@@ -1,0 +1,57 @@
+﻿<Window x:Class="RayTrace.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:RayTrace"
+        mc:Ignorable="d"
+        Title="RayTrace" Height="450" Width="800">
+    <Grid ShowGridLines="True">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        <Ribbon Grid.Row="0" Grid.ColumnSpan="2">
+            <Ribbon.ApplicationMenu>
+                <RibbonApplicationMenu KeyTip="F">
+                    <RibbonApplicationMenuItem Header="About..." />
+                    <RibbonApplicationMenuItem Header="Exit" />
+                </RibbonApplicationMenu>
+            </Ribbon.ApplicationMenu>
+            <RibbonTab x:Name="tabRender" Header="Render">
+            <RibbonGroup x:Name="groupLighting" Header="Lighting">
+                    <RibbonCheckBox x:Name="checkBoxLighting" Label="Use Lighting" Click="checkBoxLighting_Click"></RibbonCheckBox>
+                <RibbonCheckBox x:Name="checkBoxPhong" Label="Use Phong"></RibbonCheckBox>
+            </RibbonGroup>
+            <RibbonGroup x:Name="groupReflections" Header="Reflections">
+                    <RibbonCheckBox x:Name="checkBoxReflections" Label="Use Reflections" Click="checkBoxReflections_Click"></RibbonCheckBox>
+                <RibbonTextBox x:Name="textBoxDepth" Label="Depth"></RibbonTextBox>
+            </RibbonGroup>
+        </RibbonTab>
+        <RibbonTab x:Name="tabOutput" Header="Output">
+        </RibbonTab>
+        </Ribbon>
+<!--
+        <Button x:Name="buttonRender" Content="Render" HorizontalAlignment="Left" Margin="36,392,0,0" VerticalAlignment="Top" Width="75" Click="buttonRender_Click"/>
+        <ComboBox x:Name="comboBoxSize" HorizontalAlignment="Left" Margin="9,350,0,0" VerticalAlignment="Top" Width="120"/>
+        <CheckBox x:Name="checkBoxLighting" Content="Lighting" HorizontalAlignment="Left" Margin="9,228,0,0" VerticalAlignment="Top" Click="checkBoxLighting_Click"/>
+        <CheckBox x:Name="checkBoxPhong" Content="Phong illumination
+                  " HorizontalAlignment="Left" Margin="26,250,0,0" VerticalAlignment="Top" Width="140"/>
+        <CheckBox x:Name="checkBoxReflections" Content="Reflections" HorizontalAlignment="Left" Margin="9,274,0,0" VerticalAlignment="Top" Click="checkBoxReflections_Click"/>
+        <TextBox x:Name="textBoxDepth" HorizontalAlignment="Left" Height="24" Margin="116,290,0,0" TextWrapping="Wrap" Text="8" VerticalAlignment="Top" Width="48" RenderTransformOrigin="1.924,0.35"/>
+        <Label x:Name="labelDepth" Content="Max. depth
+               " HorizontalAlignment="Left" Margin="36,288,0,0" VerticalAlignment="Top" Width="75"/>
+ -->
+        <DockPanel Grid.Column="0" Grid.Row="1">
+            <Button x:Name="buttonRender" Content="Render" VerticalAlignment="Bottom" HorizontalAlignment="Left" Width="75" DockPanel.Dock="Bottom" Click="buttonRender_Click"/>
+             <TreeView x:Name="treeView"  VerticalAlignment="Stretch" Width="145" MinHeight="100" VerticalContentAlignment="Stretch"/>
+       </DockPanel>
+        <Image x:Name="image" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="1" Grid.Row="1"/>
+
+    </Grid>
+
+</Window>
