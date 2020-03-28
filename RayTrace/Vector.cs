@@ -61,6 +61,11 @@ namespace RayTrace
             return new Vector(I * scale, J * scale, K * scale);
         }
 
+        public Vector Negate()
+        {
+            return new Vector(-I, -J, -K);
+        }
+
         public double Angle(Vector v)
         {
             double dp = DotProduct(v);

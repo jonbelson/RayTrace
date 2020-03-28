@@ -22,7 +22,6 @@ namespace RayTrace
     {
         private Scene scene = new Scene();
         private Renderer renderer = new Renderer();
-        //private OutputWindow output = new OutputWindow();
    
         private Canvas canvas = null;
 
@@ -45,22 +44,22 @@ namespace RayTrace
         private void TexturedSpheresDemoScene()
         {
             Sphere sphere = new Sphere(new Point(-20, 0, 50), 20, Palette.White);
-            sphere.Material = new TextureSquares();
+            sphere.Material.Texture = new TextureSquares();
+           scene.AddShape(sphere);
+
+            sphere = new Sphere(new Point(20, 0, 50), 20, Palette.White);
+            sphere.Material.Texture = new TextureSquares();
             scene.AddShape(sphere);
 
-            //Sphere sphere = new Sphere(new Point(-20, 0, 50), 20, Palette.Red);
-            //scene.AddShape(sphere);
-            sphere = new Sphere(new Point(20, 0, 50), 20, Palette.White);
-            //            sphere.Material = new TextureSquares();
-            sphere.Material = new TextureSquares();
-            scene.AddShape(sphere);
+              Plane plane = new Plane(new Vector(0.0, 1.0, 0.0), new Point (0.0, -30.0, 0.0));
+            plane.Material.Texture = new TextureSolid(Palette.White);
+            //plane.Material.Texture = new TextureSquares() { Scale = 4 };
+            scene.AddShape(plane);
 
             Light light = new Light(new Point(-50, 0, 0), 0.5f, new Colour(1.0f, 0.0f, 0.0f));
-            //Light light = new Light(new Point(-50, 0, 0), 0.5f, new Colour(1.0f, 1.0f, 1.0f));
             scene.AddLight(light);
             light = new Light(new Point(50, 50, 0), .85f, new Colour(1.0f, 1.0f, 1.0f));
             scene.AddLight(light);
-
         }
 
         private void GetDpi(out double dpiX, out double dpiY)
@@ -89,7 +88,7 @@ namespace RayTrace
             {
                 bitmap.Lock();
 
-                for (int y = 0; y < Height; y++)
+                for (int y = 0; y < canvas.Height; y++)
                 {
                     IntPtr buffer = bitmap.BackBuffer + y * bitmap.BackBufferStride;
                     for (int x = 0; x < canvas.Width; x++)
@@ -129,8 +128,9 @@ namespace RayTrace
 
             //output.Hide();
 
-            PhongDemoScene();
-            //TexturedSpheresDemoScene();
+            //PhongDemoScene();
+            TexturedSpheresDemoScene();
+
 
             TreeViewItem item = new TreeViewItem();
             item.Header = "Lights";

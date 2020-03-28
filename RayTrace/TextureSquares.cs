@@ -1,10 +1,12 @@
 ﻿using System;
 namespace RayTrace
 {
-    public class TextureSquares : Material
+    public class TextureSquares : Texture
     {
         public Colour Colour1 { get; set; }
         public Colour Colour2 { get; set; }
+
+        public int Scale { get; set; } = 20;
 
         public TextureSquares() : this(Palette.Blue, Palette.White) { }
         public TextureSquares(Colour colour1, Colour colour2)
@@ -15,8 +17,8 @@ namespace RayTrace
 
         public override Colour GetColour(HitResult hr)
         {
-            int x = (int)(hr.u * 20);
-            int y = (int)(hr.v * 20);
+            int x = (int)(hr.u * Scale);
+            int y = (int)(hr.v * Scale);
 
             if (x % 2 == 1)
             {
@@ -26,8 +28,6 @@ namespace RayTrace
             {
                 if (y % 2 == 0) return Colour1; else return Colour2;
             }
-
-            //return Palette.Grey;
         }
     }
 }

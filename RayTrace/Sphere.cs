@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+
 namespace RayTrace
 {
     public class Sphere : Shape
@@ -34,10 +36,7 @@ namespace RayTrace
 				u = 1.0 - theta;
 			}
 
-            if (Double.IsNaN(u) || Double.IsNaN(v))
-            {
-				int ii = 0;
-            }
+			Debug.Assert(!Double.IsNaN(u) && !Double.IsNaN(v));
 
 			hr.u = (float) (1.0 - u);
 			hr.v = (float) v;
@@ -106,29 +105,13 @@ namespace RayTrace
 				// Check if segment actually intersects us.
 				double THRESH = 0.000001;
 
-//				if (mu1 < THRESH || mu1 > 1.0 + THRESH) mu1Valid = false;
-//	    		if (mu2 < THRESH || mu2 > 1.0 + THRESH) mu2Valid = false;
-
 				if (mu1 < THRESH || mu1 > 1.0 - THRESH) mu1Valid = false;
 				if (mu2 < THRESH || mu2 > 1.0 - THRESH) mu2Valid = false;
-
 
 				if (!mu1Valid && !mu2Valid)
 				{
 					return hr;
 				}
-
-/*	
-				//if (mu1 < 0 || mu1 > 1) {
-				if (mu1 < -THRESH || mu1 > 1 + THRESH)
-				{
-					return hr;
-				}
-				//if (mu2 < 0 || mu2 > 1) {
-				if (mu2 < -THRESH || mu2 > 1 + THRESH)
-				{
-					return hr;
-				}*/
 			}
 
 			Point hit1 = new Point

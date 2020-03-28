@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Windows;
 
 namespace RayTrace
 {
-    public class TextureBitmap : Material
+    public class TextureBitmap : Texture
     {
         private int width;
         private int height;
@@ -47,7 +48,7 @@ namespace RayTrace
             }
             catch (ArgumentException e)
             {
-
+                MessageBox.Show(e.Message);
             }
 
             return false;

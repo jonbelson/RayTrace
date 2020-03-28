@@ -5,8 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:RayTrace"
         mc:Ignorable="d"
-        Title="RayTrace" Height="450" Width="800">
-    <Grid ShowGridLines="True">
+        Title="RayTrace" Height="800" Width="800">
+    <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*"/>
@@ -46,9 +46,9 @@
         <Label x:Name="labelDepth" Content="Max. depth
                " HorizontalAlignment="Left" Margin="36,288,0,0" VerticalAlignment="Top" Width="75"/>
  -->
-        <DockPanel Grid.Column="0" Grid.Row="1">
-            <Button x:Name="buttonRender" Content="Render" VerticalAlignment="Bottom" HorizontalAlignment="Left" Width="75" DockPanel.Dock="Bottom" Click="buttonRender_Click"/>
-             <TreeView x:Name="treeView"  VerticalAlignment="Stretch" Width="145" MinHeight="100" VerticalContentAlignment="Stretch"/>
+        <DockPanel Grid.Column="0" Grid.Row="1" Margin="8">
+            <Button x:Name="buttonRender" Content="Render" VerticalAlignment="Bottom" HorizontalAlignment="Center" Width="75" DockPanel.Dock="Bottom" Click="buttonRender_Click" Margin="0,8,0,0"/>
+            <TreeView x:Name="treeView"  VerticalAlignment="Stretch" Width="145" MinHeight="100" VerticalContentAlignment="Stretch" Margin="0"/>
        </DockPanel>
         <Image x:Name="image" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="1" Grid.Row="1"/>
 

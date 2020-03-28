@@ -60,11 +60,16 @@
     <Compile Include="OutputWindow.xaml.cs">
       <DependentUpon>OutputWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Perlin.cs" />
+    <Compile Include="Plane.cs" />
     <Compile Include="Renderer.cs" />
     <Compile Include="Scene.cs" />
     <Compile Include="Shape.cs" />
     <Compile Include="Sphere.cs" />
+    <Compile Include="Texture.cs" />
     <Compile Include="TextureBitmap.cs" />
+    <Compile Include="TextureNoise.cs" />
+    <Compile Include="TextureSolid.cs" />
     <Compile Include="TextureSquares.cs" />
     <Compile Include="Vector.cs" />
     <Page Include="MainWindow.xaml">

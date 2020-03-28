@@ -18,7 +18,7 @@ namespace RayTrace
         public bool UseReflections { get; set; } = true;
 
         // Maximum recursive reflection depth when tracing reflections.
-        private int _recursionDepth = 10;
+        private int _recursionDepth = 5;
         public int RecursionDepth { set { if (value >= 0) _recursionDepth = value; } get { return _recursionDepth; } }
 
         // Size of rendered area, so that it ranges from -Size/2 to +Size/2 in the
@@ -35,7 +35,7 @@ namespace RayTrace
         // scene    Scene we are rendering.
         // ray      Incoming ray that produced HitResult.
         // hr       HitResult that detected intersection.
-        private Colour CalculateColour(Scene scene, Vector ray, HitResult hr, int depth = 1)
+        private Colour CalculateColour(Scene scene, Vector ray, HitResult hr, int depth = 0)
         {
             depth++;
             if (depth > RecursionDepth) return Palette.Black;
@@ -76,10 +76,7 @@ namespace RayTrace
             {
 
                 List<Light> lights = scene.IsIlluminated(hr);
-                if (lights.Count == 2)
-                {
-                    int i = 0;
-                }
+
                 foreach (Light light in lights)
                 {
                     Point p = hr.Entry;
@@ -96,11 +93,6 @@ namespace RayTrace
 
                         //Trace.Assert(false);
                         Debug.Assert(incidentColour.Red >= 0.0f && incidentColour.Green >= 0.0f && incidentColour.Blue >= 0.0);
-
-                        if (!(incidentColour.Red >= 0.0f && incidentColour.Green >= 0.0f && incidentColour.Blue >= 0.0))
-                        {
-                            int k = 0;
-                        }
 
                         colour = colour.Add(incidentColour);
                     }

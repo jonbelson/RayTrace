@@ -30,15 +30,10 @@ namespace RayTrace
         }
     }
 
+    // Base class for objects,
     abstract public class Shape
     {
         public Point Pos { get; set; }
-        //public Colour Colour { get; set; }
-        public Colour GetColour(HitResult hr)
-        {
-            return Material.GetColour(hr);
-        }
-
         public Material Material { get; set; }
 
         public Shape(Point p) : this(p, Palette.Red) { }
@@ -46,7 +41,6 @@ namespace RayTrace
         public Shape(Point p, Colour c)
         {
             Pos = p;
-            //Colour = c;
             Material = new Material(c);
         }
 
@@ -54,6 +48,11 @@ namespace RayTrace
         {
             Pos = p;
             Material = material;
+        }
+
+        public Colour GetColour(HitResult hr)
+        {
+            return Material.GetColour(hr);
         }
 
         public abstract HitResult HitTest(Point p, Vector ray);
