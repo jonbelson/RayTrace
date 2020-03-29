@@ -23,29 +23,33 @@
                 </RibbonApplicationMenu>
             </Ribbon.ApplicationMenu>
             <RibbonTab x:Name="tabRender" Header="Render">
-            <RibbonGroup x:Name="groupLighting" Header="Lighting">
+                <RibbonGroup x:Name="groupLighting" Header="Lighting">
                     <RibbonCheckBox x:Name="checkBoxLighting" Label="Use Lighting" Click="checkBoxLighting_Click"></RibbonCheckBox>
-                <RibbonCheckBox x:Name="checkBoxPhong" Label="Use Phong"></RibbonCheckBox>
-            </RibbonGroup>
-            <RibbonGroup x:Name="groupReflections" Header="Reflections">
+                    <RibbonCheckBox x:Name="checkBoxPhong" Label="Use Phong"></RibbonCheckBox>
+                </RibbonGroup>
+                <RibbonGroup x:Name="groupReflections" Header="Reflections">
                     <RibbonCheckBox x:Name="checkBoxReflections" Label="Use Reflections" Click="checkBoxReflections_Click"></RibbonCheckBox>
-                <RibbonTextBox x:Name="textBoxDepth" Label="Depth"></RibbonTextBox>
-            </RibbonGroup>
-        </RibbonTab>
+                    <RibbonTextBox x:Name="textBoxDepth" Label="Depth"></RibbonTextBox>
+                </RibbonGroup>
+            </RibbonTab>
         <RibbonTab x:Name="tabOutput" Header="Output">
-        </RibbonTab>
+                <RibbonGroup x:Name="groupSize" Header="Size">
+                    <RibbonTextBox x:Name="textWidth" Label="Width" Text="800" TextChanged="textWidth_TextChanged"></RibbonTextBox>
+                    <RibbonTextBox x:Name="textHeight" Label="Height" Text="800" IsEnabled="False"></RibbonTextBox>
+                </RibbonGroup>
+                <RibbonGroup x:Name="groupFile" Header="File">
+                    <RibbonCheckBox x:Name="checkBoxSaveImage" Label="Save Image" Click="checkBoxSaveImage_Click" IsChecked="True"></RibbonCheckBox>
+                    <RibbonTextBox x:Name="textFileName" Label="File name" Text="Untitled"></RibbonTextBox>
+ <!--                   <RibbonComboBox x:Name="comboFormat" Label="Format">
+                        <RibbonGallery>
+                            <RibbonGalleryCategory ItemsSource="{Binding saveFormats}"/>
+                        </RibbonGallery>
+                    </RibbonComboBox> -->
+                    <ComboBox x:Name="comboFormat" IsEditable="True" IsReadOnly="True" ItemsSource="{Binding saveFormats}" MinWidth="100" IsSynchronizedWithCurrentItem="True"/>
+                </RibbonGroup>
+            </RibbonTab>
         </Ribbon>
-<!--
-        <Button x:Name="buttonRender" Content="Render" HorizontalAlignment="Left" Margin="36,392,0,0" VerticalAlignment="Top" Width="75" Click="buttonRender_Click"/>
-        <ComboBox x:Name="comboBoxSize" HorizontalAlignment="Left" Margin="9,350,0,0" VerticalAlignment="Top" Width="120"/>
-        <CheckBox x:Name="checkBoxLighting" Content="Lighting" HorizontalAlignment="Left" Margin="9,228,0,0" VerticalAlignment="Top" Click="checkBoxLighting_Click"/>
-        <CheckBox x:Name="checkBoxPhong" Content="Phong illumination
-                  " HorizontalAlignment="Left" Margin="26,250,0,0" VerticalAlignment="Top" Width="140"/>
-        <CheckBox x:Name="checkBoxReflections" Content="Reflections" HorizontalAlignment="Left" Margin="9,274,0,0" VerticalAlignment="Top" Click="checkBoxReflections_Click"/>
-        <TextBox x:Name="textBoxDepth" HorizontalAlignment="Left" Height="24" Margin="116,290,0,0" TextWrapping="Wrap" Text="8" VerticalAlignment="Top" Width="48" RenderTransformOrigin="1.924,0.35"/>
-        <Label x:Name="labelDepth" Content="Max. depth
-               " HorizontalAlignment="Left" Margin="36,288,0,0" VerticalAlignment="Top" Width="75"/>
- -->
+
         <DockPanel Grid.Column="0" Grid.Row="1" Margin="8">
             <Button x:Name="buttonRender" Content="Render" VerticalAlignment="Bottom" HorizontalAlignment="Center" Width="75" DockPanel.Dock="Bottom" Click="buttonRender_Click" Margin="0,8,0,0"/>
             <TreeView x:Name="treeView"  VerticalAlignment="Stretch" Width="145" MinHeight="100" VerticalContentAlignment="Stretch" Margin="0"/>

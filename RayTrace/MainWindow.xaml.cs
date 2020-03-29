@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,6 +25,10 @@ namespace RayTrace
         private Renderer renderer = new Renderer();
    
         private Canvas canvas = null;
+
+        private readonly List<ImageFormat> saveFormats = new List<ImageFormat>() { ImageFormat.Tiff, ImageFormat.Jpeg, ImageFormat.Bmp, ImageFormat.Png };
+
+        public ImageFormat SelectedFormat { get; set; }
 
         private void PhongDemoScene()
         {
@@ -131,6 +136,14 @@ namespace RayTrace
             //PhongDemoScene();
             TexturedSpheresDemoScene();
 
+            //List<ImageFormat> formats = new List<ImageFormat>() { ImageFormat.Tiff, ImageFormat.Jpeg, ImageFormat.Bmp, ImageFormat.Png } ;
+            //comboFormat.Items.Clear();
+            //comboFormat.ItemsSource = saveFormats;
+            //comboFormat.SelectedItem;
+            //comboFormat.SelectedValue;
+            comboFormat.ItemsSource = saveFormats;
+//            comboFormat.SelectedItem = ImageFormat.Tiff;
+            comboFormat.SelectedIndex = 0;
 
             TreeViewItem item = new TreeViewItem();
             item.Header = "Lights";
@@ -164,27 +177,29 @@ namespace RayTrace
 
             renderer.RecursionDepth = depth;
 
-            canvas = new Canvas(800, 800);
+            int width = 800;
+            if (!Int32.TryParse(textWidth.Text, out width))
+            {
+                MessageBox.Show("Invalid image width.");
+                return;
+            }
+
+            int height = width;
+
+            canvas = new Canvas(width, height);
             renderer.Render(scene, canvas);
 
             Update();
 
-            //canvas.Save("Canvas.tiff");
-/*
-            //OutputWindow output = new OutputWindow();
-            output.Show();
-            output.Width = 800;
-            output.Height = 800;
-            //var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            //output.image.Source = new BitmapImage(new Uri(baseDirectory + "\\Canvas.tiff", UriKind.Absolute));
-
-            output.Canvas = canvas;
-            output.Update();
-            */
-            //output.image.Source = new BitmapImage(new Uri("pack://application:,,,/Canvas.tiff" /*, UriKind.Relative*/));
-            //output.image.Source = new BitmapImage(new Uri("c:\\temp\\Canvas.tiff", UriKind.Absolute));
-            //output.ShowDialog();
-
+            if ((bool) checkBoxSaveImage.IsChecked)
+            {
+                ImageFormat format = (ImageFormat) comboFormat.SelectedItem;
+                string fileName = textFileName.Text;
+                if (!String.IsNullOrEmpty(fileName))
+                {
+                    canvas.Save(fileName, format);
+                }
+            }
         }
 
         private void checkBoxLighting_Click(object sender, RoutedEventArgs e)
@@ -196,6 +211,19 @@ namespace RayTrace
         {
             //labelDepth.IsEnabled = (bool)checkBoxReflections.IsChecked;
             textBoxDepth.IsEnabled = (bool)checkBoxReflections.IsChecked;
+        }
+
+        private void checkBoxSaveImage_Click(object sender, RoutedEventArgs e)
+        {
+            //textFileName
+        }
+
+        private void textWidth_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (textHeight != null)
+            {
+                textHeight.Text = textWidth.Text;
+            }
         }
     }
 }

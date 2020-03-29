@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Windows;
 
 namespace RayTrace
 {
@@ -60,48 +61,50 @@ namespace RayTrace
 
         public bool Save(string path)
         {
+            return Save(path, ImageFormat.Tiff);
+        }
+
+        public bool Save(string path, ImageFormat format)
+        {
             bool success = false;
 
             // Transfer data to Bitmap.
 
-            Bitmap bitmap = new Bitmap(Width, Height, PixelFormat.Format32bppRgb);
-            Graphics g = Graphics.FromImage(bitmap);
-            //g.Clear(Color.Pink);
-            g.DrawLine(new Pen(Color.White), 0, 0, Width, Height);
-
-            BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, Width, Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb);
-            //IntPtr dest = bitmapData.Scan0;
-
-            //bitmap.
-
-            int[] row = new int[Width];
-
-            for (int y = 0; y < Height; y++)
+            try
             {
-                IntPtr dest = bitmapData.Scan0 + y * bitmapData.Stride ;
+                Bitmap bitmap = new Bitmap(Width, Height, PixelFormat.Format32bppRgb);
+                Graphics g = Graphics.FromImage(bitmap);
+                g.DrawLine(new Pen(Color.White), 0, 0, Width, Height);
 
-                // Copy the unsigned values in the buffer array to an int array.
-                //Buffer.BlockCopy(buffer, y*Width, row, 0, Width*sizeof(int));
+                BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, Width, Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb);
+                //IntPtr dest = bitmapData.Scan0;
 
-                for (int i = 0; i < Width; i++) row[i] = (int) buffer[y*Width + i];
+                //bitmap.
 
+                int[] row = new int[Width];
 
-//                if (y%2 == 0)
-//                for (int i = 0; i < Width/2; i++) row[i] = 0x00ffff;
-//                else
-//                for (int i = 0; i < Width / 2; i++) row[i] = 0xff00ff;
+                for (int y = 0; y < Height; y++)
+                {
+                    IntPtr dest = bitmapData.Scan0 + y * bitmapData.Stride;
 
-                // Copy to the Bitmap scanline.
-                System.Runtime.InteropServices.Marshal.Copy(row, 0, dest, Width);
+                    // Copy the unsigned values in the buffer array to an int array.
+                    //Buffer.BlockCopy(buffer, y*Width, row, 0, Width*sizeof(int));
 
-                //p += bitmapData.Stride;
-                 //               dest += bitmapData.Stride/sizeof(int);
-                //dest += bitmapData.Stride;
+                    for (int i = 0; i < Width; i++) row[i] = (int)buffer[y * Width + i];
+
+                    // Copy to the Bitmap scanline.
+                    System.Runtime.InteropServices.Marshal.Copy(row, 0, dest, Width);
+                }
+
+                bitmap.UnlockBits(bitmapData);
+
+                path += "." + format.ToString();
+                bitmap.Save(path, format);
             }
-
-            bitmap.UnlockBits(bitmapData);
-
-            bitmap.Save(path, ImageFormat.Tiff);
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message);
+            }
 
             return success;
         }
