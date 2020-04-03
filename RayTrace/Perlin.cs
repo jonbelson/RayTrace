@@ -8,6 +8,15 @@ namespace RayTrace
 {
     class Perlin
     {
+        // Get the maximum +ve/-ve range of noise value.
+        // http://digitalfreepen.com/2017/06/20/range-perlin-noise.html
+        public static double GetRange()
+        {
+            int N = 3;
+            return Math.Sqrt(N/4.0);
+        }
+
+
         // JAVA REFERENCE IMPLEMENTATION OF IMPROVED NOISE - COPYRIGHT 2002 KEN PERLIN.
 
         static public double Noise(double x, double y, double z)

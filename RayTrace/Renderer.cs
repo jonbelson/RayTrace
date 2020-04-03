@@ -143,6 +143,11 @@ namespace RayTrace
 
         public void Render(Scene scene, Canvas canvas)
         {
+            Render(scene, canvas, 0, canvas.Height);
+        }
+
+        public void Render(Scene scene, Canvas canvas, int startY, int numLines)
+        {
             int width = canvas.Width;
             int height = canvas.Height;
 
@@ -152,7 +157,9 @@ namespace RayTrace
             double sceneStepY = Size / height;
 
             double y = sceneStartY;
-            for (int h=0; h<height; h++)
+            //for (int h=0; h<height; h++)
+            y -= startY * sceneStepY;
+            for (int h = startY; h < startY + numLines; h++)
             {
                 double x = sceneStartX;
                 for (int w=0; w<width; w++)

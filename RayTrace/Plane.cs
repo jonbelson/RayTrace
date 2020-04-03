@@ -126,5 +126,9 @@ namespace RayTrace
             return GetIntersection(p1, p2, true);
         }
 
+        public override string ToString()
+        {
+            return "Plane[" + Normal + "," + Pos.ToString() + "]," + Material.ToString() + "]";
+        }
     }
 }

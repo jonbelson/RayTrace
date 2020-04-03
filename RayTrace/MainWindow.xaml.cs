@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -13,6 +14,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace RayTrace
 {
@@ -25,6 +27,7 @@ namespace RayTrace
         private Renderer renderer = new Renderer();
    
         private Canvas canvas = null;
+        WriteableBitmap bitmap = null;
 
         private readonly List<ImageFormat> saveFormats = new List<ImageFormat>() { ImageFormat.Tiff, ImageFormat.Jpeg, ImageFormat.Bmp, ImageFormat.Png };
 
@@ -54,6 +57,8 @@ namespace RayTrace
 
             sphere = new Sphere(new Point(20, 0, 50), 20, Palette.White);
             sphere.Material.Texture = new TextureSquares();
+            sphere.Material.Texture = new TextureNoise(Palette.White, Palette.Black);
+            sphere.Material.Texture = new TextureNoise(Palette.Red, Palette.Green) { Function=TextureNoise.ColourFunction.Blend, Scale=5 };
             scene.AddShape(sphere);
 
               Plane plane = new Plane(new Vector(0.0, 1.0, 0.0), new Point (0.0, -30.0, 0.0));
@@ -84,16 +89,20 @@ namespace RayTrace
 
         public void Update()
         {
-            double dpiX, dpiY;
-            GetDpi(out dpiX, out dpiY);
+            Update(0, canvas.Height);
+        }
 
-            WriteableBitmap bitmap = new WriteableBitmap(canvas.Width, canvas.Height, dpiX, dpiY, PixelFormats.Bgr32, null);
+        public void Update(int startY, int numLines)
+        {
+            //double dpiX, dpiY;
+            //GetDpi(out dpiX, out dpiY);
+            //WriteableBitmap bitmap = new WriteableBitmap(canvas.Width, canvas.Height, dpiX, dpiY, PixelFormats.Bgr32, null);
 
             try
             {
                 bitmap.Lock();
 
-                for (int y = 0; y < canvas.Height; y++)
+                for (int y = startY; y < startY + numLines; y++)
                 {
                     IntPtr buffer = bitmap.BackBuffer + y * bitmap.BackBufferStride;
                     for (int x = 0; x < canvas.Width; x++)
@@ -159,20 +168,19 @@ namespace RayTrace
             {
                 item.Items.Add(new TreeViewItem() { Header = shape.ToString() });
             }
-
         }
 
-        private void buttonRender_Click(object sender, RoutedEventArgs e)
+        private async Task<bool> Render()
         {
-            renderer.UseLighting = (bool) checkBoxLighting.IsChecked;
-            renderer.UsePhong = (bool) checkBoxPhong.IsChecked;
-            renderer.UseReflections = (bool) checkBoxReflections.IsChecked;
+            renderer.UseLighting = (bool)checkBoxLighting.IsChecked;
+            renderer.UsePhong = (bool)checkBoxPhong.IsChecked;
+            renderer.UseReflections = (bool)checkBoxReflections.IsChecked;
 
             int depth;
             if (!Int32.TryParse(textBoxDepth.Text, out depth))
             {
                 MessageBox.Show("Recursion depth must be an integer.");
-                return;
+                return false;
             }
 
             renderer.RecursionDepth = depth;
@@ -181,25 +189,93 @@ namespace RayTrace
             if (!Int32.TryParse(textWidth.Text, out width))
             {
                 MessageBox.Show("Invalid image width.");
-                return;
+                return false;
             }
 
             int height = width;
 
             canvas = new Canvas(width, height);
-            renderer.Render(scene, canvas);
 
-            Update();
+            double dpiX, dpiY;
+            GetDpi(out dpiX, out dpiY);
 
-            if ((bool) checkBoxSaveImage.IsChecked)
+            bitmap = new WriteableBitmap(canvas.Width, canvas.Height, dpiX, dpiY, PixelFormats.Bgr32, null);
+
+            buttonRender.IsEnabled = false;
+
+            int step = height / 4;
+
+            List<Task> tasks = new List<Task>();
+
+            for (int i = 0; i < height / step; i++)
             {
-                ImageFormat format = (ImageFormat) comboFormat.SelectedItem;
-                string fileName = textFileName.Text;
-                if (!String.IsNullOrEmpty(fileName))
+                int idx = i;
+                Task renderTask = Task.Factory.StartNew(() =>
                 {
-                    canvas.Save(fileName, format);
+                    //int idx = i;
+                    Console.WriteLine($"Starting Task {idx}, lines {idx*step} to {idx*step + step}...");
+                    renderer.Render(scene, canvas, idx*step, step);
+                    Console.WriteLine($"Done Task {idx}...");
+
+                    this.Dispatcher.Invoke(DispatcherPriority.Normal,
+                                        (ThreadStart)delegate ()
+                                        {
+                                            Console.WriteLine($"Updating {idx}, lines {idx * step} to {idx*step + step}...");
+                                            Update(idx*step, step);
+                                        }
+                    );
+                });
+                tasks.Add(renderTask);
+            }
+            
+            //List<Task> Tasks = new List<Task>() { renderTask1, renderTask2 };
+            //await Task.WaitAll(Tasks.ToArray());
+
+            foreach (Task task in tasks)
+            {
+                await task;
+            }
+
+            buttonRender.IsEnabled = true;
+
+            bool success = true;
+            if (success)
+            {
+                Update();
+
+                if ((bool)checkBoxSaveImage.IsChecked)
+                {
+                    ImageFormat format = (ImageFormat)comboFormat.SelectedItem;
+                    string fileName = textFileName.Text;
+                    if (!String.IsNullOrEmpty(fileName))
+                    {
+                        canvas.Save(fileName, format);
+                    }
                 }
             }
+
+            return true;
+
+        }
+
+        private void buttonRender_Click(object sender, RoutedEventArgs e)
+        {
+            Render();
+
+            //bool success = await Render();
+
+            //buttonRender.IsEnabled = false;
+
+            //Task renderTask = Task.Factory.StartNew(() =>
+            //{
+             //   Render();
+            //});
+
+            //await renderTask;
+
+            //buttonRender.IsEnabled = true;
+
+
         }
 
         private void checkBoxLighting_Click(object sender, RoutedEventArgs e)

@@ -24,5 +24,10 @@ namespace RayTrace
         }
 
         public virtual Colour GetColour(HitResult hr) { return Texture.GetColour(hr); }
+
+        public override string ToString()
+        {
+            return "Texture[" + Texture.ToString() + "]";
+        }
     }
 }

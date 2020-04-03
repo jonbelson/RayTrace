@@ -31,6 +31,11 @@
                     <RibbonCheckBox x:Name="checkBoxReflections" Label="Use Reflections" Click="checkBoxReflections_Click"></RibbonCheckBox>
                     <RibbonTextBox x:Name="textBoxDepth" Label="Depth"></RibbonTextBox>
                 </RibbonGroup>
+                <RibbonGroup x:Name="groupAntiAliasing" Header="Anti-Aliasing">
+                    <ComboBox x:Name="comboAntiAlias" IsEditable="True" IsReadOnly="True" MinWidth="100" IsSynchronizedWithCurrentItem="True" SelectedIndex="0">
+                        <ComboBoxItem Content="None"></ComboBoxItem>
+                    </ComboBox>
+                </RibbonGroup>
             </RibbonTab>
         <RibbonTab x:Name="tabOutput" Header="Output">
                 <RibbonGroup x:Name="groupSize" Header="Size">
@@ -50,9 +55,13 @@
             </RibbonTab>
         </Ribbon>
 
+        <GridSplitter Grid.Column="0" Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Stretch" Width="5">
+            
+        </GridSplitter>
+        
         <DockPanel Grid.Column="0" Grid.Row="1" Margin="8">
             <Button x:Name="buttonRender" Content="Render" VerticalAlignment="Bottom" HorizontalAlignment="Center" Width="75" DockPanel.Dock="Bottom" Click="buttonRender_Click" Margin="0,8,0,0"/>
-            <TreeView x:Name="treeView"  VerticalAlignment="Stretch" Width="145" MinHeight="100" VerticalContentAlignment="Stretch" Margin="0"/>
+            <TreeView x:Name="treeView"  VerticalAlignment="Stretch" MinHeight="100" VerticalContentAlignment="Stretch" Margin="0" MinWidth="120"/>
        </DockPanel>
         <Image x:Name="image" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="1" Grid.Row="1"/>
 

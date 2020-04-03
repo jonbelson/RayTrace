@@ -166,6 +166,24 @@ namespace RayTrace
 
 			CalculateUV(hr);
 
+			// XXX Should normal perturbation affect surface texture?
+			if (Smoothness < 1.0f)
+			{
+				double Scale = 10;
+
+				Vector normal = hr.EntryNormal;
+
+				double val = Perlin.Noise(Scale * normal.I, Scale * normal.J, Scale * normal.K);
+				val /= 10;
+
+				//val = (val + noiseRange) / (2.0 * noiseRange);
+
+				normal = normal.Add(new Vector(val, val, val));
+				normal.Normalise();
+
+				hr.EntryNormal = normal;
+			}
+
 			return hr;
 
 		}
@@ -184,6 +202,11 @@ namespace RayTrace
         public override HitResult HitTest(Point p1, Point p2, bool ignoreClosest = false)
         {
 			return HitTest(p1, p2, true, ignoreClosest);
+		}
+
+		public override string ToString()
+		{
+			return "Sphere[" + Pos.ToString() + "]," + Material.ToString() + "]";
 		}
 	}
 }

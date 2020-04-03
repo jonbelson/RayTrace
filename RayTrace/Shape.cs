@@ -31,10 +31,14 @@ namespace RayTrace
     }
 
     // Base class for objects,
-    abstract public class Shape
+    abstract public class Shape : Entity
     {
+        protected double noiseRange = Perlin.GetRange();
+
         public Point Pos { get; set; }
         public Material Material { get; set; }
+
+        public float Smoothness { get; set; } = 1.0f;
 
         public Shape(Point p) : this(p, Palette.Red) { }
 
