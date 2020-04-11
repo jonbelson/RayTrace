@@ -16,6 +16,7 @@ namespace RayTrace
         public bool UseLighting { set; get; } = true;
         public bool UsePhong { set; get; } = true;
         public bool UseReflections { get; set; } = true;
+        public bool UseRefraction { get; set; } = false;//true;
 
         // Maximum recursive reflection depth when tracing reflections.
         private int _recursionDepth = 5;
@@ -37,6 +38,8 @@ namespace RayTrace
         // hr       HitResult that detected intersection.
         private Colour CalculateColour(Scene scene, Vector ray, HitResult hr, int depth = 0)
         {
+            Debug.Assert(hr.HasEntry());
+
             depth++;
             if (depth > RecursionDepth) return Palette.Black;
 
@@ -46,6 +49,22 @@ namespace RayTrace
 
             //((Sphere)shape).CalculateUV(hr);
             Colour colour = shape.GetColour(hr).Multiply(scene.Ambient);
+
+            if (UseRefraction)
+            {
+                // Hit object refracts, so work out direction of refracted ray (in then out) and check if it hits anything.
+                var result = shape.GetRefractedVector(ray, hr);
+
+                //Vector refracted = result.Item1;
+
+                HitResult hrRefracted = scene.HitTest(result.Item1, result.Item2);
+                if (hrRefracted.HasEntry())
+                {
+                    Colour c = CalculateColour(scene, result.Item2, hrRefracted, depth);
+
+                    colour += c;
+                }
+            }
 
             if (UseReflections)
             {
@@ -58,7 +77,7 @@ namespace RayTrace
                 Vector R = hr.EntryNormal.Scale(2.0 * dpVE) - vecToViewer;
                 R.Normalise();
 
-                // Mkae point in direction of 'R' to use as an endpoint.
+                // Make point in direction of 'R' to use as an endpoint.
                 Vector v = R.Scale(1000.0f);
                 Point far = hr.Entry.Offset(v);
 
@@ -74,7 +93,6 @@ namespace RayTrace
 
             if (UseLighting)
             {
-
                 List<Light> lights = scene.IsIlluminated(hr);
 
                 foreach (Light light in lights)
@@ -143,13 +161,18 @@ namespace RayTrace
 
         public void Render(Scene scene, Canvas canvas)
         {
-            Render(scene, canvas, 0, canvas.Height);
+            Render(scene, canvas, 0, 0, canvas.Width, canvas.Height);
         }
 
-        public void Render(Scene scene, Canvas canvas, int startY, int numLines)
+        public void Render(Scene scene, Canvas canvas, int startX, int startY, int numColumns, int numRows)
         {
             int width = canvas.Width;
             int height = canvas.Height;
+
+            if (startY + numRows > height)
+            {
+                numRows = height - startY;
+            }
 
             double sceneStartX = -Size / 2.0;
             double sceneStartY = Size / 2.0;
@@ -159,11 +182,15 @@ namespace RayTrace
             double y = sceneStartY;
             //for (int h=0; h<height; h++)
             y -= startY * sceneStepY;
-            for (int h = startY; h < startY + numLines; h++)
+            for (int h = startY; h < startY + numRows; h++)
             {
                 double x = sceneStartX;
-                for (int w=0; w<width; w++)
+                //for (int w=0; w<width; w++)
+                x += startX * sceneStepX; 
+                for (int w=startX; w<startX + numColumns; w++)
                 {
+                    //Debug.Assert(h != height/2 || w != width/2);
+
                     // Make ray from viewpoint to projection plane.
                     Vector ray = new Vector(x, y, focalLength, true);
 

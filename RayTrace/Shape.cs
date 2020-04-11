@@ -17,7 +17,7 @@ namespace RayTrace
         public Point Entry { get { return _entry; } set { _entry = value; hasEntry = true; } }
         public Point Exit { get { return _exit; } set { _exit = value; hasExit = true; } }
 
-        public Vector EntryNormal;
+        public Vector EntryNormal;  // Normal vector at intersetion point.
 
         // Texture cordinates.
         public float u;
@@ -39,6 +39,11 @@ namespace RayTrace
         public Material Material { get; set; }
 
         public float Smoothness { get; set; } = 1.0f;
+        public float Transparency { get; set; } = 0.0f;
+        public float Reflectivity { get; set; } = 1.0f;
+
+        public bool HasTransparency() => Transparency > 0.0f;
+        public bool HasReflectivity() => Reflectivity > 0.0f;
 
         public Shape(Point p) : this(p, Palette.Red) { }
 
@@ -61,5 +66,7 @@ namespace RayTrace
 
         public abstract HitResult HitTest(Point p, Vector ray);
         public abstract HitResult HitTest(Point p1, Point p2, bool ignoreClosest=false);
+
+        public virtual (Point, Vector) GetRefractedVector(Vector ray, HitResult hr) { return (hr.Entry, ray); }
     }
 }

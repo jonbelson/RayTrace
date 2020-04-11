@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Drawing.Imaging;
 using System.Linq;
@@ -18,6 +19,47 @@ using System.Windows.Threading;
 
 namespace RayTrace
 {
+
+
+    public struct RenderBlock
+    {
+        public int StartX;
+        public int StartY;
+        public int Width;
+        public int Height;
+        public int CentreX { get { return StartX + Width / 2; } }
+        public int CentreY { get { return StartY + Height / 2; } }
+    }
+
+    public class TopToBottomComparer : IComparer<RenderBlock>
+    {
+        private int centreX;
+        private int centreY;
+
+        public TopToBottomComparer(int _centreX, int _centreY) { centreX = _centreX; centreY = _centreY; }
+
+        public int Compare(RenderBlock rb1, RenderBlock rb2)
+        {
+            float distSquared1 = (centreX - rb1.CentreX) * (centreX - rb1.CentreX) + (centreY - rb1.CentreY) * (centreY - rb1.CentreY);
+            float distSquared2 = (centreX - rb2.CentreX) * (centreX - rb2.CentreX) + (centreY - rb2.CentreY) * (centreY - rb2.CentreY);
+            if (distSquared1 > distSquared2) return 1;
+            if (distSquared1 < distSquared2) return -1;
+            return 0;
+        }
+    }
+
+    public class DiagonalComparer : IComparer<RenderBlock>
+    {
+        public int Compare(RenderBlock rb1, RenderBlock rb2)
+        {
+            float distSquared1 = rb1.CentreX * rb1.CentreX + rb1.CentreY * rb1.CentreY;
+            float distSquared2 = rb2.CentreX * rb2.CentreX + rb2.CentreY * rb2.CentreY;
+            if (distSquared1 > distSquared2) return 1;
+            if (distSquared1 < distSquared2) return -1;
+            return 0;
+        }
+    }
+
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
@@ -29,48 +71,34 @@ namespace RayTrace
         private Canvas canvas = null;
         WriteableBitmap bitmap = null;
 
+        //public bool UseThreads { get; set; } = true;
+        //public int NumThreads { get; set; } = 4;
+        //private int MaxThreads = 4;
+        public int NumRenderBlocks { get; set; } = 8;
+
+        public enum RenderDirection
+        {
+            TopToBottom, Diagonal, CentreOut
+        }
+
+        //public int MyProperty { get; set; }
+
+        //
+        public RenderDirection[] renderDirection = { RenderDirection.TopToBottom, RenderDirection.Diagonal, RenderDirection.CentreOut };
+
+        //public List<RenderDirection> renderDirecton = new List<RenderDirection>() { RenderDirection.TopToBottom, RenderDirection.Diagonal, RenderDirection.CentreOut };
+
         private readonly List<ImageFormat> saveFormats = new List<ImageFormat>() { ImageFormat.Tiff, ImageFormat.Jpeg, ImageFormat.Bmp, ImageFormat.Png };
 
         public ImageFormat SelectedFormat { get; set; }
 
-        private void PhongDemoScene()
-        {
-            for (int j = 0; j < 5; j++)
-            {
-                for (int i = 0; i <= 5; i++)
-                {
-                    Sphere sphere = new Sphere(new Point(-50 + i * 20, -40 + j * 20, 80), 8, Palette.Green);
-                    sphere.Material.k = i / 5.0;
-                    sphere.Material.ns = (j + 1) * (j + 1);
-                    scene.AddShape(sphere);
-                }
-            }
-            Light light = new Light(new Point(-50, 0, 0), 0.5f, new Colour(1.0f, 1.0f, 1.0f));
-            scene.AddLight(light);
-        }
-
-        private void TexturedSpheresDemoScene()
-        {
-            Sphere sphere = new Sphere(new Point(-20, 0, 50), 20, Palette.White);
-            sphere.Material.Texture = new TextureSquares();
-           scene.AddShape(sphere);
-
-            sphere = new Sphere(new Point(20, 0, 50), 20, Palette.White);
-            sphere.Material.Texture = new TextureSquares();
-            sphere.Material.Texture = new TextureNoise(Palette.White, Palette.Black);
-            sphere.Material.Texture = new TextureNoise(Palette.Red, Palette.Green) { Function=TextureNoise.ColourFunction.Blend, Scale=5 };
-            scene.AddShape(sphere);
-
-              Plane plane = new Plane(new Vector(0.0, 1.0, 0.0), new Point (0.0, -30.0, 0.0));
-            plane.Material.Texture = new TextureSolid(Palette.White);
-            //plane.Material.Texture = new TextureSquares() { Scale = 4 };
-            scene.AddShape(plane);
-
-            Light light = new Light(new Point(-50, 0, 0), 0.5f, new Colour(1.0f, 0.0f, 0.0f));
-            scene.AddLight(light);
-            light = new Light(new Point(50, 50, 0), .85f, new Colour(1.0f, 1.0f, 1.0f));
-            scene.AddLight(light);
-        }
+        //struct RenderBlock
+        //{
+        //    public int StartX;
+        //    public int StartY;
+        //    public int Width;
+        //    public int Height;
+        //}
 
         private void GetDpi(out double dpiX, out double dpiY)
         {
@@ -89,23 +117,21 @@ namespace RayTrace
 
         public void Update()
         {
-            Update(0, canvas.Height);
+            Update(0, 0, canvas.Width, canvas.Height);
         }
 
-        public void Update(int startY, int numLines)
+        public void Update(int startX, int startY, int numColumns, int numRows)
         {
-            //double dpiX, dpiY;
-            //GetDpi(out dpiX, out dpiY);
-            //WriteableBitmap bitmap = new WriteableBitmap(canvas.Width, canvas.Height, dpiX, dpiY, PixelFormats.Bgr32, null);
-
             try
             {
                 bitmap.Lock();
 
-                for (int y = startY; y < startY + numLines; y++)
+                for (int y = startY; y < startY + numRows; y++)
                 {
                     IntPtr buffer = bitmap.BackBuffer + y * bitmap.BackBufferStride;
-                    for (int x = 0; x < canvas.Width; x++)
+                    //                  for (int x = 0; x < canvas.Width; x++)
+                    buffer += 4 * startX;
+                    for (int x = startX; x < startX + numColumns; x++)
                     {
                         //int val = data[y * width + x];
                         //val %= palettes[currentPalette].colours.Count;
@@ -142,8 +168,9 @@ namespace RayTrace
 
             //output.Hide();
 
-            //PhongDemoScene();
-            TexturedSpheresDemoScene();
+            //scene = SceneFactory.PhongDemoScene();
+            scene = SceneFactory.TexturedSpheresDemoScene();
+            //scene = SceneFactory.RefractionDemoScene();
 
             //List<ImageFormat> formats = new List<ImageFormat>() { ImageFormat.Tiff, ImageFormat.Jpeg, ImageFormat.Bmp, ImageFormat.Png } ;
             //comboFormat.Items.Clear();
@@ -153,6 +180,12 @@ namespace RayTrace
             comboFormat.ItemsSource = saveFormats;
 //            comboFormat.SelectedItem = ImageFormat.Tiff;
             comboFormat.SelectedIndex = 0;
+
+            //comboDirection.ItemsSource = renderDirection;
+            //comboDirection.SelectedIndex = 2;
+
+            renderDirections.ItemsSource = renderDirection;
+            comboBoxDirection.SelectedItem = RenderDirection.CentreOut;
 
             TreeViewItem item = new TreeViewItem();
             item.Header = "Lights";
@@ -191,6 +224,27 @@ namespace RayTrace
                 MessageBox.Show("Invalid image width.");
                 return false;
             }
+            /*
+                        int numThreads = NumThreads;
+                        if (!Int32.TryParse(textMaxThreads.Text, out numThreads))
+                        {
+                            MessageBox.Show("Invalid number of threads.");
+                            return false;
+                        }
+
+                        NumThreads = numThreads;
+            */
+
+            int numRenderBlocks = NumRenderBlocks;
+            if (!Int32.TryParse(textNumberBlocks.Text, out numRenderBlocks))
+            {
+                MessageBox.Show("Invalid number of render blocks.");
+                return false;
+            }
+
+            NumRenderBlocks = numRenderBlocks;
+
+            RenderDirection direction = (RenderDirection)comboBoxDirection.SelectedItem;
 
             int height = width;
 
@@ -203,29 +257,54 @@ namespace RayTrace
 
             buttonRender.IsEnabled = false;
 
-            int step = height / 4;
+            int step = height / NumRenderBlocks;
+
+            // Make list of blocks to redner.
+            List<RenderBlock> renderBlocks = new List<RenderBlock>();
+
+            //const int NumBlocks = 8;
+
+            for (int y = 0; y < NumRenderBlocks; y++)
+            {
+                for (int x = 0; x < NumRenderBlocks; x++)
+                {
+                    RenderBlock renderBlock = new RenderBlock() { StartX = x * step, StartY = y * step, Width = step, Height = step };
+                    renderBlocks.Add(renderBlock);
+                }
+            }
+
+            switch (direction)
+            {
+                case RenderDirection.CentreOut: renderBlocks.Sort(new TopToBottomComparer(canvas.Width / 2, canvas.Height / 2));  break;
+                case RenderDirection.Diagonal:  renderBlocks.Sort(new DiagonalComparer());  break;
+                case RenderDirection.TopToBottom:  /* The default */ break;
+            }
+
 
             List<Task> tasks = new List<Task>();
 
-            for (int i = 0; i < height / step; i++)
+            //for (int i = 0; i < height / step; i++)
+            int i = 0;
+            foreach (RenderBlock rb in renderBlocks)
             {
                 int idx = i;
                 Task renderTask = Task.Factory.StartNew(() =>
                 {
                     //int idx = i;
-                    Console.WriteLine($"Starting Task {idx}, lines {idx*step} to {idx*step + step}...");
-                    renderer.Render(scene, canvas, idx*step, step);
+                    Console.WriteLine($"Starting Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...");
+                    renderer.Render(scene, canvas, rb.StartX, rb.StartY, rb.Width, rb.Height);
                     Console.WriteLine($"Done Task {idx}...");
 
                     this.Dispatcher.Invoke(DispatcherPriority.Normal,
                                         (ThreadStart)delegate ()
                                         {
-                                            Console.WriteLine($"Updating {idx}, lines {idx * step} to {idx*step + step}...");
-                                            Update(idx*step, step);
+                                            Console.WriteLine($"Updating {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...");
+                                            Update(rb.StartX, rb.StartY, rb.Width, rb.Height);
                                         }
                     );
                 });
                 tasks.Add(renderTask);
+                i++;
             }
             
             //List<Task> Tasks = new List<Task>() { renderTask1, renderTask2 };

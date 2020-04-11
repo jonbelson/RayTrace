@@ -100,18 +100,22 @@ namespace RayTrace
 			bool mu1Valid = true;
 			bool mu2Valid = true;
 
+			double THRESH = 0.000001;
+
+			// Generally we're not interested in hits that are very close to start position.
+			if (mu1 < THRESH)	{ mu1Valid = false;	}
+			if (mu2 < THRESH)	{ mu2Valid = false;	}
+
 			if (segmentOnly)
 			{
 				// Check if segment actually intersects us.
-				double THRESH = 0.000001;
+				if (mu1 > 1.0 - THRESH) mu1Valid = false;
+				if (mu2 > 1.0 - THRESH) mu2Valid = false;
+			}
 
-				if (mu1 < THRESH || mu1 > 1.0 - THRESH) mu1Valid = false;
-				if (mu2 < THRESH || mu2 > 1.0 - THRESH) mu2Valid = false;
-
-				if (!mu1Valid && !mu2Valid)
-				{
-					return hr;
-				}
+			if (!mu1Valid && !mu2Valid)
+			{
+				return hr;
 			}
 
 			Point hit1 = new Point
@@ -203,6 +207,30 @@ namespace RayTrace
         {
 			return HitTest(p1, p2, true, ignoreClosest);
 		}
+
+		public override (Point, Vector) GetRefractedVector(Vector ray, HitResult hr)
+		{
+			Debug.Assert(hr.HasEntry());
+
+			Vector refraction1 = Refraction.GetAngle(ray, hr.EntryNormal, RefractiveIndex.Vacuum, RefractiveIndex.WindowGlass);
+
+			if (!refraction1.IsNull())
+			{
+				// Hit test refracted ray against ourself to find exit point.
+				HitResult hrInternal = HitTest(hr.Entry, refraction1);
+				if (hrInternal.HasEntry())
+				{
+					// Found the exit point, so calculate refraction as ray exits the sphere.
+					Vector refraction2 = Refraction.GetAngle(refraction1, hrInternal.EntryNormal.Negate(), RefractiveIndex.WindowGlass, RefractiveIndex.Vacuum);
+
+					return (hrInternal.Entry, refraction2);
+				}
+			}
+
+			// Didn't mange to get e refracted ray, so return values passed.
+			return (hr.Entry, ray);	// XXX Or return Vector.Null()?
+		}
+
 
 		public override string ToString()
 		{

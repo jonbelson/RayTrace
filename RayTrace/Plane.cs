@@ -96,6 +96,9 @@ namespace RayTrace
             hr.u = (float)e1.DotProduct(vecIntersection);
             hr.v = (float)e2.DotProduct(vecIntersection);
 
+            if (hr.u < 0.0) hr.u = 1.0f + hr.u;
+            if (hr.v < 0.0) hr.v = 1.0f + hr.v;
+
             return hr;
         }
 

@@ -1,0 +1,86 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace RayTrace
+{
+    class SceneFactory
+    {
+        public static Scene PhongDemoScene()
+        {
+            Scene scene = new Scene();
+
+            for (int j = 0; j < 5; j++)
+            {
+                for (int i = 0; i <= 5; i++)
+                {
+                    Sphere sphere = new Sphere(new Point(-50 + i * 20, -40 + j * 20, 80), 8, Palette.Green);
+                    sphere.Material.k = i / 5.0;
+                    sphere.Material.ns = (j + 1) * (j + 1);
+                    scene.AddShape(sphere);
+                }
+            }
+            Light light = new Light(new Point(-50, 0, 0), 0.5f, new Colour(1.0f, 1.0f, 1.0f));
+            scene.AddLight(light);
+
+            return scene;
+        }
+
+        public static Scene TexturedSpheresDemoScene()
+        {
+            Scene scene = new Scene();
+
+            Sphere sphere = new Sphere(new Point(-20, 0, 50), 20, Palette.White);
+            sphere.Material.Texture = new TextureSquares();
+            scene.AddShape(sphere);
+
+            sphere = new Sphere(new Point(20, 0, 50), 20, Palette.White);
+            sphere.Material.Texture = new TextureSquares();
+            sphere.Material.Texture = new TextureNoise(Palette.White, Palette.Black);
+            sphere.Material.Texture = new TextureNoise(Palette.Red, Palette.Green) { Function = TextureNoise.ColourFunction.Blend, Scale = 5 };
+            scene.AddShape(sphere);
+
+            Plane plane = new Plane(new Vector(0.0, 1.0, 0.0), new Point(0.0, -30.0, 0.0));
+            plane.Material.Texture = new TextureSolid(Palette.White);
+            //plane.Material.Texture = new TextureSquares() { Scale = 4 };
+            scene.AddShape(plane);
+
+            Light light = new Light(new Point(-50, 0, 0), 0.5f, new Colour(1.0f, 0.0f, 0.0f));
+            scene.AddLight(light);
+            light = new Light(new Point(50, 50, 0), .85f, new Colour(1.0f, 1.0f, 1.0f));
+            scene.AddLight(light);
+
+            return scene;
+        }
+
+        public static Scene RefractionDemoScene()
+        {
+            Scene scene = new Scene();
+
+            Sphere sphere = new Sphere(new Point(0, 0, 50), 20, Palette.White);
+            //sphere.Material.Texture = new TextureSquares();
+            scene.AddShape(sphere);
+
+            //sphere = new Sphere(new Point(20, 0, 50), 20, Palette.White);
+            //sphere.Material.Texture = new TextureSquares();
+            //sphere.Material.Texture = new TextureNoise(Palette.White, Palette.Black);
+            //sphere.Material.Texture = new TextureNoise(Palette.Red, Palette.Green) { Function = TextureNoise.ColourFunction.Blend, Scale = 5 };
+            //scene.AddShape(sphere);
+
+            Plane plane = new Plane(new Vector(0.0, 0.0, -1.0), new Point(0.0, 0.0, 100.0));
+            plane.Reflectivity = 0.0f;
+            //plane.Material.Texture = new TextureSolid(Palette.Blue);
+            plane.Material.Texture = new TextureSquares() { Scale = 10 };
+            scene.AddShape(plane);
+
+            Light light = new Light(new Point(-50, 0, 0), 0.5f, new Colour(1.0f, 0.0f, 0.0f));
+            scene.AddLight(light);
+            light = new Light(new Point(50, 50, 0), .85f, Palette.White);
+            scene.AddLight(light);
+
+            return scene;
+        }
+    }
+}

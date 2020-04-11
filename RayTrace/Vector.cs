@@ -91,6 +91,17 @@ namespace RayTrace
             }
         }
 
+        // Return a null vector, i.e. one with all components set to 0.
+        public static Vector Null()
+        {
+            return new Vector(0.0, 0.0, 0.0);
+        }
+
+        public bool IsNull()
+        {
+            return I == 0.0 && J == 0.0 && K == 0.0;
+        }
+
         public override string ToString()
         {
             return "Vector[" + I + "," + J + "," + K + "]";
