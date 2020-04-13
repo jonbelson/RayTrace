@@ -30,15 +30,15 @@ namespace RayTrace
                 return hr;
             }
 
-            double u = num / denom;
+            double mu = num / denom;
 
-            if (u == 0.0)
+            if (mu == 0.0)
             {
                 // Either parallel to plane or on the plane - treat both as no intersection for our purposes.
                 return hr;
             }
 
-            if (u < 0.0)
+            if (mu < 0.0)
             {
                 // Not interested in intersections that happen behind us.
                 return hr;
@@ -49,7 +49,7 @@ namespace RayTrace
                 // Check if segment actually intersects us.
                 double THRESH = 0.000001;
 
-                if (u < THRESH || u > 1.0 - THRESH)
+                if (mu < THRESH || mu > 1.0 - THRESH)
                 {
                     return hr;
                 }
@@ -57,7 +57,7 @@ namespace RayTrace
 
             //Vector vecP1P2 = p2 - p1;
             Vector vecP2P1 = p1 - p2;
-            Point Intersection = p1 + vecP2P1.Scale(u);
+            Point Intersection = p1 + vecP2P1.Scale(mu);
 
             hr.Entry = Intersection;
 
@@ -92,12 +92,28 @@ namespace RayTrace
             e2.Normalise();
 
             Vector vecIntersection = new Vector(Intersection.X, Intersection.Y, Intersection.Z);
+            double mag = vecIntersection.Magnitude();
             vecIntersection.Normalise();
-            hr.u = (float)e1.DotProduct(vecIntersection);
-            hr.v = (float)e2.DotProduct(vecIntersection);
 
-            if (hr.u < 0.0) hr.u = 1.0f + hr.u;
-            if (hr.v < 0.0) hr.v = 1.0f + hr.v;
+            double u = e1.DotProduct(vecIntersection);
+            double v = e2.DotProduct(vecIntersection);
+
+            int scale = 400;
+
+            u *= mag;
+            v *= mag;
+
+            u %= scale;
+            v %= scale;
+
+            u /= scale;
+            v /= scale;
+
+            if (u < 0.0) u = 1.0f + u;
+            if (v < 0.0) v = 1.0f + v;
+
+            hr.u = (float) u;
+            hr.v = (float) v;
 
             return hr;
         }

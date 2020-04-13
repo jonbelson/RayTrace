@@ -16,7 +16,8 @@ namespace RayTrace
         public bool UseLighting { set; get; } = true;
         public bool UsePhong { set; get; } = true;
         public bool UseReflections { get; set; } = true;
-        public bool UseRefraction { get; set; } = false;//true;
+//        public bool UseRefraction { get; set; } = false;//true;
+        public bool UseRefraction { get; set; } = true;
 
         // Maximum recursive reflection depth when tracing reflections.
         private int _recursionDepth = 5;
@@ -52,43 +53,48 @@ namespace RayTrace
 
             if (UseRefraction)
             {
-                // Hit object refracts, so work out direction of refracted ray (in then out) and check if it hits anything.
-                var result = shape.GetRefractedVector(ray, hr);
-
-                //Vector refracted = result.Item1;
-
-                HitResult hrRefracted = scene.HitTest(result.Item1, result.Item2);
-                if (hrRefracted.HasEntry())
+                if (shape.HasTransparency())
                 {
-                    Colour c = CalculateColour(scene, result.Item2, hrRefracted, depth);
+                    // Hit object refracts, so work out direction of refracted ray (in then out) and check if it hits anything.
+                    var result = shape.GetRefractedVector(ray, hr);
 
-                    colour += c;
+                    //Vector refracted = result.Item1;
+
+                    HitResult hrRefracted = scene.HitTest(result.Item1, result.Item2);
+                    if (hrRefracted.HasEntry())
+                    {
+                        Colour c = CalculateColour(scene, result.Item2, hrRefracted, depth);
+
+                        colour += c;
+                    }
                 }
             }
 
             if (UseReflections)
             {
-                // Get reflection angle 'R'.
-                //Vector vecToViewer = new Vector(-x, -y, -focalLength, true);
-                Vector vecToViewer = ray.Scale(-1.0f);
-
-                double dpVE = vecToViewer.DotProduct(hr.EntryNormal);
-
-                Vector R = hr.EntryNormal.Scale(2.0 * dpVE) - vecToViewer;
-                R.Normalise();
-
-                // Make point in direction of 'R' to use as an endpoint.
-                Vector v = R.Scale(1000.0f);
-                Point far = hr.Entry.Offset(v);
-
-                HitResult hrReflect = scene.HitTest(hr.Entry, far);
-                if (hrReflect.HasEntry())
+                if (shape.HasReflectivity())
                 {
-                    Colour c = CalculateColour(scene, R, hrReflect, depth);
-                    colour += c.Scale(0.5f);
-                    //colour += hrReflect.shape.Colour * 0.5f;
-                }
+                    // Get reflection angle 'R'.
+                    //Vector vecToViewer = new Vector(-x, -y, -focalLength, true);
+                    Vector vecToViewer = ray.Scale(-1.0f);
 
+                    double dpVE = vecToViewer.DotProduct(hr.EntryNormal);
+
+                    Vector R = hr.EntryNormal.Scale(2.0 * dpVE) - vecToViewer;
+                    R.Normalise();
+
+                    // Make point in direction of 'R' to use as an endpoint.
+                    Vector v = R.Scale(1000.0f);
+                    Point far = hr.Entry.Offset(v);
+
+                    HitResult hrReflect = scene.HitTest(hr.Entry, far);
+                    if (hrReflect.HasEntry())
+                    {
+                        Colour c = CalculateColour(scene, R, hrReflect, depth);
+                        colour += c.Scale(0.5f);
+                        //colour += hrReflect.shape.Colour * 0.5f;
+                    }
+                }
             }
 
             if (UseLighting)
@@ -180,12 +186,12 @@ namespace RayTrace
             double sceneStepY = Size / height;
 
             double y = sceneStartY;
-            //for (int h=0; h<height; h++)
             y -= startY * sceneStepY;
+
             for (int h = startY; h < startY + numRows; h++)
             {
                 double x = sceneStartX;
-                //for (int w=0; w<width; w++)
+
                 x += startX * sceneStepX; 
                 for (int w=startX; w<startX + numColumns; w++)
                 {

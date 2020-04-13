@@ -36,9 +36,9 @@
                         <ComboBoxItem Content="None"></ComboBoxItem>
                     </ComboBox>
                 </RibbonGroup>
-                <RibbonGroup x:Name="groupPerformaance" Header="Performance">
+                <RibbonGroup x:Name="groupEngine" Header="Engine">
                     <RibbonTextBox x:Name="textNumberBlocks" Label="Num. Blocks" Text="{Binding NumRenderBlocks, ElementName=window, Mode=TwoWay}"></RibbonTextBox>
-                    <RibbonComboBox SelectionBoxWidth="100">
+                    <RibbonComboBox SelectionBoxWidth="100" Label="Order">
                         <RibbonGallery x:Name="comboBoxDirection">
                             <RibbonGalleryCategory x:Name="renderDirections" />
                         </RibbonGallery>
@@ -51,18 +51,18 @@
             </RibbonTab>
             <RibbonTab x:Name="tabOutput" Header="Output">
                 <RibbonGroup x:Name="groupSize" Header="Size">
-                    <RibbonTextBox x:Name="textWidth" Label="Width" Text="800" TextChanged="textWidth_TextChanged"></RibbonTextBox>
-                    <RibbonTextBox x:Name="textHeight" Label="Height" Text="800" IsEnabled="False"></RibbonTextBox>
+                    <RibbonTextBox x:Name="textWidth" Label="Width" Text="800" HorizontalAlignment="Right" TextChanged="textWidth_TextChanged"></RibbonTextBox>
+                    <RibbonTextBox x:Name="textHeight" Label="Height" Text="800" HorizontalAlignment="Right" IsEnabled="False"></RibbonTextBox>
                 </RibbonGroup>
                 <RibbonGroup x:Name="groupFile" Header="File">
                     <RibbonCheckBox x:Name="checkBoxSaveImage" Label="Save Image" Click="checkBoxSaveImage_Click" IsChecked="True"></RibbonCheckBox>
                     <RibbonTextBox x:Name="textFileName" Label="File name" Text="Untitled"></RibbonTextBox>
-                    <!--                   <RibbonComboBox x:Name="comboFormat" Label="Format">
-                        <RibbonGallery>
-                            <RibbonGalleryCategory ItemsSource="{Binding saveFormats}"/>
+                    <RibbonComboBox Label="Format">
+                        <RibbonGallery x:Name="comboBoxFormat" MaxColumnCount="1">
+                            <RibbonGalleryCategory x:Name="imageFormat" ItemsSource="{Binding SaveFormats, ElementName=window}"/>
                         </RibbonGallery>
-                    </RibbonComboBox> -->
-                    <ComboBox x:Name="comboFormat" IsEditable="True" IsReadOnly="True" ItemsSource="{Binding saveFormats}" MinWidth="100" IsSynchronizedWithCurrentItem="True"/>
+                    </RibbonComboBox>
+                    <!--<ComboBox x:Name="comboFormat" IsEditable="True" IsReadOnly="True" ItemsSource="{Binding saveFormats}" MinWidth="100" IsSynchronizedWithCurrentItem="True"/>-->
                 </RibbonGroup>
             </RibbonTab>
         </Ribbon>

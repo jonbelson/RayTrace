@@ -33,8 +33,8 @@ namespace RayTrace
 
     public class TopToBottomComparer : IComparer<RenderBlock>
     {
-        private int centreX;
-        private int centreY;
+        private readonly int centreX;
+        private readonly int centreY;
 
         public TopToBottomComparer(int _centreX, int _centreY) { centreX = _centreX; centreY = _centreY; }
 
@@ -89,6 +89,8 @@ namespace RayTrace
         //public List<RenderDirection> renderDirecton = new List<RenderDirection>() { RenderDirection.TopToBottom, RenderDirection.Diagonal, RenderDirection.CentreOut };
 
         private readonly List<ImageFormat> saveFormats = new List<ImageFormat>() { ImageFormat.Tiff, ImageFormat.Jpeg, ImageFormat.Bmp, ImageFormat.Png };
+
+        public List<ImageFormat> SaveFormats { get { return saveFormats; } }
 
         public ImageFormat SelectedFormat { get; set; }
 
@@ -169,17 +171,17 @@ namespace RayTrace
             //output.Hide();
 
             //scene = SceneFactory.PhongDemoScene();
-            scene = SceneFactory.TexturedSpheresDemoScene();
-            //scene = SceneFactory.RefractionDemoScene();
+            //scene = SceneFactory.TexturedSpheresDemoScene();
+            scene = SceneFactory.RefractionDemoScene();
 
             //List<ImageFormat> formats = new List<ImageFormat>() { ImageFormat.Tiff, ImageFormat.Jpeg, ImageFormat.Bmp, ImageFormat.Png } ;
             //comboFormat.Items.Clear();
             //comboFormat.ItemsSource = saveFormats;
             //comboFormat.SelectedItem;
             //comboFormat.SelectedValue;
-            comboFormat.ItemsSource = saveFormats;
-//            comboFormat.SelectedItem = ImageFormat.Tiff;
-            comboFormat.SelectedIndex = 0;
+            //comboBoxFormat.ItemsSource = null;
+            //comboBoxFormat.ItemsSource = saveFormats;
+            comboBoxFormat.SelectedItem = ImageFormat.Tiff;
 
             //comboDirection.ItemsSource = renderDirection;
             //comboDirection.SelectedIndex = 2;
@@ -324,7 +326,7 @@ namespace RayTrace
 
                 if ((bool)checkBoxSaveImage.IsChecked)
                 {
-                    ImageFormat format = (ImageFormat)comboFormat.SelectedItem;
+                    ImageFormat format = (ImageFormat)comboBoxFormat.SelectedItem;
                     string fileName = textFileName.Text;
                     if (!String.IsNullOrEmpty(fileName))
                     {

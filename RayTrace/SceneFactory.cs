@@ -59,17 +59,21 @@ namespace RayTrace
         {
             Scene scene = new Scene();
 
-            Sphere sphere = new Sphere(new Point(0, 0, 50), 20, Palette.White);
+            Sphere sphere = new Sphere(new Point(-10, 0, 50), 20, Palette.Black /* Palette.White*/);
             //sphere.Material.Texture = new TextureSquares();
+            sphere.Transparency = 1.0f;
+            sphere.Reflectivity = 0.0f;
+            //sphere.Material.
             scene.AddShape(sphere);
 
-            //sphere = new Sphere(new Point(20, 0, 50), 20, Palette.White);
-            //sphere.Material.Texture = new TextureSquares();
+            sphere = new Sphere(new Point(0, 10, 70), 25, Palette.Red);
+            sphere.Material.Texture = new TextureSquares() { Scale = 10 };
             //sphere.Material.Texture = new TextureNoise(Palette.White, Palette.Black);
             //sphere.Material.Texture = new TextureNoise(Palette.Red, Palette.Green) { Function = TextureNoise.ColourFunction.Blend, Scale = 5 };
             //scene.AddShape(sphere);
 
-            Plane plane = new Plane(new Vector(0.0, 0.0, -1.0), new Point(0.0, 0.0, 100.0));
+            //Plane plane = new Plane(new Vector(0.0, 0.0, -1.0), new Point(0.0, 0.0, 100.0));
+            Plane plane = new Plane(new Vector(0.0, 1.0, 0.0), new Point(0.0, -30.0, 0.0), Palette.Grey);
             plane.Reflectivity = 0.0f;
             //plane.Material.Texture = new TextureSolid(Palette.Blue);
             plane.Material.Texture = new TextureSquares() { Scale = 10 };

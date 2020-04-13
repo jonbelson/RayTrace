@@ -212,7 +212,11 @@ namespace RayTrace
 		{
 			Debug.Assert(hr.HasEntry());
 
-			Vector refraction1 = Refraction.GetAngle(ray, hr.EntryNormal, RefractiveIndex.Vacuum, RefractiveIndex.WindowGlass);
+			float n1 = RefractiveIndex.Vacuum;
+			float n2 = RefractiveIndex.WindowGlass;
+
+			//			Vector refraction1 = Refraction.GetAngle(ray, hr.EntryNormal, RefractiveIndex.Vacuum, RefractiveIndex.WindowGlass);
+			Vector refraction1 = Refraction.GetAngle(ray, hr.EntryNormal, n1, n2);
 
 			if (!refraction1.IsNull())
 			{
@@ -221,7 +225,7 @@ namespace RayTrace
 				if (hrInternal.HasEntry())
 				{
 					// Found the exit point, so calculate refraction as ray exits the sphere.
-					Vector refraction2 = Refraction.GetAngle(refraction1, hrInternal.EntryNormal.Negate(), RefractiveIndex.WindowGlass, RefractiveIndex.Vacuum);
+					Vector refraction2 = Refraction.GetAngle(refraction1, hrInternal.EntryNormal.Negate(), n2, n1);
 
 					return (hrInternal.Entry, refraction2);
 				}

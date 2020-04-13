@@ -25,6 +25,9 @@ namespace RayTrace
     public class Refraction
     {
         /*
+         * Calculate refracted angle of ray based on relative refractive indices.
+         * 'An Introduction to Ray Tracing' page section 5.2.
+         * 
          * I    Incoming light ray.
          * N    Surface normal.
          * n1   Refractive index of medium 1 wrt vacuum.
@@ -34,12 +37,23 @@ namespace RayTrace
          */
         public static Vector GetAngle(Vector I, Vector N, float n1, float n2)
         {
-            float nit = n2 / n1;
+            /*
+            double eta = n1 / n2;
 
+            double c1 = -I.DotProduct(N);
+            double cs2 = 1.0 - eta * eta * (1.0 - c1 * c1);
+            if (cs2 < 0.0)
+            {
+                return Vector.Null();
+            }
+
+            Vector T = I.Scale(eta) + N.Scale(eta*c1 - Math.Sqrt(cs2));
+            return T;
+            */
+
+            float nit = n1 / n2;
             double Ci = N.DotProduct(I.Negate());   // cos(θi)
-            //double Ct = I.DotProduct(T.Negate());   // cos(θt)
-
-            double v = (1.0 + nit * nit * (Ci * Ci - 1));
+            double v = (1.0 - nit * nit * (1.0 - Ci * Ci));
 
             if (v < 0.0)
             {
@@ -47,11 +61,9 @@ namespace RayTrace
                 return Vector.Null();
             }
 
-            Vector T1 = I.Scale(nit);
-            double T2 = (nit * Ci - Math.Sqrt(v));
-            Vector T = T1 + N.Scale(T2);
+            Vector vT = I.Scale(nit) + N.Scale(nit * Ci - Math.Sqrt(v));
 
-            return T;
+            return vT;
         }
     }
 }
