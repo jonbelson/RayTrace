@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Ribbon;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
@@ -63,7 +64,7 @@ namespace RayTrace
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : RibbonWindow
     {
         private Scene scene = new Scene();
         private Renderer renderer = new Renderer();
@@ -93,14 +94,6 @@ namespace RayTrace
         public List<ImageFormat> SaveFormats { get { return saveFormats; } }
 
         public ImageFormat SelectedFormat { get; set; }
-
-        //struct RenderBlock
-        //{
-        //    public int StartX;
-        //    public int StartY;
-        //    public int Width;
-        //    public int Height;
-        //}
 
         private void GetDpi(out double dpiX, out double dpiY)
         {
@@ -162,9 +155,11 @@ namespace RayTrace
         {
             InitializeComponent();
 
-            checkBoxLighting.IsChecked = renderer.UseLighting;
+            checkBoxAmbient.IsChecked = renderer.UseAmbient;
+            checkBoxLighting.IsChecked = renderer.UseDiffuse;
             checkBoxPhong.IsChecked = renderer.UsePhong;
             checkBoxReflections.IsChecked = renderer.UseReflections;
+            checkBoxRefraction.IsChecked = renderer.UseRefraction;
 
             textBoxDepth.Text = renderer.RecursionDepth.ToString();
 
@@ -174,17 +169,7 @@ namespace RayTrace
             //scene = SceneFactory.TexturedSpheresDemoScene();
             scene = SceneFactory.RefractionDemoScene();
 
-            //List<ImageFormat> formats = new List<ImageFormat>() { ImageFormat.Tiff, ImageFormat.Jpeg, ImageFormat.Bmp, ImageFormat.Png } ;
-            //comboFormat.Items.Clear();
-            //comboFormat.ItemsSource = saveFormats;
-            //comboFormat.SelectedItem;
-            //comboFormat.SelectedValue;
-            //comboBoxFormat.ItemsSource = null;
-            //comboBoxFormat.ItemsSource = saveFormats;
             comboBoxFormat.SelectedItem = ImageFormat.Tiff;
-
-            //comboDirection.ItemsSource = renderDirection;
-            //comboDirection.SelectedIndex = 2;
 
             renderDirections.ItemsSource = renderDirection;
             comboBoxDirection.SelectedItem = RenderDirection.CentreOut;
@@ -207,9 +192,11 @@ namespace RayTrace
 
         private async Task<bool> Render()
         {
-            renderer.UseLighting = (bool)checkBoxLighting.IsChecked;
+            renderer.UseAmbient = (bool)checkBoxAmbient.IsChecked;
+            renderer.UseDiffuse = (bool)checkBoxLighting.IsChecked;
             renderer.UsePhong = (bool)checkBoxPhong.IsChecked;
             renderer.UseReflections = (bool)checkBoxReflections.IsChecked;
+            renderer.UseRefraction = (bool)checkBoxRefraction.IsChecked;
 
             int depth;
             if (!Int32.TryParse(textBoxDepth.Text, out depth))
@@ -226,16 +213,6 @@ namespace RayTrace
                 MessageBox.Show("Invalid image width.");
                 return false;
             }
-            /*
-                        int numThreads = NumThreads;
-                        if (!Int32.TryParse(textMaxThreads.Text, out numThreads))
-                        {
-                            MessageBox.Show("Invalid number of threads.");
-                            return false;
-                        }
-
-                        NumThreads = numThreads;
-            */
 
             int numRenderBlocks = NumRenderBlocks;
             if (!Int32.TryParse(textNumberBlocks.Text, out numRenderBlocks))

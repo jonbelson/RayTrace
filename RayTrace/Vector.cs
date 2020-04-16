@@ -80,6 +80,11 @@ namespace RayTrace
             return Math.Sqrt(I*I + J*J + K*K);
         }
 
+        public double MagnitudeSquared()
+        {
+            return I * I + J * J + K * K;
+        }
+
         public void Normalise()
         {
             double magnitude = Magnitude();

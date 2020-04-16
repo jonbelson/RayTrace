@@ -18,6 +18,10 @@ namespace RayTrace
         public float Green { get; set; }
         //public float Alpha { get; set; }
 
+        public Colour(System.Windows.Media.Color color) : this(color.ScR, color.ScG, color.ScB)
+        {
+        }
+
         public Colour() : this(0.0f, 0.0f, 0.0f)
         {
             //Red = Green = Blue = 0.0f;

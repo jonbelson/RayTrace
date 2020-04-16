@@ -6,16 +6,16 @@ namespace RayTrace
         public Shape shape;
 
         private Point _entry;
-        private Point _exit;
+        //private Point _exit;
 
         private bool hasEntry = false;
-        private bool hasExit = false;
+        //private bool hasExit = false;
 
         public bool HasEntry () => hasEntry;
-        public bool HasExit() => hasExit;
+        //public bool HasExit() => hasExit;
 
         public Point Entry { get { return _entry; } set { _entry = value; hasEntry = true; } }
-        public Point Exit { get { return _exit; } set { _exit = value; hasExit = true; } }
+        //public Point Exit { get { return _exit; } set { _exit = value; hasExit = true; } }
 
         public Vector EntryNormal;  // Normal vector at intersetion point.
 
@@ -38,12 +38,17 @@ namespace RayTrace
         public Point Pos { get; set; }
         public Material Material { get; set; }
 
-        public float Smoothness { get; set; } = 1.0f;
-        public float Transparency { get; set; } = 0.0f;
-        public float Reflectivity { get; set; } = 1.0f;
+        //public float Roughness { get; set; } = 0.0f;
+        //public float Transparency { get; set; } = 0.0f;
+        //public float Reflectivity { get; set; } = 1.0f;
 
-        public bool HasTransparency() => Transparency > 0.0f;
-        public bool HasReflectivity() => Reflectivity > 0.0f;
+        public bool HasRoughness() => Material.HasRoughness();
+        public bool HasTransparency() => Material.HasTransparency();
+        public bool HasReflectivity() => Material.HasReflectivity();
+
+        //public bool HasRoughness() => Roughness > 0.0f;
+        //public bool HasTransparency() => Transparency > 0.0f;
+        //public bool HasReflectivity() => Reflectivity > 0.0f;
 
         public Shape(Point p) : this(p, Palette.Red) { }
 

@@ -58,15 +58,11 @@ namespace RayTrace
 
 			const double EPS = 0.00001;
 
-			Point dp = new Point
-			{
-				X = p2.X - p1.X,
-				Y = p2.Y - p1.Y,
-				Z = p2.Z - p1.Z
-			};
+			// Vector from p1 to p2.
+			Vector dp = p2 - p1;
 
-			double a = dp.X * dp.X + dp.Y * dp.Y + dp.Z * dp.Z;
-			double b = 2 * (dp.X * (p1.X - sc.X) + dp.Y * (p1.Y - sc.Y) + dp.Z * (p1.Z - sc.Z));
+			double a = dp.MagnitudeSquared();
+			double b = 2 * (dp.I * (p1.X - sc.X) + dp.J * (p1.Y - sc.Y) + dp.K * (p1.Z - sc.Z));
 			double c = sc.X * sc.X + sc.Y * sc.Y + sc.Z * sc.Z;
 			c += p1.X * p1.X + p1.Y * p1.Y + p1.Z * p1.Z;
 			c -= 2 * (sc.X * p1.X + sc.Y * p1.Y + sc.Z * p1.Z);
@@ -81,13 +77,10 @@ namespace RayTrace
 			// Check if line is tangental to the sphere.
 			if (bb4ac == 0.0)
 			{
-				double mu = -b / (2 * a);
+				double u = -b / (2 * a);
 
-				double X = p1.X + mu * (p2.X - p1.X);
-				double Y = p1.Y + mu * (p2.Y - p1.Y);
-				double Z = p1.Z + mu * (p2.Z - p1.Z);
-
-				hr.Entry = new Point(X, Y, Z);
+				Point p = p1 + dp.Scale(u);
+				hr.Entry = p;
 
 				CalculateUV(hr);
 
@@ -113,65 +106,31 @@ namespace RayTrace
 				if (mu2 > 1.0 - THRESH) mu2Valid = false;
 			}
 
-			if (!mu1Valid && !mu2Valid)
+			double mu;
+			if (mu1Valid && mu2Valid)
+				mu = Math.Min(mu1, mu2);
+			else if (mu1Valid)
+				mu = mu1;
+			else if (mu2Valid)
+				mu = mu2;
+			else
 			{
+				// No valid intersections.
 				return hr;
 			}
 
-			Point hit1 = new Point
-			{
-				X = p1.X + mu1 * (p2.X - p1.X),
-				Y = p1.Y + mu1 * (p2.Y - p1.Y),
-				Z = p1.Z + mu1 * (p2.Z - p1.Z)
-			};
+			Point hit = p1 + dp.Scale(mu);
 
-			Point hit2 = new Point
-			{
-				X = p1.X + mu2 * (p2.X - p1.X),
-				Y = p1.Y + mu2 * (p2.Y - p1.Y),
-				Z = p1.Z + mu2 * (p2.Z - p1.Z)
-			};
+			Vector surfaceNormal = Pos.Difference(hit);
+			surfaceNormal.Normalise();
 
-			Vector surfaceNormal1 = Pos.Difference(hit1);
-			surfaceNormal1.Normalise();
-
-			Vector surfaceNormal2 = Pos.Difference(hit2);
-			surfaceNormal2.Normalise();
-
-			if (mu1Valid && !mu2Valid)
-			{
-				hr.Entry = hit1;
-				hr.EntryNormal = surfaceNormal1;
-			}
-			else if (!mu1Valid && mu2Valid)
-			{
-				hr.Entry = hit2;
-				hr.EntryNormal = surfaceNormal2;
-			}
-			else
-			{
-				// Nearest intersection is the entry point.
-				double dist1 = hit1.Distance(p1);
-				double dist2 = hit2.Distance(p1);
-
-				if (dist1 < dist2)
-				{
-					hr.Entry = hit1;
-					hr.Exit = hit2;
-					hr.EntryNormal = surfaceNormal1;
-				}
-				else
-				{
-					hr.Entry = hit2;
-					hr.Exit = hit1;
-					hr.EntryNormal = surfaceNormal2;
-				}
-			}
+			hr.Entry = hit;
+			hr.EntryNormal = surfaceNormal;
 
 			CalculateUV(hr);
 
 			// XXX Should normal perturbation affect surface texture?
-			if (Smoothness < 1.0f)
+			if (HasRoughness())
 			{
 				double Scale = 10;
 

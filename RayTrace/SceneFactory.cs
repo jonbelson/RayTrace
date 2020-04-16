@@ -59,10 +59,10 @@ namespace RayTrace
         {
             Scene scene = new Scene();
 
-            Sphere sphere = new Sphere(new Point(-10, 0, 50), 20, Palette.Black /* Palette.White*/);
+            Sphere sphere = new Sphere(new Point(10, 0, 50), 20, Palette.Black /* Palette.White*/);
             //sphere.Material.Texture = new TextureSquares();
-            sphere.Transparency = 1.0f;
-            sphere.Reflectivity = 0.0f;
+            sphere.Material.Transparency = 1.0f;
+            sphere.Material.Reflectivity = 0.0f;
             //sphere.Material.
             scene.AddShape(sphere);
 
@@ -72,11 +72,11 @@ namespace RayTrace
             //sphere.Material.Texture = new TextureNoise(Palette.Red, Palette.Green) { Function = TextureNoise.ColourFunction.Blend, Scale = 5 };
             //scene.AddShape(sphere);
 
-            //Plane plane = new Plane(new Vector(0.0, 0.0, -1.0), new Point(0.0, 0.0, 100.0));
-            Plane plane = new Plane(new Vector(0.0, 1.0, 0.0), new Point(0.0, -30.0, 0.0), Palette.Grey);
-            plane.Reflectivity = 0.0f;
+            Plane plane = new Plane(new Vector(0.0, 0.0, -1.0), new Point(0.0, 0.0, 100.0));
+            //Plane plane = new Plane(new Vector(0.0, 1.0, 0.0), new Point(0.0, -30.0, 0.0), Palette.Grey);
+            plane.Material.Reflectivity = 0.0f;
             //plane.Material.Texture = new TextureSolid(Palette.Blue);
-            plane.Material.Texture = new TextureSquares() { Scale = 10 };
+            plane.Material.Texture = new TextureSquares() { Scale = 20 };
             scene.AddShape(plane);
 
             Light light = new Light(new Point(-50, 0, 0), 0.5f, new Colour(1.0f, 0.0f, 0.0f));

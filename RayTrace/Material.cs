@@ -9,6 +9,14 @@ namespace RayTrace
         public double k = 0.5;     // Specular reflection coefficient/constant.
         public double ns = 4.0;    // 'Shininess' of surface, 1.0 (matt) - 100 (shiny)
 
+        public float Roughness { get; set; } = 0.0f;
+        public float Transparency { get; set; } = 0.0f;
+        public float Reflectivity { get; set; } = 1.0f;
+
+        public bool HasRoughness() => Roughness > 0.0f;
+        public bool HasTransparency() => Transparency > 0.0f;
+        public bool HasReflectivity() => Reflectivity > 0.0f;
+
         public Texture Texture;
 
         public Material() : this(Palette.White) { }

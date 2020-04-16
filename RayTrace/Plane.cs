@@ -55,8 +55,8 @@ namespace RayTrace
                 }
             }
 
-            //Vector vecP1P2 = p2 - p1;
-            Vector vecP2P1 = p1 - p2;
+            Vector vecP2P1 = p2 - p1;
+            //Vector vecP2P1 = p1 - p2;
             Point Intersection = p1 + vecP2P1.Scale(mu);
 
             hr.Entry = Intersection;

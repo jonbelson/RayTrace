@@ -13,10 +13,10 @@ namespace RayTrace
         // Position of viewer.
         private Point vPos;
 
-        public bool UseLighting { set; get; } = true;
+        public bool UseAmbient { set; get; } = true;
+        public bool UseDiffuse { set; get; } = true;
         public bool UsePhong { set; get; } = true;
         public bool UseReflections { get; set; } = true;
-//        public bool UseRefraction { get; set; } = false;//true;
         public bool UseRefraction { get; set; } = true;
 
         // Maximum recursive reflection depth when tracing reflections.
@@ -49,7 +49,7 @@ namespace RayTrace
             //Colour colour = Palette.Black;
 
             //((Sphere)shape).CalculateUV(hr);
-            Colour colour = shape.GetColour(hr).Multiply(scene.Ambient);
+            Colour colour = (UseAmbient) ? shape.GetColour(hr).Multiply(scene.Ambient) : Palette.Black;
 
             if (UseRefraction)
             {
@@ -97,7 +97,7 @@ namespace RayTrace
                 }
             }
 
-            if (UseLighting)
+            if (UseDiffuse)
             {
                 List<Light> lights = scene.IsIlluminated(hr);
 
