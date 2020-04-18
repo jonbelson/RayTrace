@@ -6,16 +6,17 @@ using System.Threading.Tasks;
 
 namespace RayTrace
 {
-    // Simple texture that just return s asingle colour.
+    // Simple texture that just returns asingle colour.
     public class TextureSolid : Texture
     {
-        private Colour colour;
+        public Colour Colour { get; set; }              // Diffuse colour
+        //public Colour ColourSpecular { get; set; }    // Colour for specular reflections.
 
         public TextureSolid(Colour colour)
         {
-            this.colour = colour;
+            Colour = colour;
         }
 
-        public override Colour GetColour(HitResult hr) { return colour; }
+        public override Colour GetColour(HitResult hr) { return Colour; }
     }
 }

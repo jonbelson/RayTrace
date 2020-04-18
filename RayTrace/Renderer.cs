@@ -45,11 +45,20 @@ namespace RayTrace
             if (depth > RecursionDepth) return Palette.Black;
 
             Shape shape = hr.shape;
-            //Colour colour = shape.GetColour(hr).Multiply(scene.Ambient);
-            //Colour colour = Palette.Black;
 
             //((Sphere)shape).CalculateUV(hr);
-            Colour colour = (UseAmbient) ? shape.GetColour(hr).Multiply(scene.Ambient) : Palette.Black;
+            //Colour colour = (UseAmbient) ? shape.GetColour(hr).Multiply(scene.Ambient) : Palette.Black;
+
+            Colour ambient = Palette.Black;
+            Colour refracted = Palette.Black;
+            Colour reflected = Palette.Black;
+            Colour diffuse = Palette.Black;
+            Colour specular = Palette.Black;
+
+            if (UseAmbient)
+            {
+                ambient = shape.GetColour(hr).Multiply(scene.Ambient);
+            }
 
             if (UseRefraction)
             {
@@ -65,7 +74,9 @@ namespace RayTrace
                     {
                         Colour c = CalculateColour(scene, result.Item2, hrRefracted, depth);
 
-                        colour += c;
+                        refracted = c;
+
+                        //colour += c;
                     }
                 }
             }
@@ -91,7 +102,8 @@ namespace RayTrace
                     if (hrReflect.HasEntry())
                     {
                         Colour c = CalculateColour(scene, R, hrReflect, depth);
-                        colour += c.Scale(0.5f);
+                        //colour += c.Scale(0.5f);
+                        reflected = c;
                         //colour += hrReflect.shape.Colour * 0.5f;
                     }
                 }
@@ -105,6 +117,10 @@ namespace RayTrace
                 {
                     Point p = hr.Entry;
                     Vector vecToLight = p.Difference(light.Pos);
+
+                    // Assume light attenuatiaon is 1 over distance squared.
+                    double lightAttenuation = 1.0 / vecToLight.MagnitudeSquared();
+
                     vecToLight.Normalise();
 
                     Vector shapeNormal = hr.EntryNormal;
@@ -113,12 +129,15 @@ namespace RayTrace
 
                     if (dpLN > 0.0)
                     {
-                        Colour incidentColour = light.Colour * shape.GetColour(hr).Scale((float)dpLN);
+                        Colour incidentColour = light.Output * shape.GetColour(hr).Scale((float)dpLN);
+
+                        incidentColour = incidentColour.Scale((float) lightAttenuation);
 
                         //Trace.Assert(false);
                         Debug.Assert(incidentColour.Red >= 0.0f && incidentColour.Green >= 0.0f && incidentColour.Blue >= 0.0);
 
-                        colour = colour.Add(incidentColour);
+                        //colour = colour.Add(incidentColour);
+                        diffuse += incidentColour;
                     }
 
                     if (UsePhong)
@@ -131,7 +150,6 @@ namespace RayTrace
                         //vecToViewer.Normalise();
                         Vector vecToViewer = ray.Scale(-1.0f);
 
-
                         double Il = light.Intensity;// 1.0;    // Intensity of light source.
                         double dpVR = vecToViewer.DotProduct(R);
 
@@ -141,7 +159,7 @@ namespace RayTrace
                             //double k = 0.5;     // Specular reflection coefficient/constant.
                             //double ns = 4.0;    // 'Shininess' of surface.
 
-                            double k = shape.Material.k;    // 0.5;     // Specular reflection coefficient/constant.
+                            double k = shape.Material.ks;    // 0.5;     // Specular reflection coefficient/constant.
                             double ns = shape.Material.ns;  // 4.0;    // 'Shininess' of surface.
 
                             double d = Math.Pow(dpVR, ns);
@@ -155,12 +173,22 @@ namespace RayTrace
 
                             Colour spec = new Colour(1f, 1f, 1f);
                             //spec = light.Colour;
-                            colour = colour + spec * (float)Ispec;
+                            double factor = Ispec * lightAttenuation;
+                            Colour specularColour = spec * (float)factor;
+                            //colour += specularColour;
+
+                            specular += specularColour;
                         }
                     }
 
                 }
             }
+
+            // Combine all the colour components.
+            Colour colour = ambient + diffuse + specular;
+
+            float transparency = shape.Material.Transparency;
+            colour += refracted.Scale(transparency) + reflected.Scale(1.0f - transparency);
 
             return colour;
         }

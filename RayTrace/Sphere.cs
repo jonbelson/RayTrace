@@ -172,7 +172,7 @@ namespace RayTrace
 			Debug.Assert(hr.HasEntry());
 
 			float n1 = RefractiveIndex.Vacuum;
-			float n2 = RefractiveIndex.WindowGlass;
+			float n2 = hr.shape.Material.RefractiveIndex;
 
 			//			Vector refraction1 = Refraction.GetAngle(ray, hr.EntryNormal, RefractiveIndex.Vacuum, RefractiveIndex.WindowGlass);
 			Vector refraction1 = Refraction.GetAngle(ray, hr.EntryNormal, n1, n2);

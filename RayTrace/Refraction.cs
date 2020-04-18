@@ -7,19 +7,19 @@ using System.Threading.Tasks;
 namespace RayTrace
 {
     // Refractive indexes at wavelength of 589nm.
-    public class RefractiveIndex
+    public static class RefractiveIndex
     {
-        public static float Vacuum = 1.0f;
+        public const float Vacuum = 1.0f;
 
-        public static float Air = 1.0003f;
-        public static float Diamond = 2.42f;
-        public static float FlintGlass = 1.69f;
-        public static float FusedQuartz = 1.46f;
-        public static float Ice = 1.31f;
-        public static float Pyrex = 1.470f;
-        public static float Sapphire = 1.77f;
-        public static float Water = 1.333f;
-        public static float WindowGlass = 1.52f;
+        public const float Air = 1.0003f;
+        public const float Diamond = 2.42f;
+        public const float FlintGlass = 1.69f;
+        public const float FusedQuartz = 1.46f;
+        public const float Ice = 1.31f;
+        public const float Pyrex = 1.470f;
+        public const float Sapphire = 1.77f;
+        public const float Water = 1.333f;
+        public const float WindowGlass = 1.52f;
     }
 
     public class Refraction
