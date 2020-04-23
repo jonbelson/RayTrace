@@ -18,7 +18,6 @@ C:\Users\Jon\source\repos\RayTrace\RayTrace\obj\Debug\RayTrace.csprojAssemblyRef
 C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\bin\Debug\RayTrace.exe.config
 C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\bin\Debug\RayTrace.exe
 C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\bin\Debug\RayTrace.pdb
-C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\obj\Debug\RayTrace.csprojAssemblyReference.cache
 C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\obj\Debug\MainWindow.g.cs
 C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\obj\Debug\OutputWindow.g.cs
 C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\obj\Debug\App.g.cs
@@ -32,3 +31,4 @@ C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\obj\Debug\RayTrace.csproj.Gene
 C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\obj\Debug\RayTrace.csproj.CoreCompileInputs.cache
 C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\obj\Debug\RayTrace.exe
 C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\obj\Debug\RayTrace.pdb
+C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\obj\Debug\RayTrace.csprojAssemblyReference.cache

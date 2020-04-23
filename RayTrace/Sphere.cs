@@ -49,7 +49,7 @@ namespace RayTrace
 
         // Hit test between line a sphere.
         // segmentOnly If true, only the line segment defined by p1 and p2 is considered.
-        private HitResult HitTest(Point p1, Point p2, bool segmentOnly, bool ignoreClosest)
+        private HitResult HitTestImpl(Point p1, Point p2, bool segmentOnly)
         {
 			HitResult hr = new HitResult(this);
 
@@ -155,16 +155,16 @@ namespace RayTrace
 		{
 			Point p2 = pos.Offset(ray);
 
-			return HitTest(pos, p2, false, false);
+			return HitTestImpl(pos, p2, false);
 
 			// Based on http://paulbourke.net/geometry/circlesphere/index.html#linesphere
 
 		}
 
         // ignoreClosest    If true, 
-        public override HitResult HitTest(Point p1, Point p2, bool ignoreClosest = false)
+        public override HitResult HitTest(Point p1, Point p2)
         {
-			return HitTest(p1, p2, true, ignoreClosest);
+			return HitTestImpl(p1, p2, true);
 		}
 
 		public override (Point, Vector) GetRefractedVector(Vector ray, HitResult hr)

@@ -7,6 +7,8 @@ namespace RayTrace
     // Negative Z axis towards observer.
     public class Renderer
     {
+        public enum AntiAliasType { None, SuperSampling, AdaptiveSupersampling }
+
         // Distance of observer along Z axis.
         private double focalLength = 500.0;
 
@@ -19,6 +21,8 @@ namespace RayTrace
         public bool UseReflections { get; set; } = true;
         public bool UseRefraction { get; set; } = true;
 
+        public AntiAliasType AntiAlias { get; set; } = AntiAliasType.None;
+
         // Maximum recursive reflection depth when tracing reflections.
         private int _recursionDepth = 5;
         public int RecursionDepth { set { if (value >= 0) _recursionDepth = value; } get { return _recursionDepth; } }
@@ -27,6 +31,7 @@ namespace RayTrace
         //  x axis and -Size/2 to +Size/2 in the y axis.
         public double Size { get; }
 
+        // Constructor.
         public Renderer()
         {
             vPos = new Point(0.0, 0.0, -focalLength);
@@ -45,9 +50,6 @@ namespace RayTrace
             if (depth > RecursionDepth) return Palette.Black;
 
             Shape shape = hr.shape;
-
-            //((Sphere)shape).CalculateUV(hr);
-            //Colour colour = (UseAmbient) ? shape.GetColour(hr).Multiply(scene.Ambient) : Palette.Black;
 
             Colour ambient = Palette.Black;
             Colour refracted = Palette.Black;
@@ -156,9 +158,6 @@ namespace RayTrace
                         // Ignore negative dp as it means the vectors are pointing away from each other.
                         if (dpVR > 0.0)
                         {
-                            //double k = 0.5;     // Specular reflection coefficient/constant.
-                            //double ns = 4.0;    // 'Shininess' of surface.
-
                             double k = shape.Material.ks;    // 0.5;     // Specular reflection coefficient/constant.
                             double ns = shape.Material.ns;  // 4.0;    // 'Shininess' of surface.
 
@@ -193,11 +192,144 @@ namespace RayTrace
             return colour;
         }
 
+        // Render entire Scene to the Canvas.
         public void Render(Scene scene, Canvas canvas)
         {
             Render(scene, canvas, 0, 0, canvas.Width, canvas.Height);
         }
 
+        struct SubSample
+        {
+            public double TLx;
+            public double TLy;
+            public double BRx;
+            public double BRy;
+            public Colour[] Colours;
+
+            // 0     1
+            //
+            //    4
+            //
+            // 2     3
+            public SubSample(double tlX, double tlY, double brX, double brY)
+            {
+                TLx = tlX;
+                TLy = tlY;
+                BRx = brX;
+                BRy = brY;
+                Colours = new Colour[5];
+            }
+        }
+
+        private Colour GetSubPixelColour(Scene scene, SubSample subSample)
+        {
+            double centreX = (subSample.TLx + subSample.BRx) / 2;
+            double centreY = (subSample.TLy + subSample.BRy) / 2;
+
+            var Colours = subSample.Colours;
+
+            // Get the colours of each of the five sample points.
+            Colours[0] = GetPixelColour(scene, subSample.TLx, subSample.TLy);
+            Colours[1] = GetPixelColour(scene, subSample.BRx, subSample.TLy);
+            Colours[2] = GetPixelColour(scene, subSample.TLx, subSample.BRy);
+            Colours[3] = GetPixelColour(scene, subSample.BRx, subSample.BRy);
+            Colours[4] = GetPixelColour(scene, centreX, centreY);
+
+            Colour colour = Palette.Black;
+            for (int i=0; i<5; i++)
+            {
+                colour += Colours[i];
+            }
+
+            return colour.Scale(0.2f);
+        }
+
+        private Colour GetSubPixelColour(Scene scene, SubSample subSample, int depth)
+        {
+            if (depth > 4) return Palette.Black;
+
+            double centreX = (subSample.TLx + subSample.BRx) / 2;
+            double centreY = (subSample.TLy + subSample.BRy) / 2;
+
+            var Colours = subSample.Colours;
+
+            // Get the colours of each of the five sample points.
+            Colours[0] = GetPixelColour(scene, subSample.TLx, subSample.TLy);
+            Colours[1] = GetPixelColour(scene, subSample.BRx, subSample.TLy);
+            Colours[2] = GetPixelColour(scene, subSample.TLx, subSample.BRy);
+            Colours[3] = GetPixelColour(scene, subSample.BRx, subSample.BRy);
+            Colours[4] = GetPixelColour(scene, centreX, centreY);
+
+            Colour col04;
+            Colour col14;
+            Colour col24;
+            Colour col34;
+
+            // Compare each corner to the centre. If they're simialr, average them else subdivide further.
+            if (Colours[0].IsSimilar(Colours[4]))
+            {
+                col04 = Colour.Average(Colours[0], Colours[4]);
+            }
+            else
+            {
+                SubSample subSubSample = new SubSample(subSample.TLx, subSample.TLy, centreX, centreY);
+                col04 = GetSubPixelColour(scene, subSubSample, depth + 1);
+            }
+
+            if (Colours[1].IsSimilar(Colours[4]))
+            {
+                col14 = Colour.Average(Colours[1], Colours[4]);
+            }
+            else
+            {
+                SubSample subSubSample = new SubSample(centreX, subSample.TLy, subSample.BRx, subSample.TLy);
+                col14 = GetSubPixelColour(scene, subSubSample, depth + 1);
+            }
+
+            if (Colours[2].IsSimilar(Colours[4]))
+            {
+                col24 = Colour.Average(Colours[2], Colours[4]);
+            }
+            else
+            {
+                SubSample subSubSample = new SubSample(subSample.TLx, subSample.BRy, centreX, centreY);
+                col24 = GetSubPixelColour(scene, subSubSample, depth + 1);
+            }
+
+            if (Colours[3].IsSimilar(Colours[4]))
+            {
+                col34 = Colour.Average(Colours[3], Colours[4]);
+            }
+            else
+            {
+                SubSample subSubSample = new SubSample(centreX, centreY, subSample.BRx, subSample.BRy);
+                col34 = GetSubPixelColour(scene, subSubSample, depth + 1);
+            }
+
+            // Average the four colours.
+            Colour colour = col04 + col14 + col24 + col34;
+            colour = colour.Scale(0.25f);
+
+            return colour;
+        }
+
+        // Get the colour of specified pixel by casting a ray into the Scene.
+        private Colour GetPixelColour(Scene scene, double x, double y)
+        {
+            Colour colour = new Colour();
+
+            Vector ray = new Vector(x, y, focalLength, true);
+
+            HitResult hr = scene.HitTest(vPos, ray);
+            if (hr.HasEntry())
+            {
+                colour = CalculateColour(scene, ray, hr);
+            }
+
+            return colour;
+        }
+
+            // Render specified block of Scene to the Canvas.
         public void Render(Scene scene, Canvas canvas, int startX, int startY, int numColumns, int numRows)
         {
             int width = canvas.Width;
@@ -225,26 +357,46 @@ namespace RayTrace
                 {
                     //Debug.Assert(h != height/2 || w != width/2);
 
-                    // Make ray from viewpoint to projection plane.
-                    Vector ray = new Vector(x, y, focalLength, true);
-
-                    HitResult hr = scene.HitTest(vPos, ray);
-                    if (hr.HasEntry())
+                    if (AntiAlias == AntiAliasType.None)
                     {
-                        Shape shape = hr.shape;
-
-                        Colour colour = CalculateColour(scene, ray, hr);
-
-                        //colour += shape.Colour.Multiply(scene.Ambient);
-                        
+                        Colour colour = GetPixelColour(scene, x + sceneStepX / 2, y + sceneStepY / 2);
                         colour.Clamp();
-                        //colour.Normalise();
-                        //colour = colour.Exposure(1.2f);
                         canvas.Set(w, h, colour.ToRGB());
-
-                        //canvas.buffer[h*width + w] = colour.ToRGB();
+                    }
+                    else if (AntiAlias == AntiAliasType.SuperSampling)
+                    {
+                        SubSample subSample = new SubSample(x, y, x + sceneStepX, y - sceneStepY);
+                        Colour colour = GetSubPixelColour(scene, subSample);
+                        colour.Clamp();
+                        canvas.Set(w, h, colour.ToRGB());
+                    }
+                    else
+                    {
+                        SubSample subSample = new SubSample(x, y, x + sceneStepX, y - sceneStepY);
+                        Colour colour = GetSubPixelColour(scene, subSample, 1);
+                        colour.Clamp();
+                        canvas.Set(w, h, colour.ToRGB());
                     }
 
+                    /*
+                                        // Make ray from viewpoint to projection plane.
+                                        Vector ray = new Vector(x + sceneStepX/2, y + sceneStepY/2, focalLength, true);
+
+                                        HitResult hr = scene.HitTest(vPos, ray);
+                                        if (hr.HasEntry())
+                                        {
+                                            Shape shape = hr.shape;
+
+                                            Colour colour = CalculateColour(scene, ray, hr);
+
+                                            colour.Clamp();
+                                            //colour.Normalise();
+                                            //colour = colour.Exposure(1.2f);
+                                            canvas.Set(w, h, colour.ToRGB());
+
+                                            //canvas.buffer[h*width + w] = colour.ToRGB();
+                                        }
+                                        */
                     x += sceneStepX;
                 }
 

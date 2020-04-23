@@ -47,16 +47,20 @@
                     <RibbonCheckBox x:Name="checkBoxRefraction" Label="Refraction" ToolTip="Enable refraction for objects with transparency"></RibbonCheckBox>
                 </RibbonGroup>
 -->
+                
                 <RibbonGroup x:Name="groupAntiAliasing" Header="Anti-Aliasing">
-                    <ComboBox x:Name="comboAntiAlias" IsEditable="True" IsReadOnly="True" MinWidth="100" IsSynchronizedWithCurrentItem="True" SelectedIndex="0">
-                        <ComboBoxItem Content="None"></ComboBoxItem>
-                    </ComboBox>
+                    <RibbonComboBox Label="Type" MinWidth="100">
+                        <RibbonGallery x:Name="comboBoxAntiAlias" SelectedValue="None" SelectedValuePath="Content">
+                            <RibbonGalleryCategory x:Name="antiAliasType" ItemsSource="{Binding AntiAliasType, ElementName=window}">
+                            </RibbonGalleryCategory>
+                        </RibbonGallery>
+                    </RibbonComboBox>
                 </RibbonGroup>
                 <RibbonGroup x:Name="groupEngine" Header="Engine">
                     <RibbonTextBox x:Name="textNumberBlocks" Label="Num. Blocks" Text="{Binding NumRenderBlocks, ElementName=window, Mode=TwoWay}"></RibbonTextBox>
                     <RibbonComboBox SelectionBoxWidth="100" Label="Order">
                         <RibbonGallery x:Name="comboBoxDirection">
-                            <RibbonGalleryCategory x:Name="renderDirections" />
+                            <RibbonGalleryCategory x:Name="renderDirections" ItemsSource="{Binding RenderDirections, ElementName=window}" />
                         </RibbonGallery>
                     </RibbonComboBox>
                     <!--

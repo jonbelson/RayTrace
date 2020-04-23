@@ -72,7 +72,14 @@ namespace RayTrace
             //sphere.Material.Texture = new TextureNoise(Palette.Red, Palette.Green) { Function = TextureNoise.ColourFunction.Blend, Scale = 5 };
             sphere.Material.Transparency = 0.25f;
             sphere.Material.Reflectivity = 0.0f;
-            scene.AddShape(sphere);
+//            scene.AddShape(sphere);
+
+
+            Box box = new Box(new Point(20, 0, 0), 30, 30, 30);
+            box.Material.Transparency = 1.0f;
+            box.Material.Reflectivity = 0.0f;
+            scene.AddShape(box);
+
 
             Plane plane = new Plane(new Vector(0.0, 0.0, -1.0), new Point(0.0, 0.0, 100.0));
             //Plane plane = new Plane(new Vector(0.0, 1.0, 0.0), new Point(0.0, -30.0, 0.0), Palette.Grey);
@@ -85,6 +92,30 @@ namespace RayTrace
             scene.AddLight(light);
             light = new Light(new Point(50, 50, 0), 3000.0f, Palette.White);
             scene.AddLight(light);
+
+            return scene;
+        }
+
+        public static Scene BoxDemoScene()
+        {
+            Scene scene = new Scene();
+
+            Box box = new Box(new Point(-40, 0, 0), 10, 10, 10);
+            scene.AddShape(box);
+
+            box = new Box(new Point(0, -40, 00), 40, 40, 80);
+            scene.AddShape(box);
+
+            Plane plane = new Plane(new Vector(0.0, 1.0, 0.0), new Point(0.0, -40.0, 0.0), Palette.Grey);
+            plane.Material.Reflectivity = 1.0f;
+            //plane.Material.Texture = new TextureSolid(Palette.Blue);
+            //plane.Material.Texture = new TextureSquares() { Scale = 20 };
+            scene.AddShape(plane);
+
+
+            Light light = new Light(new Point(50, 50, 0), 3000.0f, Palette.White);
+            scene.AddLight(light);
+
 
             return scene;
         }

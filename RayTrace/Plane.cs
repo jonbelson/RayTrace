@@ -11,7 +11,7 @@ namespace RayTrace
         public Vector Normal { get; set; }
         //public Point Point { get; set; }
 
-        private HitResult GetIntersection(Point p1, Point p2, bool segmentOnly)
+        private HitResult HitTestImpl(Point p1, Point p2, bool segmentOnly)
         {
             HitResult hr = new HitResult(this);
 
@@ -137,12 +137,12 @@ namespace RayTrace
             Point p1 = pos;
             Point p2 = pos.Offset(longRay);
 
-            return GetIntersection(p1, p2, false);
+            return HitTestImpl(p1, p2, false);
         }
 
-        public override HitResult HitTest(Point p1, Point p2, bool ignoreClosest = false)
+        public override HitResult HitTest(Point p1, Point p2)
         {
-            return GetIntersection(p1, p2, true);
+            return HitTestImpl(p1, p2, true);
         }
 
         public override string ToString()

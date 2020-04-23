@@ -38,17 +38,9 @@ namespace RayTrace
         public Point Pos { get; set; }
         public Material Material { get; set; }
 
-        //public float Roughness { get; set; } = 0.0f;
-        //public float Transparency { get; set; } = 0.0f;
-        //public float Reflectivity { get; set; } = 1.0f;
-
         public bool HasRoughness() => Material.HasRoughness();
         public bool HasTransparency() => Material.HasTransparency();
         public bool HasReflectivity() => Material.HasReflectivity();
-
-        //public bool HasRoughness() => Roughness > 0.0f;
-        //public bool HasTransparency() => Transparency > 0.0f;
-        //public bool HasReflectivity() => Reflectivity > 0.0f;
 
         public Shape(Point p) : this(p, Palette.Red) { }
 
@@ -70,7 +62,7 @@ namespace RayTrace
         }
 
         public abstract HitResult HitTest(Point p, Vector ray);
-        public abstract HitResult HitTest(Point p1, Point p2, bool ignoreClosest=false);
+        public abstract HitResult HitTest(Point p1, Point p2);
 
         public virtual (Point, Vector) GetRefractedVector(Vector ray, HitResult hr) { return (hr.Entry, ray); }
     }

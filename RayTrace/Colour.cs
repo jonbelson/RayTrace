@@ -119,6 +119,23 @@ namespace RayTrace
             }
         }
 
+        // Return true if Colours are within 'similar'.
+        public bool IsSimilar(Colour c)
+        {
+            const float MinDiff = 0.1f;
+            //Vector v1 = new Vector(Red, Green, Blue);
+            //Vector v2 = new Vector(c.Red, c.Green, c.Blue);
+            //return v1.Subtract(v2).MagnitudeSquared() < MinDiff * MinDiff; 
+
+            float diffRed = Red - c.Red;
+            float diffGreen = Green - c.Green;
+            float diffBlue = Blue - c.Blue;
+
+            float diffSquared = diffRed * diffRed + diffGreen * diffGreen + diffBlue * diffBlue;
+
+            return diffSquared < MinDiff * MinDiff;
+        }
+
         public uint ToRGB()
         {
             byte r = (byte)(Red * 255);
@@ -133,6 +150,8 @@ namespace RayTrace
             return "Colour[" + Red + "," + Green + "," + Blue + "]";
         }
 
+        // Blend two Colours in the specified ratio.
+        // ratio       Ranges from 0.0 (all col1) to 1.0 (all col2).
         public static Colour Blend(Colour col1, Colour col2, float ratio)
         {
             ratio = Math.Max(ratio, 0.0f);
@@ -143,6 +162,12 @@ namespace RayTrace
             float b = col1.Blue * ratio + (1 - ratio) * col2.Blue;
 
             return new Colour(r, g, b);
+        }
+
+        // Return the average of two Colours.
+        public static Colour Average(Colour col1, Colour col2)
+        {
+            return (col1 + col2).Scale(0.5f);
         }
     }
 }

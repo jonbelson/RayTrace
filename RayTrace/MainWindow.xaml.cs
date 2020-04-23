@@ -20,8 +20,6 @@ using System.Windows.Threading;
 
 namespace RayTrace
 {
-
-
     public struct RenderBlock
     {
         public int StartX;
@@ -72,9 +70,6 @@ namespace RayTrace
         private Canvas canvas = null;
         WriteableBitmap bitmap = null;
 
-        //public bool UseThreads { get; set; } = true;
-        //public int NumThreads { get; set; } = 4;
-        //private int MaxThreads = 4;
         public int NumRenderBlocks { get; set; } = 8;
 
         public enum RenderDirection
@@ -82,12 +77,12 @@ namespace RayTrace
             TopToBottom, Diagonal, CentreOut
         }
 
-        //public int MyProperty { get; set; }
-
-        //
         public RenderDirection[] renderDirection = { RenderDirection.TopToBottom, RenderDirection.Diagonal, RenderDirection.CentreOut };
-
         //public List<RenderDirection> renderDirecton = new List<RenderDirection>() { RenderDirection.TopToBottom, RenderDirection.Diagonal, RenderDirection.CentreOut };
+        public RenderDirection[] RenderDirections { get { return renderDirection; } }
+
+        private readonly List<Renderer.AntiAliasType> antiAlias = new List<Renderer.AntiAliasType>() { Renderer.AntiAliasType.None, Renderer.AntiAliasType.SuperSampling, Renderer.AntiAliasType.AdaptiveSupersampling };
+        public List<Renderer.AntiAliasType> AntiAliasType { get { return antiAlias; } }
 
         private readonly List<ImageFormat> saveFormats = new List<ImageFormat>() { ImageFormat.Tiff, ImageFormat.Jpeg, ImageFormat.Bmp, ImageFormat.Png };
 
@@ -168,11 +163,13 @@ namespace RayTrace
             //scene = SceneFactory.PhongDemoScene();
             //scene = SceneFactory.TexturedSpheresDemoScene();
             scene = SceneFactory.RefractionDemoScene();
+            //scene = SceneFactory.BoxDemoScene();
 
             comboBoxFormat.SelectedItem = ImageFormat.Tiff;
 
-            renderDirections.ItemsSource = renderDirection;
+            //renderDirections.ItemsSource = renderDirection;
             comboBoxDirection.SelectedItem = RenderDirection.CentreOut;
+            comboBoxAntiAlias.SelectedItem = Renderer.AntiAliasType.None;
 
             TreeViewItem item = new TreeViewItem();
             item.Header = "Lights";
@@ -206,6 +203,9 @@ namespace RayTrace
             }
 
             renderer.RecursionDepth = depth;
+
+            Renderer.AntiAliasType antiAlias = (Renderer.AntiAliasType)comboBoxAntiAlias.SelectedItem;
+            renderer.AntiAlias = antiAlias;
 
             int width = 800;
             if (!Int32.TryParse(textWidth.Text, out width))
