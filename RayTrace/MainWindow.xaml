@@ -50,11 +50,12 @@
                 
                 <RibbonGroup x:Name="groupAntiAliasing" Header="Anti-Aliasing">
                     <RibbonComboBox Label="Type" MinWidth="100">
-                        <RibbonGallery x:Name="comboBoxAntiAlias" SelectedValue="None" SelectedValuePath="Content">
+                        <RibbonGallery x:Name="comboBoxAntiAlias" SelectedValue="None" SelectedValuePath="Content" SelectionChanged="comboBoxAntiAlias_SelectionChanged">
                             <RibbonGalleryCategory x:Name="antiAliasType" ItemsSource="{Binding AntiAliasType, ElementName=window}">
                             </RibbonGalleryCategory>
                         </RibbonGallery>
                     </RibbonComboBox>
+                    <RibbonTextBox x:Name="textBoxAdaptiveSubSamplingDepth" Label="Depth"></RibbonTextBox>
                 </RibbonGroup>
                 <RibbonGroup x:Name="groupEngine" Header="Engine">
                     <RibbonTextBox x:Name="textNumberBlocks" Label="Num. Blocks" Text="{Binding NumRenderBlocks, ElementName=window, Mode=TwoWay}"></RibbonTextBox>

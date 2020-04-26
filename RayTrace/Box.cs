@@ -22,12 +22,54 @@ namespace RayTrace
         }
 
         public Box(Point p) : this(p, 50, 50, 50) { }
+        public Box(Point p, double size) : this(p, size, size, size) { }
 
         private void Swap(ref double d1, ref double d2)
         {
             double temp = d1;
             d1 = d2;
             d2 = temp;
+        }
+
+        private void SetTextureCoords(HitResult hr)
+        {
+            Vector normal = hr.EntryNormal;
+            Point Intersection = hr.Entry;
+
+            // https://gamedev.stackexchange.com/questions/172352/finding-texture-coordinates-for-plane
+            Vector e1 = normal.VectorProduct(new Vector(1.0, 0.0, 0.0));
+            e1.Normalise();
+            if (e1.I == 0.0 && e1.J == 0.0 && e1.K == 0.0)
+            {
+                e1 = normal.VectorProduct(new Vector(0.0, 0.0, 1.0));
+                e1.Normalise();
+            }
+            Vector e2 = normal.VectorProduct(e1);
+            e2.Normalise();
+
+            Vector vecIntersection = new Vector(Intersection.X, Intersection.Y, Intersection.Z);
+            double mag = vecIntersection.Magnitude();
+            vecIntersection.Normalise();
+
+            double u = e1.DotProduct(vecIntersection);
+            double v = e2.DotProduct(vecIntersection);
+
+            int scale = 400;
+
+            u *= mag;
+            v *= mag;
+
+            u %= scale;
+            v %= scale;
+
+            u /= scale;
+            v /= scale;
+
+            if (u < 0.0) u = 1.0f + u;
+            if (v < 0.0) v = 1.0f + v;
+
+            hr.u = (float)u;
+            hr.v = (float)v;
         }
 
         private HitResult HitTestImpl(Point p1, Point p2, bool segmentOnly)
@@ -86,13 +128,9 @@ namespace RayTrace
             Vector d = D;
             d.Normalise();
 
-            Point Intersection = p1 + d.Scale(tnear /*+ 0.1*/);
-//            Intersection.X += d.I * t0x;
-//            Intersection.Y += d.J * t0y;
-//            Intersection.Z += d.K * t0z;
+            Point Intersection = p1 + d.Scale(tnear);
 
             hr.Entry = Intersection;
-
 
             // Calculate surfce normal at intersection point.
             Vector P2I = Intersection - Pos;
@@ -103,6 +141,9 @@ namespace RayTrace
 
             //P2I.Normalise();
 
+            Vector P2Inorm = P2I;
+            P2Inorm.Normalise();
+
             Vector normal = new Vector();
 
             double AbsI = Math.Abs(P2I.I);
@@ -112,20 +153,35 @@ namespace RayTrace
             if (AbsI > AbsJ)
             {
                 if (AbsI > AbsK)
+                {
+                    // YZ plane
                     normal.I = P2I.I > 0.0 ? 1.0 : -1.0;
+                }
                 else
+                {
+                    // XY plane
                     normal.K = P2I.K > 0.0 ? 1.0 : -1.0;
+                }
             }
             else
             {
                 if (AbsJ > AbsK)
+                {
+                    // XZ plane
                     normal.J = P2I.J > 0.0 ? 1.0 : -1.0;
+                }
                 else
+                {
+                    // XY plane
                     normal.K = P2I.K > 0.0 ? 1.0 : -1.0;
+                }
             }
 
             hr.EntryNormal = normal;
 
+            SetTextureCoords(hr);
+
+            // Add a slight offset to the intersection point to avoid self-intersection.
             hr.Entry += normal.Scale(0.01);
 
             Debug.Assert(!normal.IsNull());

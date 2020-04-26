@@ -81,8 +81,8 @@ namespace RayTrace
             scene.AddShape(box);
 
 
-            Plane plane = new Plane(new Vector(0.0, 0.0, -1.0), new Point(0.0, 0.0, 100.0));
-            //Plane plane = new Plane(new Vector(0.0, 1.0, 0.0), new Point(0.0, -30.0, 0.0), Palette.Grey);
+            //Plane plane = new Plane(new Vector(0.0, 0.0, -1.0), new Point(0.0, 0.0, 100.0));
+            Plane plane = new Plane(new Vector(0.0, 1.0, 0.0), new Point(0.0, -30.0, 0.0), Palette.Grey);
             plane.Material.Reflectivity = 0.0f;
             //plane.Material.Texture = new TextureSolid(Palette.Blue);
             plane.Material.Texture = new TextureSquares() { Scale = 20 };
@@ -101,12 +101,13 @@ namespace RayTrace
             Scene scene = new Scene();
 
             Box box = new Box(new Point(-40, 0, 0), 10, 10, 10);
+            //scene.AddShape(box);
+
+            box = new Box(new Point(0, 0, 240), 40);
+            box.Material.Texture = new TextureSquares() { Scale = 40 };
             scene.AddShape(box);
 
-            box = new Box(new Point(0, -40, 00), 40, 40, 80);
-            scene.AddShape(box);
-
-            Plane plane = new Plane(new Vector(0.0, 1.0, 0.0), new Point(0.0, -40.0, 0.0), Palette.Grey);
+            Plane plane = new Plane(new Vector(0.0, 1.0, 0.0), new Point(0.0, -30.0, 0.0), Palette.Grey);
             plane.Material.Reflectivity = 1.0f;
             //plane.Material.Texture = new TextureSolid(Palette.Blue);
             //plane.Material.Texture = new TextureSquares() { Scale = 20 };

@@ -77,7 +77,7 @@ namespace RayTrace
             TopToBottom, Diagonal, CentreOut
         }
 
-        public RenderDirection[] renderDirection = { RenderDirection.TopToBottom, RenderDirection.Diagonal, RenderDirection.CentreOut };
+        private RenderDirection[] renderDirection = { RenderDirection.TopToBottom, RenderDirection.Diagonal, RenderDirection.CentreOut };
         //public List<RenderDirection> renderDirecton = new List<RenderDirection>() { RenderDirection.TopToBottom, RenderDirection.Diagonal, RenderDirection.CentreOut };
         public RenderDirection[] RenderDirections { get { return renderDirection; } }
 
@@ -85,7 +85,6 @@ namespace RayTrace
         public List<Renderer.AntiAliasType> AntiAliasType { get { return antiAlias; } }
 
         private readonly List<ImageFormat> saveFormats = new List<ImageFormat>() { ImageFormat.Tiff, ImageFormat.Jpeg, ImageFormat.Bmp, ImageFormat.Png };
-
         public List<ImageFormat> SaveFormats { get { return saveFormats; } }
 
         public ImageFormat SelectedFormat { get; set; }
@@ -157,13 +156,15 @@ namespace RayTrace
             checkBoxRefraction.IsChecked = renderer.UseRefraction;
 
             textBoxDepth.Text = renderer.RecursionDepth.ToString();
+            textBoxAdaptiveSubSamplingDepth.Text = renderer.AdaptiveSuperSamplingDepth.ToString();
+            textBoxAdaptiveSubSamplingDepth.IsEnabled = false;
 
             //output.Hide();
 
             //scene = SceneFactory.PhongDemoScene();
             //scene = SceneFactory.TexturedSpheresDemoScene();
-            scene = SceneFactory.RefractionDemoScene();
-            //scene = SceneFactory.BoxDemoScene();
+            //scene = SceneFactory.RefractionDemoScene();
+            scene = SceneFactory.BoxDemoScene();
 
             comboBoxFormat.SelectedItem = ImageFormat.Tiff;
 
@@ -206,6 +207,21 @@ namespace RayTrace
 
             Renderer.AntiAliasType antiAlias = (Renderer.AntiAliasType)comboBoxAntiAlias.SelectedItem;
             renderer.AntiAlias = antiAlias;
+
+            int adaptiveSuperSamplingDepth;
+            if (!Int32.TryParse(textBoxAdaptiveSubSamplingDepth.Text, out adaptiveSuperSamplingDepth))
+            {
+                MessageBox.Show("Recursion depth must be an integer.");
+                return false;
+            }
+
+            if (adaptiveSuperSamplingDepth > 10)
+            {
+                MessageBox.Show("Adaptive Super-Sampling depth must be 10 or less.");
+                return false;
+            }
+
+            renderer.AdaptiveSuperSamplingDepth = adaptiveSuperSamplingDepth;
 
             int width = 800;
             if (!Int32.TryParse(textWidth.Text, out width))
@@ -358,6 +374,12 @@ namespace RayTrace
             {
                 textHeight.Text = textWidth.Text;
             }
+        }
+
+        private void comboBoxAntiAlias_SelectionChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            Renderer.AntiAliasType antiAlias = (Renderer.AntiAliasType)comboBoxAntiAlias.SelectedItem;
+            textBoxAdaptiveSubSamplingDepth.IsEnabled = antiAlias == Renderer.AntiAliasType.AdaptiveSupersampling;
         }
     }
 }
