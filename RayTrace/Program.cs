@@ -73,7 +73,7 @@ namespace RayTrace
                     scene.AddShape(sphere);
                 }
             }
-                    Light light = new Light(new Point(-50, 0, 0), 0.5f, new Colour(1.0f, 1.0f, 1.0f));
+                    Light light = new PointLight(new Point(-50, 0, 0), 0.5f, new Colour(1.0f, 1.0f, 1.0f));
                     scene.AddLight(light);
 
             //*/

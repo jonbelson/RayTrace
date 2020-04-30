@@ -121,10 +121,11 @@ namespace RayTrace
                 foreach (Light light in lights)
                 {
                     Point p = hr.Entry;
-                    Vector vecToLight = p.Difference(light.Pos);
+
+                    Vector vecToLight = light.GetDirection(p).Negate();
 
                     // Assume light attenuatiaon is 1 over distance squared.
-                    double lightAttenuation = 1.0 / vecToLight.MagnitudeSquared();
+                    double lightAttenuation = light.GetAttenuation(p);
 
                     vecToLight.Normalise();
 

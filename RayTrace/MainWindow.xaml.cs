@@ -162,9 +162,9 @@ namespace RayTrace
             //output.Hide();
 
             //scene = SceneFactory.PhongDemoScene();
-            //scene = SceneFactory.TexturedSpheresDemoScene();
+            scene = SceneFactory.TexturedSpheresDemoScene();
             //scene = SceneFactory.RefractionDemoScene();
-            scene = SceneFactory.BoxDemoScene();
+            //scene = SceneFactory.BoxDemoScene();
 
             comboBoxFormat.SelectedItem = ImageFormat.Tiff;
 

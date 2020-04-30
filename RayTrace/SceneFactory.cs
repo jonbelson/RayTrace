@@ -22,7 +22,7 @@ namespace RayTrace
                     scene.AddShape(sphere);
                 }
             }
-            Light light = new Light(new Point(-50, 0, 0), /*0.5f*/ 5000.0f, new Colour(1.0f, 1.0f, 1.0f));
+            Light light = new PointLight(new Point(-50, 0, 0), /*0.5f*/ 5000.0f, new Colour(1.0f, 1.0f, 1.0f));
             scene.AddLight(light);
 
             return scene;
@@ -47,9 +47,12 @@ namespace RayTrace
             //plane.Material.Texture = new TextureSquares() { Scale = 4 };
             scene.AddShape(plane);
 
-            Light light = new Light(new Point(-50, 0, 0), /*0.5f*/ 5000.0f, new Colour(1.0f, 0.0f, 0.0f));
-            scene.AddLight(light);
-            light = new Light(new Point(50, 50, 0), /*.85f*/ 5000.0f, new Colour(1.0f, 1.0f, 1.0f));
+            Light light = new PointLight(new Point(-50, 0, 0), /*0.5f*/ 5000.0f, new Colour(1.0f, 0.0f, 0.0f));
+//            scene.AddLight(light);
+            light = new PointLight(new Point(50, 50, 0), /*.85f*/ 5000.0f, new Colour(1.0f, 1.0f, 1.0f));
+//            scene.AddLight(light);
+
+            light = new SpotLight(new Point(0, 100, 0), new Vector(0, -1, 0), 45, 5000, Palette.White);
             scene.AddLight(light);
 
             return scene;
@@ -88,9 +91,9 @@ namespace RayTrace
             plane.Material.Texture = new TextureSquares() { Scale = 20 };
             scene.AddShape(plane);
 
-            Light light = new Light(new Point(-50, 0, 0), 3000.0f, new Colour(1.0f, 0.0f, 0.0f));
+            Light light = new PointLight(new Point(-50, 0, 0), 3000.0f, new Colour(1.0f, 0.0f, 0.0f));
             scene.AddLight(light);
-            light = new Light(new Point(50, 50, 0), 3000.0f, Palette.White);
+            light = new PointLight(new Point(50, 50, 0), 3000.0f, Palette.White);
             scene.AddLight(light);
 
             return scene;
@@ -114,7 +117,7 @@ namespace RayTrace
             scene.AddShape(plane);
 
 
-            Light light = new Light(new Point(50, 50, 0), 3000.0f, Palette.White);
+            Light light = new PointLight(new Point(50, 50, 0), 3000.0f, Palette.White);
             scene.AddLight(light);
 
 

@@ -68,8 +68,13 @@ namespace RayTrace
 
             foreach (Light light in Lights)
             {
-                Point pos2 = light.Pos;
-                Vector v = light.Pos.Difference(pos);
+                PointLight pointLight = light as PointLight;
+                if (pointLight == null)
+                {
+                    continue;                }
+
+                Point pos2 = pointLight.Pos;
+                Vector v = pointLight.Pos.Difference(pos);
 
                 //Vector step = light.Pos.Difference(pos);
                 //step.Normalise();
