@@ -147,7 +147,8 @@ namespace RayTrace
 
         public override string ToString()
         {
-            return "Colour[" + Red + "," + Green + "," + Blue + "]";
+//            return "Colour[" + Red + "," + Green + "," + Blue + "]";
+            return "[" + Red + "," + Green + "," + Blue + "]";
         }
 
         // Blend two Colours in the specified ratio.

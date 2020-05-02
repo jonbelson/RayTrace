@@ -59,7 +59,8 @@ namespace RayTrace
 
         public override string ToString()
         {
-            return "Point[" + X + "," + Y + "," + Z + "]";
+//            return "Point[" + X + "," + Y + "," + Z + "]";
+            return "[" + X + "," + Y + "," + Z + "]";
         }
     }
 }

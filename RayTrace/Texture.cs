@@ -11,5 +11,10 @@ namespace RayTrace
     {
 
         public abstract Colour GetColour(HitResult hr);
+
+        public override string ToString()
+        {
+            return "[" + GetType().Name + "]";
+        }
     }
 }

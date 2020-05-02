@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
@@ -83,6 +84,9 @@ namespace RayTrace
 
         private readonly List<Renderer.AntiAliasType> antiAlias = new List<Renderer.AntiAliasType>() { Renderer.AntiAliasType.None, Renderer.AntiAliasType.SuperSampling, Renderer.AntiAliasType.AdaptiveSupersampling };
         public List<Renderer.AntiAliasType> AntiAliasType { get { return antiAlias; } }
+
+//        public List<Entity> Entities { get; set; }
+        public ObservableCollection<Entity> Entities { get; set; } = new ObservableCollection<Entity>();
 
         private readonly List<ImageFormat> saveFormats = new List<ImageFormat>() { ImageFormat.Tiff, ImageFormat.Jpeg, ImageFormat.Bmp, ImageFormat.Png };
         public List<ImageFormat> SaveFormats { get { return saveFormats; } }
@@ -172,6 +176,20 @@ namespace RayTrace
             comboBoxDirection.SelectedItem = RenderDirection.CentreOut;
             comboBoxAntiAlias.SelectedItem = Renderer.AntiAliasType.None;
 
+            //Entities = new List<Entity>();
+            //Entities = new ObservableCollection<Entity>();
+            //listView.ItemsSource = null;
+            foreach (var light in scene.Lights)
+            {
+                Entities.Add(light);
+            }
+            foreach (var shape in scene.Shapes)
+            {
+                Entities.Add(shape);
+            }
+            //listView.ItemsSource = Entities;
+
+            /*
             TreeViewItem item = new TreeViewItem();
             item.Header = "Lights";
             treeView.Items.Add(item);
@@ -186,6 +204,7 @@ namespace RayTrace
             {
                 item.Items.Add(new TreeViewItem() { Header = shape.ToString() });
             }
+            */
         }
 
         private async Task<bool> Render()

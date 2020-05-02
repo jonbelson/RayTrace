@@ -109,7 +109,8 @@ namespace RayTrace
 
         public override string ToString()
         {
-            return "Vector[" + I + "," + J + "," + K + "]";
+//            return "Vector[" + I + "," + J + "," + K + "]";
+            return "[" + I + "," + J + "," + K + "]";
         }
     }
 }

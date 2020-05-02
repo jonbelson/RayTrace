@@ -13,7 +13,7 @@ namespace RayTrace
         
         public Entity()
         {
-
+            Name = GetType().Name;
         }
     }
 }

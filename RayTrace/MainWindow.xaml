@@ -6,6 +6,123 @@
         xmlns:local="clr-namespace:RayTrace"
         mc:Ignorable="d"
         Title="RayTrace" Height="800" Width="800">
+    <RibbonWindow.Resources>
+        <DataTemplate x:Key="EntityTemplate">
+            <StackPanel>
+                <TextBlock FontWeight="Bold" Background="LightGray" Text="{Binding Path=Name}" ></TextBlock>
+                <CheckBox IsChecked="{Binding Path=Enabled}">Enabled</CheckBox>
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="SphereTemplate">
+            <StackPanel>
+                <TextBlock FontWeight="Bold" Background="LightGray" Text="{Binding Path=Name}" ></TextBlock>
+                <StackPanel>
+                    <Grid Margin="5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+
+ <!--                   <StackPanel.Style>
+                        <Style>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Path=IsSelected, RelativeSource={
+                                    RelativeSource Mode=FindAncestor, AncestorType={x:Type ListBoxItem}
+                                             }}"
+                                             Value="False">
+                                    <Setter Property="StackPanel.Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>-->
+                        <TextBlock Text="Enabled" Grid.Row="0"></TextBlock>
+                        <TextBlock Text="Pos" Grid.Row="1"></TextBlock>
+                        <TextBlock Text="Radius" Grid.Row="2"></TextBlock>
+                        <TextBlock Text="Material" Grid.Row="3"></TextBlock>
+                        <TextBlock Text="Texture" Grid.Row="4"></TextBlock>
+                        <CheckBox IsChecked="{Binding Path=Enabled}" Grid.Column="1" Grid.Row="0"></CheckBox>
+                        <TextBlock Text="{Binding Path=Pos}" Grid.Column="1" Grid.Row="1"></TextBlock>
+                        <TextBlock Text="{Binding Path=Radius}" Grid.Column="1" Grid.Row="2"></TextBlock>
+                        <TextBlock Text="{Binding Path=Material}" Grid.Column="1" Grid.Row="3"></TextBlock>
+                        <TextBlock Text="{Binding Path=Material.Texture}" Grid.Column="1" Grid.Row="4"></TextBlock>
+                    </Grid>
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="PlaneTemplate">
+            <StackPanel>
+                <TextBlock FontWeight="Bold" Background="LightGray" Text="{Binding Path=Name}" ></TextBlock>
+                <StackPanel>
+                    <Grid Margin="5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Enabled" Grid.Row="0"></TextBlock>
+                        <TextBlock Text="Pos" Grid.Row="1"></TextBlock>
+                        <TextBlock Text="Normal" Grid.Row="2"></TextBlock>
+                        <TextBlock Text="Material" Grid.Row="3"></TextBlock>
+                        <TextBlock Text="Texture" Grid.Row="4"></TextBlock>
+
+                        <CheckBox IsChecked="{Binding Path=Enabled}" Grid.Column="1" Grid.Row="0"></CheckBox>
+                        <TextBlock Text="{Binding Path=Pos}" Grid.Column="1" Grid.Row="1"></TextBlock>
+                        <TextBlock Text="{Binding Path=Normal}" Grid.Column="1" Grid.Row="2"></TextBlock>
+                        <TextBlock Text="{Binding Path=Material}" Grid.Column="1" Grid.Row="3"></TextBlock>
+                        <TextBlock Text="{Binding Path=Material.Texture}" Grid.Column="1" Grid.Row="4"></TextBlock>
+                    </Grid>
+                </StackPanel>                
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="SpotLightTemplate">
+            <StackPanel>
+                <TextBlock FontWeight="Bold" Background="LightGray" Text="{Binding Path=Name}" ></TextBlock>
+                <StackPanel>
+                    <Grid Margin="5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Enabled" Grid.Row="0"></TextBlock>
+                        <TextBlock Text="Pos" Grid.Row="1"></TextBlock>
+                        <TextBlock Text="Direction" Grid.Row="2"></TextBlock>
+                        <TextBlock Text="Width" Grid.Row="3"></TextBlock>
+                        <TextBlock Text="Colour" Grid.Row="4"></TextBlock>
+                        <TextBlock Text="Intensity" Grid.Row="5"></TextBlock>
+
+                        <CheckBox IsChecked="{Binding Path=Enabled}" Grid.Column="1" Grid.Row="0"></CheckBox>
+                        <TextBlock Text="{Binding Path=Pos}" Grid.Column="1" Grid.Row="1"></TextBlock>
+                        <TextBlock Text="{Binding Path=Direction}" Grid.Column="1" Grid.Row="2"></TextBlock>
+                        <TextBlock Text="{Binding Path=Width}" Grid.Column="1" Grid.Row="3"></TextBlock>
+                        <TextBlock Text="{Binding Path=Colour}" Grid.Column="1" Grid.Row="4"></TextBlock>
+                        <TextBlock Text="{Binding Path=Intensity}" Grid.Column="1" Grid.Row="5"></TextBlock>
+                    </Grid>
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate> 
+    </RibbonWindow.Resources>
+    
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
@@ -50,7 +167,7 @@
                 
                 <RibbonGroup x:Name="groupAntiAliasing" Header="Anti-Aliasing">
                     <RibbonComboBox Label="Type" MinWidth="100">
-                        <RibbonGallery x:Name="comboBoxAntiAlias" SelectedValue="None" SelectedValuePath="Content" SelectionChanged="comboBoxAntiAlias_SelectionChanged">
+                        <RibbonGallery x:Name="comboBoxAntiAlias" SelectedValue="None" SelectionChanged="comboBoxAntiAlias_SelectionChanged">
                             <RibbonGalleryCategory x:Name="antiAliasType" ItemsSource="{Binding AntiAliasType, ElementName=window}">
                             </RibbonGalleryCategory>
                         </RibbonGallery>
@@ -94,7 +211,14 @@
 
         <DockPanel Grid.Column="0" Grid.Row="1" Margin="8">
             <Button x:Name="buttonRender" Content="Render" VerticalAlignment="Bottom" HorizontalAlignment="Center" Width="75" DockPanel.Dock="Bottom" Click="buttonRender_Click" Margin="0,8,0,0"/>
-            <TreeView x:Name="treeView"  VerticalAlignment="Stretch" MinHeight="100" VerticalContentAlignment="Stretch" Margin="0" MinWidth="120"/>
+            <ListBox x:Name="listBox" MinHeight="100" VerticalAlignment="Stretch" MinWidth="120" ItemsSource="{Binding Entities, ElementName=window, Mode=TwoWay}">
+                <ListBox.ItemTemplateSelector>
+                    <local:EntityTemplateSelector SphereTemplate="{StaticResource SphereTemplate}" PlaneTemplate="{StaticResource PlaneTemplate}" SpotLightTemplate="{StaticResource SpotLightTemplate}">
+                        
+                    </local:EntityTemplateSelector>
+                </ListBox.ItemTemplateSelector>
+            </ListBox>
+            <!--<TreeView x:Name="treeView"  VerticalAlignment="Stretch" MinHeight="100" VerticalContentAlignment="Stretch" Margin="0" MinWidth="120"/>-->
         </DockPanel>
         <Image x:Name="image" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="1" Grid.Row="1"/>
 

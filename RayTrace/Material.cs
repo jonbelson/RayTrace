@@ -27,7 +27,7 @@ namespace RayTrace
 //        public float IndexOfRefractive { get; set; } = RefractiveIndex.WindowGlass;
         public float RefractiveIndex { get; set; } = RayTrace.RefractiveIndex.WindowGlass;
 
-        public Texture Texture;
+        public Texture Texture { get; set; }
 
         public Material() : this(Palette.White) { }
 
@@ -46,7 +46,8 @@ namespace RayTrace
 
         public override string ToString()
         {
-            return "Texture[" + Texture.ToString() + "]";
+//            return "Texture[" + Texture.ToString() + "]";
+            return "[" + GetType().Name + "]";
         }
     }
 }
