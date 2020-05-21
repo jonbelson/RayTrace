@@ -87,6 +87,34 @@
                 </StackPanel>                
             </StackPanel>
         </DataTemplate>
+        <DataTemplate x:Key="PointLightTemplate">
+            <StackPanel>
+                <TextBlock FontWeight="Bold" Background="LightGray" Text="{Binding Path=Name}" ></TextBlock>
+                <StackPanel>
+                    <Grid Margin="5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Enabled" Grid.Row="0"></TextBlock>
+                        <TextBlock Text="Pos" Grid.Row="1"></TextBlock>
+                        <TextBlock Text="Colour" Grid.Row="2"></TextBlock>
+                        <TextBlock Text="Intensity" Grid.Row="3"></TextBlock>
+
+                        <CheckBox IsChecked="{Binding Path=Enabled}" Grid.Column="1" Grid.Row="0"></CheckBox>
+                        <TextBlock Text="{Binding Path=Pos}" Grid.Column="1" Grid.Row="1"></TextBlock>
+                        <TextBlock Text="{Binding Path=Colour}" Grid.Column="1" Grid.Row="2"></TextBlock>
+                        <TextBlock Text="{Binding Path=Intensity}" Grid.Column="1" Grid.Row="3"></TextBlock>
+                    </Grid>
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
         <DataTemplate x:Key="SpotLightTemplate">
             <StackPanel>
                 <TextBlock FontWeight="Bold" Background="LightGray" Text="{Binding Path=Name}" ></TextBlock>
@@ -213,7 +241,7 @@
             <Button x:Name="buttonRender" Content="Render" VerticalAlignment="Bottom" HorizontalAlignment="Center" Width="75" DockPanel.Dock="Bottom" Click="buttonRender_Click" Margin="0,8,0,0"/>
             <ListBox x:Name="listBox" MinHeight="100" VerticalAlignment="Stretch" MinWidth="120" ItemsSource="{Binding Entities, ElementName=window, Mode=TwoWay}">
                 <ListBox.ItemTemplateSelector>
-                    <local:EntityTemplateSelector SphereTemplate="{StaticResource SphereTemplate}" PlaneTemplate="{StaticResource PlaneTemplate}" SpotLightTemplate="{StaticResource SpotLightTemplate}">
+                    <local:EntityTemplateSelector SphereTemplate="{StaticResource SphereTemplate}" PlaneTemplate="{StaticResource PlaneTemplate}" PointLightTemplate="{StaticResource PointLightTemplate}" SpotLightTemplate="{StaticResource SpotLightTemplate}">
                         
                     </local:EntityTemplateSelector>
                 </ListBox.ItemTemplateSelector>

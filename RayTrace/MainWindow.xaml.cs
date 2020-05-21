@@ -153,6 +153,46 @@ namespace RayTrace
         {
             InitializeComponent();
 
+            Vector vLight = new Vector(0, 0, 20);
+            Vector vRay = new Vector(1, 0, 1);
+
+            Vector vLightNorm = vLight;
+            vLightNorm.Normalise();
+
+            Vector vRayNorm = vRay;
+            vRayNorm.Normalise();
+
+            double cosTheta = vLightNorm.DotProduct(vRayNorm);
+
+            // Calculate Vector to use a axis of rotation.
+            Vector vp = vLightNorm.VectorProduct(vRayNorm);
+
+
+
+            Matrix m = new Matrix();
+            //m.SetRotationZ(Math.PI/4);
+            //m.SetLookAt(new Point(10, 0, 0), new Point(10, 0, 10));
+           // m.SetLookAt(new Point(0, 0, 0), new Point(1, 0, 10));
+            m.SetLookAt(new Point(0, 0, 0), new Point(-1, 0, -1));
+            //m.SetLookAt(new Point(1, 0, 1), new Point(0, 0, 0));
+            Console.WriteLine(m);
+
+            //m.Transpose();
+            //Console.WriteLine(m);
+
+            Vector v = new Vector(-0.1, 0, 1);
+            Console.WriteLine(v);
+
+            Vector v2 = m * v;
+            Console.WriteLine(v2);
+
+            //Point p = new Point(0, 0, 100);
+            //Console.WriteLine(p);
+
+            //Point p2 = m * p;
+            //Console.WriteLine(p2);
+
+
             checkBoxAmbient.IsChecked = renderer.UseAmbient;
             checkBoxLighting.IsChecked = renderer.UseDiffuse;
             checkBoxPhong.IsChecked = renderer.UsePhong;
@@ -169,6 +209,7 @@ namespace RayTrace
             scene = SceneFactory.TexturedSpheresDemoScene();
             //scene = SceneFactory.RefractionDemoScene();
             //scene = SceneFactory.BoxDemoScene();
+            //scene = SceneFactory.SphereDemoScene();
 
             comboBoxFormat.SelectedItem = ImageFormat.Tiff;
 

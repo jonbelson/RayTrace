@@ -119,7 +119,7 @@ namespace RayTrace
             }
         }
 
-        // Return true if Colours are within 'similar'.
+        // Return true if Colours are 'similar'.
         public bool IsSimilar(Colour c)
         {
             const float MinDiff = 0.1f;

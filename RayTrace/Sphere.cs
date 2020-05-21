@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices.ComTypes;
 
 namespace RayTrace
 {
@@ -54,6 +55,14 @@ namespace RayTrace
 			HitResult hr = new HitResult(this);
 
 			Point sc = Pos;
+
+			Matrix worldToView = new Matrix();
+			worldToView.SetLookAt(new Point(0, 30, 0), new Point(0, 30, 10));
+			worldToView.SetLookAt(new Point(0, 30, 0), new Point(0, 0, 50));
+			//worldToView.SetLookAt(new Point(0, 0, 0), new Point(0, 0, 100));
+			worldToView.SetIdentity();
+			sc = worldToView * Pos;
+
 			double r = Radius;
 
 			const double EPS = 0.00001;
@@ -121,7 +130,7 @@ namespace RayTrace
 
 			Point hit = p1 + dp.Scale(mu);
 
-			Vector surfaceNormal = Pos.Difference(hit);
+			Vector surfaceNormal = /*Pos*/ sc.Difference(hit);
 			surfaceNormal.Normalise();
 
 			hr.Entry = hit;

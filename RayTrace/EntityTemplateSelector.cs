@@ -12,6 +12,7 @@ namespace RayTrace
     {
         public DataTemplate SphereTemplate { get; set; }
         public DataTemplate PlaneTemplate { get; set; }
+        public DataTemplate PointLightTemplate { get; set; }
         public DataTemplate SpotLightTemplate { get; set; }
 
         public override DataTemplate SelectTemplate(object item, DependencyObject container)
@@ -21,6 +22,7 @@ namespace RayTrace
             if (entity is Sphere) return SphereTemplate;
             if (entity is Plane) return PlaneTemplate;
             if (entity is SpotLight) return SpotLightTemplate;
+            if (entity is PointLight) return PointLightTemplate;
             //if (entity is Light) return LightTemplate;
 
             //Type type = entity.GetType();

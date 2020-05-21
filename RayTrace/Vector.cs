@@ -66,6 +66,7 @@ namespace RayTrace
             return new Vector(-I, -J, -K);
         }
 
+        // Return angle between Vectors in radians.
         public double Angle(Vector v)
         {
             double dp = DotProduct(v);

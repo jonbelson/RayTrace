@@ -21,6 +21,7 @@ namespace RayTrace
             //Size = 100.0;
         }
 
+        // XXX Should return closest hit object, not the first.
         public HitResult HitTest(Point pos, Vector ray)
         {
             //Shape nearest = null;
@@ -44,16 +45,26 @@ namespace RayTrace
 
             return hitResult;
         }
+
+        // XXX Should return closest hit object, not the first.
         public HitResult HitTest(Point p1, Point p2)
         {
             HitResult hitResult = new HitResult(null);
+
+            double closest = Double.MaxValue;
 
             foreach (Shape shape in Shapes)
             {
                 HitResult hr = shape.HitTest(p1, p2);
                 if (hr.HasEntry())
                 {
-                    return hr;
+                    //return hr;
+                    double d = p1.Distance(hr.Entry);
+                    if (d < closest)
+                    {
+                        closest = d;
+                        hitResult = hr;
+                    }
                 }
             }
 
@@ -71,7 +82,8 @@ namespace RayTrace
                 PointLight pointLight = light as PointLight;
                 if (pointLight == null)
                 {
-                    continue;                }
+                    continue;
+                }
 
                 Point pos2 = pointLight.Pos;
                 Vector v = pointLight.Pos.Difference(pos);

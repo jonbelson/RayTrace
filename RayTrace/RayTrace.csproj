@@ -62,6 +62,8 @@
     <Compile Include="DistantLight.cs" />
     <Compile Include="Entity.cs" />
     <Compile Include="EntityTemplateSelector.cs" />
+    <Compile Include="HexGrid.cs" />
+    <Compile Include="Matrix.cs" />
     <Compile Include="OutputWindow.xaml.cs">
       <DependentUpon>OutputWindow.xaml</DependentUpon>
     </Compile>

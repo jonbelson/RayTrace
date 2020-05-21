@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Dynamic;
+using System.Net.NetworkInformation;
 
 namespace RayTrace
 {
@@ -34,12 +36,87 @@ namespace RayTrace
         //  x axis and -Size/2 to +Size/2 in the y axis.
         public double Size { get; }
 
+        private static readonly double jitterOffset = 0.075;
+        private double[,] hexArray = HexGrid.values;
+        private Random rand = new Random();
+
+        //
         // Constructor.
+        //
         public Renderer()
         {
             vPos = new Point(0.0, 0.0, -focalLength);
 
             Size = 100.0;
+        }
+
+        private Colour CalculateIlluminationColour(Scene scene, Vector ray, HitResult hr)
+        {
+            Colour colour = Palette.Black;
+
+            return colour;
+        }
+
+        // Given a vector to a Light and its notional radius, return a jittered ray.
+        private Vector GetJitteredRay(int index, Vector vecToLight, double distToLight, double lightRadius)
+        {
+            // Calculate effective size of light rotated to Z axis.
+            double theta = Math.Asin(lightRadius/distToLight);
+            double circleRadius = lightRadius * Math.Cos(theta);
+            double circleDistance = distToLight - lightRadius * Math.Sin(theta);
+
+            double deltaX = jitterOffset * rand.NextDouble();
+            double deltaY = jitterOffset * rand.NextDouble();
+            Vector ray = new Vector();
+            ray.I = circleRadius * (hexArray[index,0] + deltaX);
+            ray.J = circleRadius * (hexArray[index,1] + deltaY);
+            ray.K = circleDistance;
+
+            // Project ray so Z axis aligns with vecToLight.
+            double a = vecToLight.I;
+            double b = vecToLight.J;
+            double c = vecToLight.K;
+            double mu = Math.Sqrt(b*b + c*c);
+
+            Vector jitteredRay = new Vector();
+            jitteredRay.I = mu * ray.I + a * ray.K;
+            jitteredRay.J = -a * b * ray.I / mu + c * ray.J / mu + b * ray.K;
+            jitteredRay.K = -a * c * ray.I / mu - b * ray.J / mu + c * ray.K;
+
+            return jitteredRay;
+        }
+
+        private float GetSoftShadow(Scene scene, Point pos, Vector ray, PointLight light)
+        {
+            Vector L = light.Pos - pos;
+            double distance = L.Magnitude();
+            L.Normalise();
+
+            int numUnblockedRays = 19;
+            for (int rayNum=0; rayNum<19; rayNum++)
+            {
+                Vector jitteredRay = GetJitteredRay(rayNum, L, distance, light.Radius);
+
+                HitResult hr = scene.HitTest(pos, jitteredRay);
+                if (hr.HasEntry())
+                {
+                    numUnblockedRays--;
+                }
+                if (rayNum == 6)
+                {
+                    if (numUnblockedRays == 12)
+                    {
+                        numUnblockedRays = 0;
+                        break;
+                    }
+                    else if (numUnblockedRays == 19)
+                        break;
+                }
+            }
+
+            float fraction = numUnblockedRays / 19.0f;
+
+            return fraction;
         }
 
         // scene    Scene we are rendering.
@@ -80,8 +157,6 @@ namespace RayTrace
                         Colour c = CalculateColour(scene, result.Item2, hrRefracted, depth);
 
                         refracted = c;
-
-                        //colour += c;
                     }
                 }
             }
@@ -107,9 +182,7 @@ namespace RayTrace
                     if (hrReflect.HasEntry())
                     {
                         Colour c = CalculateColour(scene, R, hrReflect, depth);
-                        //colour += c.Scale(0.5f);
                         reflected = c;
-                        //colour += hrReflect.shape.Colour * 0.5f;
                     }
                 }
             }
@@ -142,7 +215,6 @@ namespace RayTrace
                         //Trace.Assert(false);
                         Debug.Assert(incidentColour.Red >= 0.0f && incidentColour.Green >= 0.0f && incidentColour.Blue >= 0.0);
 
-                        //colour = colour.Add(incidentColour);
                         diffuse += incidentColour;
                     }
 
@@ -328,6 +400,19 @@ namespace RayTrace
             Colour colour = new Colour();
 
             Vector ray = new Vector(x, y, focalLength, true);
+
+            Matrix worldToView = new Matrix();
+            worldToView.SetLookAt(new Point(0, 30, 0), new Point(0, 30, 10));
+            worldToView.SetLookAt(new Point(0, 30, 0), new Point(0, 0, 50));
+            //worldToView.SetLookAt(new Point(0, 0, 0), new Point(0, 0, 100));
+            worldToView.SetIdentity();
+            ray = worldToView * ray;
+            Point vPos = worldToView * this.vPos;
+
+            //Matrix m = new Matrix();
+            //m.SetLookAt(new Point(1, 0, 0), new Point(1, 0, 10));
+
+            //ray = m * ray;
 
             HitResult hr = scene.HitTest(vPos, ray);
             if (hr.HasEntry())

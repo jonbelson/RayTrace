@@ -76,9 +76,15 @@ namespace RayTrace
         {
             HitResult hr = new HitResult(this);
 
+            Matrix worldToView = new Matrix();
+            worldToView.SetLookAt(new Point(0, 30, 0), new Point(0, 30, 10));
+            worldToView.SetLookAt(new Point(30, 60, 0), new Point(0, 0, 110));
+            //worldToView.SetLookAt(new Point(0, 40, 0), new Point(0, 0, 100));
+            Point wPos = worldToView * Pos;
+
             // Get bounding box extents.
-            Point B0 = new Point(Pos.X - Width / 2, Pos.Y - Height / 2, Pos.Z - Depth / 2);
-            Point B1 = new Point(Pos.X + Width / 2, Pos.Y + Height / 2, Pos.Z + Depth / 2);
+            Point B0 = new Point(wPos.X - Width / 2, wPos.Y - Height / 2, wPos.Z - Depth / 2);
+            Point B1 = new Point(wPos.X + Width / 2, wPos.Y + Height / 2, wPos.Z + Depth / 2);
 
             Vector D = p2 - p1;
             //D.Normalise();
@@ -133,7 +139,7 @@ namespace RayTrace
             hr.Entry = Intersection;
 
             // Calculate surfce normal at intersection point.
-            Vector P2I = Intersection - Pos;
+            Vector P2I = Intersection - wPos;
 
             P2I.I /= (Width / 2);
             P2I.J /= (Height / 2);

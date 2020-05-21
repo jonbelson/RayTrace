@@ -1,0 +1,39 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace RayTrace
+{
+    // Utility class to calculate offsets for hexagonally spaced points centred on a unit circle.
+    static class HexGrid
+    {
+        private static readonly double d = 1.0 / 4.0;           // minimal diameter.
+        private static readonly double r = d / 2;               // minimal radius.
+        private static readonly double root3 = Math.Sqrt(3.0);  // square root of 3.
+        private static readonly double D = (2 * d) / root3;     // maximal diameter.       
+        private static readonly double R = D / 2.0;             // maximal radius.
+        private static readonly double t = R;                   // side length.
+        private static readonly double row = R + t / 2.0;       // vertical offset from one row to another.
+
+        public static readonly double[,] values = new double[19, 2]
+        {
+            { -d, row*2 }, { 0.0, row*2 }, { d, row*2 },
+            { -3*r, row }, { -r, row }, { r, row }, { 3*r, row },
+            { -2*d, 0.0 }, { -d, 0.0 }, { 0.0, 0.0 }, { d, 0.0 }, { 2*d, 0.0 },
+            { -3*r, -row }, { -r, -row }, { r, -row }, { 3*r, -row },
+            { -d, -row*2 }, { 0.0, -row*2 }, { d, -row*2 },
+        };
+
+        //static HexGrid()
+        //{
+            //int index = 0;
+
+            //for (int x=-1; x<=1)
+            //{
+            //    grid[index][0] = 
+            //}
+        //}
+    }
+}

@@ -15,12 +15,22 @@ namespace RayTrace
         {
             HitResult hr = new HitResult(this);
 
-            double A = Normal.I;
-            double B = Normal.J;
-            double C = Normal.K;
+            Matrix worldToView = new Matrix();
+            worldToView.SetLookAt(new Point(0, 30, 0), new Point(0, 30, 10));
+            worldToView.SetLookAt(new Point(0, 30, 0), new Point(0, 0, 50));
+            //worldToView.SetLookAt(new Point(0, 0, 0), new Point(0, 0, 100));
+            worldToView.SetIdentity();
+            Point wPos = worldToView * Pos;
+
+            Vector wNormal = worldToView * Normal;
+
+            double A = wNormal.I;
+            double B = wNormal.J;
+            double C = wNormal.K;
+
 
             // Since Ax + By + Cz + D = 0...
-            double D = -(A * Pos.X + B * Pos.Y + C * Pos.Z);
+            double D = -(A * wPos.X + B * wPos.Y + C * wPos.Z);
 
             double num = A * p1.X + B * p1.Y + C * p1.Z + D;
             double denom = A * (p1.X - p2.X) + B * (p1.Y - p2.Y) + C * (p1.Z - p2.Z);
@@ -64,31 +74,31 @@ namespace RayTrace
             // Intersection could have occurred from either side of the Plane, so adjust the surface normal appropriately.
             //Vector vecP2P1 = p1 - p2;
             vecP2P1.Normalise();
-            double dp = Normal.DotProduct(vecP2P1);
+            double dp = wNormal.DotProduct(vecP2P1);
             if (dp > 0.0)
             {
-                hr.EntryNormal = Normal;
+                hr.EntryNormal = wNormal;
             }
             else
             {
-                hr.EntryNormal = Normal.Negate();
+                hr.EntryNormal = wNormal.Negate();
             }
 
-            hr.EntryNormal = Normal;
+            hr.EntryNormal = wNormal;
 
             //            Vector v = Intersection.Difference(Pos);
             //            hr.u = (float) v.I;
             //            hr.v = (float) v.J;
 
             // https://gamedev.stackexchange.com/questions/172352/finding-texture-coordinates-for-plane
-            Vector e1 = Normal.VectorProduct(new Vector(1.0, 0.0, 0.0));
+            Vector e1 = wNormal.VectorProduct(new Vector(1.0, 0.0, 0.0));
             e1.Normalise();
             if (e1.I == 0.0 && e1.J == 0.0 && e1.K == 0.0)
             {
-                e1 = Normal.VectorProduct(new Vector(0.0, 0.0, 1.0));
+                e1 = wNormal.VectorProduct(new Vector(0.0, 0.0, 1.0));
                 e1.Normalise();
             }
-            Vector e2 = Normal.VectorProduct(e1);
+            Vector e2 = wNormal.VectorProduct(e1);
             e2.Normalise();
 
             Vector vecIntersection = new Vector(Intersection.X, Intersection.Y, Intersection.Z);

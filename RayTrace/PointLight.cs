@@ -10,6 +10,9 @@ namespace RayTrace
     {
         public Point Pos { get; set; }
 
+        // Effective radius of point soruce, as used in soft shadow calculations.
+        public int Radius { get; set; } = 0;
+
         public PointLight(Point p, float intensity, Colour c) : base(intensity, c)
         {
             Pos = p;
