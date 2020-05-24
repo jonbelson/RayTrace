@@ -41,9 +41,20 @@ namespace RayTrace
 
         public double M44 { get { return M[15]; } set { M[15] = value; } }
 
+        //
+        // Constructor.
+        //
         public Matrix()
         {
             SetIdentity();
+        }
+
+         //
+        // Constructor.
+        //
+        public Matrix(Matrix other)
+        {
+            M = other.M;
         }
 
         private static Matrix NewMatrix { get { return new Matrix(); } }
@@ -123,6 +134,11 @@ namespace RayTrace
             m.SetIdentity();
             return m;
         }
+
+        //public double GetDeterminant()
+        //{
+
+        //}
 
         public static Matrix GetTranslation(double x, double y, double z)
         {

@@ -72,15 +72,15 @@ namespace RayTrace
             hr.v = (float)v;
         }
 
-        private HitResult HitTestImpl(Point p1, Point p2, bool segmentOnly)
+        private HitResult HitTestImpl(Camera camera, Point p1, Point p2, bool segmentOnly)
         {
             HitResult hr = new HitResult(this);
 
-            Matrix worldToView = new Matrix();
-            worldToView.SetLookAt(new Point(0, 30, 0), new Point(0, 30, 10));
-            worldToView.SetLookAt(new Point(30, 60, 0), new Point(0, 0, 110));
+            //Matrix worldToView = new Matrix();
+            //worldToView.SetLookAt(new Point(0, 30, 0), new Point(0, 30, 10));
+            //worldToView.SetLookAt(new Point(30, 60, 0), new Point(0, 0, 110));
             //worldToView.SetLookAt(new Point(0, 40, 0), new Point(0, 0, 100));
-            Point wPos = worldToView * Pos;
+            Point wPos = camera.WorldToView * Pos;
 
             // Get bounding box extents.
             Point B0 = new Point(wPos.X - Width / 2, wPos.Y - Height / 2, wPos.Z - Depth / 2);
@@ -195,19 +195,21 @@ namespace RayTrace
             return hr;
         }
 
-        public override HitResult HitTest(Point p, Vector ray)
+        public override HitResult HitTest(Camera camera, Ray ray)
         {
-            Point p2 = p.Offset(ray);
+            bool segmentOnly = (ray.TMax == 1.0);
 
-            return HitTestImpl(p, p2, false);
+            Point p2 = ray.Origin.Offset(ray.Direction);
+
+            return HitTestImpl(camera, ray.Origin, p2, segmentOnly);
         }
 
-        public override HitResult HitTest(Point p1, Point p2)
-        {
-            return HitTestImpl(p1, p2, true);
-        }
+        //public override HitResult HitTest(Camera camera, Point p1, Point p2)
+        //{
+        //    return HitTestImpl(camera, p1, p2, true);
+        //}
 
-        public override (Point, Vector) GetRefractedVector(Vector ray, HitResult hr)
+        public override (Point, Vector) GetRefractedVector(Camera camera, Vector ray, HitResult hr)
         {
             Debug.Assert(hr.HasEntry());
 
@@ -219,8 +221,10 @@ namespace RayTrace
 
             if (!refraction1.IsNull())
             {
+                Ray ray2 = new Ray(hr.Entry, refraction1);
+
                 // Hit test refracted ray against ourself to find exit point.
-                HitResult hrInternal = HitTest(hr.Entry, refraction1);
+                HitResult hrInternal = HitTest(camera, ray2 /*hr.Entry, refraction1*/);
                 if (hrInternal.HasEntry())
                 {
                     // Found the exit point, so calculate refraction as ray exits the sphere.

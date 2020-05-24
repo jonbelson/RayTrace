@@ -11,26 +11,20 @@ namespace RayTrace
         public Vector Normal { get; set; }
         //public Point Point { get; set; }
 
-        private HitResult HitTestImpl(Point p1, Point p2, bool segmentOnly)
+        private HitResult HitTestImpl(Camera camera, Point p1, Point p2, bool segmentOnly)
         {
             HitResult hr = new HitResult(this);
 
-            Matrix worldToView = new Matrix();
-            worldToView.SetLookAt(new Point(0, 30, 0), new Point(0, 30, 10));
-            worldToView.SetLookAt(new Point(0, 30, 0), new Point(0, 0, 50));
-            //worldToView.SetLookAt(new Point(0, 0, 0), new Point(0, 0, 100));
-            worldToView.SetIdentity();
-            Point wPos = worldToView * Pos;
+            Point vPos = camera.WorldToView * Pos;
+            Vector vNormal = camera.NormalMatrix * Normal;
 
-            Vector wNormal = worldToView * Normal;
-
-            double A = wNormal.I;
-            double B = wNormal.J;
-            double C = wNormal.K;
+            double A = vNormal.I;
+            double B = vNormal.J;
+            double C = vNormal.K;
 
 
             // Since Ax + By + Cz + D = 0...
-            double D = -(A * wPos.X + B * wPos.Y + C * wPos.Z);
+            double D = -(A * vPos.X + B * vPos.Y + C * vPos.Z);
 
             double num = A * p1.X + B * p1.Y + C * p1.Z + D;
             double denom = A * (p1.X - p2.X) + B * (p1.Y - p2.Y) + C * (p1.Z - p2.Z);
@@ -74,31 +68,33 @@ namespace RayTrace
             // Intersection could have occurred from either side of the Plane, so adjust the surface normal appropriately.
             //Vector vecP2P1 = p1 - p2;
             vecP2P1.Normalise();
-            double dp = wNormal.DotProduct(vecP2P1);
+            double dp = vNormal.DotProduct(vecP2P1);
             if (dp > 0.0)
             {
-                hr.EntryNormal = wNormal;
+                hr.EntryNormal = vNormal;
             }
             else
             {
-                hr.EntryNormal = wNormal.Negate();
+                hr.EntryNormal = vNormal.Negate();
             }
 
-            hr.EntryNormal = wNormal;
+            hr.EntryNormal = vNormal;
 
             //            Vector v = Intersection.Difference(Pos);
             //            hr.u = (float) v.I;
             //            hr.v = (float) v.J;
 
             // https://gamedev.stackexchange.com/questions/172352/finding-texture-coordinates-for-plane
-            Vector e1 = wNormal.VectorProduct(new Vector(1.0, 0.0, 0.0));
+            Vector e1 = vNormal.VectorProduct(new Vector(1.0, 0.0, 0.0));
             e1.Normalise();
             if (e1.I == 0.0 && e1.J == 0.0 && e1.K == 0.0)
             {
-                e1 = wNormal.VectorProduct(new Vector(0.0, 0.0, 1.0));
+                e1 = vNormal.VectorProduct(new Vector(0.0, 0.0, 1.0));
                 e1.Normalise();
             }
-            Vector e2 = wNormal.VectorProduct(e1);
+
+            e1 = camera.NormalMatrix * e1;
+            Vector e2 = vNormal.VectorProduct(e1);
             e2.Normalise();
 
             Vector vecIntersection = new Vector(Intersection.X, Intersection.Y, Intersection.Z);
@@ -138,22 +134,26 @@ namespace RayTrace
             Normal = normal;
         }
 
-        public override HitResult HitTest(Point pos, Vector ray)
+        public override HitResult HitTest(Camera camera, Ray ray)
         {
             HitResult hr = new HitResult(this);
 
-            Vector longRay = ray.Scale(1000.0);
+            bool segmentOnly = ray.TMax == 1.0;
 
-            Point p1 = pos;
-            Point p2 = pos.Offset(longRay);
+            //Point p2 = ray.Origin.Offset(ray.Direction);
 
-            return HitTestImpl(p1, p2, false);
+            //Vector longRay = ray.Scale(1000.0);
+
+            Point p1 = ray.Origin;
+            Point p2 = ray.Origin + ray.Direction;
+
+            return HitTestImpl(camera, p1, p2, segmentOnly);
         }
 
-        public override HitResult HitTest(Point p1, Point p2)
-        {
-            return HitTestImpl(p1, p2, true);
-        }
+        //public override HitResult HitTest(Camera camera, Point p1, Point p2)
+        //{
+        //    return HitTestImpl(camera, p1, p2, true);
+        //}
 
         public override string ToString()
         {

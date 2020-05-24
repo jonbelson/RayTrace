@@ -86,7 +86,7 @@ namespace RayTrace
             return jitteredRay;
         }
 
-        private float GetSoftShadow(Scene scene, Point pos, Vector ray, PointLight light)
+        private float GetSoftShadow(Camera camera, Scene scene, Point pos, Vector ray, PointLight light)
         {
             Vector L = light.Pos - pos;
             double distance = L.Magnitude();
@@ -97,7 +97,8 @@ namespace RayTrace
             {
                 Vector jitteredRay = GetJitteredRay(rayNum, L, distance, light.Radius);
 
-                HitResult hr = scene.HitTest(pos, jitteredRay);
+                Ray ray2 = new Ray(pos, jitteredRay);
+                HitResult hr = scene.HitTest(camera, ray2 /*pos, jitteredRay*/);
                 if (hr.HasEntry())
                 {
                     numUnblockedRays--;
@@ -122,7 +123,7 @@ namespace RayTrace
         // scene    Scene we are rendering.
         // ray      Incoming ray that produced HitResult.
         // hr       HitResult that detected intersection.
-        private Colour CalculateColour(Scene scene, Vector ray, HitResult hr, int depth = 0)
+        private Colour CalculateColour(Camera camera, Scene scene, Vector ray, HitResult hr, int depth = 0)
         {
             Debug.Assert(hr.HasEntry());
 
@@ -147,14 +148,16 @@ namespace RayTrace
                 if (shape.HasTransparency())
                 {
                     // Hit object refracts, so work out direction of refracted ray (in then out) and check if it hits anything.
-                    var result = shape.GetRefractedVector(ray, hr);
+                    var result = shape.GetRefractedVector(camera, ray, hr);
 
                     //Vector refracted = result.Item1;
 
-                    HitResult hrRefracted = scene.HitTest(result.Item1, result.Item2);
+                    Ray ray2 = new Ray(result.Item1, result.Item2);
+                    HitResult hrRefracted = scene.HitTest(camera, ray2 /*result.Item1, result.Item2*/);
                     if (hrRefracted.HasEntry())
                     {
-                        Colour c = CalculateColour(scene, result.Item2, hrRefracted, depth);
+                        //Ray ray3 = new Ray(hrRefracted.Entry, result.Item2);
+                        Colour c = CalculateColour(camera, scene, result.Item2, hrRefracted, depth);
 
                         refracted = c;
                     }
@@ -178,10 +181,10 @@ namespace RayTrace
                     Vector v = R.Scale(1000.0f);
                     Point far = hr.Entry.Offset(v);
 
-                    HitResult hrReflect = scene.HitTest(hr.Entry, far);
+                    HitResult hrReflect = scene.HitTest(camera, hr.Entry, far);
                     if (hrReflect.HasEntry())
                     {
-                        Colour c = CalculateColour(scene, R, hrReflect, depth);
+                        Colour c = CalculateColour(camera, scene, R, hrReflect, depth);
                         reflected = c;
                     }
                 }
@@ -189,7 +192,7 @@ namespace RayTrace
 
             if (UseDiffuse)
             {
-                List<Light> lights = scene.IsIlluminated(hr);
+                List<Light> lights = scene.IsIlluminated(camera, hr);
 
                 foreach (Light light in lights)
                 {
@@ -269,9 +272,9 @@ namespace RayTrace
         }
 
         // Render entire Scene to the Canvas.
-        public void Render(Scene scene, Canvas canvas)
+        public void Render(Camera camera, Scene scene, Canvas canvas)
         {
-            Render(scene, canvas, 0, 0, canvas.Width, canvas.Height);
+            Render(camera, scene, canvas, 0, 0, canvas.Width, canvas.Height);
         }
 
         struct SubSample
@@ -297,7 +300,7 @@ namespace RayTrace
             }
         }
 
-        private Colour GetSubPixelColour(Scene scene, Colour[,] colourBuffer, int w, int h, double x, double y, double width, double height)
+        private Colour GetSubPixelColour(Camera camera, Scene scene, Colour[,] colourBuffer, int w, int h, double x, double y, double width, double height)
         {
             double centreX = x + width / 2.0;
             double centreY = y - height / 2.0;
@@ -307,19 +310,19 @@ namespace RayTrace
             Colour c2 = colourBuffer[w, h + 1];
             Colour c3 = colourBuffer[w + 1, h + 1];
 
-            if (c0 == null) { c0 = GetPixelColour(scene, x, y);                     colourBuffer[w, h] = c0; }
-            if (c1 == null) { c1 = GetPixelColour(scene, x + width, y);             colourBuffer[w + 1, h] = c1; }
-            if (c2 == null) { c2 = GetPixelColour(scene, x + width, y - height);    colourBuffer[w, h + 1] = c2; }
-            if (c3 == null) { c3 = GetPixelColour(scene, x + width, y - height);    colourBuffer[w + 1, h + 1] = c3; }
+            if (c0 == null) { c0 = GetPixelColour(camera, scene, x, y);                     colourBuffer[w, h] = c0; }
+            if (c1 == null) { c1 = GetPixelColour(camera, scene, x + width, y);             colourBuffer[w + 1, h] = c1; }
+            if (c2 == null) { c2 = GetPixelColour(camera, scene, x + width, y - height);    colourBuffer[w, h + 1] = c2; }
+            if (c3 == null) { c3 = GetPixelColour(camera, scene, x + width, y - height);    colourBuffer[w + 1, h + 1] = c3; }
 
-            Colour c4 = GetPixelColour(scene, centreX, centreY);
+            Colour c4 = GetPixelColour(camera, scene, centreX, centreY);
 
             Colour colour = c0 + c1 + c2 + c3 + c4;
 
             return colour.Scale(0.2f);
         }
 
-        private Colour GetSubPixelColour(Scene scene, SubSample subSample, int depth)
+        private Colour GetSubPixelColour(Camera camera, Scene scene, SubSample subSample, int depth)
         {
             if (depth > AdaptiveSuperSamplingDepth)
                 return Palette.Black;
@@ -330,11 +333,11 @@ namespace RayTrace
             var Colours = subSample.Colours;
 
             // Get the colours of each of the five sample points.
-            if (Colours[0] == null) Colours[0] = GetPixelColour(scene, subSample.TLx, subSample.TLy);
-            if (Colours[1] == null) Colours[1] = GetPixelColour(scene, subSample.BRx, subSample.TLy);
-            if (Colours[2] == null) Colours[2] = GetPixelColour(scene, subSample.TLx, subSample.BRy);
-            if (Colours[3] == null) Colours[3] = GetPixelColour(scene, subSample.BRx, subSample.BRy);
-            if (Colours[4] == null) Colours[4] = GetPixelColour(scene, centreX, centreY);
+            if (Colours[0] == null) Colours[0] = GetPixelColour(camera, scene, subSample.TLx, subSample.TLy);
+            if (Colours[1] == null) Colours[1] = GetPixelColour(camera, scene, subSample.BRx, subSample.TLy);
+            if (Colours[2] == null) Colours[2] = GetPixelColour(camera, scene, subSample.TLx, subSample.BRy);
+            if (Colours[3] == null) Colours[3] = GetPixelColour(camera, scene, subSample.BRx, subSample.BRy);
+            if (Colours[4] == null) Colours[4] = GetPixelColour(camera, scene, centreX, centreY);
 
             Colour col04, col14, col24, col34;
 
@@ -348,7 +351,7 @@ namespace RayTrace
                 SubSample subSubSample = new SubSample(subSample.TLx, subSample.TLy, centreX, centreY);
                 subSubSample.Colours[0] = Colours[0];
                 subSubSample.Colours[3] = Colours[4];
-                col04 = GetSubPixelColour(scene, subSubSample, depth + 1);
+                col04 = GetSubPixelColour(camera, scene, subSubSample, depth + 1);
             }
 
             if (Colours[1].IsSimilar(Colours[4]))
@@ -360,7 +363,7 @@ namespace RayTrace
                 SubSample subSubSample = new SubSample(centreX, centreY, subSample.BRx, subSample.TLy);
                 subSubSample.Colours[1] = Colours[1];
                 subSubSample.Colours[2] = Colours[4];
-                col14 = GetSubPixelColour(scene, subSubSample, depth + 1);
+                col14 = GetSubPixelColour(camera, scene, subSubSample, depth + 1);
             }
 
             if (Colours[2].IsSimilar(Colours[4]))
@@ -372,7 +375,7 @@ namespace RayTrace
                 SubSample subSubSample = new SubSample(subSample.TLx, subSample.BRy, centreX, centreY);
                 subSubSample.Colours[1] = Colours[4];
                 subSubSample.Colours[2] = Colours[2];
-                col24 = GetSubPixelColour(scene, subSubSample, depth + 1);
+                col24 = GetSubPixelColour(camera, scene, subSubSample, depth + 1);
             }
 
             if (Colours[3].IsSimilar(Colours[4]))
@@ -384,7 +387,7 @@ namespace RayTrace
                 SubSample subSubSample = new SubSample(centreX, centreY, subSample.BRx, subSample.BRy);
                 subSubSample.Colours[4] = Colours[0];
                 subSubSample.Colours[3] = Colours[3];
-                col34 = GetSubPixelColour(scene, subSubSample, depth + 1);
+                col34 = GetSubPixelColour(camera, scene, subSubSample, depth + 1);
             }
 
             // Average the four colours.
@@ -395,36 +398,31 @@ namespace RayTrace
         }
 
         // Get the colour of specified pixel by casting a ray into the Scene.
-        private Colour GetPixelColour(Scene scene, double x, double y)
+        private Colour GetPixelColour(Camera camera, Scene scene, double x, double y)
         {
-            Colour colour = new Colour();
+            Colour colour = scene.Background;   // new Colour();
+//           Colour colour = new Colour();
 
             Vector ray = new Vector(x, y, focalLength, true);
 
-            Matrix worldToView = new Matrix();
-            worldToView.SetLookAt(new Point(0, 30, 0), new Point(0, 30, 10));
-            worldToView.SetLookAt(new Point(0, 30, 0), new Point(0, 0, 50));
-            //worldToView.SetLookAt(new Point(0, 0, 0), new Point(0, 0, 100));
-            worldToView.SetIdentity();
-            ray = worldToView * ray;
-            Point vPos = worldToView * this.vPos;
+            Ray r = new Ray(vPos, ray);
 
             //Matrix m = new Matrix();
             //m.SetLookAt(new Point(1, 0, 0), new Point(1, 0, 10));
 
             //ray = m * ray;
 
-            HitResult hr = scene.HitTest(vPos, ray);
+            HitResult hr = scene.HitTest(camera, r /*vPos, ray*/);
             if (hr.HasEntry())
             {
-                colour = CalculateColour(scene, ray, hr);
+                colour = CalculateColour(camera, scene, ray, hr);
             }
 
             return colour;
         }
 
         // Render specified block of Scene to the Canvas.
-        public void Render(Scene scene, Canvas canvas, int startX, int startY, int numColumns, int numRows)
+        public void Render(Camera camera, Scene scene, Canvas canvas, int startX, int startY, int numColumns, int numRows)
         {
             int width = canvas.Width;
             int height = canvas.Height;
@@ -456,21 +454,21 @@ namespace RayTrace
 
                     if (AntiAlias == AntiAliasType.None)
                     {
-                        Colour colour = GetPixelColour(scene, sceneX + sceneStepX / 2, sceneY - sceneStepY / 2);
+                        Colour colour = GetPixelColour(camera, scene, sceneX + sceneStepX / 2, sceneY - sceneStepY / 2);
                         colour.Clamp();
                         canvas.Set(w, h, colour.ToRGB());
                     }
                     else if (AntiAlias == AntiAliasType.SuperSampling)
                     {
                         //SubSample subSample = new SubSample(x, y, x + sceneStepX, y - sceneStepY);
-                        Colour colour = GetSubPixelColour(scene, colourBuffer, w - startX, h - startY, sceneX, sceneY, /*sceneX +*/ sceneStepX, /*sceneY -*/ sceneStepY);
+                        Colour colour = GetSubPixelColour(camera, scene, colourBuffer, w - startX, h - startY, sceneX, sceneY, /*sceneX +*/ sceneStepX, /*sceneY -*/ sceneStepY);
                         colour.Clamp();
                         canvas.Set(w, h, colour.ToRGB());
                     }
                     else
                     {
                         SubSample subSample = new SubSample(sceneX, sceneY, sceneX + sceneStepX, sceneY - sceneStepY);
-                        Colour colour = GetSubPixelColour(scene, subSample, 1);
+                        Colour colour = GetSubPixelColour(camera, scene, subSample, 1);
                         colour.Clamp();
                         canvas.Set(w, h, colour.ToRGB());
                     }

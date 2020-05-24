@@ -335,6 +335,8 @@ namespace RayTrace
                 case RenderDirection.TopToBottom:  /* The default */ break;
             }
 
+//            Camera camera = new Camera(new Point(0, 10, 0), new Point(0, 0, 10));
+            Camera camera = new Camera(new Point(0, 5, 0), new Point(0, 0, 100));
 
             List<Task> tasks = new List<Task>();
 
@@ -347,7 +349,7 @@ namespace RayTrace
                 {
                     //int idx = i;
                     Console.WriteLine($"Starting Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...");
-                    renderer.Render(scene, canvas, rb.StartX, rb.StartY, rb.Width, rb.Height);
+                    renderer.Render(camera, scene, canvas, rb.StartX, rb.StartY, rb.Width, rb.Height);
                     Console.WriteLine($"Done Task {idx}...");
 
                     this.Dispatcher.Invoke(DispatcherPriority.Normal,

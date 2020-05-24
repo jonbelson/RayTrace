@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 
 namespace RayTrace
@@ -35,7 +36,9 @@ namespace RayTrace
             Scene scene = new Scene();
 
             Sphere sphere = new Sphere(new Point(-20, 0, 50), 20, Palette.White);
-            sphere.Material.Texture = new TextureSquares();
+            //sphere.Material.Texture = new TextureSquares();
+            sphere.Material.Texture = new TextureSolid(Palette.Black);
+            sphere.Material.Transparency = 1.0f;
             scene.AddShape(sphere);
 
             sphere = new Sphere(new Point(20, 0, 50), 20, Palette.White);
@@ -51,8 +54,9 @@ namespace RayTrace
 
 
             Plane plane = new Plane(new Vector(0.0, 1.0, 0.0), new Point(0.0, -30.0, 0.0));
-            plane.Material.Texture = new TextureSolid(Palette.White);
-            //plane.Material.Texture = new TextureSquares() { Scale = 4 };
+            plane.Material.Texture = new TextureSolid(Palette.Black);
+            plane.Material.Texture = new TextureSquares() { Scale = 32 };
+            //plane.Material.Reflectivity = 1.0f;
             scene.AddShape(plane);
 
             Light light = new PointLight(new Point(-50, 0, 0), /*0.5f*/ 5000.0f, new Colour(1.0f, 0.0f, 0.0f));
@@ -66,6 +70,8 @@ namespace RayTrace
 
             //            light = new SpotLight(new Point(0, 100, 0), new Vector(0, -1, 0), 45, 5000, Palette.White);
             //            scene.AddLight(light);
+
+            scene.Background = new Colour(Colors.SkyBlue);
 
             return scene;
         }

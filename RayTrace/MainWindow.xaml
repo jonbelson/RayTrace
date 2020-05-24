@@ -47,7 +47,7 @@
                         <TextBlock Text="Radius" Grid.Row="2"></TextBlock>
                         <TextBlock Text="Material" Grid.Row="3"></TextBlock>
                         <TextBlock Text="Texture" Grid.Row="4"></TextBlock>
-                        <CheckBox IsChecked="{Binding Path=Enabled}" Grid.Column="1" Grid.Row="0"></CheckBox>
+                        <CheckBox IsChecked="{Binding Path=Enabled, Mode=TwoWay}" Grid.Column="1" Grid.Row="0"></CheckBox>
                         <TextBlock Text="{Binding Path=Pos}" Grid.Column="1" Grid.Row="1"></TextBlock>
                         <TextBlock Text="{Binding Path=Radius}" Grid.Column="1" Grid.Row="2"></TextBlock>
                         <TextBlock Text="{Binding Path=Material}" Grid.Column="1" Grid.Row="3"></TextBlock>
@@ -78,7 +78,7 @@
                         <TextBlock Text="Material" Grid.Row="3"></TextBlock>
                         <TextBlock Text="Texture" Grid.Row="4"></TextBlock>
 
-                        <CheckBox IsChecked="{Binding Path=Enabled}" Grid.Column="1" Grid.Row="0"></CheckBox>
+                        <CheckBox IsChecked="{Binding Path=Enabled, Mode=TwoWay}" Grid.Column="1" Grid.Row="0"></CheckBox>
                         <TextBlock Text="{Binding Path=Pos}" Grid.Column="1" Grid.Row="1"></TextBlock>
                         <TextBlock Text="{Binding Path=Normal}" Grid.Column="1" Grid.Row="2"></TextBlock>
                         <TextBlock Text="{Binding Path=Material}" Grid.Column="1" Grid.Row="3"></TextBlock>
@@ -107,7 +107,7 @@
                         <TextBlock Text="Colour" Grid.Row="2"></TextBlock>
                         <TextBlock Text="Intensity" Grid.Row="3"></TextBlock>
 
-                        <CheckBox IsChecked="{Binding Path=Enabled}" Grid.Column="1" Grid.Row="0"></CheckBox>
+                        <CheckBox IsChecked="{Binding Path=Enabled, Mode=TwoWay}" Grid.Column="1" Grid.Row="0"></CheckBox>
                         <TextBlock Text="{Binding Path=Pos}" Grid.Column="1" Grid.Row="1"></TextBlock>
                         <TextBlock Text="{Binding Path=Colour}" Grid.Column="1" Grid.Row="2"></TextBlock>
                         <TextBlock Text="{Binding Path=Intensity}" Grid.Column="1" Grid.Row="3"></TextBlock>
@@ -139,7 +139,7 @@
                         <TextBlock Text="Colour" Grid.Row="4"></TextBlock>
                         <TextBlock Text="Intensity" Grid.Row="5"></TextBlock>
 
-                        <CheckBox IsChecked="{Binding Path=Enabled}" Grid.Column="1" Grid.Row="0"></CheckBox>
+                        <CheckBox IsChecked="{Binding Path=Enabled, Mode=TwoWay}" Grid.Column="1" Grid.Row="0"></CheckBox>
                         <TextBlock Text="{Binding Path=Pos}" Grid.Column="1" Grid.Row="1"></TextBlock>
                         <TextBlock Text="{Binding Path=Direction}" Grid.Column="1" Grid.Row="2"></TextBlock>
                         <TextBlock Text="{Binding Path=Width}" Grid.Column="1" Grid.Row="3"></TextBlock>

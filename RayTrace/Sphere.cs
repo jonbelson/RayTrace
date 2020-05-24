@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Configuration;
 using System.Diagnostics;
 using System.Runtime.InteropServices.ComTypes;
 
@@ -8,7 +9,7 @@ namespace RayTrace
     {
         public int Radius { get; set; }
 
-        public void CalculateUV(HitResult hr)
+        public void CalculateUV(Camera camera, HitResult hr)
         {
             // Sn   Normal vector at point of interest.
             // Sp   Vector of north pole.
@@ -16,12 +17,14 @@ namespace RayTrace
 
 			Vector Sn = hr.EntryNormal;
 			Vector Sp = new Vector(0.0, 1.0, 0.0);
+			Sp = camera.NormalMatrix*Sp;
 			double dp = Sn.DotProduct(Sp);
 			double phi = Math.Acos(-dp);
 
 			double v = phi / Math.PI;
 
 			Vector Se = new Vector(0.0, 0.0, 1.0);
+			Se = camera.NormalMatrix * Se;
 			dp = Se.DotProduct(Sn);
 
 			double d = dp / Math.Sin(phi);
@@ -50,18 +53,11 @@ namespace RayTrace
 
         // Hit test between line a sphere.
         // segmentOnly If true, only the line segment defined by p1 and p2 is considered.
-        private HitResult HitTestImpl(Point p1, Point p2, bool segmentOnly)
+        private HitResult HitTestImpl(Camera camera, Point p1, Point p2, bool segmentOnly)
         {
 			HitResult hr = new HitResult(this);
 
-			Point sc = Pos;
-
-			Matrix worldToView = new Matrix();
-			worldToView.SetLookAt(new Point(0, 30, 0), new Point(0, 30, 10));
-			worldToView.SetLookAt(new Point(0, 30, 0), new Point(0, 0, 50));
-			//worldToView.SetLookAt(new Point(0, 0, 0), new Point(0, 0, 100));
-			worldToView.SetIdentity();
-			sc = worldToView * Pos;
+			Point sc = camera.WorldToView * Pos;
 
 			double r = Radius;
 
@@ -91,7 +87,7 @@ namespace RayTrace
 				Point p = p1 + dp.Scale(u);
 				hr.Entry = p;
 
-				CalculateUV(hr);
+				CalculateUV(camera, hr);
 
 				return hr;
 			}
@@ -136,7 +132,7 @@ namespace RayTrace
 			hr.Entry = hit;
 			hr.EntryNormal = surfaceNormal;
 
-			CalculateUV(hr);
+			CalculateUV(camera, hr);
 
 			// XXX Should normal perturbation affect surface texture?
 			if (HasRoughness())
@@ -160,23 +156,28 @@ namespace RayTrace
 
 		}
 
-		public override HitResult HitTest(Point pos, Vector ray)
+//		public override HitResult HitTest(Camera camera, Point pos, Vector ray)
+		public override HitResult HitTest(Camera camera, Ray ray)
 		{
-			Point p2 = pos.Offset(ray);
+			bool segmentOnly = (ray.TMax == 1.0);
 
-			return HitTestImpl(pos, p2, false);
+			//Debug.Assert(!segmentOnly);
+
+			Point p2 = ray.Origin.Offset(ray.Direction);
+
+			return HitTestImpl(camera, ray.Origin, p2, segmentOnly);
 
 			// Based on http://paulbourke.net/geometry/circlesphere/index.html#linesphere
 
 		}
 
-        // ignoreClosest    If true, 
-        public override HitResult HitTest(Point p1, Point p2)
-        {
-			return HitTestImpl(p1, p2, true);
-		}
+		// ignoreClosest    If true, 
+		//      public override HitResult HitTest(Camera camera, Point p1, Point p2)
+		//      {
+		//	return HitTestImpl(camera, p1, p2, true);
+		//}
 
-		public override (Point, Vector) GetRefractedVector(Vector ray, HitResult hr)
+		public override (Point, Vector) GetRefractedVector(Camera camera, Vector ray, HitResult hr)
 		{
 			Debug.Assert(hr.HasEntry());
 
@@ -188,8 +189,10 @@ namespace RayTrace
 
 			if (!refraction1.IsNull())
 			{
+				Ray ray2 = new Ray(hr.Entry, refraction1);
+
 				// Hit test refracted ray against ourself to find exit point.
-				HitResult hrInternal = HitTest(hr.Entry, refraction1);
+				HitResult hrInternal = HitTest(camera, ray2 /*hr.Entry, refraction1*/);
 				if (hrInternal.HasEntry())
 				{
 					// Found the exit point, so calculate refraction as ray exits the sphere.
@@ -202,7 +205,6 @@ namespace RayTrace
 			// Didn't mange to get e refracted ray, so return values passed.
 			return (hr.Entry, ray);	// XXX Or return Vector.Null()?
 		}
-
 
 		public override string ToString()
 		{

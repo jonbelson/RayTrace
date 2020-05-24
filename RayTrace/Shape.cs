@@ -61,9 +61,9 @@ namespace RayTrace
             return Material.GetColour(hr);
         }
 
-        public abstract HitResult HitTest(Point p, Vector ray);
-        public abstract HitResult HitTest(Point p1, Point p2);
+        public abstract HitResult HitTest(Camera camera, Ray ray /*Point p, Vector ray*/);
+        //public abstract HitResult HitTest(Camera camera, Point p1, Point p2);
 
-        public virtual (Point, Vector) GetRefractedVector(Vector ray, HitResult hr) { return (hr.Entry, ray); }
+        public virtual (Point, Vector) GetRefractedVector(Camera camera, Vector ray, HitResult hr) { return (hr.Entry, ray); }
     }
 }

@@ -82,7 +82,7 @@ namespace RayTrace
             //renderer.UseLighting = false;
             //renderer.UsePhong = false;
             renderer.UseReflections = false;
-            renderer.Render(scene, canvas);
+            renderer.Render(null, scene, canvas);
 
             canvas.Save("Canvas.tiff");
 

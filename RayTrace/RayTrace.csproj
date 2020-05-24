@@ -59,6 +59,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Box.cs" />
+    <Compile Include="Camera.cs" />
     <Compile Include="DistantLight.cs" />
     <Compile Include="Entity.cs" />
     <Compile Include="EntityTemplateSelector.cs" />
@@ -70,6 +71,7 @@
     <Compile Include="Perlin.cs" />
     <Compile Include="Plane.cs" />
     <Compile Include="PointLight.cs" />
+    <Compile Include="Ray.cs" />
     <Compile Include="Refraction.cs" />
     <Compile Include="Renderer.cs" />
     <Compile Include="Scene.cs" />

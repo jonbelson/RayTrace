@@ -12,32 +12,38 @@ namespace RayTrace
         /*private*/ public List<Shape> Shapes = new List<Shape>();
         /*private*/ public List<Light> Lights = new List<Light>();
 
-        public Colour Ambient { get; set; }
+        public Colour Ambient { get; set; } = new Colour(0.2f, 0.2f, 0.2f);
+
+        public Colour Background { get; set; } = Palette.Black;
 
         public Scene()
         {
-            Ambient = new Colour(0.2f, 0.2f, 0.2f);
+            //Ambient = new Colour(0.2f, 0.2f, 0.2f);
 
             //Size = 100.0;
         }
 
-        // XXX Should return closest hit object, not the first.
-        public HitResult HitTest(Point pos, Vector ray)
+        // Return closest hit object.
+//        public HitResult HitTest(Camera camera, Point pos, Vector ray)
+        public HitResult HitTest(Camera camera, Ray ray)
         {
-            //Shape nearest = null;
-            double distance = 1000000.0;
             HitResult hitResult = new HitResult(null);
+
+            double closest = Double.MaxValue;
 
             foreach (Shape shape in Shapes)
             {
-                HitResult hr = shape.HitTest(pos, ray);
+                if (!shape.Enabled) continue;
+
+//                HitResult hr = shape.HitTest(camera, pos, ray);
+                HitResult hr = shape.HitTest(camera, ray);
                 if (hr.HasEntry())
                 {
-                    double d = pos.Distance(hr.Entry);
-                    if (d < distance)
+//                    double d = pos.Distance(hr.Entry);
+                    double d = ray.Origin.Distance(hr.Entry);
+                    if (d < closest)
                     {
-                        distance = d;
-                        //nearest = shape;
+                        closest = d;
                         hitResult = hr;
                     }
                 }
@@ -46,19 +52,22 @@ namespace RayTrace
             return hitResult;
         }
 
-        // XXX Should return closest hit object, not the first.
-        public HitResult HitTest(Point p1, Point p2)
+        // Return closest hit object.
+        public HitResult HitTest(Camera camera, Point p1, Point p2)
         {
             HitResult hitResult = new HitResult(null);
+
+            Ray ray = new Ray(p1, p2);
 
             double closest = Double.MaxValue;
 
             foreach (Shape shape in Shapes)
             {
-                HitResult hr = shape.HitTest(p1, p2);
+                if (!shape.Enabled) continue;
+
+                HitResult hr = shape.HitTest(camera, ray /*p1, p2*/);
                 if (hr.HasEntry())
                 {
-                    //return hr;
                     double d = p1.Distance(hr.Entry);
                     if (d < closest)
                     {
@@ -71,7 +80,7 @@ namespace RayTrace
             return hitResult;
         }
 
-        public List<Light> IsIlluminated(HitResult hr)
+        public List<Light> IsIlluminated(Camera camera, HitResult hr)
         {
             Point pos = hr.Entry;
 
@@ -79,6 +88,8 @@ namespace RayTrace
 
             foreach (Light light in Lights)
             {
+                if (!light.Enabled) continue;
+
                 PointLight pointLight = light as PointLight;
                 if (pointLight == null)
                 {
@@ -92,7 +103,7 @@ namespace RayTrace
                 //step.Normalise();
                 //pos = pos.Offset(step);
 
-                HitResult hitResult = HitTest(pos, pos2);
+                HitResult hitResult = HitTest(camera, pos, pos2);
                 if (hitResult.HasEntry())
                 {
                     // Ray from hit point to light hit an object, so no direct illumination.
