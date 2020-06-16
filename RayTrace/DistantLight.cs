@@ -15,12 +15,12 @@ namespace RayTrace
             Direction = direction;
         }
 
-        public override Vector GetDirection(Point p)
+        public override Vector GetDirection(Camera camera, Point p)
         {
             return Direction;
         }
 
-        public override float GetAttenuation(Point p)
+        public override float GetAttenuation(Camera camera, Point p)
         {
             return 1.0f;
         }

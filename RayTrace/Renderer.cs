@@ -34,7 +34,7 @@ namespace RayTrace
 
         // Size of rendered area, so that it ranges from -Size/2 to +Size/2 in the
         //  x axis and -Size/2 to +Size/2 in the y axis.
-        public double Size { get; }
+        public double Size { get; set; }
 
         private static readonly double jitterOffset = 0.075;
         private double[,] hexArray = HexGrid.values;
@@ -45,7 +45,8 @@ namespace RayTrace
         //
         public Renderer()
         {
-            vPos = new Point(0.0, 0.0, -focalLength);
+//            vPos = new Point(0.0, 0.0, -focalLength);
+            vPos = new Point(0.0, 0.0, 0.0);
 
             Size = 100.0;
         }
@@ -56,6 +57,69 @@ namespace RayTrace
 
             return colour;
         }
+
+        // Based on 'AimZ()' function from 'RenderMan Companion' page 143.
+        private Vector Aim(Vector vecToLight)
+        {
+            double yrot;
+            double xzlen = Math.Sqrt(vecToLight.I * vecToLight.I + vecToLight.K * vecToLight.K);
+            if (xzlen == 0.0)
+            {
+                yrot = (vecToLight.J< 0.0) ? Math.PI : 0.0;
+            }
+            else
+            {
+                yrot = Math.Acos(vecToLight.K/xzlen);
+            }
+
+            double yzlen = Math.Sqrt(vecToLight.J * vecToLight.J + xzlen * xzlen);
+            double xrot = Math.Acos(xzlen / yzlen);
+
+            // Set direcion of rotation appropriately.
+            if (vecToLight.J <= 0.0) xrot = -xrot;
+            if (vecToLight.I > 0.0) yrot = -yrot;
+
+
+            Matrix xrotation = new Matrix();
+            xrotation.SetRotationX(xrot);
+
+            Matrix yrotation = new Matrix();
+            yrotation.SetRotationY(yrot);
+
+            Vector test = new Vector(vecToLight.I, vecToLight.J, vecToLight.K);
+
+            Vector v1 = yrotation * test;
+
+            Vector v2 = xrotation * v1;
+
+            Matrix align = yrotation * xrotation;
+
+            Vector test2 = align * test;
+
+
+            // Create matricies to rotation from Z axis to vecToLight.
+            Matrix xrotation2 = new Matrix();
+            xrotation2.SetRotationX(-xrot);
+
+            Matrix yrotation2 = new Matrix();
+            yrotation2.SetRotationY(-yrot);
+
+            Matrix align2 = xrotation2 * yrotation2;
+
+            Vector zvec = new Vector(0, 0, 1);
+
+            Vector test3 = align2 * zvec;
+
+            // Transpose of 'pure rotation' LookAt() matrix effectively reverses direction of rotations.
+            Matrix lookAt2 = new Matrix();
+            lookAt2.SetLookAt(new Point(0, 0, 0), new Point(vecToLight.I, vecToLight.J, vecToLight.K));
+            lookAt2.Transpose();
+
+            Vector test4 = lookAt2 * zvec;
+
+            return v2;
+        }
+
 
         // Given a vector to a Light and its notional radius, return a jittered ray.
         private Vector GetJitteredRay(int index, Vector vecToLight, double distToLight, double lightRadius)
@@ -83,6 +147,48 @@ namespace RayTrace
             jitteredRay.J = -a * b * ray.I / mu + c * ray.J / mu + b * ray.K;
             jitteredRay.K = -a * c * ray.I / mu - b * ray.J / mu + c * ray.K;
 
+
+
+
+
+
+
+
+            // Find magnitude of vecToLight projected on the YZ plane
+            double H = vecToLight.Magnitude();
+            double A = vecToLight.I;
+            double yzLen = Math.Sqrt(H*H - A*A);
+
+            // Get angle between projected vector and XZ plane.
+            double sinPhi = vecToLight.J/yzLen;
+            double phi = Math.Asin(sinPhi);
+
+            // phi is rotation around X axis.
+
+            double cosTheta = yzLen / H;
+            double theta2 = Math.Acos(cosTheta);
+
+            // theta2 is rotation around Y axis.
+
+            Matrix m = new Matrix();
+            m.SetRotationX(-phi);
+
+            Vector v1 = m * new Vector(0, 0, 1);
+
+            //double dotProduct = vecToLight.Angle(new Vector(0, 0, 1));
+
+            Matrix m2 = new Matrix();
+            m2.SetRotationY(phi /*theta2*/);
+
+            Matrix m3 = m * m2;
+
+            Vector v2 = m2 * v1;
+
+            // TEST - unit vector down Z axis should align with vecToLight. 
+            Vector vv = m3 * new Vector(0, 0, 1);
+
+
+
             return jitteredRay;
         }
 
@@ -90,7 +196,7 @@ namespace RayTrace
         {
             Vector L = light.Pos - pos;
             double distance = L.Magnitude();
-            L.Normalise();
+            L = L.Normalise();
 
             int numUnblockedRays = 19;
             for (int rayNum=0; rayNum<19; rayNum++)
@@ -161,6 +267,11 @@ namespace RayTrace
 
                         refracted = c;
                     }
+                    else
+                    {
+                        // Refraction didn't hit anything, so just use the Scene backgorund colour.
+                        refracted = scene.Background;
+                    }
                 }
             }
 
@@ -175,7 +286,7 @@ namespace RayTrace
                     double dpVE = vecToViewer.DotProduct(hr.EntryNormal);
 
                     Vector R = hr.EntryNormal.Scale(2.0 * dpVE) - vecToViewer;
-                    R.Normalise();
+                    R = R.Normalise();
 
                     // Make point in direction of 'R' to use as an endpoint.
                     Vector v = R.Scale(1000.0f);
@@ -186,6 +297,11 @@ namespace RayTrace
                     {
                         Colour c = CalculateColour(camera, scene, R, hrReflect, depth);
                         reflected = c;
+                    }
+                    else
+                    {
+                        // Reflection didn't hit anything, so just use the Scene backgorund colour.
+                        reflected = scene.Background;
                     }
                 }
             }
@@ -198,12 +314,14 @@ namespace RayTrace
                 {
                     Point p = hr.Entry;
 
-                    Vector vecToLight = light.GetDirection(p).Negate();
+                    Vector vecToLight = light.GetDirection(camera, p).Negate();
 
-                    // Assume light attenuatiaon is 1 over distance squared.
-                    double lightAttenuation = light.GetAttenuation(p);
+                    //vecToLight = camera.NormalMatrix * vecToLight;
 
-                    vecToLight.Normalise();
+                    // Assume light attenuation is 1 over distance squared.
+                    double lightAttenuation = light.GetAttenuation(camera, p);
+                   //lightAttenuation = 1.0;
+                    vecToLight = vecToLight.Normalise();
 
                     Vector shapeNormal = hr.EntryNormal;
 
@@ -225,10 +343,10 @@ namespace RayTrace
                     {
                         // Phong shading.
                         Vector R = shapeNormal.Scale(2.0 * dpLN) - vecToLight;
-                        R.Normalise();
+                        R = R.Normalise();
 
                         //Vector vecToViewer = new Vector(-x, -y, -focalLength);
-                        //vecToViewer.Normalise();
+                        //vecToViewer = vecToViewer.Normalise();
                         Vector vecToViewer = ray.Scale(-1.0f);
 
                         double Il = light.Intensity;// 1.0;    // Intensity of light source.
@@ -246,7 +364,7 @@ namespace RayTrace
                             //Ispec = Math.Pow(Ispec, ns);
 
                             //Vector E = new Vector(-x, -y, -focalLength);
-                            //E.Normalise();
+                            //E = E.Normalise();
                             //double s = Math.Pow(Math.Max(0.0, E.DotProduct(R)), 1.2);
 
                             Colour spec = new Colour(1f, 1f, 1f);
@@ -403,7 +521,8 @@ namespace RayTrace
             Colour colour = scene.Background;   // new Colour();
 //           Colour colour = new Colour();
 
-            Vector ray = new Vector(x, y, focalLength, true);
+//            Vector ray = new Vector(x, y, focalLength, true);
+            Vector ray = new Vector(x, y, 1, true);
 
             Ray r = new Ray(vPos, ray);
 
@@ -424,6 +543,16 @@ namespace RayTrace
         // Render specified block of Scene to the Canvas.
         public void Render(Camera camera, Scene scene, Canvas canvas, int startX, int startY, int numColumns, int numRows)
         {
+            //GetJitteredRay(0, new Vector(1, 1, 1, true), 10, 1);
+
+            Vector v = Aim(new Vector(1, 1, 1, true));
+
+            // Calculate Scene size based on camera FOV.
+            double sceneWidth = camera.GetSceneWidth();
+            double sceneHeight = camera.GetSceneHeight();
+
+            Size = sceneWidth;
+
             int width = canvas.Width;
             int height = canvas.Height;
 

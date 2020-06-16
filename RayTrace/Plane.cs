@@ -67,7 +67,7 @@ namespace RayTrace
 
             // Intersection could have occurred from either side of the Plane, so adjust the surface normal appropriately.
             //Vector vecP2P1 = p1 - p2;
-            vecP2P1.Normalise();
+            vecP2P1 = vecP2P1.Normalise();
             double dp = vNormal.DotProduct(vecP2P1);
             if (dp > 0.0)
             {
@@ -86,20 +86,20 @@ namespace RayTrace
 
             // https://gamedev.stackexchange.com/questions/172352/finding-texture-coordinates-for-plane
             Vector e1 = vNormal.VectorProduct(new Vector(1.0, 0.0, 0.0));
-            e1.Normalise();
+            e1 = e1.Normalise();
             if (e1.I == 0.0 && e1.J == 0.0 && e1.K == 0.0)
             {
                 e1 = vNormal.VectorProduct(new Vector(0.0, 0.0, 1.0));
-                e1.Normalise();
+                e1 = e1.Normalise();
             }
 
             e1 = camera.NormalMatrix * e1;
             Vector e2 = vNormal.VectorProduct(e1);
-            e2.Normalise();
+            e2 = e2.Normalise();
 
             Vector vecIntersection = new Vector(Intersection.X, Intersection.Y, Intersection.Z);
             double mag = vecIntersection.Magnitude();
-            vecIntersection.Normalise();
+            vecIntersection = vecIntersection.Normalise();
 
             double u = e1.DotProduct(vecIntersection);
             double v = e2.DotProduct(vecIntersection);

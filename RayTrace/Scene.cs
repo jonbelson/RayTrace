@@ -96,14 +96,20 @@ namespace RayTrace
                     continue;
                 }
 
-                Point pos2 = pointLight.Pos;
-                Vector v = pointLight.Pos.Difference(pos);
+                //Point pos2 = pointLight.Pos;
+                Point pos2 = camera.WorldToView * pointLight.Pos;
+                //Vector v = pointLight.Pos.Difference(pos);
+                //Vector v = pos2.Difference(pos);
 
                 //Vector step = light.Pos.Difference(pos);
-                //step.Normalise();
+                //step = step.Normalise();
                 //pos = pos.Offset(step);
 
-                HitResult hitResult = HitTest(camera, pos, pos2);
+                Camera nullCamera = new Camera(new Point(0, 0, 0), new Point(0, 0, 0));
+                nullCamera.WorldToView.SetIdentity();
+
+                HitResult hitResult = HitTest(/*nullCamera*/ camera, pos, pos2);
+                //HitResult hitResult = HitTest(camera, pos, pos2);
                 if (hitResult.HasEntry())
                 {
                     // Ray from hit point to light hit an object, so no direct illumination.

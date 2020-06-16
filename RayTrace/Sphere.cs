@@ -127,7 +127,7 @@ namespace RayTrace
 			Point hit = p1 + dp.Scale(mu);
 
 			Vector surfaceNormal = /*Pos*/ sc.Difference(hit);
-			surfaceNormal.Normalise();
+			surfaceNormal = surfaceNormal.Normalise();
 
 			hr.Entry = hit;
 			hr.EntryNormal = surfaceNormal;
@@ -147,7 +147,7 @@ namespace RayTrace
 				//val = (val + noiseRange) / (2.0 * noiseRange);
 
 				normal = normal.Add(new Vector(val, val, val));
-				normal.Normalise();
+				normal = normal.Normalise();
 
 				hr.EntryNormal = normal;
 			}

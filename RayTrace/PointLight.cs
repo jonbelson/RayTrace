@@ -18,17 +18,25 @@ namespace RayTrace
             Pos = p;
         }
 
-        public override Vector GetDirection(Point p)
+        public override Vector GetDirection(Camera camera, Point p)
         {
+            Point viewPos = camera.WorldToView*Pos;
+            return viewPos.Difference(p);
+
+/*
             Vector vecToLight = Pos.Difference(p);
 //            Vector vecToLight = p.Difference(Pos);
 
             return vecToLight;
+*/
         }
 
-        public override float GetAttenuation(Point p)
+        public override float GetAttenuation(Camera camera, Point p)
         {
-            Vector vecToLight = p.Difference(Pos).Negate();
+            Point viewPos = camera.WorldToView * Pos;
+
+            //Vector vecToLight = p.Difference(Pos).Negate();
+            Vector vecToLight = viewPos.Difference(p);
 
             // Assume light attenuatiaon is 1 over distance squared.
             double lightAttenuation = 1.0 / vecToLight.MagnitudeSquared();

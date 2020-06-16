@@ -25,21 +25,29 @@ namespace RayTrace
             Width = widthDeg;
         }
 
-        public override Vector GetDirection(Point p)
+        public override Vector GetDirection(Camera camera, Point p)
         {
-            Vector vecToLight = Pos.Difference(p);
+            Point viewPos = camera.WorldToView * Pos;
+
+            //Vector vecToLight = Pos.Difference(p);
+            Vector vecToLight = viewPos.Difference(p);
 
             return vecToLight;
         }
 
-        public override float GetAttenuation(Point p)
+        public override float GetAttenuation(Camera camera, Point p)
         {
-            Vector vecFromLight = p.Difference(Pos).Negate();
+            Point viewPos = camera.WorldToView * Pos;
+            Vector viewDirection = camera.NormalMatrix*Direction;
+
+            //Vector vecFromLight = p.Difference(Pos).Negate();
+            //Vector vecFromLight = p.Difference(viewPos).Negate();
+            Vector vecFromLight = viewPos.Difference(p);
 
             Vector vecNorm = vecFromLight;
-            vecNorm.Normalise();
+            vecNorm = vecNorm.Normalise();
 
-            double dp = vecNorm.DotProduct(Direction);
+            double dp = vecNorm.DotProduct(viewDirection);
 
             double angleRad = Math.Acos(dp);
             if (angleRad > widthRad)

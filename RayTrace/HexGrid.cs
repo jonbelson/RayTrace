@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace RayTrace
 {
-    // Utility class to calculate offsets for hexagonally spaced points centred on a unit circle.
+    // Utility class to calculate offsets for hexagonally-spaced points centred on a unit circle.
     static class HexGrid
     {
         private static readonly double d = 1.0 / 4.0;           // minimal diameter.
@@ -26,14 +26,20 @@ namespace RayTrace
             { -d, -row*2 }, { 0.0, -row*2 }, { d, -row*2 },
         };
 
-        //static HexGrid()
-        //{
-            //int index = 0;
-
-            //for (int x=-1; x<=1)
-            //{
-            //    grid[index][0] = 
-            //}
-        //}
+        // Write grid values to console for debugging purposes.
+        public static void DumpGrid()
+        {
+            int hexIndex = 0;
+            int[] rows = new int[] { 3, 4, 5, 4, 3 };
+            foreach (int row in rows)
+            {
+                for (int i = 0; i < row; i++)
+                {
+                    Console.Write(values[hexIndex, 0].ToString("F2") + ", " + values[hexIndex, 1].ToString("F2") + " ");
+                    hexIndex++;
+                }
+                Console.WriteLine();
+            }
+        }
     }
 }

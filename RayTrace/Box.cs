@@ -38,18 +38,18 @@ namespace RayTrace
 
             // https://gamedev.stackexchange.com/questions/172352/finding-texture-coordinates-for-plane
             Vector e1 = normal.VectorProduct(new Vector(1.0, 0.0, 0.0));
-            e1.Normalise();
+            e1 = e1.Normalise();
             if (e1.I == 0.0 && e1.J == 0.0 && e1.K == 0.0)
             {
                 e1 = normal.VectorProduct(new Vector(0.0, 0.0, 1.0));
-                e1.Normalise();
+                e1 = e1.Normalise();
             }
             Vector e2 = normal.VectorProduct(e1);
-            e2.Normalise();
+            e2 = e2.Normalise();
 
             Vector vecIntersection = new Vector(Intersection.X, Intersection.Y, Intersection.Z);
             double mag = vecIntersection.Magnitude();
-            vecIntersection.Normalise();
+            vecIntersection = vecIntersection.Normalise();
 
             double u = e1.DotProduct(vecIntersection);
             double v = e2.DotProduct(vecIntersection);
@@ -87,7 +87,7 @@ namespace RayTrace
             Point B1 = new Point(wPos.X + Width / 2, wPos.Y + Height / 2, wPos.Z + Depth / 2);
 
             Vector D = p2 - p1;
-            //D.Normalise();
+            //D = D.Normalise();
 
             double tnear = -9999999999;
             double tfar = 999999999;
@@ -132,7 +132,7 @@ namespace RayTrace
             if (tfar < 0) return hr;
 
             Vector d = D;
-            d.Normalise();
+            d = d.Normalise();
 
             Point Intersection = p1 + d.Scale(tnear);
 
@@ -145,10 +145,10 @@ namespace RayTrace
             P2I.J /= (Height / 2);
             P2I.K /= (Depth / 2);
 
-            //P2I.Normalise();
+            //P2I = P2I.Normalise();
 
             Vector P2Inorm = P2I;
-            P2Inorm.Normalise();
+            P2Inorm = P2Inorm.Normalise();
 
             Vector normal = new Vector();
 

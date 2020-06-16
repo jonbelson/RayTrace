@@ -152,46 +152,47 @@ namespace RayTrace
         public MainWindow()
         {
             InitializeComponent();
+            if (false)
+            {
+                Vector vLight = new Vector(0, 0, 20);
+                Vector vRay = new Vector(1, 0, 1);
 
-            Vector vLight = new Vector(0, 0, 20);
-            Vector vRay = new Vector(1, 0, 1);
+                Vector vLightNorm = vLight;
+                vLightNorm.Normalise();
 
-            Vector vLightNorm = vLight;
-            vLightNorm.Normalise();
+                Vector vRayNorm = vRay;
+                vRayNorm.Normalise();
 
-            Vector vRayNorm = vRay;
-            vRayNorm.Normalise();
+                double cosTheta = vLightNorm.DotProduct(vRayNorm);
 
-            double cosTheta = vLightNorm.DotProduct(vRayNorm);
-
-            // Calculate Vector to use a axis of rotation.
-            Vector vp = vLightNorm.VectorProduct(vRayNorm);
+                // Calculate Vector to use a axis of rotation.
+                Vector vp = vLightNorm.VectorProduct(vRayNorm);
 
 
 
-            Matrix m = new Matrix();
-            //m.SetRotationZ(Math.PI/4);
-            //m.SetLookAt(new Point(10, 0, 0), new Point(10, 0, 10));
-           // m.SetLookAt(new Point(0, 0, 0), new Point(1, 0, 10));
-            m.SetLookAt(new Point(0, 0, 0), new Point(-1, 0, -1));
-            //m.SetLookAt(new Point(1, 0, 1), new Point(0, 0, 0));
-            Console.WriteLine(m);
+                Matrix m = new Matrix();
+                //m.SetRotationZ(Math.PI/4);
+                //m.SetLookAt(new Point(10, 0, 0), new Point(10, 0, 10));
+                // m.SetLookAt(new Point(0, 0, 0), new Point(1, 0, 10));
+                m.SetLookAt(new Point(0, 0, 0), new Point(-1, 0, -1));
+                //m.SetLookAt(new Point(1, 0, 1), new Point(0, 0, 0));
+                Console.WriteLine(m);
 
-            //m.Transpose();
-            //Console.WriteLine(m);
+                //m.Transpose();
+                //Console.WriteLine(m);
 
-            Vector v = new Vector(-0.1, 0, 1);
-            Console.WriteLine(v);
+                Vector v = new Vector(-0.1, 0, 1);
+                Console.WriteLine(v);
 
-            Vector v2 = m * v;
-            Console.WriteLine(v2);
+                Vector v2 = m * v;
+                Console.WriteLine(v2);
 
-            //Point p = new Point(0, 0, 100);
-            //Console.WriteLine(p);
+                //Point p = new Point(0, 0, 100);
+                //Console.WriteLine(p);
 
-            //Point p2 = m * p;
-            //Console.WriteLine(p2);
-
+                //Point p2 = m * p;
+                //Console.WriteLine(p2);
+            }
 
             checkBoxAmbient.IsChecked = renderer.UseAmbient;
             checkBoxLighting.IsChecked = renderer.UseDiffuse;
@@ -206,10 +207,11 @@ namespace RayTrace
             //output.Hide();
 
             //scene = SceneFactory.PhongDemoScene();
-            scene = SceneFactory.TexturedSpheresDemoScene();
+            //scene = SceneFactory.TexturedSpheresDemoScene();
             //scene = SceneFactory.RefractionDemoScene();
             //scene = SceneFactory.BoxDemoScene();
             //scene = SceneFactory.SphereDemoScene();
+            scene = SceneFactory.SoftLightDemoScene();
 
             comboBoxFormat.SelectedItem = ImageFormat.Tiff;
 
@@ -336,7 +338,15 @@ namespace RayTrace
             }
 
 //            Camera camera = new Camera(new Point(0, 10, 0), new Point(0, 0, 10));
-            Camera camera = new Camera(new Point(0, 5, 0), new Point(0, 0, 100));
+            //Camera camera = new Camera(new Point(0, 10, 0), new Point(0, 0, 40));
+            //Camera camera = new Camera(new Point(10, 5, 0), new Point(0, 0, 40));
+
+            //Camera camera = new Camera(new Point(0, 0, 0), new Point(0, 0, 40));
+            //Camera camera = new Camera(new Point(0, 40, 0), new Point(0, 0, 40));
+            //            Camera camera = new Camera(new Point(80, 10, 40), new Point(0, 0, 40));
+            //            Camera camera = new Camera(new Point(80, 40, 50), new Point(0, 0, 50));
+//                        Camera camera = new Camera(new Point(40, 0, 40), new Point(0, 0, 40));
+            Camera camera = new Camera(new Point(40, 0, 20), new Point(0, 0, 40));
 
             List<Task> tasks = new List<Task>();
 

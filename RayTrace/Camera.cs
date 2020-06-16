@@ -8,11 +8,22 @@ namespace RayTrace
 {
     public class Camera
     {
-        private Point pos = new Point(0, 0, 0);
-        private Point target = new Point(0, 0, 1.0f);
+        private Point _pos = new Point(0, 0, 0);
+        private Point _target = new Point(0, 0, 1.0f);
+        private double _fovHRadians;
+        private double _fovHDegrees;
 
-        public Point Pos { get { return pos; } set { pos = value; UpdateMatrix(); } }
-        public Point Target { get { return target; } set { target = value; UpdateMatrix(); } }
+        public Point Pos { get { return _pos; } set { _pos = value; UpdateMatrix(); } }
+        public Point Target { get { return _target; } set { _target = value; UpdateMatrix(); } }
+
+        public double FovH {
+            get => _fovHDegrees;
+            set
+            {
+                _fovHDegrees = value;
+                _fovHRadians = (value / 180.0) * Math.PI;
+            }
+        }
 
         // Matrix for World to View transform.
         public Matrix WorldToView { get; set; } = new Matrix();
@@ -22,9 +33,9 @@ namespace RayTrace
 
         private void UpdateMatrix()
         {
-            WorldToView.SetLookAt(pos, target);
+            WorldToView.SetLookAt(_pos, _target);
 
-            NormalMatrix = WorldToView;
+            NormalMatrix = new Matrix(WorldToView);
             NormalMatrix.M14 = 0.0;
             NormalMatrix.M24 = 0.0;
             NormalMatrix.M34 = 0.0;
@@ -32,9 +43,22 @@ namespace RayTrace
 
         public Camera(Point from, Point to)
         {
-            pos = from;
-            target = to;
+            _pos = from;
+            _target = to;
+
+            FovH = 90.0;
+
             UpdateMatrix();
+        }
+
+        public double GetSceneWidth()
+        {
+            return 2.0 * Math.Tan(_fovHRadians / 2.0);
+        }
+
+        public double GetSceneHeight()
+        {
+            return 2.0 * Math.Tan(_fovHRadians / 2.0);
         }
     }
 }

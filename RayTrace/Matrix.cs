@@ -49,12 +49,12 @@ namespace RayTrace
             SetIdentity();
         }
 
-         //
+        //
         // Constructor.
         //
         public Matrix(Matrix other)
         {
-            M = other.M;
+            other.M.CopyTo(M, 0);
         }
 
         private static Matrix NewMatrix { get { return new Matrix(); } }
@@ -223,14 +223,14 @@ namespace RayTrace
             Point cameraTarget = to;
             Point cameraPosition = from;
             Vector zaxis = cameraTarget - cameraPosition;
-//            Vector zaxis = cameraPosition - cameraTarget;
+            //            Vector zaxis = cameraPosition - cameraTarget;
 
-            zaxis.Normalise();
+            zaxis = zaxis.Normalise();
             Vector cameraUpVector = new Vector(0, 1, 0);
 
             Vector xaxis = cameraUpVector.VectorProduct(zaxis);
             //xaxis = zaxis.VectorProduct(cameraUpVector);
-            xaxis.Normalise();
+            xaxis = xaxis.Normalise();
 
             Vector yaxis = zaxis.VectorProduct(xaxis);
             //yaxis = xaxis.VectorProduct(zaxis);
@@ -273,7 +273,7 @@ namespace RayTrace
 
 //            Vector forward = from - to;
             Vector forward = to - from;
-            forward.Normalise();
+            forward = forward.Normalise();
 
             Vector temp = new Vector(0.0, 1.0, 0.0);
             Vector right = temp.VectorProduct(forward);

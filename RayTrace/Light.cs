@@ -21,7 +21,7 @@ namespace RayTrace
             return "Light[" + Intensity + "," + Colour.ToString() + "]";
         }
 
-        public abstract Vector GetDirection(Point p);
-        public abstract float GetAttenuation(Point p);
+        public abstract Vector GetDirection(Camera camera, Point p);
+        public abstract float GetAttenuation(Camera camera, Point p);
     }
 }
