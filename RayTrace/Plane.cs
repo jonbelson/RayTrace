@@ -42,7 +42,10 @@ namespace RayTrace
                 return hr;
             }
 
-            if (mu < 0.0)
+            double THRESH = 0.000001;
+
+//            if (mu < 0.0)
+            if (mu < THRESH)
             {
                 // Not interested in intersections that happen behind us.
                 return hr;
@@ -51,8 +54,6 @@ namespace RayTrace
             if (segmentOnly)
             {
                 // Check if segment actually intersects us.
-                double THRESH = 0.000001;
-
                 if (mu < THRESH || mu > 1.0 - THRESH)
                 {
                     return hr;

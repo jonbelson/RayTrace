@@ -226,8 +226,8 @@ namespace RayTrace
             /*Sphere*/ sphere = new Sphere(new Point(0, floorHeight, 0), 2, Palette.Red);
             scene.AddShape(sphere);
 
-            Light light = new SpotLight(new Point(-30, 30, 40), new Vector(1, -1, 0, true), 25, 6000, Palette.White);
-            //Light light = new PointLight(new Point(-50, 50, 40), 5000, Palette.White);
+            //Light light = new SpotLight(new Point(-30, 30, 40), new Vector(1, -1, 0, true), 25, 6000, Palette.White);
+            Light light = new PointLight(new Point(-50, 50, 40), 6000, Palette.White);
             scene.AddLight(light);
 
             return scene;

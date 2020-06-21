@@ -125,7 +125,8 @@ namespace RayTrace
                 }
             }
 
-            M = m2.M;
+            //M = m2.M;
+            m2.M.CopyTo(M, 0);
         }
 
         public static Matrix GetIdentity()

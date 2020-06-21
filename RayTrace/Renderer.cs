@@ -12,7 +12,7 @@ namespace RayTrace
         public enum AntiAliasType { None, SuperSampling, AdaptiveSupersampling }
 
         // Distance of observer along Z axis.
-        private double focalLength = 500.0;
+        //private double focalLength = 500.0;
 
         // Position of viewer.
         private Point vPos;
@@ -22,6 +22,7 @@ namespace RayTrace
         public bool UsePhong { set; get; } = true;
         public bool UseReflections { get; set; } = true;
         public bool UseRefraction { get; set; } = true;
+        public bool UseSoftShadows { get; set; } = true;
 
         public AntiAliasType AntiAlias { get; set; } = AntiAliasType.None;
 
@@ -36,7 +37,7 @@ namespace RayTrace
         //  x axis and -Size/2 to +Size/2 in the y axis.
         public double Size { get; set; }
 
-        private static readonly double jitterOffset = 0.075;
+        private static readonly double jitterOffset = 0.01;//0.075;
         private double[,] hexArray = HexGrid.values;
         private Random rand = new Random();
 
@@ -122,94 +123,127 @@ namespace RayTrace
 
 
         // Given a vector to a Light and its notional radius, return a jittered ray.
-        private Vector GetJitteredRay(int index, Vector vecToLight, double distToLight, double lightRadius)
+        // matrix       Matrix to rotate Z axis to align with light vector.
+        // vecToLight   Normalised vector to light.
+        private Vector GetJitteredRay(Matrix matrix, int index, Vector vecToLight, double distToLight, double lightRadius)
         {
-            // Calculate effective size of light rotated to Z axis.
+            // Calculate effective size of light from view point.
             double theta = Math.Asin(lightRadius/distToLight);
             double circleRadius = lightRadius * Math.Cos(theta);
             double circleDistance = distToLight - lightRadius * Math.Sin(theta);
 
             double deltaX = jitterOffset * rand.NextDouble();
             double deltaY = jitterOffset * rand.NextDouble();
+
+            Debug.Assert(!Double.IsNaN(deltaX));
+            Debug.Assert(!Double.IsNaN(deltaY));
+
             Vector ray = new Vector();
             ray.I = circleRadius * (hexArray[index,0] + deltaX);
             ray.J = circleRadius * (hexArray[index,1] + deltaY);
             ray.K = circleDistance;
 
-            // Project ray so Z axis aligns with vecToLight.
-            double a = vecToLight.I;
-            double b = vecToLight.J;
-            double c = vecToLight.K;
-            double mu = Math.Sqrt(b*b + c*c);
-
-            Vector jitteredRay = new Vector();
-            jitteredRay.I = mu * ray.I + a * ray.K;
-            jitteredRay.J = -a * b * ray.I / mu + c * ray.J / mu + b * ray.K;
-            jitteredRay.K = -a * c * ray.I / mu - b * ray.J / mu + c * ray.K;
+            Debug.Assert(!Double.IsNaN(ray.I));
+            Debug.Assert(!Double.IsNaN(ray.J));
+            Debug.Assert(!Double.IsNaN(ray.K));
 
 
+            /*
+                        // Project ray so Z axis aligns with vecToLight.
+                        double a = vecToLight.I;
+                        double b = vecToLight.J;
+                        double c = vecToLight.K;
+                        double mu = Math.Sqrt(b*b + c*c);
+
+                        Vector jitteredRay = new Vector();
+                        jitteredRay.I = mu * ray.I + a * ray.K;
+                        jitteredRay.J = -a * b * ray.I / mu + c * ray.J / mu + b * ray.K;
+                        jitteredRay.K = -a * c * ray.I / mu - b * ray.J / mu + c * ray.K;
+            */
+
+            // Transpose of 'pure rotation' LookAt() matrix effectively reverses direction of rotations.
+            //Matrix lookAt2 = new Matrix();
+            //lookAt2.SetLookAt(new Point(0, 0, 0), new Point(vecToLight.I, vecToLight.J, vecToLight.K));
+            //lookAt2.Transpose();
+
+            //            Vector jitteredDir = lookAt2*jitteredRay;
+            //            Vector jitteredDir = lookAt2 * ray;
+
+            // Rotate the jittered vector (which is relative to the Z axis) to be aligned with the original light vector.
+            Vector jitteredDir = matrix * ray;
 
 
+            Debug.Assert(!Double.IsNaN(jitteredDir.I));
+            Debug.Assert(!Double.IsNaN(jitteredDir.J));
+            Debug.Assert(!Double.IsNaN(jitteredDir.K));
 
 
+            return jitteredDir;
 
+            //// Find magnitude of vecToLight projected on the YZ plane
+            //double H = vecToLight.Magnitude();
+            //double A = vecToLight.I;
+            //double yzLen = Math.Sqrt(H*H - A*A);
 
-            // Find magnitude of vecToLight projected on the YZ plane
-            double H = vecToLight.Magnitude();
-            double A = vecToLight.I;
-            double yzLen = Math.Sqrt(H*H - A*A);
+            //// Get angle between projected vector and XZ plane.
+            //double sinPhi = vecToLight.J/yzLen;
+            //double phi = Math.Asin(sinPhi);
 
-            // Get angle between projected vector and XZ plane.
-            double sinPhi = vecToLight.J/yzLen;
-            double phi = Math.Asin(sinPhi);
+            //// phi is rotation around X axis.
 
-            // phi is rotation around X axis.
+            //double cosTheta = yzLen / H;
+            //double theta2 = Math.Acos(cosTheta);
 
-            double cosTheta = yzLen / H;
-            double theta2 = Math.Acos(cosTheta);
+            //// theta2 is rotation around Y axis.
 
-            // theta2 is rotation around Y axis.
+            //Matrix m = new Matrix();
+            //m.SetRotationX(-phi);
 
-            Matrix m = new Matrix();
-            m.SetRotationX(-phi);
+            //Vector v1 = m * new Vector(0, 0, 1);
 
-            Vector v1 = m * new Vector(0, 0, 1);
+            ////double dotProduct = vecToLight.Angle(new Vector(0, 0, 1));
 
-            //double dotProduct = vecToLight.Angle(new Vector(0, 0, 1));
+            //Matrix m2 = new Matrix();
+            //m2.SetRotationY(phi /*theta2*/);
 
-            Matrix m2 = new Matrix();
-            m2.SetRotationY(phi /*theta2*/);
+            //Matrix m3 = m * m2;
 
-            Matrix m3 = m * m2;
+            //Vector v2 = m2 * v1;
 
-            Vector v2 = m2 * v1;
+            //// TEST - unit vector down Z axis should align with vecToLight. 
+            //Vector vv = m3 * new Vector(0, 0, 1);
 
-            // TEST - unit vector down Z axis should align with vecToLight. 
-            Vector vv = m3 * new Vector(0, 0, 1);
+            //return jitteredRay;
 
-
-
-            return jitteredRay;
         }
 
+        // scene    Scene we are rendering.
+        // ray      Incoming ray that produced HitResult.
         private float GetSoftShadow(Camera camera, Scene scene, Point pos, Vector ray, PointLight light)
         {
             Vector L = light.Pos - pos;
             double distance = L.Magnitude();
             L = L.Normalise();
 
+            Matrix lookAt = new Matrix();
+            lookAt.SetLookAt(new Point(0, 0, 0), new Point(L.I, L.J, L.K));
+            //            lookAt2.SetLookAt(new Point(0, 0, 0), new Point(jitteredRay.I, jitteredRay.J, jitteredRay.K));
+            lookAt.Transpose();
+
             int numUnblockedRays = 19;
             for (int rayNum=0; rayNum<19; rayNum++)
             {
-                Vector jitteredRay = GetJitteredRay(rayNum, L, distance, light.Radius);
+                Vector jitteredRay = GetJitteredRay(lookAt, rayNum, L, distance, light.Radius);
 
                 Ray ray2 = new Ray(pos, jitteredRay);
-                HitResult hr = scene.HitTest(camera, ray2 /*pos, jitteredRay*/);
+                HitResult hr = scene.HitTest(camera, ray2);
                 if (hr.HasEntry())
                 {
+                    Debug.Assert(hr.shape is Sphere);
+
                     numUnblockedRays--;
                 }
-                if (rayNum == 6)
+/*                if (rayNum == 6)
                 {
                     if (numUnblockedRays == 12)
                     {
@@ -218,7 +252,7 @@ namespace RayTrace
                     }
                     else if (numUnblockedRays == 19)
                         break;
-                }
+                }*/
             }
 
             float fraction = numUnblockedRays / 19.0f;
@@ -308,19 +342,52 @@ namespace RayTrace
 
             if (UseDiffuse)
             {
-                List<Light> lights = scene.IsIlluminated(camera, hr);
-
-                foreach (Light light in lights)
+                foreach (Light light in scene.Lights)
                 {
+                    if (!light.Enabled) continue;
+
+                    PointLight pointLight = light as PointLight;
+                    if (pointLight == null)
+                    {
+                        continue;
+                    }
+
+                    float visibleFraction = 0.0f;
+                    if (UseSoftShadows)
+                    {
+                        visibleFraction = GetSoftShadow(camera, scene, hr.Entry, ray, pointLight);
+                    }
+                    else
+                    {
+                        Point pos = hr.Entry;
+                        Point pos2 = camera.WorldToView * pointLight.Pos;
+
+                        HitResult hitResult = scene.HitTest(camera, pos, pos2);
+                        if (hitResult.HasEntry())
+                        {
+                            continue;
+                        }
+                        visibleFraction = 1.0f;
+
+                    }
+                    if (visibleFraction == 0.0f)
+                    {
+                        continue;
+                    }
+
+                //}
+
+                //List<Light> lights = scene.IsIlluminated(camera, hr);
+
+                //foreach (Light light in lights)
+                //{
                     Point p = hr.Entry;
 
                     Vector vecToLight = light.GetDirection(camera, p).Negate();
 
-                    //vecToLight = camera.NormalMatrix * vecToLight;
-
                     // Assume light attenuation is 1 over distance squared.
                     double lightAttenuation = light.GetAttenuation(camera, p);
-                   //lightAttenuation = 1.0;
+
                     vecToLight = vecToLight.Normalise();
 
                     Vector shapeNormal = hr.EntryNormal;
@@ -332,6 +399,8 @@ namespace RayTrace
                         Colour incidentColour = light.Output * shape.GetColour(hr).Scale((float)dpLN);
 
                         incidentColour = incidentColour.Scale((float) lightAttenuation);
+
+                        incidentColour = incidentColour.Scale(visibleFraction);
 
                         //Trace.Assert(false);
                         Debug.Assert(incidentColour.Red >= 0.0f && incidentColour.Green >= 0.0f && incidentColour.Blue >= 0.0);
@@ -345,8 +414,6 @@ namespace RayTrace
                         Vector R = shapeNormal.Scale(2.0 * dpLN) - vecToLight;
                         R = R.Normalise();
 
-                        //Vector vecToViewer = new Vector(-x, -y, -focalLength);
-                        //vecToViewer = vecToViewer.Normalise();
                         Vector vecToViewer = ray.Scale(-1.0f);
 
                         double Il = light.Intensity;// 1.0;    // Intensity of light source.
@@ -371,7 +438,6 @@ namespace RayTrace
                             //spec = light.Colour;
                             double factor = Ispec * lightAttenuation;
                             Colour specularColour = spec * (float)factor;
-                            //colour += specularColour;
 
                             specular += specularColour;
                         }

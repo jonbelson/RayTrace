@@ -197,8 +197,9 @@ namespace RayTrace
             checkBoxAmbient.IsChecked = renderer.UseAmbient;
             checkBoxLighting.IsChecked = renderer.UseDiffuse;
             checkBoxPhong.IsChecked = renderer.UsePhong;
-            checkBoxReflections.IsChecked = renderer.UseReflections;
             checkBoxRefraction.IsChecked = renderer.UseRefraction;
+            checkBoxSoftShadows.IsChecked = renderer.UseSoftShadows;
+            checkBoxReflections.IsChecked = renderer.UseReflections;
 
             textBoxDepth.Text = renderer.RecursionDepth.ToString();
             textBoxAdaptiveSubSamplingDepth.Text = renderer.AdaptiveSuperSamplingDepth.ToString();
@@ -255,8 +256,9 @@ namespace RayTrace
             renderer.UseAmbient = (bool)checkBoxAmbient.IsChecked;
             renderer.UseDiffuse = (bool)checkBoxLighting.IsChecked;
             renderer.UsePhong = (bool)checkBoxPhong.IsChecked;
-            renderer.UseReflections = (bool)checkBoxReflections.IsChecked;
             renderer.UseRefraction = (bool)checkBoxRefraction.IsChecked;
+            renderer.UseSoftShadows = (bool)checkBoxSoftShadows.IsChecked;
+            renderer.UseReflections = (bool)checkBoxReflections.IsChecked;
 
             int depth;
             if (!Int32.TryParse(textBoxDepth.Text, out depth))
@@ -341,12 +343,12 @@ namespace RayTrace
             //Camera camera = new Camera(new Point(0, 10, 0), new Point(0, 0, 40));
             //Camera camera = new Camera(new Point(10, 5, 0), new Point(0, 0, 40));
 
-            //Camera camera = new Camera(new Point(0, 0, 0), new Point(0, 0, 40));
+            Camera camera = new Camera(new Point(0, 0, 0), new Point(0, 0, 40));
             //Camera camera = new Camera(new Point(0, 40, 0), new Point(0, 0, 40));
             //            Camera camera = new Camera(new Point(80, 10, 40), new Point(0, 0, 40));
             //            Camera camera = new Camera(new Point(80, 40, 50), new Point(0, 0, 50));
 //                        Camera camera = new Camera(new Point(40, 0, 40), new Point(0, 0, 40));
-            Camera camera = new Camera(new Point(40, 0, 20), new Point(0, 0, 40));
+//            Camera camera = new Camera(new Point(40, 0, 20), new Point(0, 0, 40));
 
             List<Task> tasks = new List<Task>();
 
