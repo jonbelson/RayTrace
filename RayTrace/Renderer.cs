@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Dynamic;
 using System.Net.NetworkInformation;
+using System.Runtime.CompilerServices;
 
 namespace RayTrace
 {
@@ -15,7 +16,7 @@ namespace RayTrace
         //private double focalLength = 500.0;
 
         // Position of viewer.
-        private Point vPos;
+        //private Point vPos;
 
         public bool UseAmbient { set; get; } = true;
         public bool UseDiffuse { set; get; } = true;
@@ -23,6 +24,7 @@ namespace RayTrace
         public bool UseReflections { get; set; } = true;
         public bool UseRefraction { get; set; } = true;
         public bool UseSoftShadows { get; set; } = true;
+        public bool UseDepthOfField { get; set; } = true;
 
         public AntiAliasType AntiAlias { get; set; } = AntiAliasType.None;
 
@@ -37,9 +39,10 @@ namespace RayTrace
         //  x axis and -Size/2 to +Size/2 in the y axis.
         public double Size { get; set; }
 
-        private static readonly double jitterOffset = 0.01;//0.075;
+        //private static readonly double jitterOffset = 0.075;
+        private static readonly double jitterOffset = HexGrid.Jitter;   // 0.075;
         private double[,] hexArray = HexGrid.values;
-        private Random rand = new Random();
+        //private Random rand = new Random();
 
         //
         // Constructor.
@@ -47,9 +50,11 @@ namespace RayTrace
         public Renderer()
         {
 //            vPos = new Point(0.0, 0.0, -focalLength);
-            vPos = new Point(0.0, 0.0, 0.0);
+            //vPos = new Point(0.0, 0.0, 0.0);
 
             Size = 100.0;
+
+            //HexGrid.DumpGrid();
         }
 
         private Colour CalculateIlluminationColour(Scene scene, Vector ray, HitResult hr)
@@ -57,6 +62,27 @@ namespace RayTrace
             Colour colour = Palette.Black;
 
             return colour;
+        }
+
+        private Point GetPointOnDisc(Random rand)
+        {
+            double x, y;
+            do
+            {
+                //double r1 = rand.NextDouble();
+                //double r2 = rand.NextDouble();
+                x = -1.0 + 2.0 * rand.NextDouble();
+                y = -1.0 + 2.0 * rand.NextDouble();
+            } while (x * x + y * y > 1.0);
+
+            return new Point(x, y, 0.0);
+        }
+
+        private Vector GetVectorOnDisc(Random rand)
+        {
+            Point p = GetPointOnDisc(rand);
+
+            return new Vector(p.X, p.Y, 0.0);
         }
 
         // Based on 'AimZ()' function from 'RenderMan Companion' page 143.
@@ -125,15 +151,17 @@ namespace RayTrace
         // Given a vector to a Light and its notional radius, return a jittered ray.
         // matrix       Matrix to rotate Z axis to align with light vector.
         // vecToLight   Normalised vector to light.
-        private Vector GetJitteredRay(Matrix matrix, int index, Vector vecToLight, double distToLight, double lightRadius)
+        private Vector GetJitteredRay(Matrix matrix, int index, Vector vecToLight, double distToLight, double lightRadius, Random rand)
         {
             // Calculate effective size of light from view point.
             double theta = Math.Asin(lightRadius/distToLight);
             double circleRadius = lightRadius * Math.Cos(theta);
             double circleDistance = distToLight - lightRadius * Math.Sin(theta);
 
-            double deltaX = jitterOffset * rand.NextDouble();
-            double deltaY = jitterOffset * rand.NextDouble();
+            double deltaX = jitterOffset * (-1.0 + 2*rand.NextDouble());
+            double deltaY = jitterOffset * (-1.0 + 2*rand.NextDouble());
+            //double deltaX = jitterOffset * rand.NextDouble();
+            //double deltaY = jitterOffset * rand.NextDouble();
 
             Debug.Assert(!Double.IsNaN(deltaX));
             Debug.Assert(!Double.IsNaN(deltaY));
@@ -159,6 +187,8 @@ namespace RayTrace
                         jitteredRay.I = mu * ray.I + a * ray.K;
                         jitteredRay.J = -a * b * ray.I / mu + c * ray.J / mu + b * ray.K;
                         jitteredRay.K = -a * c * ray.I / mu - b * ray.J / mu + c * ray.K;
+
+                        return jitteredRay;
             */
 
             // Transpose of 'pure rotation' LookAt() matrix effectively reverses direction of rotations.
@@ -168,18 +198,16 @@ namespace RayTrace
 
             //            Vector jitteredDir = lookAt2*jitteredRay;
             //            Vector jitteredDir = lookAt2 * ray;
-
+            
             // Rotate the jittered vector (which is relative to the Z axis) to be aligned with the original light vector.
             Vector jitteredDir = matrix * ray;
-
 
             Debug.Assert(!Double.IsNaN(jitteredDir.I));
             Debug.Assert(!Double.IsNaN(jitteredDir.J));
             Debug.Assert(!Double.IsNaN(jitteredDir.K));
 
-
             return jitteredDir;
-
+            
             //// Find magnitude of vecToLight projected on the YZ plane
             //double H = vecToLight.Magnitude();
             //double A = vecToLight.I;
@@ -221,6 +249,8 @@ namespace RayTrace
         // ray      Incoming ray that produced HitResult.
         private float GetSoftShadow(Camera camera, Scene scene, Point pos, Vector ray, PointLight light)
         {
+            Random rand = new Random(123456);
+
             Vector L = light.Pos - pos;
             double distance = L.Magnitude();
             L = L.Normalise();
@@ -230,32 +260,44 @@ namespace RayTrace
             //            lookAt2.SetLookAt(new Point(0, 0, 0), new Point(jitteredRay.I, jitteredRay.J, jitteredRay.K));
             lookAt.Transpose();
 
-            int numUnblockedRays = 19;
-            for (int rayNum=0; rayNum<19; rayNum++)
+            // Do more interations of the hex grid for 'wider' PointLights.
+            int numIterations = light.Radius;
+
+            int maxIterations = 19 * numIterations;
+
+            int totalNumUnblockedRays = maxIterations;
+            for (int i = 0; i < numIterations; i++)
             {
-                Vector jitteredRay = GetJitteredRay(lookAt, rayNum, L, distance, light.Radius);
-
-                Ray ray2 = new Ray(pos, jitteredRay);
-                HitResult hr = scene.HitTest(camera, ray2);
-                if (hr.HasEntry())
+                int numUnblockedRays = 19;
+                for (int rayNum = 0; rayNum < 19; rayNum++)
                 {
-                    Debug.Assert(hr.shape is Sphere);
+                    Vector jitteredRay = GetJitteredRay(lookAt, rayNum, L, distance, light.Radius, rand);
 
-                    numUnblockedRays--;
-                }
-/*                if (rayNum == 6)
-                {
-                    if (numUnblockedRays == 12)
+                    Ray ray2 = new Ray(pos, jitteredRay);
+                    HitResult hr = scene.HitTest(camera, ray2);
+                    if (hr.HasEntry())
                     {
-                        numUnblockedRays = 0;
-                        break;
-                    }
-                    else if (numUnblockedRays == 19)
-                        break;
-                }*/
-            }
+                        Debug.Assert(hr.shape is Sphere);
 
-            float fraction = numUnblockedRays / 19.0f;
+                        numUnblockedRays--;
+                        totalNumUnblockedRays--;
+                    }
+                    /*
+                    if (rayNum == 6)
+                    {
+                        if (numUnblockedRays == 12)
+                        {
+                            numUnblockedRays = 0;
+                            break;
+                        }
+                        else if (numUnblockedRays == 19)
+                            break;
+                    }
+                    */
+                }
+                //totalNumUnblockedRays -= (19 - numUnblockedRays);
+            }
+            float fraction = ((float) totalNumUnblockedRays) / maxIterations;
 
             return fraction;
         }
@@ -375,14 +417,7 @@ namespace RayTrace
                         continue;
                     }
 
-                //}
-
-                //List<Light> lights = scene.IsIlluminated(camera, hr);
-
-                //foreach (Light light in lights)
-                //{
                     Point p = hr.Entry;
-
                     Vector vecToLight = light.GetDirection(camera, p).Negate();
 
                     // Assume light attenuation is 1 over distance squared.
@@ -584,23 +619,63 @@ namespace RayTrace
         // Get the colour of specified pixel by casting a ray into the Scene.
         private Colour GetPixelColour(Camera camera, Scene scene, double x, double y)
         {
-            Colour colour = scene.Background;   // new Colour();
-//           Colour colour = new Colour();
+            Colour colour = scene.Background;
 
-//            Vector ray = new Vector(x, y, focalLength, true);
-            Vector ray = new Vector(x, y, 1, true);
+            //Vector ray = new Vector(x, y, 1, true);
 
-            Ray r = new Ray(vPos, ray);
+            //http://cg.skeelogy.com/depth-of-field-using-raytracing/
 
-            //Matrix m = new Matrix();
-            //m.SetLookAt(new Point(1, 0, 0), new Point(1, 0, 10));
-
-            //ray = m * ray;
-
-            HitResult hr = scene.HitTest(camera, r /*vPos, ray*/);
-            if (hr.HasEntry())
+            if (UseDepthOfField)
             {
-                colour = CalculateColour(camera, scene, ray, hr);
+                Vector viewVector = camera.GetViewVector();
+                double d = 1.0;
+                Vector viewToPixel = new Vector(x, y, 1);
+                double dtick = viewToPixel.Magnitude();
+                Vector v = viewToPixel.Normalise();
+                double f = camera.GetViewVector().Magnitude();
+
+                Point e = new Point(0.0, 0.0, 0.0);
+                Point P = e + v * (dtick / (d / (d + f)));  // Point on focal plane.
+                double aperture = 30.0;// 50.0;
+
+                //Colour sum = Palette.Black;
+
+//                Random rand = new Random(System.Threading.Thread.CurrentThread.ManagedThreadId);
+                Random rand = new Random(1234);
+
+                double sceneWidth = camera.GetSceneWidth();
+                double pixelWidth = sceneWidth / 800.0;
+
+                // Create rays from area around image pixel to P.
+                int numSamples = 20;
+                for (int i = 0; i < numSamples; i++)
+                {
+                    Point o = new Point(x, y, 1.0);
+                    Vector offset = GetVectorOnDisc(rand) * aperture * pixelWidth;
+                    o += offset;
+                    Vector dir = P - o;
+
+                    Ray r = new Ray(o, dir);
+                    HitResult hit = scene.HitTest(camera, r);
+                    if (hit.HasEntry())
+                    {
+                        colour += CalculateColour(camera, scene, dir, hit);
+                    }
+                }
+
+                colour = colour.Scale(1.0f / numSamples);
+            }
+            else
+            {
+                Point origin = new Point(0.0, 0.0, 0.0);
+                Vector dir = new Vector(x, y, 1);
+                Ray ray = new Ray(origin, dir);
+
+                HitResult hr = scene.HitTest(camera, ray);
+                if (hr.HasEntry())
+                {
+                    colour = CalculateColour(camera, scene, dir, hr);
+                }
             }
 
             return colour;
@@ -609,10 +684,6 @@ namespace RayTrace
         // Render specified block of Scene to the Canvas.
         public void Render(Camera camera, Scene scene, Canvas canvas, int startX, int startY, int numColumns, int numRows)
         {
-            //GetJitteredRay(0, new Vector(1, 1, 1, true), 10, 1);
-
-            Vector v = Aim(new Vector(1, 1, 1, true));
-
             // Calculate Scene size based on camera FOV.
             double sceneWidth = camera.GetSceneWidth();
             double sceneHeight = camera.GetSceneHeight();

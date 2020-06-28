@@ -60,5 +60,12 @@ namespace RayTrace
         {
             return 2.0 * Math.Tan(_fovHRadians / 2.0);
         }
+
+        // Return normalised Vector from camera position to viewed point.
+        public Vector GetViewVector()
+        {
+            Vector v = Target - Pos;
+            return v;//.Normalise();
+        }
     }
 }

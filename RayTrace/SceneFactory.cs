@@ -232,5 +232,40 @@ namespace RayTrace
 
             return scene;
         }
+
+        public static Scene FovDemoScene()
+        {
+            Scene scene = new Scene();
+
+            float floorHeight = -10;
+            Plane floor = new Plane(new Vector(0, 1, 0), new Point(0, floorHeight, 0), new Colour(Colors.LightGray));
+            //floor.Material.Texture = new TextureSquares(Palette.Black, Palette.White);
+            //floor.Material.Reflectivity = 0.1f;
+            scene.AddShape(floor);
+
+            Sphere sphere = new Sphere(new Point(-20, 0, 20), 10, new Colour(Colors.Orange));
+            //scene.AddShape(sphere);
+
+            sphere = new Sphere(new Point(-10, 0, 30), 10, Palette.Red);
+            scene.AddShape(sphere);
+
+            sphere = new Sphere(new Point(10, 0, 70), 10, Palette.Green);
+            scene.AddShape(sphere);
+
+            sphere = new Sphere(new Point(40, 0, 110), 10, Palette.Blue);
+            scene.AddShape(sphere);
+
+            sphere = new Sphere(new Point(80, 0, 150), 10, new Colour(Colors.Yellow));
+            scene.AddShape(sphere);
+
+            Light light = new PointLight(new Point(-50, 50, 40), 6000, Palette.White);
+            scene.AddLight(light);
+
+            light = new PointLight(new Point(0, 50, 0), 3000, Palette.White);
+            scene.AddLight(light);
+
+
+            return scene;
+        }
     }
 }

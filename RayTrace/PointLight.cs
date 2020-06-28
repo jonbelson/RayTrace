@@ -16,7 +16,7 @@ namespace RayTrace
         public PointLight(Point p, float intensity, Colour c) : base(intensity, c)
         {
             Pos = p;
-            Radius = 5;
+            Radius = 8;// 1;
         }
 
         public override Vector GetDirection(Camera camera, Point p)
