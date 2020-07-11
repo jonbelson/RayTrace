@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace RayTrace
 {
-    public class Camera
+    public class Camera : Entity
     {
         private Point _pos = new Point(0, 0, 0);
         private Point _target = new Point(0, 0, 1.0f);
@@ -15,6 +15,9 @@ namespace RayTrace
 
         public Point Pos { get { return _pos; } set { _pos = value; UpdateMatrix(); } }
         public Point Target { get { return _target; } set { _target = value; UpdateMatrix(); } }
+
+        public double DepthOfField { get; set; } = 10.0;
+        public double Aperture { get; set; } = 30.0;
 
         public double FovH {
             get => _fovHDegrees;

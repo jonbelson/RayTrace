@@ -7,19 +7,134 @@
         mc:Ignorable="d"
         Title="RayTrace" Height="800" Width="800">
     <RibbonWindow.Resources>
+
+        <local:RgbConverter x:Key="RgbConverter"></local:RgbConverter>
+        
+        <Border x:Shared="False" x:Key="EntityContent" >
+            <StackPanel>
+                <TextBlock FontWeight="Bold" Background="LightGray" Text="{Binding Path=Name}" ></TextBlock>
+                <Grid Margin="5,5,5,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="60"/>
+                        <ColumnDefinition Width="8" />
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Enabled" Grid.Row="0"></TextBlock>
+                    <CheckBox IsChecked="{Binding Path=Enabled, Mode=TwoWay}" Grid.Column="2" Grid.Row="0"></CheckBox>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <Border x:Shared="False" x:Key="PositionContent">
+            <StackPanel>
+                <Grid Margin="5,5,5,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="60"/>
+                        <ColumnDefinition Width="8" />
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Pos X" Grid.Row="0"></TextBlock>
+                    <TextBlock Text="Pos Y" Grid.Row="1"></TextBlock>
+                    <TextBlock Text="Pos Z" Grid.Row="2"></TextBlock>
+<!--                    <TextBox DataContext="{Binding Path=Pos}" Text="{Binding Path=X, Mode=TwoWay}" Grid.Column="2" Grid.Row="0"></TextBox>-->
+                    <TextBox Text="{Binding Path=Pos.X, Mode=TwoWay}" Grid.Column="2" Grid.Row="0"></TextBox>
+                    <TextBox Text="{Binding Path=Pos.Y, Mode=TwoWay}" Grid.Column="2" Grid.Row="1"></TextBox>
+                    <TextBox Text="{Binding Path=Pos.Z, Mode=TwoWay}" Grid.Column="2" Grid.Row="2"></TextBox>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+
+        <Border x:Shared="False" x:Key="ColourContent" >
+
+            <StackPanel>
+                <Grid Margin="5,5,5,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="60"/>
+                        <ColumnDefinition Width="8" />
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="Colour R" Grid.Row="0"></TextBlock>
+                    <TextBlock Text="Colour G" Grid.Row="1"></TextBlock>
+                    <TextBlock Text="Colour B" Grid.Row="2"></TextBlock>
+                    <TextBox Text="{Binding Path=Colour.Red, Mode=TwoWay}" Grid.Column="2" Grid.Row="0"></TextBox>
+                    <TextBox Text="{Binding Path=Colour.Green, Mode=TwoWay}" Grid.Column="2" Grid.Row="1"></TextBox>
+                    <TextBox Text="{Binding Path=Colour.Blue, Mode=TwoWay}" Grid.Column="2" Grid.Row="2"></TextBox>
+
+                </Grid>
+               <Rectangle Width="100" Height="16" Stroke="Black">
+                    <Rectangle.Fill>
+                    <MultiBinding Converter="{StaticResource RgbConverter}">
+                            <Binding Path="Colour.Red" ></Binding>
+                            <Binding Path="Colour.Green" ></Binding>
+                            <Binding Path="Colour.Blue" ></Binding>
+                        </MultiBinding>
+                    </Rectangle.Fill>
+                </Rectangle>
+            </StackPanel>
+        </Border>
+
+        <Border x:Shared="False" x:Key="MaterialContent" >
+
+            <StackPanel>
+                <Grid Margin="5,5,5,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="60"/>
+                        <ColumnDefinition Width="8" />
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="Roughness" Grid.Row="0"></TextBlock>
+                    <TextBlock Text="Transparency" Grid.Row="1"></TextBlock>
+                    <TextBlock Text="Reflectivity" Grid.Row="2"></TextBlock>
+                    <TextBox Text="{Binding Path=Material.Roughness, Mode=TwoWay}" Grid.Column="2" Grid.Row="0"></TextBox>
+                    <TextBox Text="{Binding Path=Material.Transparency, Mode=TwoWay}" Grid.Column="2" Grid.Row="1"></TextBox>
+                    <TextBox Text="{Binding Path=Material.Reflectivity, Mode=TwoWay}" Grid.Column="2" Grid.Row="2"></TextBox>
+
+                </Grid>
+            </StackPanel>
+        </Border>
+
+<!--
         <DataTemplate x:Key="EntityTemplate">
             <StackPanel>
                 <TextBlock FontWeight="Bold" Background="LightGray" Text="{Binding Path=Name}" ></TextBlock>
                 <CheckBox IsChecked="{Binding Path=Enabled}">Enabled</CheckBox>
             </StackPanel>
         </DataTemplate>
-        <DataTemplate x:Key="SphereTemplate">
+-->        
+        
+        <DataTemplate x:Key="CameraTemplate">
             <StackPanel>
                 <TextBlock FontWeight="Bold" Background="LightGray" Text="{Binding Path=Name}" ></TextBlock>
+                <ContentPresenter Content="{StaticResource PositionContent}"></ContentPresenter>
                 <StackPanel>
                     <Grid Margin="5">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="60"/>
+                            <ColumnDefinition Width="8" />
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
@@ -27,7 +142,70 @@
                             <RowDefinition />
                             <RowDefinition />
                             <RowDefinition />
-                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Target" Grid.Row="0"></TextBlock>
+                        <TextBlock Text="FovH" Grid.Row="1"></TextBlock>
+                        <TextBlock Text="DoF" Grid.Row="2"></TextBlock>
+                        <TextBlock Text="Aperture" Grid.Row="3"></TextBlock>
+
+                        <TextBlock Text="{Binding Path=Target}" Grid.Column="2" Grid.Row="0"></TextBlock>
+                        <TextBox Text="{Binding Path=FovH, Mode=TwoWay}" Grid.Column="2" Grid.Row="1"></TextBox>
+                        <TextBox Text="{Binding Path=DepthOfField, Mode=TwoWay}" Grid.Column="2" Grid.Row="2"></TextBox>
+                        <TextBox Text="{Binding Path=Aperture, Mode=TwoWay}" Grid.Column="2" Grid.Row="3"></TextBox>
+                    </Grid>
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+
+
+        <Border x:Shared="False" x:Key="ShapeContent" >
+            <StackPanel>
+                <ContentPresenter Content="{StaticResource EntityContent}"></ContentPresenter>
+                <ContentPresenter Content="{StaticResource PositionContent}"></ContentPresenter>
+                <ContentPresenter Content="{StaticResource MaterialContent}"></ContentPresenter>
+            </StackPanel>
+        </Border>
+
+<!--
+        <DataTemplate x:Key="ShapeTemplate">
+            <StackPanel>
+                <ContentPresenter Content="{StaticResource PositionContent}"></ContentPresenter>
+                <ContentPresenter Content="{StaticResource MaterialContent}"></ContentPresenter>
+
+                <Grid Margin="5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="60"/>
+                        <ColumnDefinition Width="8" />
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Material" Grid.Row="0"></TextBlock>
+                    <TextBlock Text="Texture" Grid.Row="1"></TextBlock>
+
+                    <TextBlock Text="{Binding Path=Material.Texture}" Grid.Column="2" Grid.Row="1"></TextBlock>
+                </Grid>
+
+            </StackPanel>
+        </DataTemplate>
+-->        
+        
+        <DataTemplate x:Key="SphereTemplate">
+            <StackPanel>
+
+                <ContentPresenter Content="{StaticResource ShapeContent}"></ContentPresenter>
+
+                <StackPanel>
+                    <Grid Margin="5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="60"/>
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
  <!--                   <StackPanel.Style>
@@ -41,110 +219,95 @@
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </StackPanel.Style>-->
-                        <TextBlock Text="Enabled" Grid.Row="0"></TextBlock>
-                        <TextBlock Text="Pos" Grid.Row="1"></TextBlock>
-                        <TextBlock Text="Radius" Grid.Row="2"></TextBlock>
-                        <TextBlock Text="Material" Grid.Row="3"></TextBlock>
-                        <TextBlock Text="Texture" Grid.Row="4"></TextBlock>
-                        <CheckBox IsChecked="{Binding Path=Enabled, Mode=TwoWay}" Grid.Column="1" Grid.Row="0"></CheckBox>
-                        <TextBlock Text="{Binding Path=Pos}" Grid.Column="1" Grid.Row="1"></TextBlock>
-                        <TextBlock Text="{Binding Path=Radius}" Grid.Column="1" Grid.Row="2"></TextBlock>
-                        <TextBlock Text="{Binding Path=Material}" Grid.Column="1" Grid.Row="3"></TextBlock>
-                        <TextBlock Text="{Binding Path=Material.Texture}" Grid.Column="1" Grid.Row="4"></TextBlock>
+                    </StackPanel.Style>
+-->
+                        <TextBlock Text="Radius" Grid.Row="0"></TextBlock>
+                        <TextBox Text="{Binding Path=Radius, Mode=TwoWay}" Grid.Column="2" Grid.Row="0"></TextBox>
                     </Grid>
                 </StackPanel>
             </StackPanel>
         </DataTemplate>
+        
+        
         <DataTemplate x:Key="PlaneTemplate">
             <StackPanel>
-                <TextBlock FontWeight="Bold" Background="LightGray" Text="{Binding Path=Name}" ></TextBlock>
+
+                <ContentPresenter Content="{StaticResource ShapeContent}"></ContentPresenter>
+
                 <StackPanel>
                     <Grid Margin="5">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="60"/>
+                            <ColumnDefinition Width="8" />
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition />
-                            <RowDefinition />
-                            <RowDefinition />
-                            <RowDefinition />
                         </Grid.RowDefinitions>
-                        <TextBlock Text="Enabled" Grid.Row="0"></TextBlock>
-                        <TextBlock Text="Pos" Grid.Row="1"></TextBlock>
-                        <TextBlock Text="Normal" Grid.Row="2"></TextBlock>
-                        <TextBlock Text="Material" Grid.Row="3"></TextBlock>
-                        <TextBlock Text="Texture" Grid.Row="4"></TextBlock>
+                        <TextBlock Text="Normal" Grid.Row="0"></TextBlock>
+                        <TextBlock Text="Texture" Grid.Row="2"></TextBlock>
 
-                        <CheckBox IsChecked="{Binding Path=Enabled, Mode=TwoWay}" Grid.Column="1" Grid.Row="0"></CheckBox>
-                        <TextBlock Text="{Binding Path=Pos}" Grid.Column="1" Grid.Row="1"></TextBlock>
-                        <TextBlock Text="{Binding Path=Normal}" Grid.Column="1" Grid.Row="2"></TextBlock>
-                        <TextBlock Text="{Binding Path=Material}" Grid.Column="1" Grid.Row="3"></TextBlock>
-                        <TextBlock Text="{Binding Path=Material.Texture}" Grid.Column="1" Grid.Row="4"></TextBlock>
+                        <TextBlock Text="{Binding Path=Normal}" Grid.Column="2" Grid.Row="0"></TextBlock>
+                        <TextBlock Text="{Binding Path=Material.Texture}" Grid.Column="2" Grid.Row="1"></TextBlock>
                     </Grid>
                 </StackPanel>                
             </StackPanel>
         </DataTemplate>
+
+        
         <DataTemplate x:Key="PointLightTemplate">
             <StackPanel>
-                <TextBlock FontWeight="Bold" Background="LightGray" Text="{Binding Path=Name}" ></TextBlock>
+
+                <ContentPresenter Content="{StaticResource EntityContent}"></ContentPresenter>
+                <ContentPresenter Content="{StaticResource PositionContent}"></ContentPresenter>
+                <ContentPresenter Content="{StaticResource ColourContent}"></ContentPresenter>
+
                 <StackPanel>
                     <Grid Margin="5">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="60"/>
+                            <ColumnDefinition Width="8" />
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition />
-                            <RowDefinition />
-                            <RowDefinition />
                         </Grid.RowDefinitions>
-                        <TextBlock Text="Enabled" Grid.Row="0"></TextBlock>
-                        <TextBlock Text="Pos" Grid.Row="1"></TextBlock>
-                        <TextBlock Text="Colour" Grid.Row="2"></TextBlock>
                         <TextBlock Text="Intensity" Grid.Row="3"></TextBlock>
 
-                        <CheckBox IsChecked="{Binding Path=Enabled, Mode=TwoWay}" Grid.Column="1" Grid.Row="0"></CheckBox>
-                        <TextBlock Text="{Binding Path=Pos}" Grid.Column="1" Grid.Row="1"></TextBlock>
-                        <TextBlock Text="{Binding Path=Colour}" Grid.Column="1" Grid.Row="2"></TextBlock>
-                        <TextBlock Text="{Binding Path=Intensity}" Grid.Column="1" Grid.Row="3"></TextBlock>
+                        <TextBox Text="{Binding Path=Intensity, Mode=TwoWay}" Grid.Column="2" Grid.Row="3"></TextBox>
                     </Grid>
                 </StackPanel>
             </StackPanel>
         </DataTemplate>
+        
+        
         <DataTemplate x:Key="SpotLightTemplate">
             <StackPanel>
-                <TextBlock FontWeight="Bold" Background="LightGray" Text="{Binding Path=Name}" ></TextBlock>
+
+                <ContentPresenter Content="{StaticResource EntityContent}"></ContentPresenter>
+                <ContentPresenter Content="{StaticResource PositionContent}"></ContentPresenter>
+                <ContentPresenter Content="{StaticResource ColourContent}"></ContentPresenter>
+
                 <StackPanel>
                     <Grid Margin="5">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="8" />
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition />
                             <RowDefinition />
-                            <RowDefinition />
-                            <RowDefinition />
-                            <RowDefinition />
                         </Grid.RowDefinitions>
-                        <TextBlock Text="Enabled" Grid.Row="0"></TextBlock>
-                        <TextBlock Text="Pos" Grid.Row="1"></TextBlock>
-                        <TextBlock Text="Direction" Grid.Row="2"></TextBlock>
-                        <TextBlock Text="Width" Grid.Row="3"></TextBlock>
-                        <TextBlock Text="Colour" Grid.Row="4"></TextBlock>
-                        <TextBlock Text="Intensity" Grid.Row="5"></TextBlock>
+                        <TextBlock Text="Direction" Grid.Row="0"></TextBlock>
+                        <TextBlock Text="Width" Grid.Row="1"></TextBlock>
+                        <TextBlock Text="Intensity" Grid.Row="2"></TextBlock>
 
-                        <CheckBox IsChecked="{Binding Path=Enabled, Mode=TwoWay}" Grid.Column="1" Grid.Row="0"></CheckBox>
-                        <TextBlock Text="{Binding Path=Pos}" Grid.Column="1" Grid.Row="1"></TextBlock>
-                        <TextBlock Text="{Binding Path=Direction}" Grid.Column="1" Grid.Row="2"></TextBlock>
-                        <TextBlock Text="{Binding Path=Width}" Grid.Column="1" Grid.Row="3"></TextBlock>
-                        <TextBlock Text="{Binding Path=Colour}" Grid.Column="1" Grid.Row="4"></TextBlock>
-                        <TextBlock Text="{Binding Path=Intensity}" Grid.Column="1" Grid.Row="5"></TextBlock>
+                        <TextBlock Text="{Binding Path=Direction}" Grid.Column="2" Grid.Row="0"></TextBlock>
+                        <TextBox Text="{Binding Path=Width, Mode=TwoWay}" Grid.Column="2" Grid.Row="1"></TextBox>
+                        <TextBox Text="{Binding Path=Intensity, Mode=TwoWay}" Grid.Column="2" Grid.Row="2"></TextBox>
                     </Grid>
                 </StackPanel>
             </StackPanel>
@@ -243,7 +406,7 @@
             <Button x:Name="buttonRender" Content="Render" VerticalAlignment="Bottom" HorizontalAlignment="Center" Width="75" DockPanel.Dock="Bottom" Click="buttonRender_Click" Margin="0,8,0,0"/>
             <ListBox x:Name="listBox" MinHeight="100" VerticalAlignment="Stretch" MinWidth="120" ItemsSource="{Binding Entities, ElementName=window, Mode=TwoWay}">
                 <ListBox.ItemTemplateSelector>
-                    <local:EntityTemplateSelector SphereTemplate="{StaticResource SphereTemplate}" PlaneTemplate="{StaticResource PlaneTemplate}" PointLightTemplate="{StaticResource PointLightTemplate}" SpotLightTemplate="{StaticResource SpotLightTemplate}">
+                    <local:EntityTemplateSelector CameraTemplate="{StaticResource CameraTemplate}" SphereTemplate="{StaticResource SphereTemplate}" PlaneTemplate="{StaticResource PlaneTemplate}" PointLightTemplate="{StaticResource PointLightTemplate}" SpotLightTemplate="{StaticResource SpotLightTemplate}">
                         
                     </local:EntityTemplateSelector>
                 </ListBox.ItemTemplateSelector>

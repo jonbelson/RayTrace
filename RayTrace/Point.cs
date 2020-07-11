@@ -1,21 +1,22 @@
 ﻿using System;
+using System.Collections.Specialized;
+using System.ComponentModel;
+
 namespace RayTrace
 {
     // Represent a point in 3D space.
-    public struct Point
+    public class /*struct*/ Point
     {
-        public double X { get; set; }
+        [NotifyParentProperty(true)]
+        public double X { get ;set; }
+        [NotifyParentProperty(true)]
         public double Y { get; set; }
+        [NotifyParentProperty(true)]
         public double Z { get; set; }
 
-        //public Point() : this(0.0, 0.0, 0.0) { }
+        public Point() : this(0.0, 0.0, 0.0) { }
 
         public Point(double x, double y, double z) => (X, Y, Z) = (x, y, z);
-        //{
-        //    X = x;
-        //    Y = y;
-        //    Z = z;
-        //}
 
         public Point Scale(double scale) => new Point(X * scale, Y * scale, Z * scale);
         //{

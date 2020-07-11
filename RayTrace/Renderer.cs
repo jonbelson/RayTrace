@@ -10,7 +10,7 @@ namespace RayTrace
     // Negative Z axis towards observer.
     public class Renderer
     {
-        public enum AntiAliasType { None, SuperSampling, AdaptiveSupersampling }
+        public enum AntiAliasType { None, NoiseGrid, SuperSampling, AdaptiveSupersampling }
 
         // Distance of observer along Z axis.
         //private double focalLength = 500.0;
@@ -23,7 +23,7 @@ namespace RayTrace
         public bool UsePhong { set; get; } = true;
         public bool UseReflections { get; set; } = true;
         public bool UseRefraction { get; set; } = true;
-        public bool UseSoftShadows { get; set; } = true;
+        public bool UseSoftShadows { get; set; } = false;//true;
         public bool UseDepthOfField { get; set; } = true;
 
         public AntiAliasType AntiAlias { get; set; } = AntiAliasType.None;
@@ -632,11 +632,11 @@ namespace RayTrace
                 Vector viewToPixel = new Vector(x, y, 1);
                 double dtick = viewToPixel.Magnitude();
                 Vector v = viewToPixel.Normalise();
-                double f = camera.GetViewVector().Magnitude();
+                double f = camera.DepthOfField; // camera.GetViewVector().Magnitude();
 
                 Point e = new Point(0.0, 0.0, 0.0);
                 Point P = e + v * (dtick / (d / (d + f)));  // Point on focal plane.
-                double aperture = 30.0;// 50.0;
+                double aperture = camera.Aperture;
 
                 //Colour sum = Palette.Black;
 
@@ -647,7 +647,8 @@ namespace RayTrace
                 double pixelWidth = sceneWidth / 800.0;
 
                 // Create rays from area around image pixel to P.
-                int numSamples = 20;
+                int numSamples = (int)aperture;
+                if (numSamples == 0) numSamples = 1;
                 for (int i = 0; i < numSamples; i++)
                 {
                     Point o = new Point(x, y, 1.0);
@@ -721,6 +722,20 @@ namespace RayTrace
                     if (AntiAlias == AntiAliasType.None)
                     {
                         Colour colour = GetPixelColour(camera, scene, sceneX + sceneStepX / 2, sceneY - sceneStepY / 2);
+                        colour.Clamp();
+                        canvas.Set(w, h, colour.ToRGB());
+                    }
+                    else if (AntiAlias == AntiAliasType.NoiseGrid)
+                    {
+                        Random rand = new Random(1234);
+                        double[,] grid = SampleGrid.GetOffsetGrid(rand, 5);
+                        Colour colour = Palette.Black;
+                        for (int i=0; i<grid.GetLength(0); i++)
+                        {
+                            colour += GetPixelColour(camera, scene, sceneX + sceneStepX*grid[i, 0], sceneY - sceneStepY*grid[i, 1]);
+
+                        }
+                        colour = colour.Scale(1.0f/grid.GetLength(0));
                         colour.Clamp();
                         canvas.Set(w, h, colour.ToRGB());
                     }

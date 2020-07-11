@@ -10,6 +10,7 @@ namespace RayTrace
 {
     public class EntityTemplateSelector : DataTemplateSelector
     {
+        public DataTemplate CameraTemplate { get; set; }
         public DataTemplate SphereTemplate { get; set; }
         public DataTemplate PlaneTemplate { get; set; }
         public DataTemplate PointLightTemplate { get; set; }
@@ -19,6 +20,7 @@ namespace RayTrace
         {
             Entity entity = (Entity)item;
 
+            if (entity is Camera) return CameraTemplate;
             if (entity is Sphere) return SphereTemplate;
             if (entity is Plane) return PlaneTemplate;
             if (entity is SpotLight) return SpotLightTemplate;

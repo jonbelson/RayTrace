@@ -1,4 +1,6 @@
 ﻿using System;
+using System.ComponentModel;
+
 namespace RayTrace
 {
     public class HitResult
@@ -35,6 +37,7 @@ namespace RayTrace
     {
         protected double noiseRange = Perlin.GetRange();
 
+        [NotifyParentProperty(true)]
         public Point Pos { get; set; }
         public Material Material { get; set; }
 

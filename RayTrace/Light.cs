@@ -1,9 +1,12 @@
 ﻿using System;
+using System.ComponentModel;
+
 namespace RayTrace
 {
     public abstract class Light : Entity
     {
         public float Intensity { get; set; }        // 'Brightness' of light.
+        [NotifyParentProperty(true)]
         public Colour Colour { get; set; }          // Base colour
 
         public Colour Output { get { return Colour * Intensity; }  }    // Combined colour and intensity.

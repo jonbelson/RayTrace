@@ -12,6 +12,8 @@ namespace RayTrace
         /*private*/ public List<Shape> Shapes = new List<Shape>();
         /*private*/ public List<Light> Lights = new List<Light>();
 
+        public Camera Camera { get; set; } = new Camera(new Point(0, 0, 0), new Point(0 ,0, 1));
+
         public Colour Ambient { get; set; } = new Colour(0.2f, 0.2f, 0.2f);
 
         public Colour Background { get; set; } = Palette.Black;

@@ -74,6 +74,8 @@
     <Compile Include="Ray.cs" />
     <Compile Include="Refraction.cs" />
     <Compile Include="Renderer.cs" />
+    <Compile Include="RgbConverter.cs" />
+    <Compile Include="SampleGrid.cs" />
     <Compile Include="Scene.cs" />
     <Compile Include="SceneFactory.cs" />
     <Compile Include="Shape.cs" />

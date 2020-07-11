@@ -82,7 +82,7 @@ namespace RayTrace
         //public List<RenderDirection> renderDirecton = new List<RenderDirection>() { RenderDirection.TopToBottom, RenderDirection.Diagonal, RenderDirection.CentreOut };
         public RenderDirection[] RenderDirections { get { return renderDirection; } }
 
-        private readonly List<Renderer.AntiAliasType> antiAlias = new List<Renderer.AntiAliasType>() { Renderer.AntiAliasType.None, Renderer.AntiAliasType.SuperSampling, Renderer.AntiAliasType.AdaptiveSupersampling };
+        private readonly List<Renderer.AntiAliasType> antiAlias = new List<Renderer.AntiAliasType>() { Renderer.AntiAliasType.None, Renderer.AntiAliasType.NoiseGrid, Renderer.AntiAliasType.SuperSampling, Renderer.AntiAliasType.AdaptiveSupersampling };
         public List<Renderer.AntiAliasType> AntiAliasType { get { return antiAlias; } }
 
 //        public List<Entity> Entities { get; set; }
@@ -153,6 +153,9 @@ namespace RayTrace
         {
             InitializeComponent();
 
+//            SampleGrid.GetGrid(new Random(), 20);
+            //SampleGrid.GetOffsetGrid(new Random(), 20);
+
             checkBoxAmbient.IsChecked = renderer.UseAmbient;
             checkBoxLighting.IsChecked = renderer.UseDiffuse;
             checkBoxPhong.IsChecked = renderer.UsePhong;
@@ -182,6 +185,7 @@ namespace RayTrace
             //Entities = new List<Entity>();
             //Entities = new ObservableCollection<Entity>();
             //listView.ItemsSource = null;
+            Entities.Add(scene.Camera);
             foreach (var light in scene.Lights)
             {
                 Entities.Add(light);
@@ -303,7 +307,7 @@ namespace RayTrace
             //Camera camera = new Camera(new Point(0, 10, 0), new Point(0, 0, 40));
             //Camera camera = new Camera(new Point(10, 5, 0), new Point(0, 0, 40));
 
-            Camera camera = new Camera(new Point(0, 0, 0), new Point(0, 0, 8));
+//            Camera camera = new Camera(new Point(0, 0, 0), new Point(0, 0, 8));
             //Camera camera = new Camera(new Point(0, 10, 0), new Point(0, 0, 10));
 
             //Camera camera = new Camera(new Point(0, 40, 0), new Point(0, 0, 40));
@@ -323,7 +327,7 @@ namespace RayTrace
                 {
                     //int idx = i;
                     Console.WriteLine($"Starting Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...");
-                    renderer.Render(camera, scene, canvas, rb.StartX, rb.StartY, rb.Width, rb.Height);
+                    renderer.Render(scene.Camera, scene, canvas, rb.StartX, rb.StartY, rb.Width, rb.Height);
                     Console.WriteLine($"Done Task {idx}...");
 
                     this.Dispatcher.Invoke(DispatcherPriority.Normal,

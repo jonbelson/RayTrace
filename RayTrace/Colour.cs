@@ -1,21 +1,27 @@
 ﻿using System;
+using System.ComponentModel;
+
 namespace RayTrace
 {
     public class Palette
     {
-        public static Colour Red = new Colour(1.0f, 0.0f, 0.0f);
-        public static Colour Green = new Colour(0.0f, 1.0f, 0.0f);
-        public static Colour Blue = new Colour(0.0f, 0.0f, 1.0f);
-        public static Colour White = new Colour(1.0f, 1.0f, 1.0f);
-        public static Colour Black = new Colour(0.0f, 0.0f, 0.0f);
-        public static Colour Grey = new Colour(0.7f, 0.7f, 0.7f);
+        public static Colour Red { get { return new Colour(1.0f, 0.0f, 0.0f); } } 
+        public static Colour Green { get { return new Colour(0.0f, 1.0f, 0.0f); } }
+        public static Colour Blue { get { return new Colour(0.0f, 0.0f, 1.0f); } }
+        public static Colour White { get { return new Colour(1.0f, 1.0f, 1.0f); } }
+        public static Colour Black { get { return new Colour(0.0f, 0.0f, 0.0f); } }
+        public static Colour Grey { get { return new Colour(0.7f, 0.7f, 0.7f); } }
     }
 
     public class Colour
     {
+        [NotifyParentProperty(true)]
         public float Red { get; set; }
+        [NotifyParentProperty(true)]
         public float Blue { get; set; }
+        [NotifyParentProperty(true)]
         public float Green { get; set; }
+
         //public float Alpha { get; set; }
 
         public Colour(System.Windows.Media.Color color) : this(color.ScR, color.ScG, color.ScB)
