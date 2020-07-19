@@ -270,5 +270,24 @@ namespace RayTrace
 
             return scene;
         }
+
+        public static Scene ModelScene()
+        {
+            Scene scene = new Scene();
+
+            Model model = new Model(new Point(0.0, 0.0, 0.0));
+            scene.AddShape(model);
+
+            float floorHeight = -10;
+            Plane floor = new Plane(new Vector(0, 1, 0), new Point(0, floorHeight, 0), new Colour(Colors.LightGray));
+            //floor.Material.Texture = new TextureSquares(Palette.Black, Palette.White);
+            //floor.Material.Reflectivity = 0.1f;
+            scene.AddShape(floor);
+
+            Light light = new PointLight(new Point(-50, 50, 40), 6000, Palette.White);
+            scene.AddLight(light);
+
+            return scene;
+        }
     }
 }

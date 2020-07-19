@@ -259,12 +259,9 @@
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition />
                         </Grid.RowDefinitions>
-                        <TextBlock Text="Normal" Grid.Row="0"></TextBlock>
                         <TextBlock Text="Texture" Grid.Row="2"></TextBlock>
 
-                        <TextBlock Text="{Binding Path=Normal}" Grid.Column="2" Grid.Row="0"></TextBlock>
                         <TextBlock Text="{Binding Path=Material.Texture}" Grid.Column="2" Grid.Row="1"></TextBlock>
                     </Grid>
                 </StackPanel>                

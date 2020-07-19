@@ -24,7 +24,7 @@ namespace RayTrace
         public bool UseReflections { get; set; } = true;
         public bool UseRefraction { get; set; } = true;
         public bool UseSoftShadows { get; set; } = false;//true;
-        public bool UseDepthOfField { get; set; } = true;
+        public bool UseDepthOfField { get; set; } = false;//true;
 
         public AntiAliasType AntiAlias { get; set; } = AntiAliasType.None;
 
@@ -279,7 +279,7 @@ namespace RayTrace
                     HitResult hr = scene.HitTest(camera, ray2);
                     if (hr.HasEntry())
                     {
-                        Debug.Assert(hr.shape is Sphere);
+                        //Debug.Assert(hr.shape is Sphere);
 
                         numUnblockedRays--;
                         totalNumUnblockedRays--;

@@ -22,7 +22,6 @@ namespace RayTrace
             double B = vNormal.J;
             double C = vNormal.K;
 
-
             // Since Ax + By + Cz + D = 0...
             double D = -(A * vPos.X + B * vPos.Y + C * vPos.Z);
 
