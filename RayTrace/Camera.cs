@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,7 +14,9 @@ namespace RayTrace
         private double _fovHRadians;
         private double _fovHDegrees;
 
+        [NotifyParentProperty(true)]
         public Point Pos { get { return _pos; } set { _pos = value; UpdateMatrix(); } }
+        [NotifyParentProperty(true)]
         public Point Target { get { return _target; } set { _target = value; UpdateMatrix(); } }
 
         public double DepthOfField { get; set; } = 10.0;
@@ -34,7 +37,7 @@ namespace RayTrace
         // Matrix for transforming World normals to View.
         public Matrix NormalMatrix { get; set; } = new Matrix();
 
-        private void UpdateMatrix()
+        /*private*/ public  void UpdateMatrix()
         {
             WorldToView.SetLookAt(_pos, _target);
 

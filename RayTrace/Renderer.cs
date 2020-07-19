@@ -251,7 +251,9 @@ namespace RayTrace
         {
             Random rand = new Random(123456);
 
-            Vector L = light.Pos - pos;
+            Point lightPos = camera.WorldToView * light.Pos;
+
+            Vector L = lightPos - pos;
             double distance = L.Magnitude();
             L = L.Normalise();
 
@@ -402,9 +404,9 @@ namespace RayTrace
                     else
                     {
                         Point pos = hr.Entry;
-                        Point pos2 = camera.WorldToView * pointLight.Pos;
+                        Point lightPos = camera.WorldToView * pointLight.Pos;
 
-                        HitResult hitResult = scene.HitTest(camera, pos, pos2);
+                        HitResult hitResult = scene.HitTest(camera, pos, lightPos);
                         if (hitResult.HasEntry())
                         {
                             continue;
@@ -491,9 +493,9 @@ namespace RayTrace
         }
 
         // Render entire Scene to the Canvas.
-        public void Render(Camera camera, Scene scene, Canvas canvas)
+        public void Render(Scene scene, Canvas canvas)
         {
-            Render(camera, scene, canvas, 0, 0, canvas.Width, canvas.Height);
+            Render(scene, canvas, 0, 0, canvas.Width, canvas.Height);
         }
 
         struct SubSample
@@ -655,7 +657,7 @@ namespace RayTrace
                     Vector offset = GetVectorOnDisc(rand) * aperture * pixelWidth;
                     o += offset;
                     Vector dir = P - o;
-
+                    dir = dir.Normalise();
                     Ray r = new Ray(o, dir);
                     HitResult hit = scene.HitTest(camera, r);
                     if (hit.HasEntry())
@@ -683,8 +685,10 @@ namespace RayTrace
         }
 
         // Render specified block of Scene to the Canvas.
-        public void Render(Camera camera, Scene scene, Canvas canvas, int startX, int startY, int numColumns, int numRows)
+        public void Render(Scene scene, Canvas canvas, int startX, int startY, int numColumns, int numRows)
         {
+            Camera camera = scene.Camera;
+
             // Calculate Scene size based on camera FOV.
             double sceneWidth = camera.GetSceneWidth();
             double sceneHeight = camera.GetSceneHeight();
@@ -722,6 +726,7 @@ namespace RayTrace
                     if (AntiAlias == AntiAliasType.None)
                     {
                         Colour colour = GetPixelColour(camera, scene, sceneX + sceneStepX / 2, sceneY - sceneStepY / 2);
+                        colour = colour.Exposure(1.2f);
                         colour.Clamp();
                         canvas.Set(w, h, colour.ToRGB());
                     }

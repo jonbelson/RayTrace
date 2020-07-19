@@ -194,24 +194,22 @@ namespace RayTrace
             {
                 Entities.Add(shape);
             }
+
             //listView.ItemsSource = Entities;
+        }
 
-            /*
-            TreeViewItem item = new TreeViewItem();
-            item.Header = "Lights";
-            treeView.Items.Add(item);
-            foreach (var light in scene.Lights)
+        private void RenderPoint(int x, int y)
+        {
+            if (canvas != null)
             {
-                item.Items.Add(new TreeViewItem() { Header=light.ToString() });
-            }
+                x = Math.Min(x, canvas.Width - 1);
+                y = Math.Min(y, canvas.Height - 1);
 
-            item = new TreeViewItem() { Header = "Shapes" };
-            treeView.Items.Add(item);
-            foreach (var shape in scene.Shapes)
-            {
-                item.Items.Add(new TreeViewItem() { Header = shape.ToString() });
+                x = Math.Max(x, 0);
+                y = Math.Max(y, 0);
+
+                renderer.Render(scene, canvas, x, y, 1, 1);
             }
-            */
         }
 
         private async Task<bool> Render()
@@ -303,18 +301,7 @@ namespace RayTrace
                 case RenderDirection.TopToBottom:  /* The default */ break;
             }
 
-//            Camera camera = new Camera(new Point(0, 10, 0), new Point(0, 0, 10));
-            //Camera camera = new Camera(new Point(0, 10, 0), new Point(0, 0, 40));
-            //Camera camera = new Camera(new Point(10, 5, 0), new Point(0, 0, 40));
-
-//            Camera camera = new Camera(new Point(0, 0, 0), new Point(0, 0, 8));
-            //Camera camera = new Camera(new Point(0, 10, 0), new Point(0, 0, 10));
-
-            //Camera camera = new Camera(new Point(0, 40, 0), new Point(0, 0, 40));
-            //            Camera camera = new Camera(new Point(80, 10, 40), new Point(0, 0, 40));
-            //            Camera camera = new Camera(new Point(80, 40, 50), new Point(0, 0, 50));
-            //                        Camera camera = new Camera(new Point(40, 0, 40), new Point(0, 0, 40));
-            //            Camera camera = new Camera(new Point(40, 0, 20), new Point(0, 0, 40));
+            scene.Camera.UpdateMatrix();
 
             List<Task> tasks = new List<Task>();
 
@@ -327,7 +314,7 @@ namespace RayTrace
                 {
                     //int idx = i;
                     Console.WriteLine($"Starting Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...");
-                    renderer.Render(scene.Camera, scene, canvas, rb.StartX, rb.StartY, rb.Width, rb.Height);
+                    renderer.Render(scene, canvas, rb.StartX, rb.StartY, rb.Width, rb.Height);
                     Console.WriteLine($"Done Task {idx}...");
 
                     this.Dispatcher.Invoke(DispatcherPriority.Normal,
@@ -420,6 +407,28 @@ namespace RayTrace
         {
             Renderer.AntiAliasType antiAlias = (Renderer.AntiAliasType)comboBoxAntiAlias.SelectedItem;
             textBoxAdaptiveSubSamplingDepth.IsEnabled = antiAlias == Renderer.AntiAliasType.AdaptiveSupersampling;
+        }
+
+        private void image_MouseMove(object sender, MouseEventArgs e)
+        {
+            //sender;
+            var pos = e.GetPosition(image /*(IInputElement) sender*/);
+
+            var x = bitmap.PixelWidth * pos.X / image.ActualWidth;
+            var y = bitmap.PixelHeight* pos.Y / image.ActualHeight;
+
+            Console.WriteLine(x + ", " + y);
+            //Console.WriteLine(Mouse.GetPosition());
+        }
+
+        private void image_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            var pos = e.GetPosition(image /*(IInputElement) sender*/);
+
+            var x = bitmap.PixelWidth * pos.X / image.ActualWidth;
+            var y = bitmap.PixelHeight * pos.Y / image.ActualHeight;
+
+            RenderPoint((int) x, (int) y);
         }
     }
 }

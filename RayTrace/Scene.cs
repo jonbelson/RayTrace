@@ -1,6 +1,7 @@
 ﻿using System;
 
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace RayTrace
 {
@@ -9,10 +10,11 @@ namespace RayTrace
         // Size 
         //public int Size { get; }
 
-        /*private*/ public List<Shape> Shapes = new List<Shape>();
-        /*private*/ public List<Light> Lights = new List<Light>();
+        public List<Shape> Shapes = new List<Shape>();
+        public List<Light> Lights = new List<Light>();
 
-        public Camera Camera { get; set; } = new Camera(new Point(0, 0, 0), new Point(0 ,0, 1));
+        [NotifyParentProperty(true)]
+        public Camera Camera { get; /*set;*/ } = new Camera(new Point(0, 0, 0), new Point(0, 0, 1));
 
         public Colour Ambient { get; set; } = new Colour(0.2f, 0.2f, 0.2f);
 

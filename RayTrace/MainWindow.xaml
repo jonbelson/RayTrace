@@ -9,10 +9,8 @@
     <RibbonWindow.Resources>
 
         <local:RgbConverter x:Key="RgbConverter"></local:RgbConverter>
-        
-        <Border x:Shared="False" x:Key="EntityContent" >
-            <StackPanel>
-                <TextBlock FontWeight="Bold" Background="LightGray" Text="{Binding Path=Name}" ></TextBlock>
+
+        <Border x:Shared="False" x:Key="EntityContent" Width="{Binding ElementName=listBox, Path=Width}">
                 <Grid Margin="5,5,5,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="60"/>
@@ -24,10 +22,10 @@
                         <RowDefinition />
                         <RowDefinition />
                     </Grid.RowDefinitions>
-                    <TextBlock Text="Enabled" Grid.Row="0"></TextBlock>
-                    <CheckBox IsChecked="{Binding Path=Enabled, Mode=TwoWay}" Grid.Column="2" Grid.Row="0"></CheckBox>
+                    <TextBlock FontWeight="Bold" Background="LightGray" Text="{Binding Path=Name}" Grid.Row="0" Grid.ColumnSpan="3"></TextBlock>
+                    <TextBlock Text="Enabled" Grid.Row="1"></TextBlock>
+                    <CheckBox IsChecked="{Binding Path=Enabled, Mode=TwoWay}" Grid.Column="2" Grid.Row="1"></CheckBox>
                 </Grid>
-            </StackPanel>
         </Border>
 
         <Border x:Shared="False" x:Key="PositionContent">
@@ -46,7 +44,6 @@
                     <TextBlock Text="Pos X" Grid.Row="0"></TextBlock>
                     <TextBlock Text="Pos Y" Grid.Row="1"></TextBlock>
                     <TextBlock Text="Pos Z" Grid.Row="2"></TextBlock>
-<!--                    <TextBox DataContext="{Binding Path=Pos}" Text="{Binding Path=X, Mode=TwoWay}" Grid.Column="2" Grid.Row="0"></TextBox>-->
                     <TextBox Text="{Binding Path=Pos.X, Mode=TwoWay}" Grid.Column="2" Grid.Row="0"></TextBox>
                     <TextBox Text="{Binding Path=Pos.Y, Mode=TwoWay}" Grid.Column="2" Grid.Row="1"></TextBox>
                     <TextBox Text="{Binding Path=Pos.Z, Mode=TwoWay}" Grid.Column="2" Grid.Row="2"></TextBox>
@@ -54,6 +51,51 @@
             </StackPanel>
         </Border>
 
+        <Border x:Shared="False" x:Key="TargetContent">
+            <StackPanel>
+                <Grid Margin="5,5,5,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="60"/>
+                        <ColumnDefinition Width="8" />
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Target X" Grid.Row="0"></TextBlock>
+                    <TextBlock Text="Target Y" Grid.Row="1"></TextBlock>
+                    <TextBlock Text="Target Z" Grid.Row="2"></TextBlock>
+                    <TextBox Text="{Binding Path=Target.X, Mode=TwoWay}" Grid.Column="2" Grid.Row="0"></TextBox>
+                    <TextBox Text="{Binding Path=Target.Y, Mode=TwoWay}" Grid.Column="2" Grid.Row="1"></TextBox>
+                    <TextBox Text="{Binding Path=Target.Z, Mode=TwoWay}" Grid.Column="2" Grid.Row="2"></TextBox>
+                </Grid>
+            </StackPanel>
+        </Border>
+        
+        <Border x:Shared="False" x:Key="NormalContent">
+            <StackPanel>
+                <Grid Margin="5,5,5,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="60"/>
+                        <ColumnDefinition Width="8" />
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Vector I" Grid.Row="0"></TextBlock>
+                    <TextBlock Text="Vector J" Grid.Row="1"></TextBlock>
+                    <TextBlock Text="Vector K" Grid.Row="2"></TextBlock>
+                    <TextBox Text="{Binding Path=Normal.I, Mode=TwoWay}" Grid.Column="2" Grid.Row="0"></TextBox>
+                    <TextBox Text="{Binding Path=Normal.J, Mode=TwoWay}" Grid.Column="2" Grid.Row="1"></TextBox>
+                    <TextBox Text="{Binding Path=Normal.K, Mode=TwoWay}" Grid.Column="2" Grid.Row="2"></TextBox>
+                </Grid>
+            </StackPanel>
+        </Border>
 
         <Border x:Shared="False" x:Key="ColourContent" >
 
@@ -78,7 +120,7 @@
                     <TextBox Text="{Binding Path=Colour.Blue, Mode=TwoWay}" Grid.Column="2" Grid.Row="2"></TextBox>
 
                 </Grid>
-               <Rectangle Width="100" Height="16" Stroke="Black">
+               <Rectangle Width="60" Height="32" Stroke="Black" Margin="8">
                     <Rectangle.Fill>
                     <MultiBinding Converter="{StaticResource RgbConverter}">
                             <Binding Path="Colour.Red" ></Binding>
@@ -130,6 +172,7 @@
             <StackPanel>
                 <TextBlock FontWeight="Bold" Background="LightGray" Text="{Binding Path=Name}" ></TextBlock>
                 <ContentPresenter Content="{StaticResource PositionContent}"></ContentPresenter>
+                <ContentPresenter Content="{StaticResource TargetContent}"></ContentPresenter>
                 <StackPanel>
                     <Grid Margin="5">
                         <Grid.ColumnDefinitions>
@@ -143,15 +186,13 @@
                             <RowDefinition />
                             <RowDefinition />
                         </Grid.RowDefinitions>
-                        <TextBlock Text="Target" Grid.Row="0"></TextBlock>
-                        <TextBlock Text="FovH" Grid.Row="1"></TextBlock>
-                        <TextBlock Text="DoF" Grid.Row="2"></TextBlock>
-                        <TextBlock Text="Aperture" Grid.Row="3"></TextBlock>
+                        <TextBlock Text="FovH" Grid.Row="0"></TextBlock>
+                        <TextBlock Text="DoF" Grid.Row="1"></TextBlock>
+                        <TextBlock Text="Aperture" Grid.Row="2"></TextBlock>
 
-                        <TextBlock Text="{Binding Path=Target}" Grid.Column="2" Grid.Row="0"></TextBlock>
-                        <TextBox Text="{Binding Path=FovH, Mode=TwoWay}" Grid.Column="2" Grid.Row="1"></TextBox>
-                        <TextBox Text="{Binding Path=DepthOfField, Mode=TwoWay}" Grid.Column="2" Grid.Row="2"></TextBox>
-                        <TextBox Text="{Binding Path=Aperture, Mode=TwoWay}" Grid.Column="2" Grid.Row="3"></TextBox>
+                        <TextBox Text="{Binding Path=FovH, Mode=TwoWay}" Grid.Column="2" Grid.Row="0"></TextBox>
+                        <TextBox Text="{Binding Path=DepthOfField, Mode=TwoWay}" Grid.Column="2" Grid.Row="1"></TextBox>
+                        <TextBox Text="{Binding Path=Aperture, Mode=TwoWay}" Grid.Column="2" Grid.Row="2"></TextBox>
                     </Grid>
                 </StackPanel>
             </StackPanel>
@@ -166,32 +207,6 @@
             </StackPanel>
         </Border>
 
-<!--
-        <DataTemplate x:Key="ShapeTemplate">
-            <StackPanel>
-                <ContentPresenter Content="{StaticResource PositionContent}"></ContentPresenter>
-                <ContentPresenter Content="{StaticResource MaterialContent}"></ContentPresenter>
-
-                <Grid Margin="5">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="60"/>
-                        <ColumnDefinition Width="8" />
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition />
-                    </Grid.RowDefinitions>
-                    <TextBlock Text="Material" Grid.Row="0"></TextBlock>
-                    <TextBlock Text="Texture" Grid.Row="1"></TextBlock>
-
-                    <TextBlock Text="{Binding Path=Material.Texture}" Grid.Column="2" Grid.Row="1"></TextBlock>
-                </Grid>
-
-            </StackPanel>
-        </DataTemplate>
--->        
-        
         <DataTemplate x:Key="SphereTemplate">
             <StackPanel>
 
@@ -233,6 +248,7 @@
             <StackPanel>
 
                 <ContentPresenter Content="{StaticResource ShapeContent}"></ContentPresenter>
+                <ContentPresenter Content="{StaticResource NormalContent}"></ContentPresenter>
 
                 <StackPanel>
                     <Grid Margin="5">
@@ -404,7 +420,7 @@
 
         <DockPanel Grid.Column="0" Grid.Row="1" Margin="8">
             <Button x:Name="buttonRender" Content="Render" VerticalAlignment="Bottom" HorizontalAlignment="Center" Width="75" DockPanel.Dock="Bottom" Click="buttonRender_Click" Margin="0,8,0,0"/>
-            <ListBox x:Name="listBox" MinHeight="100" VerticalAlignment="Stretch" MinWidth="120" ItemsSource="{Binding Entities, ElementName=window, Mode=TwoWay}">
+            <ListBox x:Name="listBox" MinHeight="100" VerticalAlignment="Stretch" MinWidth="120" DockPanel.Dock="Left" ItemsSource="{Binding Entities, ElementName=window, Mode=TwoWay}" HorizontalContentAlignment="Stretch">
                 <ListBox.ItemTemplateSelector>
                     <local:EntityTemplateSelector CameraTemplate="{StaticResource CameraTemplate}" SphereTemplate="{StaticResource SphereTemplate}" PlaneTemplate="{StaticResource PlaneTemplate}" PointLightTemplate="{StaticResource PointLightTemplate}" SpotLightTemplate="{StaticResource SpotLightTemplate}">
                         
@@ -413,7 +429,7 @@
             </ListBox>
             <!--<TreeView x:Name="treeView"  VerticalAlignment="Stretch" MinHeight="100" VerticalContentAlignment="Stretch" Margin="0" MinWidth="120"/>-->
         </DockPanel>
-        <Image x:Name="image" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="1" Grid.Row="1"/>
+        <Image x:Name="image" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="1" Grid.Row="1" MouseMove="image_MouseMove" MouseLeftButtonDown="image_MouseLeftButtonDown"/>
 
     </Grid>
 

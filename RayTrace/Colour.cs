@@ -104,9 +104,9 @@ namespace RayTrace
         public Colour Exposure(float exp)
         {
             Colour c = new Colour();
-            c.Red = 1.0f - (float) Math.Exp((float) (-c.Red*exp));
-            c.Green = 1.0f - (float)Math.Exp((float)(-c.Green * exp));
-            c.Blue = 1.0f - (float)Math.Exp((float)(-c.Blue * exp));
+            c.Red = 1.0f - (float) Math.Exp((float) (-Red*exp));
+            c.Green = 1.0f - (float)Math.Exp((float)(-Green * exp));
+            c.Blue = 1.0f - (float)Math.Exp((float)(-Blue * exp));
 
             return c;
         }

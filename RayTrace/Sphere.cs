@@ -21,6 +21,8 @@ namespace RayTrace
 			double dp = Sn.DotProduct(Sp);
 			double phi = Math.Acos(-dp);
 
+			Debug.Assert(!Double.IsNaN(phi));
+
 			double v = phi / Math.PI;
 
 			Vector Se = new Vector(0.0, 0.0, 1.0);
