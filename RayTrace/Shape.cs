@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Dynamic;
 
 namespace RayTrace
 {
@@ -40,6 +41,8 @@ namespace RayTrace
         [NotifyParentProperty(true)]
         public Point Pos { get; set; }
         public Material Material { get; set; }
+
+        public Matrix ObjectToWorld { get; set; } = new Matrix();
 
         public bool HasRoughness() => Material.HasRoughness();
         public bool HasTransparency() => Material.HasTransparency();

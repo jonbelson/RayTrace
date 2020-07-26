@@ -157,6 +157,10 @@ namespace RayTrace
 
         public static Matrix GetScale(double sx, double sy, double sz) => NewMatrix.SetScale(sx, sy, sz);
 
+        public static Matrix GetRotationX(float radians) => NewMatrix.SetRotationX(radians);
+        public static Matrix GetRotationY(float radians) => NewMatrix.SetRotationY(radians);
+        public static Matrix GetRotationZ(float radians) => NewMatrix.SetRotationZ(radians);
+
         public void SetIdentity()
         {
             SetNull();
@@ -185,33 +189,39 @@ namespace RayTrace
         }
 
         // Rotation matrix around the x axis (clockwise);
-        public void SetRotationX(double radians)
+        public Matrix SetRotationX(double radians)
         {
             SetIdentity();
             M22 = Math.Cos(radians);
             M23 = -Math.Sin(radians);
             M32 = Math.Sin(radians);
             M33 = Math.Cos(radians);
+
+            return this;
         }
 
         // Rotation matrix around the y axis (clockwise).
-        public void SetRotationY(double radians)
+        public Matrix SetRotationY(double radians)
         {
             SetIdentity();
             M11 = Math.Cos(radians);
             M13 = Math.Sin(radians);
             M31 = -Math.Sin(radians);
             M33 = Math.Cos(radians);
+
+            return this;
         }
 
         // Rotation matrix around the z axis (anticlockwise).
-        public void SetRotationZ(double radians)
+        public Matrix SetRotationZ(double radians)
         {
             SetIdentity();
             M11 = Math.Cos(radians);
             M12 = -Math.Sin(radians);
             M21 = Math.Sin(radians);
             M22 = Math.Cos(radians);
+
+            return this;
         }
 
         // Make camToWorld matrix.

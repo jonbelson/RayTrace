@@ -275,7 +275,10 @@ namespace RayTrace
         {
             Scene scene = new Scene();
 
-            Model model = new Model(new Point(0.0, 0.0, 0.0));
+            //Model model = new Model(new Point(0.0, 0.0, 0.0), modelData);
+            Model model = ModelFactory.Cube();
+            //Model model = ModelFactory.Octahedron();
+            model = ModelFactory.Tetahedron();
             scene.AddShape(model);
 
             float floorHeight = -10;
@@ -285,6 +288,36 @@ namespace RayTrace
             scene.AddShape(floor);
 
             Light light = new PointLight(new Point(-50, 50, 40), 6000, Palette.White);
+            scene.AddLight(light);
+
+            return scene;
+        }
+
+        public static Scene ObjScene()
+        {
+            Scene scene = new Scene();
+
+            ModelImporter importer = new ModelImporter();
+            ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\pbr-low-poly-fox-character");
+
+            Model model = new Model(new Point(0.0, 0.0, 10.0), modelData);
+            model.Material.Texture = new TextureSolid(Palette.White);
+            //model = ModelFactory.Octahedron();
+            // model = ModelFactory.Cube();
+            //model = ModelFactory.Tetahedron();
+            scene.AddShape(model);
+
+
+            double floorHeight = model.MinY;
+            Plane floor = new Plane(new Vector(0, 1, 0), new Point(0, floorHeight, 0), new Colour(Colors.LightGray));
+            //floor.Material.Texture = new TextureSquares(Palette.Black, Palette.White);
+            //floor.Material.Reflectivity = 0.1f;
+            scene.AddShape(floor);
+
+            Light light = new PointLight(new Point(-50, 50, 10), 6000, Palette.White);
+            scene.AddLight(light);
+
+            light = new PointLight(new Point(10, 50, 0), 3000, Palette.White);
             scene.AddLight(light);
 
             return scene;

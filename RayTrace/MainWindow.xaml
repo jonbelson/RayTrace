@@ -268,7 +268,32 @@
             </StackPanel>
         </DataTemplate>
 
-        
+
+        <DataTemplate x:Key="ModelTemplate">
+            <StackPanel>
+
+                <ContentPresenter Content="{StaticResource ShapeContent}"></ContentPresenter>
+<!--
+                <StackPanel>
+                    <Grid Margin="5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="60"/>
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Texture" Grid.Row="2"></TextBlock>
+
+                        <TextBlock Text="{Binding Path=Material.Texture}" Grid.Column="2" Grid.Row="1"></TextBlock>
+                    </Grid>
+                </StackPanel>
+-->                
+            </StackPanel>
+        </DataTemplate>
+
+
         <DataTemplate x:Key="PointLightTemplate">
             <StackPanel>
 
@@ -419,7 +444,7 @@
             <Button x:Name="buttonRender" Content="Render" VerticalAlignment="Bottom" HorizontalAlignment="Center" Width="75" DockPanel.Dock="Bottom" Click="buttonRender_Click" Margin="0,8,0,0"/>
             <ListBox x:Name="listBox" MinHeight="100" VerticalAlignment="Stretch" MinWidth="120" DockPanel.Dock="Left" ItemsSource="{Binding Entities, ElementName=window, Mode=TwoWay}" HorizontalContentAlignment="Stretch">
                 <ListBox.ItemTemplateSelector>
-                    <local:EntityTemplateSelector CameraTemplate="{StaticResource CameraTemplate}" SphereTemplate="{StaticResource SphereTemplate}" PlaneTemplate="{StaticResource PlaneTemplate}" PointLightTemplate="{StaticResource PointLightTemplate}" SpotLightTemplate="{StaticResource SpotLightTemplate}">
+                    <local:EntityTemplateSelector CameraTemplate="{StaticResource CameraTemplate}" SphereTemplate="{StaticResource SphereTemplate}" PlaneTemplate="{StaticResource PlaneTemplate}" ModelTemplate="{StaticResource ModelTemplate}" PointLightTemplate="{StaticResource PointLightTemplate}" SpotLightTemplate="{StaticResource SpotLightTemplate}">
                         
                     </local:EntityTemplateSelector>
                 </ListBox.ItemTemplateSelector>

@@ -175,7 +175,8 @@ namespace RayTrace
             //scene = SceneFactory.SphereDemoScene();
             //scene = SceneFactory.SoftLightDemoScene();
             //scene = SceneFactory.FovDemoScene();
-            scene = SceneFactory.ModelScene();
+            //scene = SceneFactory.ModelScene();
+            scene = SceneFactory.ObjScene();
 
             comboBoxFormat.SelectedItem = ImageFormat.Tiff;
 
