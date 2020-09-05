@@ -190,7 +190,7 @@ namespace RayTrace
             {
                 //modelData.points = new Point[points.Count];
                 modelData.points = points.ToArray();
-                modelData.normals = normals.ToArray();
+                //modelData.normals = normals.ToArray();
                 modelData.texels = texels.ToArray();
 
                 modelData.minX = modelData.minY = modelData.minZ = Double.MaxValue;
@@ -206,6 +206,10 @@ namespace RayTrace
                     modelData.maxZ = Math.Max(p.Z, modelData.maxZ);
                 }
 
+                Console.WriteLine($"X : [ {modelData.minX} {modelData.maxX} ]");
+                Console.WriteLine($"Y : [ {modelData.minY} {modelData.maxY} ]");
+                Console.WriteLine($"Z : [ {modelData.minZ} {modelData.maxZ} ]");
+
                 List<ModelData.Triangle> triangles = new List<ModelData.Triangle>();
                 foreach (Face face in faces)
                 {
@@ -213,24 +217,22 @@ namespace RayTrace
                     {
                         // Triangle, so just copy across
                         ModelData.Triangle triangle = new ModelData.Triangle();
-                        //triangle.v0 = face.vertices[0].vertex;
-                        //triangle.v1 = face.vertices[2].vertex;
-                        //triangle.v2 = face.vertices[1].vertex;
                         triangle.v0 = face.vertices[0].vertex;
                         triangle.v1 = face.vertices[1].vertex;
                         triangle.v2 = face.vertices[2].vertex;
 
+                        triangle.n0 = face.vertices[0].normal;
+                        triangle.n1 = face.vertices[1].normal;
+                        triangle.n2 = face.vertices[2].normal;
 
-                        // Only have one normal per triangle currently.
-                        triangle.n = face.vertices[0].normal;
+                        //Debug.Assert(triangle.n != 1);
 
                         Vector n = GetNormal(points, triangle);
+                        normals.Add(n);
+                        triangle.n = normals.Count() - 1;
+                        //modelData.normals.;
+                        //modelData.normals[triangle.n] = n;
 
-                        modelData.normals[triangle.n] = n;
-
-                        //triangle.t0 = face.vertices[0].texture;
-                        //triangle.t1 = face.vertices[2].texture;
-                        //triangle.t2 = face.vertices[1].texture;
                         triangle.t0 = face.vertices[0].texture;
                         triangle.t1 = face.vertices[1].texture;
                         triangle.t2 = face.vertices[2].texture;
@@ -241,23 +243,20 @@ namespace RayTrace
                     {
                         // Turn quad into two triangles, 013 and 123
                         ModelData.Triangle triangle = new ModelData.Triangle();
-                        //triangle.v0 = face.vertices[0].vertex;
-                        //triangle.v1 = face.vertices[2].vertex;
-                        //triangle.v2 = face.vertices[1].vertex;
                         triangle.v0 = face.vertices[0].vertex;
                         triangle.v1 = face.vertices[1].vertex;
                         triangle.v2 = face.vertices[2].vertex;
 
-                        // Only have one normal per triangle currently.
-                        triangle.n = face.vertices[0].normal;
+                        triangle.n0 = face.vertices[0].normal;
+                        triangle.n1 = face.vertices[1].normal;
+                        triangle.n2 = face.vertices[2].normal;
+
+                        Debug.Assert(triangle.n != 1);
 
                         Vector n = GetNormal(points, triangle);
+                        normals.Add(n);
+                        triangle.n = normals.Count() - 1;
 
-                        modelData.normals[triangle.n] = n;
-
-                        //triangle.t0 = face.vertices[0].texture;
-                        //triangle.t1 = face.vertices[2].texture;
-                        //triangle.t2 = face.vertices[1].texture;
                         triangle.t0 = face.vertices[0].texture;
                         triangle.t1 = face.vertices[1].texture;
                         triangle.t2 = face.vertices[2].texture;
@@ -265,23 +264,22 @@ namespace RayTrace
                         triangles.Add(triangle);
 
                         triangle = new ModelData.Triangle();
-                        //triangle.v0 = face.vertices[0].vertex;
-                        //triangle.v1 = face.vertices[3].vertex;
-                        //triangle.v2 = face.vertices[2].vertex;
                         triangle.v0 = face.vertices[0].vertex;
                         triangle.v1 = face.vertices[2].vertex;
                         triangle.v2 = face.vertices[3].vertex;
 
-                        // Only have one normal per triangle currently.
-                        triangle.n = face.vertices[1].normal;
+                        triangle.n0 = face.vertices[0].normal;
+                        triangle.n1 = face.vertices[2].normal;
+                        triangle.n2 = face.vertices[3].normal;
+
+                        Debug.Assert(triangle.n != 1);
 
                         n = GetNormal(points, triangle);
+                        normals.Add(n);
+                        triangle.n = normals.Count() - 1;
 
-                        modelData.normals[triangle.n] = n;
+                        //modelData.normals[triangle.n] = n;
 
-                        //triangle.t0 = face.vertices[0].texture;
-                        //triangle.t1 = face.vertices[3].texture;
-                        //triangle.t2 = face.vertices[2].texture;
                         triangle.t0 = face.vertices[0].texture;
                         triangle.t1 = face.vertices[2].texture;
                         triangle.t2 = face.vertices[3].texture;
@@ -290,6 +288,8 @@ namespace RayTrace
                     }
                 }
                 modelData.triangles = triangles.ToArray();
+
+                modelData.normals = normals.ToArray();
 
             }
 

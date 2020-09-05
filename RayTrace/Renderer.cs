@@ -20,6 +20,7 @@ namespace RayTrace
 
         public bool UseAmbient { set; get; } = true;
         public bool UseDiffuse { set; get; } = true;
+        public bool UseShadows { set; get; } = true;
         public bool UsePhong { set; get; } = true;
         public bool UseReflections { get; set; } = true;
         public bool UseRefraction { get; set; } = true;
@@ -64,6 +65,7 @@ namespace RayTrace
             return colour;
         }
 
+        // Return a random Point within a unit disc.
         private Point GetPointOnDisc(Random rand)
         {
             double x, y;
@@ -78,6 +80,7 @@ namespace RayTrace
             return new Point(x, y, 0.0);
         }
 
+        // Return a random Vector within a unit disc.
         private Vector GetVectorOnDisc(Random rand)
         {
             Point p = GetPointOnDisc(rand);
@@ -397,22 +400,29 @@ namespace RayTrace
                     }
 
                     float visibleFraction = 0.0f;
-                    if (UseSoftShadows)
+                    if (!UseShadows)
                     {
-                        visibleFraction = GetSoftShadow(camera, scene, hr.Entry, ray, pointLight);
+                        visibleFraction = 1.0f;
                     }
                     else
                     {
-                        Point pos = hr.Entry;
-                        Point lightPos = camera.WorldToView * pointLight.Pos;
-
-                        HitResult hitResult = scene.HitTest(camera, pos, lightPos);
-                        if (hitResult.HasEntry())
+                        if (UseSoftShadows)
                         {
-                            continue;
+                            visibleFraction = GetSoftShadow(camera, scene, hr.Entry, ray, pointLight);
                         }
-                        visibleFraction = 1.0f;
+                        else
+                        {
+                            Point pos = hr.Entry;
+                            Point lightPos = camera.WorldToView * pointLight.Pos;
 
+                            HitResult hitResult = scene.HitTest(camera, pos, lightPos);
+                            if (hitResult.HasEntry())
+                            {
+                                continue;
+                            }
+                            visibleFraction = 1.0f;
+
+                        }
                     }
                     if (visibleFraction == 0.0f)
                     {
@@ -741,6 +751,7 @@ namespace RayTrace
 
                         }
                         colour = colour.Scale(1.0f/grid.GetLength(0));
+                        colour = colour.Exposure(1.2f);
                         colour.Clamp();
                         canvas.Set(w, h, colour.ToRGB());
                     }
@@ -748,6 +759,7 @@ namespace RayTrace
                     {
                         //SubSample subSample = new SubSample(x, y, x + sceneStepX, y - sceneStepY);
                         Colour colour = GetSubPixelColour(camera, scene, colourBuffer, w - startX, h - startY, sceneX, sceneY, /*sceneX +*/ sceneStepX, /*sceneY -*/ sceneStepY);
+                        colour = colour.Exposure(1.2f);
                         colour.Clamp();
                         canvas.Set(w, h, colour.ToRGB());
                     }
@@ -755,6 +767,7 @@ namespace RayTrace
                     {
                         SubSample subSample = new SubSample(sceneX, sceneY, sceneX + sceneStepX, sceneY - sceneStepY);
                         Colour colour = GetSubPixelColour(camera, scene, subSample, 1);
+                        colour = colour.Exposure(1.2f);
                         colour.Clamp();
                         canvas.Set(w, h, colour.ToRGB());
                     }

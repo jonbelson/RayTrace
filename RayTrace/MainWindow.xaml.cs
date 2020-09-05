@@ -153,6 +153,13 @@ namespace RayTrace
         {
             InitializeComponent();
 
+            //Point p = new Point(1.0, 0, 0);
+            //Matrix m = new Matrix();
+            //m.SetRotationY(-Math.PI/2);
+
+            //Point p2 = m*p;
+            //Console.WriteLine(p2);
+
 //            SampleGrid.GetGrid(new Random(), 20);
             //SampleGrid.GetOffsetGrid(new Random(), 20);
 
@@ -160,6 +167,7 @@ namespace RayTrace
             checkBoxLighting.IsChecked = renderer.UseDiffuse;
             checkBoxPhong.IsChecked = renderer.UsePhong;
             checkBoxRefraction.IsChecked = renderer.UseRefraction;
+            checkBoxShadows.IsChecked = renderer.UseShadows;
             checkBoxSoftShadows.IsChecked = renderer.UseSoftShadows;
             checkBoxReflections.IsChecked = renderer.UseReflections;
             checkBoxDepthOfField.IsChecked = renderer.UseDepthOfField;
@@ -220,6 +228,7 @@ namespace RayTrace
             renderer.UseDiffuse = (bool)checkBoxLighting.IsChecked;
             renderer.UsePhong = (bool)checkBoxPhong.IsChecked;
             renderer.UseRefraction = (bool)checkBoxRefraction.IsChecked;
+            renderer.UseShadows = (bool)checkBoxShadows.IsChecked;
             renderer.UseSoftShadows = (bool)checkBoxSoftShadows.IsChecked;
             renderer.UseReflections = (bool)checkBoxReflections.IsChecked;
             renderer.UseDepthOfField = (bool)checkBoxDepthOfField.IsChecked;

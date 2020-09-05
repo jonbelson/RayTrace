@@ -20,13 +20,8 @@ namespace RayTrace
         {
             public int v0, v1, v2;  // Indices into Point array.
             public int t0, t1, t2;  // Indexes into Texel array.
-            public int n;           // Index into normal array.
-            //public Triangle(int v1, int v2, int v3)
-            //{
-            //    this.v1 = v1;
-            //    this.v2 = v2;
-            //    this.v3 = v3;
-            //}
+            public int n0, n1, n2;  // Indices into normal array.
+            public int n;           // Index into normal array for triangle normal.
         }
 
         public Point[] points;
@@ -48,6 +43,9 @@ namespace RayTrace
         public Point GetTrianglePointV0(int index) => points[triangles[index].v0];
         public Point GetTrianglePointV1(int index) => points[triangles[index].v1];
         public Point GetTrianglePointV2(int index) => points[triangles[index].v2];
+        public Vector GetTriangleNormal1(int index) => normals[triangles[index].n0];
+        public Vector GetTriangleNormal2(int index) => normals[triangles[index].n1];
+        public Vector GetTriangleNormal3(int index) => normals[triangles[index].n2];
         public Vector GetTriangleNormal(int index) => normals[triangles[index].n];
     }
 
@@ -75,18 +73,60 @@ namespace RayTrace
             return normal.Normalise();
         }
 
+        // https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/barycentric-coordinates
+        // Return u, v (w = 1 - u - v)
+        private (double, double) GetBarymetricCoords(Point P0, Point P1, Point P2, Point hit)
+        {
+            // Get triangle area.
+            Vector p0p1 = P1 - P0;
+            Vector p0p2 = P2 - P0;
+
+            Vector N = p0p1.VectorProduct(p0p2);
+            double area = N.Magnitude() / 2.0;
+
+            // CAP
+            Vector p2p0 = P0 - P2;
+            Vector p2hit = hit - P2;
+            N = p2p0.VectorProduct(p2hit);
+            double u = N.Magnitude() / 2.0 / area;
+
+            // ABP
+            //Vector p0p1 = P1 - P0;
+            Vector hitP1 = hit - P0;
+            N = p0p1.VectorProduct(hitP1);
+            double v = N.Magnitude() / 2.0 / area;
+
+            // BCP
+            //double w = 1.0 - u - v;
+
+            //return new Vector(u, v, w);
+
+            return (u, v);
+        }
+
+        // n0, n1, n2   Vector normals for triangle.
+        // u, v         Barycentric coordinates of hit point.
+        private Vector Interpolate(Vector n0, Vector n1, Vector n2, double u, double v)
+        {
+            Vector N = n0*(1.0 - u - v) + n1*u + n2*v;
+
+            return N.Normalise();
+        }
+
         public Model(Point p, ModelData modelData) : base(p)
         {
             _modelData = modelData;
 
-            Matrix rotate = Matrix.GetRotationY((float) Math.PI);
+            Matrix rotate = Matrix.GetRotationY((float) Math.PI/2);
             Matrix scale = Matrix.GetScale(2.0, 2.0, 2.0);
-            Matrix translate = Matrix.GetTranslation(0.0, -5.0, 10.0);
+            Matrix translate = Matrix.GetTranslation(0.0, 0.0, 10.0);
+
+            //ObjectToWorld = rotate * scale * translate;
 
             //            ObjectToWorld = scale * translate;
             //ObjectToWorld = scale;
             //ObjectToWorld = rotate * scale * translate;
-            //ObjectToWorld = rotate;
+            ObjectToWorld = rotate;
         }
 
         private HitResult HitTestImpl(Camera camera, Point p1, Point p2, bool segmentOnly)
@@ -132,7 +172,6 @@ namespace RayTrace
             if (_modelData.points.Length <= _modelData.triangles[index].v2) return hr;
             if (_modelData.normals.Length <= _modelData.triangles[index].n) return hr;
 
-
             Point V0 = _modelData.GetTrianglePointV0(index);
             Vector Normal = _modelData.GetTriangleNormal(index).Negate();
             //Vector Normal = _modelData.GetTriangleNormal(index);
@@ -140,15 +179,23 @@ namespace RayTrace
             V0 = ObjectToWorld * V0;
 
             Point vPos = camera.WorldToView * V0;
-            Vector vNormal = camera.NormalMatrix * Normal;
+            Vector vNormal = ObjectToWorldNormal * camera.NormalMatrix * Normal;
 
+            //vNormal = ObjectToWorldNormal * vNormal;
 
-            Point v0 = camera.WorldToView * _modelData.GetTrianglePointV0(index);
-            Point v1 = camera.WorldToView * _modelData.GetTrianglePointV1(index);
-            Point v2 = camera.WorldToView * _modelData.GetTrianglePointV2(index);
+            Point v0 = ObjectToWorld * camera.WorldToView * _modelData.GetTrianglePointV0(index);
+            Point v1 = ObjectToWorld * camera.WorldToView * _modelData.GetTrianglePointV1(index);
+            Point v2 = ObjectToWorld * camera.WorldToView * _modelData.GetTrianglePointV2(index);
 
-            vNormal = GetNormal(v0, v1, v2);
-            vNormal = vNormal.Negate();
+            // Check if face is pointing away from us.
+            Vector ray = p2 - p1;
+            double dp = vNormal.DotProduct(ray);
+            if (dp > 0.0) return hr;    // Check >0 since vectors point in opposite directions.
+
+            //Vector compare = vNormal;
+
+            //vNormal = GetNormal(v0, v1, v2);
+            //vNormal = vNormal.Negate();
 
             double A = vNormal.I;
             double B = vNormal.J;

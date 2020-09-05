@@ -42,7 +42,28 @@ namespace RayTrace
         public Point Pos { get; set; }
         public Material Material { get; set; }
 
-        public Matrix ObjectToWorld { get; set; } = new Matrix();
+        private Matrix _objectToWorld = new Matrix();
+        private Matrix _objectToWorldNormal = new Matrix();
+        public Matrix ObjectToWorld {
+            get { return _objectToWorld; }
+            set {
+                _objectToWorld = value;
+                _objectToWorldNormal = new Matrix(_objectToWorld)
+                {
+                    // Remove translation component.
+                    M14 = 0.0,
+                    M24 = 0.0,
+                    M34 = 0.0,
+
+                    // Remove scale component.
+                    //M11 = 0.0,
+                    //M22 = 0.0,
+                    //M33 = 0.0
+                };
+            }
+        }
+
+        public Matrix ObjectToWorldNormal { get { return _objectToWorldNormal; } }
 
         public bool HasRoughness() => Material.HasRoughness();
         public bool HasTransparency() => Material.HasTransparency();

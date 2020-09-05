@@ -374,6 +374,7 @@
                     <RibbonCheckBox x:Name="checkBoxLighting" Label="Diffuse" Click="checkBoxLighting_Click" ToolTip="Enable diffuse lighting"></RibbonCheckBox>
                     <RibbonCheckBox x:Name="checkBoxPhong" Label="Specular" ToolTip="Enable Phong specular highlights"></RibbonCheckBox>
                     <RibbonCheckBox x:Name="checkBoxRefraction" Label="Refraction" ToolTip="Enable refraction for objects with transparency"></RibbonCheckBox>
+                    <RibbonCheckBox x:Name="checkBoxShadows" Label="Shadows" ToolTip="Enable shadows"></RibbonCheckBox>
                     <RibbonCheckBox x:Name="checkBoxSoftShadows" Label="Soft Shadows" ToolTip="Enable soft shadows"></RibbonCheckBox>
                     <RibbonCheckBox x:Name="checkBoxDepthOfField" Label="Depth of Field" ToolTip="Enable depth of field"></RibbonCheckBox>
                     <RibbonSeparator MinWidth="2" MinHeight="55" IsEnabled="True" />
