@@ -230,8 +230,6 @@ namespace RayTrace
                         Vector n = GetNormal(points, triangle);
                         normals.Add(n);
                         triangle.n = normals.Count() - 1;
-                        //modelData.normals.;
-                        //modelData.normals[triangle.n] = n;
 
                         triangle.t0 = face.vertices[0].texture;
                         triangle.t1 = face.vertices[1].texture;
@@ -278,8 +276,6 @@ namespace RayTrace
                         normals.Add(n);
                         triangle.n = normals.Count() - 1;
 
-                        //modelData.normals[triangle.n] = n;
-
                         triangle.t0 = face.vertices[0].texture;
                         triangle.t1 = face.vertices[2].texture;
                         triangle.t2 = face.vertices[3].texture;
@@ -291,6 +287,9 @@ namespace RayTrace
 
                 modelData.normals = normals.ToArray();
 
+
+                // Load texture
+                modelData.texture = new TextureBitmap(texturesPath + @"\LP_Firefox_1001_BaseColor.png");
             }
 
             return modelData;

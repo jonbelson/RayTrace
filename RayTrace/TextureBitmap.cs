@@ -61,6 +61,19 @@ namespace RayTrace
             LoadTexture(fileName);
         }
 
+        public Colour GetColour(float u, float v)
+        {
+            if (texture != null)
+            {
+                int x = (int)(u * width);
+                int y = (int)(v * height);
+
+                return texture[y * width + x];
+            }
+
+            return Palette.Grey;
+        }
+
         public override Colour GetColour(HitResult hr)
         {
             if (texture != null)
@@ -71,12 +84,10 @@ namespace RayTrace
                 int x = (int)(u * width);
                 int y = (int)(v * height);
 
-
                 return texture[y * width + x];
             }
 
             return Palette.Grey;
         }
-
     }
 }

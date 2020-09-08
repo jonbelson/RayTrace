@@ -95,7 +95,7 @@ namespace RayTrace
                     double sum = 0.0;
                     for (int k = 0; k < Size; k++)
                     {
-                        sum += m1.M[k * Size + i] * m2.M[j * Size + k];
+                        sum += m2.M[k * Size + i] * m1.M[j * Size + k];
                     }
                     mm.M[j * Size + i] = sum;
                 }

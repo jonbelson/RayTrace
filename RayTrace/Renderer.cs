@@ -415,8 +415,12 @@ namespace RayTrace
                             Point pos = hr.Entry;
                             Point lightPos = camera.WorldToView * pointLight.Pos;
 
-                            HitResult hitResult = scene.HitTest(camera, pos, lightPos);
-                            if (hitResult.HasEntry())
+                            //HitResult hitResult = scene.HitTest(camera, pos, lightPos);
+                            //if (hitResult.HasEntry())
+                            //{
+                            //    continue;
+                            //}
+                            if (scene.HitTestFast(camera, pos, lightPos))
                             {
                                 continue;
                             }

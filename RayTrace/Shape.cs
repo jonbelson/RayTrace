@@ -26,6 +26,9 @@ namespace RayTrace
         public float u;
         public float v;
 
+        // Optional value used by certain Shapes (e.g. triangle that was hit in a Model).
+        public int index;
+
         public HitResult(Shape shape)
         {
             this.shape = shape;
@@ -54,11 +57,6 @@ namespace RayTrace
                     M14 = 0.0,
                     M24 = 0.0,
                     M34 = 0.0,
-
-                    // Remove scale component.
-                    //M11 = 0.0,
-                    //M22 = 0.0,
-                    //M33 = 0.0
                 };
             }
         }
@@ -83,13 +81,20 @@ namespace RayTrace
             Material = material;
         }
 
-        public Colour GetColour(HitResult hr)
+        public virtual Colour GetColour(HitResult hr)
         {
             return Material.GetColour(hr);
         }
 
         public abstract HitResult HitTest(Camera camera, Ray ray /*Point p, Vector ray*/);
         //public abstract HitResult HitTest(Camera camera, Point p1, Point p2);
+
+        // Optimisable version of HitTest() which just returns true or false.
+        public virtual bool HitTestQuick(Camera camera, Ray ray)
+        {
+            HitResult hr = HitTest(camera, ray);
+            return hr.HasEntry();
+        }
 
         public virtual (Point, Vector) GetRefractedVector(Camera camera, Vector ray, HitResult hr) { return (hr.Entry, ray); }
     }

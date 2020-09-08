@@ -84,6 +84,24 @@ namespace RayTrace
             return hitResult;
         }
 
+        public bool HitTestFast(Camera camera, Point p1, Point p2)
+        {
+            Ray ray = new Ray(p1, p2);
+
+            foreach (Shape shape in Shapes)
+            {
+                if (!shape.Enabled) continue;
+
+                if (shape.HitTestQuick(camera, ray))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+
         public List<Light> IsIlluminated(Camera camera, HitResult hr)
         {
             Point pos = hr.Entry;

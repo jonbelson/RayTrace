@@ -72,6 +72,8 @@ namespace RayTrace
             return new Colour(c.Red * scale, c.Green * scale, c.Blue * scale);
         }
 
+        public static Colour operator*(Colour c, double scale) => new Colour(c.Red * (float) scale, c.Green * (float) scale, c.Blue * (float) scale);
+
         public Colour Add(Colour c)
         {
             return new Colour(Red + c.Red, Green + c.Green, Blue + c.Blue);
