@@ -84,10 +84,8 @@ namespace RayTrace
             return hitResult;
         }
 
-        public bool HitTestFast(Camera camera, Point p1, Point p2)
+        public bool HitTestFast(Camera camera, Ray ray)
         {
-            Ray ray = new Ray(p1, p2);
-
             foreach (Shape shape in Shapes)
             {
                 if (!shape.Enabled) continue;
@@ -99,6 +97,25 @@ namespace RayTrace
             }
 
             return false;
+        }
+
+        public bool HitTestFast(Camera camera, Point p1, Point p2)
+        {
+            Ray ray = new Ray(p1, p2);
+
+            return HitTestFast(camera, ray);
+/*
+            foreach (Shape shape in Shapes)
+            {
+                if (!shape.Enabled) continue;
+
+                if (shape.HitTestQuick(camera, ray))
+                {
+                    return true;
+                }
+            }
+
+            return false;*/
         }
 
 

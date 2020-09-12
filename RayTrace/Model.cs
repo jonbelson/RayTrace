@@ -42,6 +42,8 @@ namespace RayTrace
         {
         }
 
+        public BoundingBox GetBoundingBox() => new BoundingBox(minX, maxX, minY, maxY, minZ, maxZ);
+
         public Point GetTrianglePointV0(int index) => points[triangles[index].v0];
         public Point GetTrianglePointV1(int index) => points[triangles[index].v1];
         public Point GetTrianglePointV2(int index) => points[triangles[index].v2];
@@ -144,17 +146,31 @@ namespace RayTrace
             //ObjectToWorld = scale * translate;
             //ObjectToWorld = scale;
             //ObjectToWorld = rotate * scale * translate;
-            ObjectToWorld = rotate;
+            //ObjectToWorld = rotate;
         }
 
         private HitResult HitTestImpl(Camera camera, Point p1, Point p2, bool segmentOnly)
         {
             HitResult hitResult = new HitResult(null);
 
-            double closest = Double.MaxValue;
-
             Matrix ObjectToView = camera.WorldToView * ObjectToWorld;
+
+            //Point Min = new Point(_modelData.minX, _modelData.minY, _modelData.minZ);
+            //Point Max = new Point(_modelData.maxX, _modelData.maxY, _modelData.maxZ);
+
+            //BoundingBox bb = new BoundingBox(Min.X, Max.X, Min.Y, Max.Y, Min.Z, Max.Z);
+            BoundingBox bb = _modelData.GetBoundingBox();
+
+            BoundingBox bb2 = bb.Transform(ObjectToView);
+
+            if (!bb2.Intersects(p1, p2))
+            {
+                return hitResult;
+            }
+
             Matrix ObjectToViewNormal = camera.NormalMatrix * ObjectToWorldNormal;
+
+            double closest = Double.MaxValue;
 
             for (int i=0; i<_modelData.triangles.Length; i++)
             {

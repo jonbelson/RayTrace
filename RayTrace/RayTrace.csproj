@@ -58,6 +58,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="BoundingBox.cs" />
     <Compile Include="Box.cs" />
     <Compile Include="Camera.cs" />
     <Compile Include="DistantLight.cs" />

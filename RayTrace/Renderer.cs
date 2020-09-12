@@ -279,8 +279,8 @@ namespace RayTrace
                     Vector jitteredRay = GetJitteredRay(lookAt, rayNum, L, distance, light.Radius, rand);
 
                     Ray ray2 = new Ray(pos, jitteredRay);
-                    HitResult hr = scene.HitTest(camera, ray2);
-                    if (hr.HasEntry())
+                    bool hit = scene.HitTestFast(camera, ray2);
+                    if (hit)
                     {
                         //Debug.Assert(hr.shape is Sphere);
 
