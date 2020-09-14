@@ -268,9 +268,11 @@ namespace RayTrace
             // Do more interations of the hex grid for 'wider' PointLights.
             int numIterations = light.Radius;
 
-            int maxIterations = 19 * numIterations;
+            //int maxIterations = 19 * numIterations;
 
-            int totalNumUnblockedRays = maxIterations;
+            float totalFraction = 0.0f;
+
+            //int totalNumUnblockedRays = maxIterations;
             for (int i = 0; i < numIterations; i++)
             {
                 int numUnblockedRays = 19;
@@ -285,24 +287,30 @@ namespace RayTrace
                         //Debug.Assert(hr.shape is Sphere);
 
                         numUnblockedRays--;
-                        totalNumUnblockedRays--;
+                        //totalNumUnblockedRays--;
                     }
-                    /*
                     if (rayNum == 6)
                     {
-                        if (numUnblockedRays == 12)
+                        if (numUnblockedRays == 12)     // Corners and centre blocked.
                         {
                             numUnblockedRays = 0;
                             break;
                         }
-                        else if (numUnblockedRays == 19)
+                        else if (numUnblockedRays == 19)    // Corners and centre not blocked.
+                        {
                             break;
+                        }
                     }
-                    */
                 }
-                //totalNumUnblockedRays -= (19 - numUnblockedRays);
+
+                totalFraction += numUnblockedRays / 19.0f;
             }
-            float fraction = ((float) totalNumUnblockedRays) / maxIterations;
+
+            //totalNumUnblockedRays -= (19 - numUnblockedRays);
+            //}
+            //            float fraction = ((float) totalNumUnblockedRays) / maxIterations;
+            //float fraction = ((float)numUnblockedRays) / maxIterations;
+            float fraction = totalFraction / numIterations;
 
             return fraction;
         }

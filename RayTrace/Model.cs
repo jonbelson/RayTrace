@@ -315,6 +315,15 @@ namespace RayTrace
             Point p2 = ray.Origin.Offset(ray.Direction);
 
             Matrix ObjectToView = camera.WorldToView * ObjectToWorld;
+
+            BoundingBox bb = _modelData.GetBoundingBox();
+            BoundingBox bb2 = bb.Transform(ObjectToView);
+
+            if (!bb2.Intersects(p1, p2))
+            {
+                return false;
+            }
+
             Matrix ObjectToViewNormal = camera.NormalMatrix * ObjectToWorldNormal;
 
             for (int i = 0; i < _modelData.triangles.Length; i++)

@@ -21,7 +21,8 @@ namespace RayTrace
         private static readonly double row = R + t / 2.0;       // vertical offset from one row to another.
 
         public static double Jitter { get; } = jitter;
-
+/*
+        // Points centred on hexagons in the hexagonal grid, ordered top to bottom by row.
         public static readonly double[,] values = new double[19, 2]
         {
             { -d, row*2 }, { 0.0, row*2 }, { d, row*2 },
@@ -29,6 +30,21 @@ namespace RayTrace
             { -2*d, 0.0 }, { -d, 0.0 }, { 0.0, 0.0 }, { d, 0.0 }, { 2*d, 0.0 },
             { -3*r, -row }, { -r, -row }, { r, -row }, { 3*r, -row },
             { -d, -row*2 }, { 0.0, -row*2 }, { d, -row*2 },
+        };
+*/
+        // Points centred on hexagons in the hexagonal grid, with outermost six corners first followed by the centre.
+        public static readonly double[,] values = new double[19, 2]
+        {
+            { -d, row*2 }, { d, row*2 },
+            { -2*d, 0.0 }, { 2*d, 0.0 },
+            { -3*r, -row }, { 3*r, -row },
+            { -d, 0.0 },
+
+            { 0.0, row*2 },
+            { -3*r, row }, { -r, row }, { r, row }, { 3*r, row },
+            { -d, 0.0 },{ d, 0.0 },
+            { -3*r, -row }, { -r, -row }, { r, -row }, { 3*r, -row },
+            { 0.0, -row*2 },
         };
 
 

@@ -61,6 +61,8 @@ namespace RayTrace
             LoadTexture(fileName);
         }
 
+        public bool IsValid() => texture != null;
+
         public Colour GetColour(float u, float v)
         {
             if (texture != null)

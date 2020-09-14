@@ -122,63 +122,68 @@ namespace RayTrace
 
             try
             {
-                StreamReader file = new StreamReader(sourcePath + @"\LP_Firefox.obj");
 
-                string line;
-                modelData = new ModelData();
-                char[] delim = new char[] { ' ' };
-                double d1, d2, d3;
-                float f1, f2, f3;
-                while ((line = file.ReadLine()) != null)
+                string[] dirs = Directory.GetFiles(sourcePath, "*.obj");
+                if (dirs.Length > 0)
                 {
-                    if (line.Length == 0) continue;
-                    if (line[0] == '#') continue;
+                    StreamReader file = new StreamReader(dirs[0]);
 
-                    string[] tokens = line.Split(delim, StringSplitOptions.RemoveEmptyEntries);
-                    if (tokens.Length == 0)
+                    string line;
+                    modelData = new ModelData();
+                    char[] delim = new char[] { ' ' };
+                    double d1, d2, d3;
+                    float f1, f2, f3;
+                    while ((line = file.ReadLine()) != null)
                     {
-                        continue;
-                    }
+                        if (line.Length == 0) continue;
+                        if (line[0] == '#') continue;
 
-                    if (tokens[0] == "v")
-                    {
-                        if (tokens.Length >= 4 && Parse(tokens, out d1, out d2, out d3) == 3)
+                        string[] tokens = line.Split(delim, StringSplitOptions.RemoveEmptyEntries);
+                        if (tokens.Length == 0)
                         {
-                            Point p = new Point(d1, d2, -d3);
-                            points.Add(p);
+                            continue;
                         }
-                    }
-                    else if (tokens[0] == "vn")
-                    {
-                        if (tokens.Length == 4 && Parse(tokens, out d1, out d2, out d3) == 3)
-                        {
-                            Vector v = new Vector(d1, d2, -d3);
-                            normals.Add(v);
-                        }
-                    }
-                    else if (tokens[0] == "vt")
-                    {
-                        if (tokens.Length == 3 && Parse(tokens, out f1, out f2) == 2)
-                        {
-                            ModelData.Texel t = new ModelData.Texel();
-                            t.u = f1;
-                            t.v = f2;
-                            texels.Add(t);
-                        }
-                    }
-                    else if (tokens[0] == "f")
-                    {
-                        Face face = ParseFace(tokens);
-                        if (face != null)
-                        {
-                            faces.Add(face);
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine("Ignored line: " + line);
-                    }
 
+                        if (tokens[0] == "v")
+                        {
+                            if (tokens.Length >= 4 && Parse(tokens, out d1, out d2, out d3) == 3)
+                            {
+                                Point p = new Point(d1, d2, -d3);
+                                points.Add(p);
+                            }
+                        }
+                        else if (tokens[0] == "vn")
+                        {
+                            if (tokens.Length == 4 && Parse(tokens, out d1, out d2, out d3) == 3)
+                            {
+                                Vector v = new Vector(d1, d2, -d3);
+                                normals.Add(v);
+                            }
+                        }
+                        else if (tokens[0] == "vt")
+                        {
+                            if (tokens.Length == 3 && Parse(tokens, out f1, out f2) == 2)
+                            {
+                                ModelData.Texel t = new ModelData.Texel();
+                                t.u = f1;
+                                t.v = f2;
+                                texels.Add(t);
+                            }
+                        }
+                        else if (tokens[0] == "f")
+                        {
+                            Face face = ParseFace(tokens);
+                            if (face != null)
+                            {
+                                faces.Add(face);
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("Ignored line: " + line);
+                        }
+
+                    }
                 }
             }
             catch (Exception e)
@@ -287,9 +292,28 @@ namespace RayTrace
 
                 modelData.normals = normals.ToArray();
 
-
                 // Load texture
-                modelData.texture = new TextureBitmap(texturesPath + @"\LP_Firefox_1001_BaseColor.png");
+                try
+                {
+//                    string[] dirs = Directory.GetFiles(texturesPath, "*.png");
+                    string[] dirs = Directory.GetFiles(texturesPath);
+
+                    foreach (string file in dirs)
+                    {
+                        // XXX For now just load the first texture.
+                        TextureBitmap texture = new TextureBitmap(file);
+                        if (texture.IsValid())
+                        {
+                            modelData.texture = texture;
+                            break;
+                        }
+                        modelData.texture = new TextureBitmap(file);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Failed to load textures for {path}: " + e.Message);
+                }
             }
 
             return modelData;

@@ -151,7 +151,7 @@ namespace RayTrace
             double floorHeight = -60;
             double radius = 8;
             double bigRadius = 40;
-            double sceneWidth = 200;
+            //double sceneWidth = 200;
 
             Plane floor = new Plane(new Vector(0, 1, 0), new Point(0, floorHeight, 0), new Colour(Colors.LightGray));
             scene.AddShape(floor);
@@ -298,7 +298,8 @@ namespace RayTrace
             Scene scene = new Scene();
 
             ModelImporter importer = new ModelImporter();
-            ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\pbr-low-poly-fox-character");
+//            ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\pbr-low-poly-fox-character");
+            ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\dinosaur");
 
             Model model = new Model(new Point(0.0, 0.0, 10.0), modelData);
             model.Material.Texture = new TextureSolid(Palette.White);
