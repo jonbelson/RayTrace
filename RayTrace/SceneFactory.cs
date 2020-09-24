@@ -299,9 +299,12 @@ namespace RayTrace
 
             ModelImporter importer = new ModelImporter();
 //            ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\pbr-low-poly-fox-character");
-            ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\dinosaur");
+//            ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\dinosaur");
+            ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\apollo-und-daphne");
 
             Model model = new Model(new Point(0.0, 0.0, 10.0), modelData);
+            //model.ObjectToWorld
+
             model.Material.Texture = new TextureSolid(Palette.White);
             //model = ModelFactory.Octahedron();
             // model = ModelFactory.Cube();

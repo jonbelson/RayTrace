@@ -67,27 +67,34 @@ namespace RayTrace
         public bool HasTransparency() => Material.HasTransparency();
         public bool HasReflectivity() => Material.HasReflectivity();
 
+        // Constructor.
         public Shape(Point p) : this(p, Palette.Red) { }
 
+        // Constructor.
         public Shape(Point p, Colour c)
         {
             Pos = p;
             Material = new Material(c);
         }
 
+        // Constructor.
         public Shape(Point p, Material material)
         {
             Pos = p;
             Material = material;
         }
 
+        // Allow Shape to pre-transform data using the Camera's WorldToView Matrix.
+        public virtual void CreateCache(Camera camera) { }
+
+        // Get colour at hit point.
+        // Default implementation just returns the Material's colour at that point.
         public virtual Colour GetColour(HitResult hr)
         {
             return Material.GetColour(hr);
         }
 
-        public abstract HitResult HitTest(Camera camera, Ray ray /*Point p, Vector ray*/);
-        //public abstract HitResult HitTest(Camera camera, Point p1, Point p2);
+        public abstract HitResult HitTest(Camera camera, Ray ray);
 
         // Optimisable version of HitTest() which just returns true or false.
         public virtual bool HitTestQuick(Camera camera, Ray ray)

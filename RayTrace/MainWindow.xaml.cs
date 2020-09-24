@@ -208,6 +208,7 @@ namespace RayTrace
             //listView.ItemsSource = Entities;
         }
 
+        // Render a single pixel from the current Canvas.
         private void RenderPoint(int x, int y)
         {
             if (canvas != null)
@@ -282,8 +283,7 @@ namespace RayTrace
 
             canvas = new Canvas(width, height);
 
-            double dpiX, dpiY;
-            GetDpi(out dpiX, out dpiY);
+            GetDpi(out double dpiX, out double dpiY);
 
             bitmap = new WriteableBitmap(canvas.Width, canvas.Height, dpiX, dpiY, PixelFormats.Bgr32, null);
 
@@ -312,7 +312,8 @@ namespace RayTrace
                 case RenderDirection.TopToBottom:  /* The default */ break;
             }
 
-            scene.Camera.UpdateMatrix();
+            scene.Camera.UpdateMatrix();    // XXX Needed?
+            scene.CreateCaches();
 
             List<Task> tasks = new List<Task>();
 

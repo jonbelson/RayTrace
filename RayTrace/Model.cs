@@ -9,6 +9,9 @@ using System.Windows.Media.Media3D;
 
 namespace RayTrace
 {
+    //
+    // Class containing the geometry and textures that comprise a 3D model.
+    //
     public class ModelData
     {
         public TextureBitmap texture = null;
@@ -18,7 +21,7 @@ namespace RayTrace
             public float u, v;
         }
 
-        public class /*struct*/ Triangle
+        public class Triangle
         {
             public int v0, v1, v2;  // Indices into Point array.
             public int t0, t1, t2;  // Indexes into Texel array.
@@ -38,6 +41,7 @@ namespace RayTrace
         public double maxY = 0.0;
         public double maxZ = 0.0;
 
+        // Constructor.
         public ModelData()
         {
         }
@@ -66,12 +70,31 @@ namespace RayTrace
     {
         private ModelData _modelData;
 
+        // Cached vertices and normal vectors converted to View space.
+        private Point[] _viewPoints = null;
+        private Vector[] _viewNormals = null;
+        private BoundingBox _viewBoundingBox;
+
+        // Root Node of space partition tree.
+        private Node _root = null;
+
+        private Point GetTrianglePointV0(int index) => _viewPoints[_modelData.triangles[index].v0];
+        private Point GetTrianglePointV1(int index) => _viewPoints[_modelData.triangles[index].v1];
+        private Point GetTrianglePointV2(int index) => _viewPoints[_modelData.triangles[index].v2];
+
+        public Vector GetTriangleNormal0(int index) => _viewNormals[_modelData.triangles[index].n0];
+        public Vector GetTriangleNormal1(int index) => _viewNormals[_modelData.triangles[index].n1];
+        public Vector GetTriangleNormal2(int index) => _viewNormals[_modelData.triangles[index].n2];
+
+        public Vector GetTriangleNormal(int index) => _viewNormals[_modelData.triangles[index].n];
+
         public double MinX => _modelData.minX;
         public double MinY => _modelData.minY;
         public double MinZ => _modelData.minZ;
         public double MaxX => _modelData.maxX;
         public double MaxY => _modelData.maxY;
         public double MaxZ => _modelData.maxZ;
+
 
         private Vector GetNormal(Point P0, Point P1, Point P2)
         {
@@ -133,37 +156,130 @@ namespace RayTrace
             return new ModelData.Texel() { u = texelU, v = texelV };
         }
 
+        // Constructor.
         public Model(Point p, ModelData modelData) : base(p)
         {
             _modelData = modelData;
 
-            Matrix rotate = Matrix.GetRotationY((float) Math.PI/2);
+//            Matrix rotate = Matrix.GetRotationY((float) Math.PI/2);
+            Matrix rotate = Matrix.GetRotationX((float)Math.PI / 2);
             Matrix scale = Matrix.GetScale(2.0, 2.0, 2.0);
             Matrix translate = Matrix.GetTranslation(0.0, 0.0, 10.0);
+
+            rotate = Matrix.GetRotationY((float)Math.PI / 2) * rotate;
 
             //ObjectToWorld = rotate * scale * translate;
 
             //ObjectToWorld = scale * translate;
             //ObjectToWorld = scale;
             //ObjectToWorld = rotate * scale * translate;
-            //ObjectToWorld = rotate;
+            ObjectToWorld = rotate;
+        }
+
+        public override void CreateCache(Camera camera)
+        {
+            if (_modelData != null)
+            {
+                // Convert vertices from Model space to View space.
+                Matrix ObjectToView = camera.WorldToView * ObjectToWorld;
+
+                _viewPoints = new Point[_modelData.points.Length];
+
+                for (int i = 0; i < _modelData.points.Length; i++)
+                {
+                    _viewPoints[i] = ObjectToView * _modelData.points[i];
+                }
+
+                Matrix ObjectToViewNormal = camera.NormalMatrix * ObjectToWorldNormal;
+
+                _viewNormals = new Vector[_modelData.normals.Length];
+
+                for (int i=0; i<_modelData.normals.Length; i++)
+                {
+                    _viewNormals[i] = ObjectToViewNormal * _modelData.normals[i];
+                }
+
+                BoundingBox bb = _modelData.GetBoundingBox();
+                _viewBoundingBox = bb.Transform(ObjectToView);
+
+                TreeMaker treeMaker = new TreeMaker();
+                _root = treeMaker.MakeTree(_modelData, ObjectToView);
+            }
+        }
+
+        // Recurse through partition tree, checking for intersections in boxes that that ray passees through.
+        private void HitTestRecurse(List<HitResult> hitResults, Node node, Point p1, Point p2, bool segmentOnly)
+        {
+            // Does ray passes through us?
+            if (node.Box.Intersects(p1, p2))
+            {
+                if (node.Left == null && node.Right == null)
+                {
+                    // We're a leaf node, so test our triangles.
+                    foreach (int i in node.Triangles)
+                    {
+                        HitResult hr = HitTestTriangle(null, null, i, p1, p2, segmentOnly);
+                        if (hr.HasEntry())
+                        {
+                            hitResults.Add(hr);
+                        }
+                    }
+                    return;
+                }
+
+                if (node.Left != null)
+                {
+                    HitTestRecurse(hitResults, node.Left, p1, p2, segmentOnly);
+                }
+                if (node.Right != null)
+                {
+                    HitTestRecurse(hitResults, node.Right, p1, p2, segmentOnly);
+                }
+            }
         }
 
         private HitResult HitTestImpl(Camera camera, Point p1, Point p2, bool segmentOnly)
         {
             HitResult hitResult = new HitResult(null);
 
+            Node node = _root;
+            List<HitResult> hitResults = new List<HitResult>();
+            HitTestRecurse(hitResults, node, p1, p2, segmentOnly);
+
+            if (hitResults.Count > 0)
+            {
+                double closest2 = Double.MaxValue;
+
+                foreach (HitResult hr in hitResults)
+                {
+                    if (hr.HasEntry())
+                    {
+                        double d = p1.Distance(hr.Entry);
+                        if (d < closest2)
+                        {
+                            closest2 = d;
+                            hitResult = hr;
+                        }
+                    }
+                }
+
+                return hitResult;
+
+            }
+
+            return new HitResult(this);
+
+
+
+
+
+
             Matrix ObjectToView = camera.WorldToView * ObjectToWorld;
 
-            //Point Min = new Point(_modelData.minX, _modelData.minY, _modelData.minZ);
-            //Point Max = new Point(_modelData.maxX, _modelData.maxY, _modelData.maxZ);
+//            BoundingBox bb = _modelData.GetBoundingBox();
+//            BoundingBox bb2 = bb.Transform(ObjectToView);
 
-            //BoundingBox bb = new BoundingBox(Min.X, Max.X, Min.Y, Max.Y, Min.Z, Max.Z);
-            BoundingBox bb = _modelData.GetBoundingBox();
-
-            BoundingBox bb2 = bb.Transform(ObjectToView);
-
-            if (!bb2.Intersects(p1, p2))
+            if (!_viewBoundingBox.Intersects(p1, p2))
             {
                 return hitResult;
             }
@@ -206,10 +322,13 @@ namespace RayTrace
             if (_modelData.points.Length <= _modelData.triangles[index].v2) return hr;
             if (_modelData.normals.Length <= _modelData.triangles[index].n) return hr;
 
-            Vector Normal = _modelData.GetTriangleNormal(index).Negate();
+            //Vector Normal = _modelData.GetTriangleNormal(index).Negate();
 
-            Point vPos = ObjectToView * _modelData.GetTrianglePointV0(index);
-            Vector vNormal = ObjectToViewNormal * Normal;
+            //Point vPos = ObjectToView * _modelData.GetTrianglePointV0(index);
+        Point vPos = GetTrianglePointV0(index);
+
+            //Vector vNormal = ObjectToViewNormal * Normal;
+        Vector vNormal = GetTriangleNormal(index).Negate();
 
             // Check if face is pointing away from us.
             Vector ray = p2 - p1;
@@ -263,8 +382,11 @@ namespace RayTrace
             // From https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/ray-triangle-intersection-geometric-solution
 
             Point V0 = vPos;
-            Point V1 = ObjectToView * _modelData.GetTrianglePointV1(index);
-            Point V2 = ObjectToView * _modelData.GetTrianglePointV2(index);
+            //Point V1 = ObjectToView * _modelData.GetTrianglePointV1(index);
+            //Point V2 = ObjectToView * _modelData.GetTrianglePointV2(index);
+
+        Point V1 = GetTrianglePointV1(index);
+        Point V2 = GetTrianglePointV2(index);
 
             Vector edge0 = V1 - V0;
             Vector edge1 = V2 - V1;
@@ -284,12 +406,16 @@ namespace RayTrace
                 hr.u = (float) uv.Item1;
                 hr.v = (float) uv.Item2;
 
-                Vector n0 = _modelData.GetTriangleNormal0(index);
-                Vector n1 = _modelData.GetTriangleNormal1(index);
-                Vector n2 = _modelData.GetTriangleNormal2(index);
+                //Vector n0 = _modelData.GetTriangleNormal0(index);
+                //Vector n1 = _modelData.GetTriangleNormal1(index);
+                //Vector n2 = _modelData.GetTriangleNormal2(index);
+
+                Vector n0 = GetTriangleNormal0(index);
+                Vector n1 = GetTriangleNormal1(index);
+                Vector n2 = GetTriangleNormal2(index);
 
                 Vector N = GetNormal(n0, n1, n2, uv.Item1, uv.Item2);
-                N = ObjectToViewNormal * N; // XXX Check normal is being treated correctly re. transforms.
+                //N = ObjectToViewNormal * N; // XXX Check normal is being treated correctly re. transforms.
                 hr.EntryNormal = N;
 
                 hr.index = index;
@@ -309,6 +435,9 @@ namespace RayTrace
 
         public override bool HitTestQuick(Camera camera, Ray ray)
         {
+            HitResult hr = HitTest(camera, ray);
+            return hr.HasEntry();
+
             bool segmentOnly = (ray.TMax == 1.0);
 
             Point p1 = ray.Origin;
@@ -316,22 +445,26 @@ namespace RayTrace
 
             Matrix ObjectToView = camera.WorldToView * ObjectToWorld;
 
-            BoundingBox bb = _modelData.GetBoundingBox();
-            BoundingBox bb2 = bb.Transform(ObjectToView);
+            //BoundingBox bb = _modelData.GetBoundingBox();
+            //BoundingBox bb2 = bb.Transform(ObjectToView);
 
-            if (!bb2.Intersects(p1, p2))
+            //if (!bb2.Intersects(p1, p2))
+            if (!_viewBoundingBox.Intersects(p1, p2))
             {
                 return false;
             }
 
-            Matrix ObjectToViewNormal = camera.NormalMatrix * ObjectToWorldNormal;
+            //Matrix ObjectToViewNormal = camera.NormalMatrix * ObjectToWorldNormal;
 
             for (int i = 0; i < _modelData.triangles.Length; i++)
             {
-                Vector Normal = _modelData.GetTriangleNormal(i).Negate();
+                //Vector Normal = _modelData.GetTriangleNormal(i).Negate();
 
-                Point vPos = ObjectToView * _modelData.GetTrianglePointV0(i);
-                Vector vNormal = ObjectToViewNormal * Normal;
+                //Point vPos = ObjectToView * _modelData.GetTrianglePointV0(i);
+                //Vector vNormal = ObjectToViewNormal * Normal;
+
+                Point vPos = GetTrianglePointV0(i);
+                Vector vNormal = GetTriangleNormal(i).Negate();
 
                 double A = vNormal.I;
                 double B = vNormal.J;
@@ -384,8 +517,10 @@ namespace RayTrace
                 // From https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/ray-triangle-intersection-geometric-solution
 
                 Point V0 = vPos;
-                Point V1 = ObjectToView * _modelData.GetTrianglePointV1(i);
-                Point V2 = ObjectToView * _modelData.GetTrianglePointV2(i);
+                //Point V1 = ObjectToView * _modelData.GetTrianglePointV1(i);
+                //Point V2 = ObjectToView * _modelData.GetTrianglePointV2(i);
+                Point V1 = GetTrianglePointV1(i);
+                Point V2 = GetTrianglePointV2(i);
 
                 Vector edge0 = V1 - V0;
                 Vector edge1 = V2 - V1;

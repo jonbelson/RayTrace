@@ -14,7 +14,7 @@ namespace RayTrace
         public List<Light> Lights = new List<Light>();
 
         [NotifyParentProperty(true)]
-        public Camera Camera { get; /*set;*/ } = new Camera(new Point(0, 0, 0), new Point(0, 0, 1));
+        public Camera Camera { get; } = new Camera(new Point(0, 0, 0), new Point(0, 0, 1));
 
         public Colour Ambient { get; set; } = new Colour(0.2f, 0.2f, 0.2f);
 
@@ -27,8 +27,17 @@ namespace RayTrace
             //Size = 100.0;
         }
 
+        public void CreateCaches()
+        {
+            Camera.UpdateMatrix();
+
+            foreach (Shape shape in Shapes)
+            {
+                shape.CreateCache(Camera);
+            }
+        }
+
         // Return closest hit object.
-//        public HitResult HitTest(Camera camera, Point pos, Vector ray)
         public HitResult HitTest(Camera camera, Ray ray)
         {
             HitResult hitResult = new HitResult(null);
@@ -39,11 +48,9 @@ namespace RayTrace
             {
                 if (!shape.Enabled) continue;
 
-//                HitResult hr = shape.HitTest(camera, pos, ray);
                 HitResult hr = shape.HitTest(camera, ray);
                 if (hr.HasEntry())
                 {
-//                    double d = pos.Distance(hr.Entry);
                     double d = ray.Origin.Distance(hr.Entry);
                     if (d < closest)
                     {
@@ -59,31 +66,11 @@ namespace RayTrace
         // Return closest hit object.
         public HitResult HitTest(Camera camera, Point p1, Point p2)
         {
-            HitResult hitResult = new HitResult(null);
-
             Ray ray = new Ray(p1, p2);
-
-            double closest = Double.MaxValue;
-
-            foreach (Shape shape in Shapes)
-            {
-                if (!shape.Enabled) continue;
-
-                HitResult hr = shape.HitTest(camera, ray /*p1, p2*/);
-                if (hr.HasEntry())
-                {
-                    double d = p1.Distance(hr.Entry);
-                    if (d < closest)
-                    {
-                        closest = d;
-                        hitResult = hr;
-                    }
-                }
-            }
-
-            return hitResult;
+            return HitTest(camera, ray);
         }
 
+        // Return true if an object is intersected.
         public bool HitTestFast(Camera camera, Ray ray)
         {
             foreach (Shape shape in Shapes)
@@ -99,25 +86,13 @@ namespace RayTrace
             return false;
         }
 
+        // Return true if an object is intersected.
         public bool HitTestFast(Camera camera, Point p1, Point p2)
         {
             Ray ray = new Ray(p1, p2);
 
             return HitTestFast(camera, ray);
-/*
-            foreach (Shape shape in Shapes)
-            {
-                if (!shape.Enabled) continue;
-
-                if (shape.HitTestQuick(camera, ray))
-                {
-                    return true;
-                }
-            }
-
-            return false;*/
         }
-
 
         public List<Light> IsIlluminated(Camera camera, HitResult hr)
         {

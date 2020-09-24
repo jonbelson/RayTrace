@@ -37,7 +37,7 @@ namespace RayTrace
         // Matrix for transforming World normals to View.
         public Matrix NormalMatrix { get; set; } = new Matrix();
 
-        /*private*/ public  void UpdateMatrix()
+        /*private*/ public void UpdateMatrix()
         {
             WorldToView.SetLookAt(_pos, _target);
 
@@ -47,6 +47,7 @@ namespace RayTrace
             NormalMatrix.M34 = 0.0;
         }
 
+        // Constructor.
         public Camera(Point from, Point to)
         {
             _pos = from;

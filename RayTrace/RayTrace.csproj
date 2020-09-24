@@ -90,6 +90,7 @@
     <Compile Include="TextureNoise.cs" />
     <Compile Include="TextureSolid.cs" />
     <Compile Include="TextureSquares.cs" />
+    <Compile Include="TreeMaker.cs" />
     <Compile Include="Vector.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

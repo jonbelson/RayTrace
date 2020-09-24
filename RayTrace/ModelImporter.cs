@@ -215,6 +215,9 @@ namespace RayTrace
                 Console.WriteLine($"Y : [ {modelData.minY} {modelData.maxY} ]");
                 Console.WriteLine($"Z : [ {modelData.minZ} {modelData.maxZ} ]");
 
+                Console.WriteLine($"Number points : {points.Count}");
+                Console.WriteLine($"Number faces : {faces.Count}");
+
                 List<ModelData.Triangle> triangles = new List<ModelData.Triangle>();
                 foreach (Face face in faces)
                 {
@@ -289,6 +292,8 @@ namespace RayTrace
                     }
                 }
                 modelData.triangles = triangles.ToArray();
+
+                Console.WriteLine($"Number triangles : {triangles.Count}");
 
                 modelData.normals = normals.ToArray();
 

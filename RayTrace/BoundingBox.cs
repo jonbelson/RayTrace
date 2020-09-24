@@ -23,6 +23,34 @@ namespace RayTrace
         public double MinZ { get; set; }
         public double MaxZ { get; set; }
 
+        public enum Axis { X, Y, Z };
+
+        public Point GetCentre()
+        {
+            return new Point()
+            {
+                X = (MinX + MaxX) / 2.0,
+                Y = (MinY + MaxY) / 2.0,
+                Z = (MinZ + MaxZ) / 2.0
+            };
+        }
+
+        public Axis GetLongestAxis()
+        {
+            double width = Math.Abs(MaxX - MinX);
+            double height = Math.Abs(MaxY - MinY);
+            double depth = Math.Abs(MaxZ - MinZ);
+
+            if (width > height)
+            {
+                return (width > depth) ? Axis.X : Axis.Z;
+            }
+            else
+            {
+                return (height > depth) ? Axis.Y : Axis.Z;
+            }
+        }
+
         // Default BoundingBox that contains, well, nothing.
         public BoundingBox()
         {
