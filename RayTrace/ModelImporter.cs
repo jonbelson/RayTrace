@@ -79,6 +79,7 @@ namespace RayTrace
                     string[] numbers = tokens[i].Split('/');
                     if (numbers.Length == 3)
                     {
+                        // v/vt/vn format.
                         int i1, i2, i3;
                         if (Int32.TryParse(numbers[0], out i1))
                         {
@@ -95,6 +96,20 @@ namespace RayTrace
                                     Debug.Assert(i1 >= 0 && i2 >= 0 && i3 >= 0);
                                 }
                             }
+                        }
+                    }
+                    else if (numbers.Length == 1)
+                    {
+                        int i1;
+                        if (Int32.TryParse(numbers[0], out i1))
+                        {
+                            FaceVertex faceVertex = new FaceVertex();
+                            faceVertex.vertex = i1;
+                            faceVertex.texture = 0;
+                            faceVertex.normal = -1;
+                            face.vertices.Add(faceVertex);
+
+                            Debug.Assert(i1 >= 0);
                         }
                     }
                 }

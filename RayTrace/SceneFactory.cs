@@ -298,12 +298,20 @@ namespace RayTrace
             Scene scene = new Scene();
 
             ModelImporter importer = new ModelImporter();
-//            ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\pbr-low-poly-fox-character");
-//            ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\dinosaur");
-            ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\apollo-und-daphne");
+
+            Matrix objectToWorld = new Matrix();
+            //ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\pbr-low-poly-fox-character");
+            //            ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\dinosaur");
+
+            //            ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\apollo-und-daphne");
+            //            Matrix objectToWorld = Matrix.GetRotationX((float)Math.PI / 2);
+            //            objectToWorld = Matrix.GetRotationY((float)Math.PI / 2) * objectToWorld;
+
+            ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\day-18-office-rat");
+
 
             Model model = new Model(new Point(0.0, 0.0, 10.0), modelData);
-            //model.ObjectToWorld
+            model.ObjectToWorld = objectToWorld;
 
             model.Material.Texture = new TextureSolid(Palette.White);
             //model = ModelFactory.Octahedron();

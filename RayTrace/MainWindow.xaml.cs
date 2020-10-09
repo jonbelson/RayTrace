@@ -177,14 +177,14 @@ namespace RayTrace
             textBoxAdaptiveSubSamplingDepth.IsEnabled = false;
 
             //scene = SceneFactory.PhongDemoScene();
-            //scene = SceneFactory.TexturedSpheresDemoScene();
+            scene = SceneFactory.TexturedSpheresDemoScene();
             //scene = SceneFactory.RefractionDemoScene();
             //scene = SceneFactory.BoxDemoScene();
             //scene = SceneFactory.SphereDemoScene();
             //scene = SceneFactory.SoftLightDemoScene();
             //scene = SceneFactory.FovDemoScene();
             //scene = SceneFactory.ModelScene();
-            scene = SceneFactory.ObjScene();
+            //scene = SceneFactory.ObjScene();
 
             comboBoxFormat.SelectedItem = ImageFormat.Tiff;
 
@@ -429,8 +429,7 @@ namespace RayTrace
             var x = bitmap.PixelWidth * pos.X / image.ActualWidth;
             var y = bitmap.PixelHeight* pos.Y / image.ActualHeight;
 
-            Console.WriteLine(x + ", " + y);
-            //Console.WriteLine(Mouse.GetPosition());
+            //Console.WriteLine(x + ", " + y);
         }
 
         private void image_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

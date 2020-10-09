@@ -78,18 +78,24 @@ namespace RayTrace
         // Root Node of space partition tree.
         private Node _root = null;
 
+        // Utility functions to get pre-cached vertices.
         private Point GetTrianglePointV0(int index) => _viewPoints[_modelData.triangles[index].v0];
         private Point GetTrianglePointV1(int index) => _viewPoints[_modelData.triangles[index].v1];
         private Point GetTrianglePointV2(int index) => _viewPoints[_modelData.triangles[index].v2];
 
+        // Utility functions to get pre-cached normals.
         public Vector GetTriangleNormal0(int index) => _viewNormals[_modelData.triangles[index].n0];
         public Vector GetTriangleNormal1(int index) => _viewNormals[_modelData.triangles[index].n1];
         public Vector GetTriangleNormal2(int index) => _viewNormals[_modelData.triangles[index].n2];
 
+        // If nromal index is set to -1, assume that there are no vertex normals for this triangle.
+        public bool HasVectorNormal(int index) => _modelData.triangles[index].n0 != -1;
+
         public Vector GetTriangleNormal(int index) => _viewNormals[_modelData.triangles[index].n];
 
         public double MinX => _modelData.minX;
-        public double MinY => _modelData.minY;
+        //public double MinY => _modelData.minY;
+        public double MinY { get { BoundingBox bb = _modelData.GetBoundingBox(); BoundingBox bb2 = bb.Transform(ObjectToWorld); return bb2.MinY; } }
         public double MinZ => _modelData.minZ;
         public double MaxX => _modelData.maxX;
         public double MaxY => _modelData.maxY;
@@ -166,16 +172,17 @@ namespace RayTrace
             Matrix scale = Matrix.GetScale(2.0, 2.0, 2.0);
             Matrix translate = Matrix.GetTranslation(0.0, 0.0, 10.0);
 
-            rotate = Matrix.GetRotationY((float)Math.PI / 2) * rotate;
+            //rotate = Matrix.GetRotationY((float)Math.PI / 2) * rotate;
 
             //ObjectToWorld = rotate * scale * translate;
 
             //ObjectToWorld = scale * translate;
             //ObjectToWorld = scale;
             //ObjectToWorld = rotate * scale * translate;
-            ObjectToWorld = rotate;
+            //ObjectToWorld = rotate;
         }
 
+        // Transform all vertices to View space based on current Camera position and orientation.
         public override void CreateCache(Camera camera)
         {
             if (_modelData != null)
@@ -410,13 +417,16 @@ namespace RayTrace
                 //Vector n1 = _modelData.GetTriangleNormal1(index);
                 //Vector n2 = _modelData.GetTriangleNormal2(index);
 
-                Vector n0 = GetTriangleNormal0(index);
-                Vector n1 = GetTriangleNormal1(index);
-                Vector n2 = GetTriangleNormal2(index);
+                if (HasVectorNormal(index))
+                {
+                    Vector n0 = GetTriangleNormal0(index);
+                    Vector n1 = GetTriangleNormal1(index);
+                    Vector n2 = GetTriangleNormal2(index);
 
-                Vector N = GetNormal(n0, n1, n2, uv.Item1, uv.Item2);
-                //N = ObjectToViewNormal * N; // XXX Check normal is being treated correctly re. transforms.
-                hr.EntryNormal = N;
+                    Vector N = GetNormal(n0, n1, n2, uv.Item1, uv.Item2);
+                    //N = ObjectToViewNormal * N; // XXX Check normal is being treated correctly re. transforms.
+                    hr.EntryNormal = N;
+                }
 
                 hr.index = index;
             }

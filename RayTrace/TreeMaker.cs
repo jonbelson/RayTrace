@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
+using System.Security.RightsManagement;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -22,11 +23,34 @@ namespace RayTrace
 
     public class TreeMaker
     {
+        public int MaxDepth { get; set; } = 10;
+
         private Matrix _objectToView = new Matrix();
 
         private Point GetTrianglePointV0(ModelData modelData, int index) => _objectToView * modelData.points[modelData.triangles[index].v0];
         private Point GetTrianglePointV1(ModelData modelData, int index) => _objectToView * modelData.points[modelData.triangles[index].v1];
         private Point GetTrianglePointV2(ModelData modelData, int index) => _objectToView * modelData.points[modelData.triangles[index].v2];
+
+        // Get centroid of all vertices for specified triangles.
+        private Point GetCentroid(ModelData modelData, List<int> triangles)
+        {
+            Point p = new Point();
+
+            foreach (int i in triangles)
+            {
+                Point p0 = GetTrianglePointV0(modelData, i);
+                Point p1 = GetTrianglePointV1(modelData, i);
+                Point p2 = GetTrianglePointV2(modelData, i);
+
+                p.X += p0.X + p1.X + p2.X;
+                p.Y += p0.Y + p1.Y + p2.Y;
+                p.Z += p0.Z + p1.Z + p2.Z;
+            }
+
+            int numPoints = triangles.Count() * 3;  // Three vertices for each triangle.
+
+            return p.Scale(1.0/numPoints);
+        }
 
         // Get BoundingBox containing all vertices from specified triangles.
         private BoundingBox GetBoundingBox(ModelData modelData, List <int> triangles)
@@ -102,12 +126,19 @@ namespace RayTrace
             node.Box = bb;
             node.Triangles = triangles;
 
+            // Don't bother subdividing further if there are too few triangles.
+            if (triangles.Count < 10)
+            {
+                return node;
+            }
+
             List<int> left = new List<int>();
             List<int> right = new List<int>();
 
             // Use the centre point of the BB as a threshold for subdividing. Would be better to
             //  use the centre of the triangle points, but this will do for now.
-            Point centre = bb.GetCentre();
+            //Point centre = bb.GetCentre();
+            Point centre = GetCentroid(modelData, triangles);
 
             var longestAxis = bb.GetLongestAxis();
             switch (longestAxis)
@@ -138,9 +169,14 @@ namespace RayTrace
             }
 
             // If left and right have > 50% in common, don't split further.
+            var intersect = left.Intersect(right).ToList();
+            if (intersect.Count > left.Count/2 && intersect.Count > right.Count/2)
+            {
+                return node;
+            }
 
             depth++;
-            if (depth < 10)
+            if (depth < MaxDepth)
             {
                 // Create child Nodes if there are any triangles.
                 if (left.Count() > 0) node.Left = MakeNode(modelData, left, depth);

@@ -10,14 +10,6 @@ namespace RayTrace
     // Negative Z axis towards observer.
     public class Renderer
     {
-        public enum AntiAliasType { None, NoiseGrid, SuperSampling, AdaptiveSupersampling }
-
-        // Distance of observer along Z axis.
-        //private double focalLength = 500.0;
-
-        // Position of viewer.
-        //private Point vPos;
-
         public bool UseAmbient { set; get; } = true;
         public bool UseDiffuse { set; get; } = true;
         public bool UseShadows { set; get; } = true;
@@ -27,6 +19,7 @@ namespace RayTrace
         public bool UseSoftShadows { get; set; } = false;//true;
         public bool UseDepthOfField { get; set; } = false;//true;
 
+        public enum AntiAliasType { None, NoiseGrid, SuperSampling, AdaptiveSupersampling }
         public AntiAliasType AntiAlias { get; set; } = AntiAliasType.None;
 
         private int _adaptiveSuperSamplingDepth = 5;
@@ -315,6 +308,63 @@ namespace RayTrace
             return fraction;
         }
 
+        private Colour GetReflectedColour(Camera camera, Scene scene, Vector ray, HitResult hr, int depth)
+        {
+            Colour c = Palette.Black;
+
+            // Get reflection angle 'R'.
+            Vector vecToViewer = ray.Scale(-1.0f);
+
+            double dpVE = vecToViewer.DotProduct(hr.EntryNormal);
+
+            Vector R = hr.EntryNormal.Scale(2.0 * dpVE) - vecToViewer;
+            R = R.Normalise();
+
+            // Make point in direction of 'R' to use as an endpoint.
+            Vector v = R.Scale(1000.0f);
+            Point far = hr.Entry.Offset(v);
+
+            HitResult hrReflect = scene.HitTest(camera, hr.Entry, far);
+            if (hrReflect.HasEntry())
+            {
+                c = CalculateColour(camera, scene, R, hrReflect, depth);
+            }
+            else
+            {
+                // Reflection didn't hit anything, so just use the Scene backgorund colour.
+                c = scene.Background;
+            }
+
+            return c;
+        }
+
+        private Colour GetRefractedColour(Camera camera, Scene scene, Vector ray, HitResult hr, int depth)
+        {
+            Colour c = Palette.Black;
+
+            Shape shape = hr.shape;
+
+            // Hit object refracts, so work out direction of refracted ray (in then out) and check if it hits anything.
+            var result = shape.GetRefractedVector(camera, ray, hr);
+
+            Ray ray2 = new Ray(result.Item1, result.Item2);
+            HitResult hrRefracted = scene.HitTest(camera, ray2);
+            if (hrRefracted.HasEntry())
+            {
+                //Ray ray3 = new Ray(hrRefracted.Entry, result.Item2);
+                c = CalculateColour(camera, scene, result.Item2, hrRefracted, depth);
+
+                //refracted = c;
+            }
+            else
+            {
+                // Refraction didn't hit anything, so just use the Scene backgorund colour.
+                c = scene.Background;
+            }
+
+            return c;
+        }
+
         // scene    Scene we are rendering.
         // ray      Incoming ray that produced HitResult.
         // hr       HitResult that detected intersection.
@@ -322,8 +372,8 @@ namespace RayTrace
         {
             Debug.Assert(hr.HasEntry());
 
-            depth++;
             if (depth > RecursionDepth) return Palette.Black;
+            depth++;
 
             Shape shape = hr.shape;
 
@@ -345,22 +395,30 @@ namespace RayTrace
                     // Hit object refracts, so work out direction of refracted ray (in then out) and check if it hits anything.
                     var result = shape.GetRefractedVector(camera, ray, hr);
 
-                    //Vector refracted = result.Item1;
+                    // Schlicks approximation of Fresnal's factor.
+                    // L = k_fresnal * L_reflected_ + (1 - k_fresnal) * L_refracted
+                    float n1 = RefractiveIndex.Vacuum;
+                    float n2 = shape.Material.RefractiveIndex;
+                    float R0 = ((n1 - n2) / (n1 + n2)) * ((n1 - n2) / (n1 + n2));
 
-                    Ray ray2 = new Ray(result.Item1, result.Item2);
-                    HitResult hrRefracted = scene.HitTest(camera, ray2 /*result.Item1, result.Item2*/);
-                    if (hrRefracted.HasEntry())
-                    {
-                        //Ray ray3 = new Ray(hrRefracted.Entry, result.Item2);
-                        Colour c = CalculateColour(camera, scene, result.Item2, hrRefracted, depth);
+                    Vector vecToViewer = ray.Scale(-1.0f).Normalise();
+                    //vecToViewer = vecToViewer.Normalise();
+                    float cosTheta = (float) vecToViewer.DotProduct(hr.EntryNormal);
 
-                        refracted = c;
-                    }
-                    else
-                    {
-                        // Refraction didn't hit anything, so just use the Scene backgorund colour.
-                        refracted = scene.Background;
-                    }
+                    float Rtheta = R0 + (1.0f - R0) * (1.0f * cosTheta);
+                    float fresnalFactor = Rtheta;
+
+                    Debug.Assert(fresnalFactor >= 0.0);
+                    Debug.Assert(fresnalFactor <= 1.0);
+
+                    Colour fresnalReflect = GetReflectedColour(camera, scene, ray, hr, depth);
+                    Colour fresnalRefract = GetRefractedColour(camera, scene, ray, hr, depth);
+
+//                    refracted = fresnalReflect * fresnalFactor + fresnalRefract*(1.0f - fresnalFactor);
+                    refracted = fresnalRefract * fresnalFactor + fresnalReflect * (1.0f - fresnalFactor);
+
+                    //refracted = fresnalRefract;
+                    //refracted = Palette.Red * fresnalFactor + Palette.Green * (1.0f - fresnalFactor);
                 }
             }
 
@@ -368,30 +426,7 @@ namespace RayTrace
             {
                 if (shape.HasReflectivity())
                 {
-                    // Get reflection angle 'R'.
-                    //Vector vecToViewer = new Vector(-x, -y, -focalLength, true);
-                    Vector vecToViewer = ray.Scale(-1.0f);
-
-                    double dpVE = vecToViewer.DotProduct(hr.EntryNormal);
-
-                    Vector R = hr.EntryNormal.Scale(2.0 * dpVE) - vecToViewer;
-                    R = R.Normalise();
-
-                    // Make point in direction of 'R' to use as an endpoint.
-                    Vector v = R.Scale(1000.0f);
-                    Point far = hr.Entry.Offset(v);
-
-                    HitResult hrReflect = scene.HitTest(camera, hr.Entry, far);
-                    if (hrReflect.HasEntry())
-                    {
-                        Colour c = CalculateColour(camera, scene, R, hrReflect, depth);
-                        reflected = c;
-                    }
-                    else
-                    {
-                        // Reflection didn't hit anything, so just use the Scene backgorund colour.
-                        reflected = scene.Background;
-                    }
+                    reflected = GetReflectedColour(camera, scene, ray, hr, depth);
                 }
             }
 
@@ -414,7 +449,7 @@ namespace RayTrace
                     }
                     else
                     {
-                        if (UseSoftShadows)
+                        if (UseSoftShadows && pointLight.Radius > 0)
                         {
                             visibleFraction = GetSoftShadow(camera, scene, hr.Entry, ray, pointLight);
                         }
@@ -423,11 +458,6 @@ namespace RayTrace
                             Point pos = hr.Entry;
                             Point lightPos = camera.WorldToView * pointLight.Pos;
 
-                            //HitResult hitResult = scene.HitTest(camera, pos, lightPos);
-                            //if (hitResult.HasEntry())
-                            //{
-                            //    continue;
-                            //}
                             if (scene.HitTestFast(camera, pos, lightPos))
                             {
                                 continue;
