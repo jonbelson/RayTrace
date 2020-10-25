@@ -10,9 +10,6 @@ namespace RayTrace
     {
         public Point Pos { get; set; }
 
-        // Effective radius of point soruce, as used in soft shadow calculations.
-        public int Radius { get; set; } = 0;
-
         public PointLight(Point p, float intensity, Colour c) : base(intensity, c)
         {
             Pos = p;
@@ -43,6 +40,13 @@ namespace RayTrace
             double lightAttenuation = 1.0 / vecToLight.MagnitudeSquared();
 
             return (float) lightAttenuation;
+        }
+
+        public override Colour GetIntensityAtPoint(Camera camera, Point p)
+        {
+            Vector vecToLight = GetDirection(camera, p);
+            double dDistanceSqr = vecToLight.MagnitudeSquared();
+            return Output / (4.0 * Math.PI * dDistanceSqr);
         }
 
         public override string ToString()

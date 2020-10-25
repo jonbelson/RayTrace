@@ -69,6 +69,7 @@
     <Compile Include="Model.cs" />
     <Compile Include="ModelFactory.cs" />
     <Compile Include="ModelImporter.cs" />
+    <Compile Include="NoiseSphere.cs" />
     <Compile Include="OutputWindow.xaml.cs">
       <DependentUpon>OutputWindow.xaml</DependentUpon>
     </Compile>
@@ -88,6 +89,7 @@
     <Compile Include="Texture.cs" />
     <Compile Include="TextureBitmap.cs" />
     <Compile Include="TextureNoise.cs" />
+    <Compile Include="TextureNoiseVolume.cs" />
     <Compile Include="TextureSolid.cs" />
     <Compile Include="TextureSquares.cs" />
     <Compile Include="TreeMaker.cs" />

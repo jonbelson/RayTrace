@@ -165,7 +165,7 @@ namespace RayTrace
 
             checkBoxAmbient.IsChecked = renderer.UseAmbient;
             checkBoxLighting.IsChecked = renderer.UseDiffuse;
-            checkBoxPhong.IsChecked = renderer.UsePhong;
+            checkBoxSpecular.IsChecked = renderer.UseSpecular;
             checkBoxRefraction.IsChecked = renderer.UseRefraction;
             checkBoxShadows.IsChecked = renderer.UseShadows;
             checkBoxSoftShadows.IsChecked = renderer.UseSoftShadows;
@@ -177,11 +177,11 @@ namespace RayTrace
             textBoxAdaptiveSubSamplingDepth.IsEnabled = false;
 
             //scene = SceneFactory.PhongDemoScene();
-            scene = SceneFactory.TexturedSpheresDemoScene();
+            //scene = SceneFactory.TexturedSpheresDemoScene();
             //scene = SceneFactory.RefractionDemoScene();
             //scene = SceneFactory.BoxDemoScene();
             //scene = SceneFactory.SphereDemoScene();
-            //scene = SceneFactory.SoftLightDemoScene();
+            scene = SceneFactory.SoftLightDemoScene();
             //scene = SceneFactory.FovDemoScene();
             //scene = SceneFactory.ModelScene();
             //scene = SceneFactory.ObjScene();
@@ -227,7 +227,7 @@ namespace RayTrace
         {
             renderer.UseAmbient = (bool)checkBoxAmbient.IsChecked;
             renderer.UseDiffuse = (bool)checkBoxLighting.IsChecked;
-            renderer.UsePhong = (bool)checkBoxPhong.IsChecked;
+            renderer.UseSpecular = (bool)checkBoxSpecular.IsChecked;
             renderer.UseRefraction = (bool)checkBoxRefraction.IsChecked;
             renderer.UseShadows = (bool)checkBoxShadows.IsChecked;
             renderer.UseSoftShadows = (bool)checkBoxSoftShadows.IsChecked;
@@ -289,20 +289,36 @@ namespace RayTrace
 
             buttonRender.IsEnabled = false;
 
-            int step = height / NumRenderBlocks;
+            float floatStep = ((float)height) / NumRenderBlocks;
+            int intStep = (int)floatStep;
 
-            // Make list of blocks to redner.
+            // Make list of blocks to render.
             List<RenderBlock> renderBlocks = new List<RenderBlock>();
 
-            //const int NumBlocks = 8;
-
+            int intY = 0;
+            float floatY = 0.0f;
             for (int y = 0; y < NumRenderBlocks; y++)
             {
+                int intX = 0;
+                float floatX = 0.0f;
+
+                int blockHeight = intStep;
+                if (floatY > intY) blockHeight++;
+
                 for (int x = 0; x < NumRenderBlocks; x++)
                 {
-                    RenderBlock renderBlock = new RenderBlock() { StartX = x * step, StartY = y * step, Width = step, Height = step };
+                    int blockWidth = intStep;
+                    if (floatX > intX) blockWidth++;
+
+                    RenderBlock renderBlock = new RenderBlock() { StartX = intX, StartY = intY, Width = blockWidth, Height = blockHeight };
                     renderBlocks.Add(renderBlock);
+
+                    intX += blockWidth;
+                    floatX += floatStep;
                 }
+
+                intY += blockHeight;
+                floatY += floatStep;
             }
 
             switch (direction)
@@ -317,7 +333,6 @@ namespace RayTrace
 
             List<Task> tasks = new List<Task>();
 
-            //for (int i = 0; i < height / step; i++)
             int i = 0;
             foreach (RenderBlock rb in renderBlocks)
             {
@@ -368,7 +383,6 @@ namespace RayTrace
             }
 
             return true;
-
         }
 
         private void buttonRender_Click(object sender, RoutedEventArgs e)
@@ -393,7 +407,7 @@ namespace RayTrace
 
         private void checkBoxLighting_Click(object sender, RoutedEventArgs e)
         {
-            checkBoxPhong.IsEnabled = (bool) checkBoxLighting.IsChecked;
+            checkBoxSpecular.IsEnabled = (bool) checkBoxLighting.IsChecked;
         }
 
         private void checkBoxReflections_Click(object sender, RoutedEventArgs e)

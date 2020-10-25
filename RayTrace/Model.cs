@@ -215,8 +215,13 @@ namespace RayTrace
         }
 
         // Recurse through partition tree, checking for intersections in boxes that that ray passees through.
-        private void HitTestRecurse(List<HitResult> hitResults, Node node, Point p1, Point p2, bool segmentOnly)
+        private void HitTestRecurse(List<HitResult> hitResults, Node node, Point p1, Point p2, bool segmentOnly, bool firstHitOnly)
         {
+            if (firstHitOnly && hitResults.Count > 0)
+            {
+                return;
+            }
+
             // Does ray passes through us?
             if (node.Box.Intersects(p1, p2))
             {
@@ -236,22 +241,22 @@ namespace RayTrace
 
                 if (node.Left != null)
                 {
-                    HitTestRecurse(hitResults, node.Left, p1, p2, segmentOnly);
+                    HitTestRecurse(hitResults, node.Left, p1, p2, segmentOnly, firstHitOnly);
                 }
                 if (node.Right != null)
                 {
-                    HitTestRecurse(hitResults, node.Right, p1, p2, segmentOnly);
+                    HitTestRecurse(hitResults, node.Right, p1, p2, segmentOnly, firstHitOnly);
                 }
             }
         }
 
-        private HitResult HitTestImpl(Camera camera, Point p1, Point p2, bool segmentOnly)
+        private HitResult HitTestImpl(Camera camera, Point p1, Point p2, bool segmentOnly, bool firstHitOnly)
         {
             HitResult hitResult = new HitResult(null);
 
             Node node = _root;
             List<HitResult> hitResults = new List<HitResult>();
-            HitTestRecurse(hitResults, node, p1, p2, segmentOnly);
+            HitTestRecurse(hitResults, node, p1, p2, segmentOnly, firstHitOnly);
 
             if (hitResults.Count > 0)
             {
@@ -428,7 +433,7 @@ namespace RayTrace
                     hr.EntryNormal = N;
                 }
 
-                hr.index = index;
+                hr.Index = index;
             }
 
             return hr;
@@ -440,18 +445,22 @@ namespace RayTrace
 
             Point p2 = ray.Origin.Offset(ray.Direction);
 
-            return HitTestImpl(camera, ray.Origin, p2, segmentOnly);
+            return HitTestImpl(camera, ray.Origin, p2, segmentOnly, false);
         }
 
         public override bool HitTestQuick(Camera camera, Ray ray)
         {
-            HitResult hr = HitTest(camera, ray);
-            return hr.HasEntry();
-
             bool segmentOnly = (ray.TMax == 1.0);
 
-            Point p1 = ray.Origin;
             Point p2 = ray.Origin.Offset(ray.Direction);
+
+            HitResult hr = HitTestImpl(camera, ray.Origin, p2, segmentOnly, true);
+            return hr.HasEntry();
+
+            //bool segmentOnly = (ray.TMax == 1.0);
+
+            Point p1 = ray.Origin;
+            //Point p2 = ray.Origin.Offset(ray.Direction);
 
             Matrix ObjectToView = camera.WorldToView * ObjectToWorld;
 
@@ -554,9 +563,9 @@ namespace RayTrace
         {
             if (_modelData.texture != null)
             {
-                ModelData.Texel t0 = _modelData.GetTriangleColour0(hr.index);
-                ModelData.Texel t1 = _modelData.GetTriangleColour1(hr.index);
-                ModelData.Texel t2 = _modelData.GetTriangleColour2(hr.index);
+                ModelData.Texel t0 = _modelData.GetTriangleColour0(hr.Index);
+                ModelData.Texel t1 = _modelData.GetTriangleColour1(hr.Index);
+                ModelData.Texel t2 = _modelData.GetTriangleColour2(hr.Index);
 
                 ModelData.Texel texel = GetColour(t0, t1, t2, hr.u, hr.v);
 

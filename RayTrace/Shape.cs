@@ -4,30 +4,28 @@ using System.Dynamic;
 
 namespace RayTrace
 {
+    // Result of an intersection test.
     public class HitResult
     {
         public Shape shape;
 
         private Point _entry;
-        //private Point _exit;
+        private bool _hasEntry = false;
 
-        private bool hasEntry = false;
-        //private bool hasExit = false;
+        public bool HasEntry () => _hasEntry;
 
-        public bool HasEntry () => hasEntry;
-        //public bool HasExit() => hasExit;
-
-        public Point Entry { get { return _entry; } set { _entry = value; hasEntry = true; } }
-        //public Point Exit { get { return _exit; } set { _exit = value; hasExit = true; } }
-
+        public Point Entry { get { return _entry; } set { _entry = value; _hasEntry = true; } }
         public Vector EntryNormal;  // Normal vector at intersetion point.
+
+        // Ray that resulted in this HitResult.
+        public Vector Ray { get; set; }
 
         // Texture cordinates.
         public float u;
         public float v;
 
         // Optional value used by certain Shapes (e.g. triangle that was hit in a Model).
-        public int index;
+        public int Index { get; set; }
 
         public HitResult(Shape shape)
         {
@@ -36,7 +34,7 @@ namespace RayTrace
         }
     }
 
-    // Base class for objects,
+    // Base class for objects.
     abstract public class Shape : Entity
     {
         protected double noiseRange = Perlin.GetRange();

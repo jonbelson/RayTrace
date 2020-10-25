@@ -28,10 +28,7 @@ namespace RayTrace
         {
         }
 
-        public Colour() : this(0.0f, 0.0f, 0.0f)
-        {
-            //Red = Green = Blue = 0.0f;
-        }
+        public Colour() : this(0.0f, 0.0f, 0.0f) { }
 
         public Colour(float red, float green, float blue)
         {
@@ -73,6 +70,8 @@ namespace RayTrace
         }
 
         public static Colour operator*(Colour c, double scale) => new Colour(c.Red * (float) scale, c.Green * (float) scale, c.Blue * (float) scale);
+
+        public static Colour operator/(Colour c, double scale) => new Colour(c.Red / (float)scale, c.Green / (float)scale, c.Blue / (float)scale);
 
         public Colour Add(Colour c)
         {

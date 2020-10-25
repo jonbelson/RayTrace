@@ -1,16 +1,29 @@
-﻿using System;
+﻿
+using System;
+using System.Drawing;
+
 namespace RayTrace
 {
-    // Characteristics of a Shape's surface.
+    public enum MaterialType
+    {
+        Diffuse, Reflective, RefractiveAndReflective, Phong
+    }
+
+    // Characteristics of a Shape's physical form.
     public class Material
     {
-        public double ka = 1.0;     // Ambient reflection coefficient.
-        public double kd = 1.0;     // Diffuse reflection coefficient (0 - 1).
+        //public double ka = 1.0;     // Ambient reflection coefficient.
+        //public double kd = 1.0;     // Diffuse reflection coefficient (0 - 1).
+
+        public MaterialType Type { get; set; } = MaterialType.Diffuse;
+
+        // Ratio of reflected light to incident light (Pd), i.e. how much light is reflected.
+        public Colour Albedo { get; set; } = new Colour(0.18f, 0.18f, 0.18f);
 
         // Phong reflection constants.
-        //public double Il = 1.0;
-        public double ks = 0.5;     // Specular reflection coefficient/constant.
-        public double ns = 4.0;    // 'Shininess' of surface, 1.0 (matt) - 100 (shiny)
+        public double PhongDiffuse = 0.75;      // Phong specular coefficient ('kd')
+        public double PhongSpecular = 0.5;      // Specular reflection coefficient/constant ('ks')
+        public double PhongShininess = 4.0;     // 'Shininess' of surface, 1.0 (matt) - 100 (shiny) ('ns'), 'specular exponent'
 
         private float roughness;
         private float transparency; // Transparency coefficient kt, range 0.0 to 1.0.
@@ -24,7 +37,9 @@ namespace RayTrace
         public bool HasTransparency() => Transparency > 0.0f;
         public bool HasReflectivity() => Reflectivity > 0.0f;
 
-//        public float IndexOfRefractive { get; set; } = RefractiveIndex.WindowGlass;
+        //// True if the Shape is considered solid, or false if at least part of the interior is empty.
+        //public bool IsSolid { get; set; }
+
         public float RefractiveIndex { get; set; } = RayTrace.RefractiveIndex.WindowGlass;
 
         public Texture Texture { get; set; }
@@ -43,6 +58,12 @@ namespace RayTrace
         }
 
         public virtual Colour GetColour(HitResult hr) { return Texture.GetColour(hr); }
+
+        public Vector GetReflection(HitResult hr)
+        {
+
+            return new Vector() ;
+        }
 
         public override string ToString()
         {

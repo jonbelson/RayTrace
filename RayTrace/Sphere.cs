@@ -29,7 +29,11 @@ namespace RayTrace
 			Se = camera.NormalMatrix * Se;
 			dp = Se.DotProduct(Sn);
 
-			double d = dp / Math.Sin(phi);
+			double d = 0.0;
+			if (phi != 0.0)
+			{
+				d = dp / Math.Sin(phi);
+			}
 			if (d > 1.0) d = 1.0;
 			if (d < -1.0) d = -1.0;
 			double theta = (Math.Acos(d)) / (2.0*Math.PI);

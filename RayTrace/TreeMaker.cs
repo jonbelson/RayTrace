@@ -24,6 +24,7 @@ namespace RayTrace
     public class TreeMaker
     {
         public int MaxDepth { get; set; } = 10;
+        public int MinTrianglesPerNode { get; set; } = 10;
 
         private Matrix _objectToView = new Matrix();
 
@@ -127,7 +128,7 @@ namespace RayTrace
             node.Triangles = triangles;
 
             // Don't bother subdividing further if there are too few triangles.
-            if (triangles.Count < 10)
+            if (triangles.Count < MinTrianglesPerNode)
             {
                 return node;
             }

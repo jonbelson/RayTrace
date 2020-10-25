@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Dynamic;
 using System.Net.NetworkInformation;
 using System.Runtime.CompilerServices;
+using System.Windows.Media.Converters;
 
 namespace RayTrace
 {
@@ -13,7 +14,7 @@ namespace RayTrace
         public bool UseAmbient { set; get; } = true;
         public bool UseDiffuse { set; get; } = true;
         public bool UseShadows { set; get; } = true;
-        public bool UsePhong { set; get; } = true;
+        public bool UseSpecular { set; get; } = true;
         public bool UseReflections { get; set; } = true;
         public bool UseRefraction { get; set; } = true;
         public bool UseSoftShadows { get; set; } = false;//true;
@@ -79,6 +80,27 @@ namespace RayTrace
             Point p = GetPointOnDisc(rand);
 
             return new Vector(p.X, p.Y, 0.0);
+        }
+
+        // Return a random Point within a unit sphere.
+        private Point GetPointInSphere(Random rand)
+        {
+            double x, y, z;
+            do
+            {
+                x = -1.0 + 2.0 * rand.NextDouble();
+                y = -1.0 + 2.0 * rand.NextDouble();
+                z = -1.0 + 2.0 * rand.NextDouble();
+            } while (x * x + y * y + z * z > 1.0);
+
+            return new Point(x, y, z);
+        }
+
+        // Return a random Vector within a unit sphere.
+        private Vector GetVectorInSphere(Random rand)
+        {
+            Point p = GetPointInSphere(rand);
+            return new Vector(p.X, p.Y, p.Z);
         }
 
         // Based on 'AimZ()' function from 'RenderMan Companion' page 143.
@@ -246,6 +268,7 @@ namespace RayTrace
         private float GetSoftShadow(Camera camera, Scene scene, Point pos, Vector ray, PointLight light)
         {
             Random rand = new Random(123456);
+//            Random rand = new Random();
 
             Point lightPos = camera.WorldToView * light.Pos;
 
@@ -383,10 +406,145 @@ namespace RayTrace
             Colour diffuse = Palette.Black;
             Colour specular = Palette.Black;
 
+            switch (shape.Material.Type)
+            {
+                case MaterialType.Reflective:
+                    {
+                        reflected = GetReflectedColour(camera, scene, ray, hr, depth) * 0.8;
+                    }
+                    break;
+                case MaterialType.RefractiveAndReflective:
+                    {
+                        var result = shape.GetRefractedVector(camera, ray, hr);
+
+                        // Schlicks approximation of Fresnal's factor.
+                        // L = k_fresnal * L_reflected_ + (1 - k_fresnal) * L_refracted
+                        float n1 = RefractiveIndex.Vacuum;
+                        float n2 = shape.Material.RefractiveIndex;
+                        float R0 = ((n1 - n2) / (n1 + n2)) * ((n1 - n2) / (n1 + n2));
+
+                        Vector vecToViewer = ray.Scale(-1.0f).Normalise();
+                        //vecToViewer = vecToViewer.Normalise();
+                        float cosTheta = (float)vecToViewer.DotProduct(hr.EntryNormal);
+
+                        float Rtheta = R0 + (1.0f - R0) * (1.0f * cosTheta);
+                        float fresnalFactor = Rtheta;
+
+                        Debug.Assert(fresnalFactor >= 0.0);
+                        Debug.Assert(fresnalFactor <= 1.0);
+
+                        Colour fresnalReflect = GetReflectedColour(camera, scene, ray, hr, depth);
+                        Colour fresnalRefract = GetRefractedColour(camera, scene, ray, hr, depth);
+
+                        //                    refracted = fresnalReflect * fresnalFactor + fresnalRefract*(1.0f - fresnalFactor);
+                        refracted = fresnalRefract * fresnalFactor + fresnalReflect * (1.0f - fresnalFactor);
+                    }
+                    break;
+                case MaterialType.Diffuse:
+                    // Direct illumination.
+                    foreach (Light light in scene.Lights)
+                    {
+                        if (!light.Enabled) continue;
+
+                        Vector vecToLight = light.GetDirection(camera, hr.Entry).Negate();
+
+                        float visibleFraction = 0.0f;
+                        if (!UseShadows)
+                        {
+                            visibleFraction = 1.0f;
+                        }
+                        else
+                        {
+                            if (UseSoftShadows && light.Radius > 0)
+                            {
+                                PointLight pointLight = light as PointLight;
+                                visibleFraction = GetSoftShadow(camera, scene, hr.Entry, ray, pointLight);
+
+                                if (visibleFraction == 0.0f) continue;
+                            }
+                            else
+                            {
+                                if (scene.HitTestFast(camera, new Ray(hr.Entry, vecToLight)))
+                                {
+                                    continue;
+                                }
+                                visibleFraction = 1.0f;
+                            }
+                        }
+
+                        vecToLight = vecToLight.Normalise();
+                        double dpLN = vecToLight.DotProduct(hr.EntryNormal);
+                        if (dpLN > 0.0)
+                        {
+//                            diffuse += light.GetIntensityAtPoint(camera, hr.Entry) * dpLN * shape.Material.Albedo;
+                            diffuse += light.GetIntensityAtPoint(camera, hr.Entry) * dpLN * shape.Material.GetColour(hr) * visibleFraction;
+                        }
+                    }
+                    // Indirect illumination to-do.
+                    break;
+                case MaterialType.Phong:
+                    foreach (Light light in scene.Lights)
+                    {
+                        if (!light.Enabled) continue;
+
+                        Vector vecToLight = light.GetDirection(camera, hr.Entry).Negate();
+
+                        if (UseShadows)
+                        {
+                            if (scene.HitTestFast(camera, new Ray(hr.Entry, vecToLight)))
+                            {
+                                continue;
+                            }
+                        }
+
+                        // Diffuse part.
+                        Colour lightIntensity = light.GetIntensityAtPoint(camera, hr.Entry);
+                        vecToLight = vecToLight.Normalise();
+                        double dpLN = vecToLight.DotProduct(hr.EntryNormal);
+                        if (dpLN > 0.0)
+                        {
+                            // diffuse += light.GetIntensityAtPoint(camera, hr.Entry) * dpLN * shape.Material.Albedo;
+                            diffuse += lightIntensity * dpLN * shape.Material.GetColour(hr) * hr.shape.Material.PhongDiffuse;
+
+                            if (UseSpecular)
+                            {
+                                // Specular part.
+                                Vector vecReflect = hr.EntryNormal.Scale(2.0 * dpLN) - vecToLight;
+                                vecReflect = vecReflect.Normalise();
+
+                                Vector vecToViewer = ray.Scale(-1.0f).Normalise();
+
+                                //double Il = light.Intensity;// 1.0;    // Intensity of light source.
+                                double dpVR = vecToViewer.DotProduct(vecReflect);
+
+                                // Ignore negative dp as it means the vectors are pointing away from each other.
+                                if (dpVR > 0.0)
+                                {
+                                    double d = Math.Pow(dpVR, shape.Material.PhongShininess);
+                                    if (d < 0.0) d = 0.0;
+
+                                    Colour specularColour = lightIntensity * d;
+
+                                    specular += specularColour * shape.Material.PhongSpecular;
+                                }
+                            }
+                        }
+                    }
+                    break;
+            }
+
             if (UseAmbient)
             {
                 ambient = shape.GetColour(hr).Multiply(scene.Ambient);
             }
+
+
+            Colour finalColour = ambient + diffuse + reflected + refracted + specular;
+            return finalColour;
+
+/*
+
+
 
             if (UseRefraction)
             {
@@ -485,9 +643,15 @@ namespace RayTrace
 
                     if (dpLN > 0.0)
                     {
-                        Colour incidentColour = light.Output * shape.GetColour(hr).Scale((float)dpLN);
+                        // For distant light (doesn't take distance into account).
+                        Colour incidentColour = shape.Material.Albedo/Math.PI * light.Output * shape.GetColour(hr).Scale((float)dpLN);
 
-                        incidentColour = incidentColour.Scale((float) lightAttenuation);
+                        // For point light sufaces.
+                        Vector vecToLight2 = light.GetDirection(camera, p).Negate();
+                        double dDistanceSqr = vecToLight2.MagnitudeSquared();
+                        incidentColour = light.Output / (4.0 * Math.PI * dDistanceSqr) * shape.GetColour(hr).Scale((float)dpLN);
+
+                        //incidentColour = incidentColour.Scale((float) lightAttenuation);
 
                         incidentColour = incidentColour.Scale(visibleFraction);
 
@@ -511,17 +675,13 @@ namespace RayTrace
                         // Ignore negative dp as it means the vectors are pointing away from each other.
                         if (dpVR > 0.0)
                         {
-                            double k = shape.Material.ks;    // 0.5;     // Specular reflection coefficient/constant.
-                            double ns = shape.Material.ns;  // 4.0;    // 'Shininess' of surface.
+                            double k = shape.Material.Specular;    // 0.5;     // Specular reflection coefficient/constant.
+                            double ns = shape.Material.Shininess;  // 4.0;    // 'Shininess' of surface.
 
                             double d = Math.Pow(dpVR, ns);
 
                             double Ispec = k * Il * d;
                             //Ispec = Math.Pow(Ispec, ns);
-
-                            //Vector E = new Vector(-x, -y, -focalLength);
-                            //E = E.Normalise();
-                            //double s = Math.Pow(Math.Max(0.0, E.DotProduct(R)), 1.2);
 
                             Colour spec = new Colour(1f, 1f, 1f);
                             //spec = light.Colour;
@@ -542,6 +702,7 @@ namespace RayTrace
             colour += refracted.Scale(transparency) + reflected.Scale(1.0f - transparency);
 
             return colour;
+*/
         }
 
         // Render entire Scene to the Canvas.

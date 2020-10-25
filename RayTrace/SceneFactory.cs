@@ -15,17 +15,23 @@ namespace RayTrace
         {
             Scene scene = new Scene();
 
+            double[] n = { 2, 10, 50, 250, 1250 };
+            double[] ks = { 0.02, 0.04, 0.08, 0.1, 0.15, 0.2 };
+
             for (int j = 0; j < 5; j++)
             {
                 for (int i = 0; i <= 5; i++)
                 {
                     Sphere sphere = new Sphere(new Point(-50 + i * 20, -40 + j * 20, 80), 8, Palette.Green);
-                    sphere.Material.ks = i / 5.0;
-                    sphere.Material.ns = (j + 1) * (j + 1);
+                    sphere.Material.Type = MaterialType.Phong;
+                    sphere.Material.PhongDiffuse = 0.95;
+                    sphere.Material.PhongSpecular = 2*ks[i];  // i / 5.0;
+                    sphere.Material.PhongShininess = n[j];  // (j + 1) * (j + 1);
                     scene.AddShape(sphere);
                 }
             }
-            Light light = new PointLight(new Point(-50, 0, 0), /*0.5f*/ 5000.0f, new Colour(1.0f, 1.0f, 1.0f));
+            //Light light = new PointLight(new Point(-50, 0, 0), /*0.5f*/ 50000.0f, new Colour(1.0f, 1.0f, 1.0f));
+            Light light = new DistantLight(new Vector(1.0, 0.0, 1.0), 2, Palette.White);
             scene.AddLight(light);
 
             return scene;
@@ -37,34 +43,42 @@ namespace RayTrace
 
             Sphere sphere = new Sphere(new Point(-20, 0, 50), 20, Palette.White);
             //sphere.Material.Texture = new TextureSquares();
+            sphere.Material.Type = MaterialType.Diffuse;
+            sphere.Material.Type = MaterialType.Reflective;
+            sphere.Material.Type = MaterialType.RefractiveAndReflective;
             sphere.Material.Texture = new TextureSolid(Palette.Black);
             sphere.Material.Transparency = 1.0f;
             scene.AddShape(sphere);
 
             sphere = new Sphere(new Point(20, 0, 50), 20, Palette.White);
             sphere.Material.Texture = new TextureSquares();
-            sphere.Material.Texture = new TextureNoise(Palette.White, Palette.Black);
-            sphere.Material.Texture = new TextureNoise(Palette.Red, Palette.Green) { Function = TextureNoise.ColourFunction.Blend, Scale = 5 };
+//            sphere.Material.Texture = new TextureNoise(Palette.White, Palette.Black);
+//            sphere.Material.Texture = new TextureNoise(Palette.Red, Palette.Green) { Function = TextureNoise.ColourFunction.Blend, Scale = 5 };
+            sphere.Material.Type = MaterialType.Diffuse;
             scene.AddShape(sphere);
 
             sphere = new Sphere(new Point(0, 0, 90), 20, Palette.Red);
             scene.AddShape(sphere);
-            //Box box = new Box(new Point(0, 0, 110), 40);
+            //sphere.Material.Texture = new TextureSquares();
             //scene.AddShape(box);
 
 
             Plane plane = new Plane(new Vector(0.0, 1.0, 0.0), new Point(0.0, -30.0, 0.0));
+            //plane.Material.Texture = new TextureSquares();
             plane.Material.Texture = new TextureSolid(Palette.Black);
-            plane.Material.Texture = new TextureSquares() { Scale = /*32*/ 8 };
+            plane.Material.Texture = new TextureSquares(Palette.Black, Palette.White) { Scale = /*32*/ 8 };
             //plane.Material.Reflectivity = 1.0f;
             scene.AddShape(plane);
 
-            Light light = new PointLight(new Point(-50, 0, 0), /*0.5f*/ 5000.0f, new Colour(1.0f, 0.0f, 0.0f));
+            //Light light = new PointLight(new Point(-50, 0, 0), /*0.5f*/ 5000.0f, new Colour(1.0f, 0.0f, 0.0f));
             //            scene.AddLight(light);
-            light = new PointLight(new Point(50, 50, 0), /*.85f*/ 5000.0f, new Colour(1.0f, 1.0f, 1.0f));
+            //light = new PointLight(new Point(50, 50, 0), /*.85f*/ 5000.0f, new Colour(1.0f, 1.0f, 1.0f));
             //            scene.AddLight(light);
 
-            light = new PointLight(new Point(0, 100, 0), /*.85f*/ 5000.0f, new Colour(1.0f, 1.0f, 1.0f));
+            Light light = new PointLight(new Point(0, 100, 0), /*.85f*/ 5000.0f, new Colour(1.0f, 1.0f, 1.0f));
+            scene.AddLight(light);
+
+            light = new DistantLight(new Vector(-50, 50, 50).Negate(), 5, Palette.White);
             scene.AddLight(light);
 
 
@@ -222,12 +236,11 @@ namespace RayTrace
             Sphere sphere = new Sphere(new Point(0, 0, 40), 10, Palette.Red);
             scene.AddShape(sphere);
 
-
             /*Sphere*/ sphere = new Sphere(new Point(0, floorHeight, 0), 2, Palette.Red);
             scene.AddShape(sphere);
 
             //Light light = new SpotLight(new Point(-30, 30, 40), new Vector(1, -1, 0, true), 25, 6000, Palette.White);
-            Light light = new PointLight(new Point(-50, 50, 40), 6000, Palette.White);
+            Light light = new PointLight(new Point(-25, 25, 40), 10000, Palette.White);
             scene.AddLight(light);
 
             return scene;
@@ -300,14 +313,22 @@ namespace RayTrace
             ModelImporter importer = new ModelImporter();
 
             Matrix objectToWorld = new Matrix();
-            //ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\pbr-low-poly-fox-character");
-            //            ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\dinosaur");
+
+            ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\pbr-low-poly-fox-character");
+            scene.Camera.Pos = new Point(-3.5, 4, -5);
+            scene.Camera.Target = new Point(0, 3, 1);
+
+            /*
+            ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\dinosaur");
+            scene.Camera.Pos = new Point(-30, 14, -8);
+            scene.Camera.Target = new Point(0, 12, -4);
+            */
 
             //            ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\apollo-und-daphne");
             //            Matrix objectToWorld = Matrix.GetRotationX((float)Math.PI / 2);
             //            objectToWorld = Matrix.GetRotationY((float)Math.PI / 2) * objectToWorld;
 
-            ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\day-18-office-rat");
+            //ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\day-18-office-rat");
 
 
             Model model = new Model(new Point(0.0, 0.0, 10.0), modelData);
@@ -318,7 +339,6 @@ namespace RayTrace
             // model = ModelFactory.Cube();
             //model = ModelFactory.Tetahedron();
             scene.AddShape(model);
-
 
             double floorHeight = model.MinY;
             Plane floor = new Plane(new Vector(0, 1, 0), new Point(0, floorHeight, 0), new Colour(Colors.LightGray));
