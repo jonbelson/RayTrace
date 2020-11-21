@@ -12,13 +12,10 @@ namespace RayTrace
     // Characteristics of a Shape's physical form.
     public class Material
     {
-        //public double ka = 1.0;     // Ambient reflection coefficient.
-        //public double kd = 1.0;     // Diffuse reflection coefficient (0 - 1).
-
         public MaterialType Type { get; set; } = MaterialType.Diffuse;
 
         // Ratio of reflected light to incident light (Pd), i.e. how much light is reflected.
-        public Colour Albedo { get; set; } = new Colour(0.18f, 0.18f, 0.18f);
+        //public Colour Albedo { get; set; } = new Colour(0.18f, 0.18f, 0.18f);
 
         // Phong reflection constants.
         public double PhongDiffuse = 0.75;      // Phong specular coefficient ('kd')

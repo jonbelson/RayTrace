@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Diagnostics;
 
 namespace RayTrace
 {
@@ -143,11 +144,21 @@ namespace RayTrace
             return diffSquared < MinDiff * MinDiff;
         }
 
-        public uint ToRGB()
+        public uint ToRGB(float gamma=1/2.2f)
         {
-            byte r = (byte)(Red * 255);
-            byte g = (byte)(Green * 255);
-            byte b = (byte)(Blue * 255);
+            double gammaRed = Math.Pow(Red, gamma);
+            double gammaGreen = Math.Pow(Green, gamma);
+            double gammaBlue = Math.Pow(Blue, gamma);
+
+           // Debug.Assert(gammaRed <= 1.0 && gammaGreen <= 1.0 && gammaBlue <= 1.0);
+
+            gammaRed = Math.Max(0.0, Math.Min(1.0, gammaRed));
+            gammaGreen = Math.Max(0.0, Math.Min(1.0, gammaGreen));
+            gammaBlue = Math.Max(0.0, Math.Min(1.0, gammaBlue));
+
+            byte r = (byte)(gammaRed * 255);
+            byte g = (byte)(gammaGreen * 255);
+            byte b = (byte)(gammaBlue * 255);
 
             return (uint) (r << 16 | g << 8 | b);
         }

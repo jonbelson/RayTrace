@@ -32,3 +32,4 @@ C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\obj\Debug\RayTrace.csproj.Core
 C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\obj\Debug\RayTrace.exe
 C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\obj\Debug\RayTrace.pdb
 C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\obj\Debug\GeneratedInternalTypeHelper.g.cs
+C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\obj\Debug\RayTrace.csprojAssemblyReference.cache

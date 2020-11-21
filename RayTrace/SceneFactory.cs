@@ -25,7 +25,7 @@ namespace RayTrace
                     Sphere sphere = new Sphere(new Point(-50 + i * 20, -40 + j * 20, 80), 8, Palette.Green);
                     sphere.Material.Type = MaterialType.Phong;
                     sphere.Material.PhongDiffuse = 0.95;
-                    sphere.Material.PhongSpecular = 2*ks[i];  // i / 5.0;
+                    sphere.Material.PhongSpecular = 2 * ks[i];  // i / 5.0;
                     sphere.Material.PhongShininess = n[j];  // (j + 1) * (j + 1);
                     scene.AddShape(sphere);
                 }
@@ -52,8 +52,8 @@ namespace RayTrace
 
             sphere = new Sphere(new Point(20, 0, 50), 20, Palette.White);
             sphere.Material.Texture = new TextureSquares();
-//            sphere.Material.Texture = new TextureNoise(Palette.White, Palette.Black);
-//            sphere.Material.Texture = new TextureNoise(Palette.Red, Palette.Green) { Function = TextureNoise.ColourFunction.Blend, Scale = 5 };
+            //            sphere.Material.Texture = new TextureNoise(Palette.White, Palette.Black);
+            //            sphere.Material.Texture = new TextureNoise(Palette.Red, Palette.Green) { Function = TextureNoise.ColourFunction.Blend, Scale = 5 };
             sphere.Material.Type = MaterialType.Diffuse;
             scene.AddShape(sphere);
 
@@ -236,7 +236,8 @@ namespace RayTrace
             Sphere sphere = new Sphere(new Point(0, 0, 40), 10, Palette.Red);
             scene.AddShape(sphere);
 
-            /*Sphere*/ sphere = new Sphere(new Point(0, floorHeight, 0), 2, Palette.Red);
+            /*Sphere*/
+            sphere = new Sphere(new Point(0, floorHeight, 0), 2, Palette.Red);
             scene.AddShape(sphere);
 
             //Light light = new SpotLight(new Point(-30, 30, 40), new Vector(1, -1, 0, true), 25, 6000, Palette.White);
@@ -352,6 +353,83 @@ namespace RayTrace
             light = new PointLight(new Point(10, 50, 0), 3000, Palette.White);
             scene.AddLight(light);
 
+            return scene;
+        }
+
+        public static Scene GIDemoScene()
+        {
+            Scene scene = new Scene();
+
+            //            Sphere sphere = new Sphere(new Point(-20, 0, 50), 20, new Colour(0.7f, 0.7f, 0.7f) /* Palette.White*/);
+            Sphere sphere = new Sphere(new Point(-10, 0, 20), 5, new Colour(0.5f, 0, 0) /* Palette.White*/);
+            //sphere.Material.Texture = new TextureSquares();
+            sphere.Material.Transparency = 0.0f;
+            sphere.Material.Reflectivity = 0.0f;
+            //sphere.Material.
+            scene.AddShape(sphere);
+
+            //            sphere = new Sphere(new Point(20, 0, 50), 20, new Colour(0.7f, 0, 0));
+            sphere = new Sphere(new Point(0, 0, 23), 5, new Colour(0.5f, 0.5f, 0.5f));
+            //sphere.Material.Texture = new TextureSquares() { Scale = 10 };
+            //sphere.Material.Texture = new TextureNoise(Palette.White, Palette.Black);
+            //sphere.Material.Texture = new TextureNoise(Palette.Red, Palette.Green) { Function = TextureNoise.ColourFunction.Blend, Scale = 5 };
+            sphere.Material.Transparency = 0.0f;
+            sphere.Material.Reflectivity = 0.0f;
+            //sphere.Material.Transparency = 0.0f;
+            //sphere.Material.Reflectivity = 1.0f;
+            scene.AddShape(sphere);
+
+            sphere = new Sphere(new Point(10, 0, 20), 5, new Colour(0.0f, 0.0f, 0.5f) /* Palette.White*/);
+            scene.AddShape(sphere);
+
+
+            //Box box = new Box(new Point(20, 0, 0), 30, 30, 30);
+            //box.Material.Transparency = 1.0f;
+            //box.Material.Reflectivity = 0.0f;
+            //scene.AddShape(box);
+
+
+            //            Plane plane = new Plane(new Vector(0.0, 0.0, -1.0), new Point(0.0, 0.0, 150.0));
+            Plane plane = new Plane(new Vector(0.0, 1.0, 0.0), new Point(0.0, -5.0, 0.0), Palette.Grey);
+            plane.Material.Reflectivity = 0.0f;
+            //plane.Material.Texture = new TextureSolid(Palette.Blue);
+            //plane.Material.Texture = new TextureSquares() { Scale = 20 };
+            scene.AddShape(plane);
+
+            Light light = new PointLight(new Point(-50, 0, 0), 3000.0f, new Colour(1.0f, 0.0f, 0.0f));
+            // scene.AddLight(light);
+            light = new PointLight(new Point(30, 30, 0), 3000.0f, Palette.White);
+            DistantLight distantLight = new DistantLight(new Vector(-10, 0, 20), 2, Palette.White);
+            //scene.AddLight(light);
+            scene.AddLight(distantLight);
+
+            return scene;
+        }
+
+        public static Scene GIDemoScene2()
+        {
+            Scene scene = new Scene();
+
+            const int size = 15;
+
+            Sphere sphere = new Sphere(new Point(-4, 0, 10), 2, new Colour(0.5f, 0, 0) /* Palette.White*/);
+            scene.AddShape(sphere);
+            sphere = new Sphere(new Point(4, 0, 10), 2, new Colour(0.0f, 0.0f, 0.5f));
+            scene.AddShape(sphere);
+
+            Plane plane = new Plane(new Vector(0.0, 1.0, 0.0), new Point(0.0, -4.0, 0.0), Palette.Grey);
+            scene.AddShape(plane);
+
+            Plane left = new Plane(new Vector(1.0, 0.0, 0.0), new Point(-size, 0.0, 0.0), new Colour(0.5f, 0.0f, 0.0f));
+            scene.AddShape(left);
+            Plane right = new Plane(new Vector(-1.0, 0.0, 0.0), new Point(size, 0.0, 0.0), new Colour(0.0f, 0.5f, 0.0f));
+            scene.AddShape(right);
+
+            Plane back = new Plane(new Vector(0.0, 0.0, -1.0), new Point(0.0, 0.0, 20 /*size*/), new Colour(0.5f, 0.5f, 0.5f));
+            scene.AddShape(back);
+
+            Light light = new PointLight(new Point(0, 20, 0), 3000.0f, new Colour(1.0f, 1.0f, 1.0f));
+            scene.AddLight(light);
             return scene;
         }
     }

@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
@@ -170,21 +171,27 @@ namespace RayTrace
             checkBoxShadows.IsChecked = renderer.UseShadows;
             checkBoxSoftShadows.IsChecked = renderer.UseSoftShadows;
             checkBoxReflections.IsChecked = renderer.UseReflections;
+            checkBoxGIEnable.IsChecked = renderer.UseGlobalIllumination;
             checkBoxDepthOfField.IsChecked = renderer.UseDepthOfField;
 
             textBoxDepth.Text = renderer.RecursionDepth.ToString();
             textBoxAdaptiveSubSamplingDepth.Text = renderer.AdaptiveSuperSamplingDepth.ToString();
             textBoxAdaptiveSubSamplingDepth.IsEnabled = false;
 
+            textBoxGINumRays.Text = renderer.GINumRays.ToString();
+            textBoxGIDepth.Text = renderer.GIDepth.ToString();
+
             //scene = SceneFactory.PhongDemoScene();
             //scene = SceneFactory.TexturedSpheresDemoScene();
             //scene = SceneFactory.RefractionDemoScene();
             //scene = SceneFactory.BoxDemoScene();
             //scene = SceneFactory.SphereDemoScene();
-            scene = SceneFactory.SoftLightDemoScene();
+            //scene = SceneFactory.SoftLightDemoScene();
             //scene = SceneFactory.FovDemoScene();
             //scene = SceneFactory.ModelScene();
             //scene = SceneFactory.ObjScene();
+//            scene = SceneFactory.GIDemoScene();
+            scene = SceneFactory.GIDemoScene2();
 
             comboBoxFormat.SelectedItem = ImageFormat.Tiff;
 
@@ -232,6 +239,7 @@ namespace RayTrace
             renderer.UseShadows = (bool)checkBoxShadows.IsChecked;
             renderer.UseSoftShadows = (bool)checkBoxSoftShadows.IsChecked;
             renderer.UseReflections = (bool)checkBoxReflections.IsChecked;
+            renderer.UseGlobalIllumination = (bool)checkBoxGIEnable.IsChecked;
             renderer.UseDepthOfField = (bool)checkBoxDepthOfField.IsChecked;
 
             int depth;
@@ -242,6 +250,22 @@ namespace RayTrace
             }
 
             renderer.RecursionDepth = depth;
+
+            if (!Int32.TryParse(textBoxGIDepth.Text, out int giDepth))
+            {
+                MessageBox.Show("Recursion depth must be an integer.");
+                return false;
+            }
+
+            renderer.GIDepth = giDepth;
+
+            if (!Int32.TryParse(textBoxGINumRays.Text, out int giNumRays))
+            {
+                MessageBox.Show("Number of GI rays must be an integer.");
+                return false;
+            }
+
+            renderer.GINumRays = giNumRays;
 
             Renderer.AntiAliasType antiAlias = (Renderer.AntiAliasType)comboBoxAntiAlias.SelectedItem;
             renderer.AntiAlias = antiAlias;
@@ -331,6 +355,14 @@ namespace RayTrace
             scene.Camera.UpdateMatrix();    // XXX Needed?
             scene.CreateCaches();
 
+            ThreadPool.GetMaxThreads(out int workerThreads, out int completonPortThreads);
+
+            //ThreadPool.SetMaxThreads();
+
+
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
+
             List<Task> tasks = new List<Task>();
 
             int i = 0;
@@ -339,7 +371,7 @@ namespace RayTrace
                 int idx = i;
                 Task renderTask = Task.Factory.StartNew(() =>
                 {
-                    //int idx = i;
+                    Thread.CurrentThread.Name = $"Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...";
                     Console.WriteLine($"Starting Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...");
                     renderer.Render(scene, canvas, rb.StartX, rb.StartY, rb.Width, rb.Height);
                     Console.WriteLine($"Done Task {idx}...");
@@ -347,7 +379,7 @@ namespace RayTrace
                     this.Dispatcher.Invoke(DispatcherPriority.Normal,
                                         (ThreadStart)delegate ()
                                         {
-                                            Console.WriteLine($"Updating {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...");
+                                            //Console.WriteLine($"Updating {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...");
                                             Update(rb.StartX, rb.StartY, rb.Width, rb.Height);
                                         }
                     );
@@ -363,6 +395,14 @@ namespace RayTrace
             {
                 await task;
             }
+
+            stopWatch.Stop();
+            // Get the elapsed time as a TimeSpan value.
+            TimeSpan ts = stopWatch.Elapsed;
+
+            // Format and display the TimeSpan value.
+            string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
+            Console.WriteLine("REader time: " + elapsedTime);
 
             buttonRender.IsEnabled = true;
 

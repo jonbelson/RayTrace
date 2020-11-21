@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.Dynamic;
 using System.Net.NetworkInformation;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows.Media.Converters;
+
 
 namespace RayTrace
 {
@@ -19,6 +23,7 @@ namespace RayTrace
         public bool UseRefraction { get; set; } = true;
         public bool UseSoftShadows { get; set; } = false;//true;
         public bool UseDepthOfField { get; set; } = false;//true;
+        public bool UseGlobalIllumination { get; set; } = false;
 
         public enum AntiAliasType { None, NoiseGrid, SuperSampling, AdaptiveSupersampling }
         public AntiAliasType AntiAlias { get; set; } = AntiAliasType.None;
@@ -30,6 +35,14 @@ namespace RayTrace
         private int _recursionDepth = 5;
         public int RecursionDepth { set { if (value >= 0) _recursionDepth = value; } get { return _recursionDepth; } }
 
+        // Maximum recursive global illumination depth when tracing scattered rays.
+        private int _GIDepth = 1;
+        public int GIDepth { set { if (value >= 0) _GIDepth = value; } get { return _GIDepth; } }
+
+        // Number of scattered rays for each diffuse intersection when tracing scattered rays.
+        private int _GINumRays = 20;
+        public int GINumRays { set { if (value >= 0) _GINumRays = value; } get { return _GINumRays; } }
+
         // Size of rendered area, so that it ranges from -Size/2 to +Size/2 in the
         //  x axis and -Size/2 to +Size/2 in the y axis.
         public double Size { get; set; }
@@ -39,17 +52,37 @@ namespace RayTrace
         private double[,] hexArray = HexGrid.values;
         //private Random rand = new Random();
 
+        // Array of RNGs for threads to use.
+        private const int NumRandomisers = 64;
+        private Random[] randomisers = new Random[NumRandomisers];
+
+        private const int NumRandSeeds = 1000; 
+        private int[] seeds = new int[NumRandSeeds];
+        private static int randIndex = 0;
+        private static object RandLock = new object();
+
+        //[ThreadStatic] private static Random threadRand;
+        private ThreadLocal<Random> threadRand;
+        //[DllImport("kernel32.dll")]
+        //static extern int GetCurrentThreadId();
+
         //
         // Constructor.
         //
         public Renderer()
         {
-//            vPos = new Point(0.0, 0.0, -focalLength);
-            //vPos = new Point(0.0, 0.0, 0.0);
-
             Size = 100.0;
 
-            //HexGrid.DumpGrid();
+            for (int i=0; i<NumRandomisers; i++)
+            {
+                randomisers[i] = new Random();
+            }
+
+            Random r = new Random();
+            for (int i=0; i<1000; i++)
+            {
+                seeds[i] = r.Next(); 
+            }
         }
 
         private Colour CalculateIlluminationColour(Scene scene, Vector ray, HitResult hr)
@@ -65,8 +98,6 @@ namespace RayTrace
             double x, y;
             do
             {
-                //double r1 = rand.NextDouble();
-                //double r2 = rand.NextDouble();
                 x = -1.0 + 2.0 * rand.NextDouble();
                 y = -1.0 + 2.0 * rand.NextDouble();
             } while (x * x + y * y > 1.0);
@@ -110,11 +141,11 @@ namespace RayTrace
             double xzlen = Math.Sqrt(vecToLight.I * vecToLight.I + vecToLight.K * vecToLight.K);
             if (xzlen == 0.0)
             {
-                yrot = (vecToLight.J< 0.0) ? Math.PI : 0.0;
+                yrot = (vecToLight.J < 0.0) ? Math.PI : 0.0;
             }
             else
             {
-                yrot = Math.Acos(vecToLight.K/xzlen);
+                yrot = Math.Acos(vecToLight.K / xzlen);
             }
 
             double yzlen = Math.Sqrt(vecToLight.J * vecToLight.J + xzlen * xzlen);
@@ -172,12 +203,12 @@ namespace RayTrace
         private Vector GetJitteredRay(Matrix matrix, int index, Vector vecToLight, double distToLight, double lightRadius, Random rand)
         {
             // Calculate effective size of light from view point.
-            double theta = Math.Asin(lightRadius/distToLight);
+            double theta = Math.Asin(lightRadius / distToLight);
             double circleRadius = lightRadius * Math.Cos(theta);
             double circleDistance = distToLight - lightRadius * Math.Sin(theta);
 
-            double deltaX = jitterOffset * (-1.0 + 2*rand.NextDouble());
-            double deltaY = jitterOffset * (-1.0 + 2*rand.NextDouble());
+            double deltaX = jitterOffset * (-1.0 + 2 * rand.NextDouble());
+            double deltaY = jitterOffset * (-1.0 + 2 * rand.NextDouble());
             //double deltaX = jitterOffset * rand.NextDouble();
             //double deltaY = jitterOffset * rand.NextDouble();
 
@@ -185,8 +216,8 @@ namespace RayTrace
             Debug.Assert(!Double.IsNaN(deltaY));
 
             Vector ray = new Vector();
-            ray.I = circleRadius * (hexArray[index,0] + deltaX);
-            ray.J = circleRadius * (hexArray[index,1] + deltaY);
+            ray.I = circleRadius * (hexArray[index, 0] + deltaX);
+            ray.J = circleRadius * (hexArray[index, 1] + deltaY);
             ray.K = circleDistance;
 
             Debug.Assert(!Double.IsNaN(ray.I));
@@ -216,7 +247,7 @@ namespace RayTrace
 
             //            Vector jitteredDir = lookAt2*jitteredRay;
             //            Vector jitteredDir = lookAt2 * ray;
-            
+
             // Rotate the jittered vector (which is relative to the Z axis) to be aligned with the original light vector.
             Vector jitteredDir = matrix * ray;
 
@@ -225,7 +256,7 @@ namespace RayTrace
             Debug.Assert(!Double.IsNaN(jitteredDir.K));
 
             return jitteredDir;
-            
+
             //// Find magnitude of vecToLight projected on the YZ plane
             //double H = vecToLight.Magnitude();
             //double A = vecToLight.I;
@@ -265,10 +296,10 @@ namespace RayTrace
 
         // scene    Scene we are rendering.
         // ray      Incoming ray that produced HitResult.
-        private float GetSoftShadow(Camera camera, Scene scene, Point pos, Vector ray, PointLight light)
+        private float GetSoftShadow(Camera camera, Scene scene, Point pos, Vector ray, PointLight light, Random rand)
         {
-            Random rand = new Random(123456);
-//            Random rand = new Random();
+            //Random rand = new Random(123456);
+            //            Random rand = new Random();
 
             Point lightPos = camera.WorldToView * light.Pos;
 
@@ -296,7 +327,7 @@ namespace RayTrace
                 {
                     Vector jitteredRay = GetJitteredRay(lookAt, rayNum, L, distance, light.Radius, rand);
 
-                    Ray ray2 = new Ray(pos, jitteredRay);
+                    Ray ray2 = new Ray(pos, jitteredRay.AsPoint());
                     bool hit = scene.HitTestFast(camera, ray2);
                     if (hit)
                     {
@@ -331,7 +362,7 @@ namespace RayTrace
             return fraction;
         }
 
-        private Colour GetReflectedColour(Camera camera, Scene scene, Vector ray, HitResult hr, int depth)
+        private Colour GetReflectedColour(Camera camera, Scene scene, Vector ray, Random rand, HitResult hr, int depth)
         {
             Colour c = Palette.Black;
 
@@ -350,7 +381,7 @@ namespace RayTrace
             HitResult hrReflect = scene.HitTest(camera, hr.Entry, far);
             if (hrReflect.HasEntry())
             {
-                c = CalculateColour(camera, scene, R, hrReflect, depth);
+                c = CalculateColour(camera, scene, R, rand, hrReflect, depth);
             }
             else
             {
@@ -361,7 +392,7 @@ namespace RayTrace
             return c;
         }
 
-        private Colour GetRefractedColour(Camera camera, Scene scene, Vector ray, HitResult hr, int depth)
+        private Colour GetRefractedColour(Camera camera, Scene scene, Vector ray, Random rand, HitResult hr, int depth)
         {
             Colour c = Palette.Black;
 
@@ -375,7 +406,7 @@ namespace RayTrace
             if (hrRefracted.HasEntry())
             {
                 //Ray ray3 = new Ray(hrRefracted.Entry, result.Item2);
-                c = CalculateColour(camera, scene, result.Item2, hrRefracted, depth);
+                c = CalculateColour(camera, scene, result.Item2, rand, hrRefracted, depth);
 
                 //refracted = c;
             }
@@ -388,12 +419,14 @@ namespace RayTrace
             return c;
         }
 
+        //Random rand = new Random(/*24680*/);
+
         // scene    Scene we are rendering.
         // ray      Incoming ray that produced HitResult.
         // hr       HitResult that detected intersection.
-        private Colour CalculateColour(Camera camera, Scene scene, Vector ray, HitResult hr, int depth = 0)
+        private Colour CalculateColour(Camera camera, Scene scene, Vector ray, Random rand, HitResult hr, int depth = 0)
         {
-            Debug.Assert(hr.HasEntry());
+            ////////Debug.Assert(hr.HasEntry());
 
             if (depth > RecursionDepth) return Palette.Black;
             depth++;
@@ -410,7 +443,7 @@ namespace RayTrace
             {
                 case MaterialType.Reflective:
                     {
-                        reflected = GetReflectedColour(camera, scene, ray, hr, depth) * 0.8;
+                        reflected = GetReflectedColour(camera, scene, ray, rand, hr, depth) * 0.8;
                     }
                     break;
                 case MaterialType.RefractiveAndReflective:
@@ -433,54 +466,100 @@ namespace RayTrace
                         Debug.Assert(fresnalFactor >= 0.0);
                         Debug.Assert(fresnalFactor <= 1.0);
 
-                        Colour fresnalReflect = GetReflectedColour(camera, scene, ray, hr, depth);
-                        Colour fresnalRefract = GetRefractedColour(camera, scene, ray, hr, depth);
+                        Colour fresnalReflect = GetReflectedColour(camera, scene, ray, rand, hr, depth);
+                        Colour fresnalRefract = GetRefractedColour(camera, scene, ray, rand, hr, depth);
 
                         //                    refracted = fresnalReflect * fresnalFactor + fresnalRefract*(1.0f - fresnalFactor);
                         refracted = fresnalRefract * fresnalFactor + fresnalReflect * (1.0f - fresnalFactor);
                     }
                     break;
                 case MaterialType.Diffuse:
-                    // Direct illumination.
-                    foreach (Light light in scene.Lights)
                     {
-                        if (!light.Enabled) continue;
+                        Colour directLight = Palette.Black;
+                        Colour indirectLight = Palette.Black;
 
-                        Vector vecToLight = light.GetDirection(camera, hr.Entry).Negate();
+                        // Direct illumination from each of the lights.
+                        foreach (Light light in scene.Lights)
+                        {
+                            if (!light.Enabled) continue;
 
-                        float visibleFraction = 0.0f;
-                        if (!UseShadows)
-                        {
-                            visibleFraction = 1.0f;
-                        }
-                        else
-                        {
-                            if (UseSoftShadows && light.Radius > 0)
+                            Vector vecToLight = light.GetDirection(camera, hr.Entry).Negate();
+
+                            float visibleFraction = 0.0f;
+                            if (!UseShadows)
                             {
-                                PointLight pointLight = light as PointLight;
-                                visibleFraction = GetSoftShadow(camera, scene, hr.Entry, ray, pointLight);
-
-                                if (visibleFraction == 0.0f) continue;
+                                visibleFraction = 1.0f;
                             }
                             else
                             {
-                                if (scene.HitTestFast(camera, new Ray(hr.Entry, vecToLight)))
+                                if (UseSoftShadows && light.Radius > 0)
                                 {
-                                    continue;
+                                    PointLight pointLight = light as PointLight;
+                                    visibleFraction = GetSoftShadow(camera, scene, hr.Entry, ray, pointLight, rand);
+
+                                    if (visibleFraction == 0.0f) continue;
                                 }
-                                visibleFraction = 1.0f;
+                                else
+                                {
+                                    if (scene.HitTestFast(camera, new Ray(hr.Entry, vecToLight.AsPoint())))
+                                    {
+                                        continue;
+                                    }
+                                    visibleFraction = 1.0f;
+                                }
+                            }
+
+                            vecToLight = vecToLight.Normalise();
+                            double dpLN = vecToLight.DotProduct(hr.EntryNormal);
+                            if (dpLN > 0.0)
+                            {
+                                //diffuse += light.GetIntensityAtPoint(camera, hr.Entry) * dpLN * shape.Material.Albedo;
+                                directLight += light.GetIntensityAtPoint(camera, hr.Entry) * dpLN * visibleFraction;
                             }
                         }
 
-                        vecToLight = vecToLight.Normalise();
-                        double dpLN = vecToLight.DotProduct(hr.EntryNormal);
-                        if (dpLN > 0.0)
+                        if (UseGlobalIllumination)
                         {
-//                            diffuse += light.GetIntensityAtPoint(camera, hr.Entry) * dpLN * shape.Material.Albedo;
-                            diffuse += light.GetIntensityAtPoint(camera, hr.Entry) * dpLN * shape.Material.GetColour(hr) * visibleFraction;
+                            // Indirect illumination from other objects in the scene.
+
+                            //Random rand = new Random(/*24680*/);
+                            int numSamples = GINumRays;
+                            //Colour giColour = Palette.Black;
+                            for (int i = 0; i < numSamples; i++)
+                            {
+                                /*
+                                // Get random vector around surface normal to use as a reflection vector.
+                                Vector scattered = GetVectorInSphere(rand);
+                                */
+
+                                Point p = hr.Entry + hr.EntryNormal + GetVectorInSphere(rand);
+                                Vector scattered = p - hr.Entry;
+                                scattered = scattered.Normalise();
+
+                                // Check scattered Vector is in the corect hemishere
+                                double dpSN = scattered.DotProduct(hr.EntryNormal);
+                                if (dpSN < 0.0)
+                                {
+                                    // Reverse the direction on the Vector.
+                                    scattered = -scattered;
+                                    dpSN = scattered.DotProduct(hr.EntryNormal);
+                                }
+
+                                Debug.Assert(scattered.DotProduct(hr.EntryNormal) >= 0);
+                                Debug.Assert(dpSN >= 0.0);
+
+                                HitResult hr2 = scene.HitTest(camera, new Ray(hr.Entry + hr.EntryNormal.Scale(0.01), scattered));
+                                if (hr2.HasEntry())
+                                {
+                                    Debug.Assert(hr.shape != hr2.shape);
+                                    indirectLight += CalculateColour(camera, scene, scattered, rand, hr2, depth) * dpSN / Math.PI;
+                                }
+                            }
+                            indirectLight /= numSamples;
                         }
+
+                        diffuse += (directLight + indirectLight) * shape.Material.GetColour(hr);
                     }
-                    // Indirect illumination to-do.
                     break;
                 case MaterialType.Phong:
                     foreach (Light light in scene.Lights)
@@ -542,167 +621,167 @@ namespace RayTrace
             Colour finalColour = ambient + diffuse + reflected + refracted + specular;
             return finalColour;
 
-/*
+            /*
 
 
 
-            if (UseRefraction)
-            {
-                if (shape.HasTransparency())
-                {
-                    // Hit object refracts, so work out direction of refracted ray (in then out) and check if it hits anything.
-                    var result = shape.GetRefractedVector(camera, ray, hr);
-
-                    // Schlicks approximation of Fresnal's factor.
-                    // L = k_fresnal * L_reflected_ + (1 - k_fresnal) * L_refracted
-                    float n1 = RefractiveIndex.Vacuum;
-                    float n2 = shape.Material.RefractiveIndex;
-                    float R0 = ((n1 - n2) / (n1 + n2)) * ((n1 - n2) / (n1 + n2));
-
-                    Vector vecToViewer = ray.Scale(-1.0f).Normalise();
-                    //vecToViewer = vecToViewer.Normalise();
-                    float cosTheta = (float) vecToViewer.DotProduct(hr.EntryNormal);
-
-                    float Rtheta = R0 + (1.0f - R0) * (1.0f * cosTheta);
-                    float fresnalFactor = Rtheta;
-
-                    Debug.Assert(fresnalFactor >= 0.0);
-                    Debug.Assert(fresnalFactor <= 1.0);
-
-                    Colour fresnalReflect = GetReflectedColour(camera, scene, ray, hr, depth);
-                    Colour fresnalRefract = GetRefractedColour(camera, scene, ray, hr, depth);
-
-//                    refracted = fresnalReflect * fresnalFactor + fresnalRefract*(1.0f - fresnalFactor);
-                    refracted = fresnalRefract * fresnalFactor + fresnalReflect * (1.0f - fresnalFactor);
-
-                    //refracted = fresnalRefract;
-                    //refracted = Palette.Red * fresnalFactor + Palette.Green * (1.0f - fresnalFactor);
-                }
-            }
-
-            if (UseReflections)
-            {
-                if (shape.HasReflectivity())
-                {
-                    reflected = GetReflectedColour(camera, scene, ray, hr, depth);
-                }
-            }
-
-            if (UseDiffuse)
-            {
-                foreach (Light light in scene.Lights)
-                {
-                    if (!light.Enabled) continue;
-
-                    PointLight pointLight = light as PointLight;
-                    if (pointLight == null)
-                    {
-                        continue;
-                    }
-
-                    float visibleFraction = 0.0f;
-                    if (!UseShadows)
-                    {
-                        visibleFraction = 1.0f;
-                    }
-                    else
-                    {
-                        if (UseSoftShadows && pointLight.Radius > 0)
+                        if (UseRefraction)
                         {
-                            visibleFraction = GetSoftShadow(camera, scene, hr.Entry, ray, pointLight);
-                        }
-                        else
-                        {
-                            Point pos = hr.Entry;
-                            Point lightPos = camera.WorldToView * pointLight.Pos;
-
-                            if (scene.HitTestFast(camera, pos, lightPos))
+                            if (shape.HasTransparency())
                             {
-                                continue;
+                                // Hit object refracts, so work out direction of refracted ray (in then out) and check if it hits anything.
+                                var result = shape.GetRefractedVector(camera, ray, hr);
+
+                                // Schlicks approximation of Fresnal's factor.
+                                // L = k_fresnal * L_reflected_ + (1 - k_fresnal) * L_refracted
+                                float n1 = RefractiveIndex.Vacuum;
+                                float n2 = shape.Material.RefractiveIndex;
+                                float R0 = ((n1 - n2) / (n1 + n2)) * ((n1 - n2) / (n1 + n2));
+
+                                Vector vecToViewer = ray.Scale(-1.0f).Normalise();
+                                //vecToViewer = vecToViewer.Normalise();
+                                float cosTheta = (float) vecToViewer.DotProduct(hr.EntryNormal);
+
+                                float Rtheta = R0 + (1.0f - R0) * (1.0f * cosTheta);
+                                float fresnalFactor = Rtheta;
+
+                                Debug.Assert(fresnalFactor >= 0.0);
+                                Debug.Assert(fresnalFactor <= 1.0);
+
+                                Colour fresnalReflect = GetReflectedColour(camera, scene, ray, hr, depth);
+                                Colour fresnalRefract = GetRefractedColour(camera, scene, ray, hr, depth);
+
+            //                    refracted = fresnalReflect * fresnalFactor + fresnalRefract*(1.0f - fresnalFactor);
+                                refracted = fresnalRefract * fresnalFactor + fresnalReflect * (1.0f - fresnalFactor);
+
+                                //refracted = fresnalRefract;
+                                //refracted = Palette.Red * fresnalFactor + Palette.Green * (1.0f - fresnalFactor);
                             }
-                            visibleFraction = 1.0f;
-
                         }
-                    }
-                    if (visibleFraction == 0.0f)
-                    {
-                        continue;
-                    }
 
-                    Point p = hr.Entry;
-                    Vector vecToLight = light.GetDirection(camera, p).Negate();
-
-                    // Assume light attenuation is 1 over distance squared.
-                    double lightAttenuation = light.GetAttenuation(camera, p);
-
-                    vecToLight = vecToLight.Normalise();
-
-                    Vector shapeNormal = hr.EntryNormal;
-
-                    double dpLN = vecToLight.DotProduct(shapeNormal);
-
-                    if (dpLN > 0.0)
-                    {
-                        // For distant light (doesn't take distance into account).
-                        Colour incidentColour = shape.Material.Albedo/Math.PI * light.Output * shape.GetColour(hr).Scale((float)dpLN);
-
-                        // For point light sufaces.
-                        Vector vecToLight2 = light.GetDirection(camera, p).Negate();
-                        double dDistanceSqr = vecToLight2.MagnitudeSquared();
-                        incidentColour = light.Output / (4.0 * Math.PI * dDistanceSqr) * shape.GetColour(hr).Scale((float)dpLN);
-
-                        //incidentColour = incidentColour.Scale((float) lightAttenuation);
-
-                        incidentColour = incidentColour.Scale(visibleFraction);
-
-                        //Trace.Assert(false);
-                        Debug.Assert(incidentColour.Red >= 0.0f && incidentColour.Green >= 0.0f && incidentColour.Blue >= 0.0);
-
-                        diffuse += incidentColour;
-                    }
-
-                    if (UsePhong)
-                    {
-                        // Phong shading.
-                        Vector R = shapeNormal.Scale(2.0 * dpLN) - vecToLight;
-                        R = R.Normalise();
-
-                        Vector vecToViewer = ray.Scale(-1.0f);
-
-                        double Il = light.Intensity;// 1.0;    // Intensity of light source.
-                        double dpVR = vecToViewer.DotProduct(R);
-
-                        // Ignore negative dp as it means the vectors are pointing away from each other.
-                        if (dpVR > 0.0)
+                        if (UseReflections)
                         {
-                            double k = shape.Material.Specular;    // 0.5;     // Specular reflection coefficient/constant.
-                            double ns = shape.Material.Shininess;  // 4.0;    // 'Shininess' of surface.
-
-                            double d = Math.Pow(dpVR, ns);
-
-                            double Ispec = k * Il * d;
-                            //Ispec = Math.Pow(Ispec, ns);
-
-                            Colour spec = new Colour(1f, 1f, 1f);
-                            //spec = light.Colour;
-                            double factor = Ispec * lightAttenuation;
-                            Colour specularColour = spec * (float)factor;
-
-                            specular += specularColour;
+                            if (shape.HasReflectivity())
+                            {
+                                reflected = GetReflectedColour(camera, scene, ray, hr, depth);
+                            }
                         }
-                    }
 
-                }
-            }
+                        if (UseDiffuse)
+                        {
+                            foreach (Light light in scene.Lights)
+                            {
+                                if (!light.Enabled) continue;
 
-            // Combine all the colour components.
-            Colour colour = ambient + diffuse + specular;
+                                PointLight pointLight = light as PointLight;
+                                if (pointLight == null)
+                                {
+                                    continue;
+                                }
 
-            float transparency = shape.Material.Transparency;
-            colour += refracted.Scale(transparency) + reflected.Scale(1.0f - transparency);
+                                float visibleFraction = 0.0f;
+                                if (!UseShadows)
+                                {
+                                    visibleFraction = 1.0f;
+                                }
+                                else
+                                {
+                                    if (UseSoftShadows && pointLight.Radius > 0)
+                                    {
+                                        visibleFraction = GetSoftShadow(camera, scene, hr.Entry, ray, pointLight);
+                                    }
+                                    else
+                                    {
+                                        Point pos = hr.Entry;
+                                        Point lightPos = camera.WorldToView * pointLight.Pos;
 
-            return colour;
-*/
+                                        if (scene.HitTestFast(camera, pos, lightPos))
+                                        {
+                                            continue;
+                                        }
+                                        visibleFraction = 1.0f;
+
+                                    }
+                                }
+                                if (visibleFraction == 0.0f)
+                                {
+                                    continue;
+                                }
+
+                                Point p = hr.Entry;
+                                Vector vecToLight = light.GetDirection(camera, p).Negate();
+
+                                // Assume light attenuation is 1 over distance squared.
+                                double lightAttenuation = light.GetAttenuation(camera, p);
+
+                                vecToLight = vecToLight.Normalise();
+
+                                Vector shapeNormal = hr.EntryNormal;
+
+                                double dpLN = vecToLight.DotProduct(shapeNormal);
+
+                                if (dpLN > 0.0)
+                                {
+                                    // For distant light (doesn't take distance into account).
+                                    Colour incidentColour = shape.Material.Albedo/Math.PI * light.Output * shape.GetColour(hr).Scale((float)dpLN);
+
+                                    // For point light sufaces.
+                                    Vector vecToLight2 = light.GetDirection(camera, p).Negate();
+                                    double dDistanceSqr = vecToLight2.MagnitudeSquared();
+                                    incidentColour = light.Output / (4.0 * Math.PI * dDistanceSqr) * shape.GetColour(hr).Scale((float)dpLN);
+
+                                    //incidentColour = incidentColour.Scale((float) lightAttenuation);
+
+                                    incidentColour = incidentColour.Scale(visibleFraction);
+
+                                    //Trace.Assert(false);
+                                    Debug.Assert(incidentColour.Red >= 0.0f && incidentColour.Green >= 0.0f && incidentColour.Blue >= 0.0);
+
+                                    diffuse += incidentColour;
+                                }
+
+                                if (UsePhong)
+                                {
+                                    // Phong shading.
+                                    Vector R = shapeNormal.Scale(2.0 * dpLN) - vecToLight;
+                                    R = R.Normalise();
+
+                                    Vector vecToViewer = ray.Scale(-1.0f);
+
+                                    double Il = light.Intensity;// 1.0;    // Intensity of light source.
+                                    double dpVR = vecToViewer.DotProduct(R);
+
+                                    // Ignore negative dp as it means the vectors are pointing away from each other.
+                                    if (dpVR > 0.0)
+                                    {
+                                        double k = shape.Material.Specular;    // 0.5;     // Specular reflection coefficient/constant.
+                                        double ns = shape.Material.Shininess;  // 4.0;    // 'Shininess' of surface.
+
+                                        double d = Math.Pow(dpVR, ns);
+
+                                        double Ispec = k * Il * d;
+                                        //Ispec = Math.Pow(Ispec, ns);
+
+                                        Colour spec = new Colour(1f, 1f, 1f);
+                                        //spec = light.Colour;
+                                        double factor = Ispec * lightAttenuation;
+                                        Colour specularColour = spec * (float)factor;
+
+                                        specular += specularColour;
+                                    }
+                                }
+
+                            }
+                        }
+
+                        // Combine all the colour components.
+                        Colour colour = ambient + diffuse + specular;
+
+                        float transparency = shape.Material.Transparency;
+                        colour += refracted.Scale(transparency) + reflected.Scale(1.0f - transparency);
+
+                        return colour;
+            */
         }
 
         // Render entire Scene to the Canvas.
@@ -744,10 +823,10 @@ namespace RayTrace
             Colour c2 = colourBuffer[w, h + 1];
             Colour c3 = colourBuffer[w + 1, h + 1];
 
-            if (c0 == null) { c0 = GetPixelColour(camera, scene, x, y);                     colourBuffer[w, h] = c0; }
-            if (c1 == null) { c1 = GetPixelColour(camera, scene, x + width, y);             colourBuffer[w + 1, h] = c1; }
-            if (c2 == null) { c2 = GetPixelColour(camera, scene, x + width, y - height);    colourBuffer[w, h + 1] = c2; }
-            if (c3 == null) { c3 = GetPixelColour(camera, scene, x + width, y - height);    colourBuffer[w + 1, h + 1] = c3; }
+            if (c0 == null) { c0 = GetPixelColour(camera, scene, x, y); colourBuffer[w, h] = c0; }
+            if (c1 == null) { c1 = GetPixelColour(camera, scene, x + width, y); colourBuffer[w + 1, h] = c1; }
+            if (c2 == null) { c2 = GetPixelColour(camera, scene, x + width, y - height); colourBuffer[w, h + 1] = c2; }
+            if (c3 == null) { c3 = GetPixelColour(camera, scene, x + width, y - height); colourBuffer[w + 1, h + 1] = c3; }
 
             Colour c4 = GetPixelColour(camera, scene, centreX, centreY);
 
@@ -831,14 +910,39 @@ namespace RayTrace
             return colour;
         }
 
+        //private static Random r = new Random();
+        //private int[] seeds = new int[16] { r.Next(), r.Next(), r.Next(), r.Next(), r.Next(), r.Next(), r.Next(), r.Next(), r.Next(), r.Next(), r.Next(), r.Next(), r.Next(), r.Next(), r.Next(), r.Next() };
+        //private int seedIndex = 0;
+
+
         // Get the colour of specified pixel by casting a ray into the Scene.
-        private Colour GetPixelColour(Camera camera, Scene scene, double x, double y)
+        private Colour GetPixelColour(Camera camera, Scene scene, /*Random rand,*/ double x, double y)
         {
             Colour colour = scene.Background;
 
             //Vector ray = new Vector(x, y, 1, true);
 
             //http://cg.skeelogy.com/depth-of-field-using-raytracing/
+
+            //Random rand = new Random(System.Threading.Thread.CurrentThread.ManagedThreadId);
+            //Random rand = new Random(1234);
+            //Random rand = new Random(seeds[seedIndex++]);
+
+            // Pick a RNG to use.
+            //int managedThreadId = Thread.CurrentThread.ManagedThreadId;
+            //Random rand = randomisers[managedThreadId % NumRandomisers];
+/*
+            int index = 0;
+            lock (RandLock)
+            {
+                index = randIndex++;
+                if (randIndex >= 1000) randIndex = 0;
+                //Console.Write("Using index {0} seed {1}\n", index, seeds[index]);
+            }
+            Random rand = new Random(seeds[index]);
+*/
+            //Random rand = threadRand;
+            Random rand = threadRand.Value;
 
             if (UseDepthOfField)
             {
@@ -855,8 +959,6 @@ namespace RayTrace
 
                 //Colour sum = Palette.Black;
 
-//                Random rand = new Random(System.Threading.Thread.CurrentThread.ManagedThreadId);
-                Random rand = new Random(1234);
 
                 double sceneWidth = camera.GetSceneWidth();
                 double pixelWidth = sceneWidth / 800.0;
@@ -875,7 +977,7 @@ namespace RayTrace
                     HitResult hit = scene.HitTest(camera, r);
                     if (hit.HasEntry())
                     {
-                        colour += CalculateColour(camera, scene, dir, hit);
+                        colour += CalculateColour(camera, scene, dir, rand, hit);
                     }
                 }
 
@@ -890,7 +992,7 @@ namespace RayTrace
                 HitResult hr = scene.HitTest(camera, ray);
                 if (hr.HasEntry())
                 {
-                    colour = CalculateColour(camera, scene, dir, hr);
+                    colour = CalculateColour(camera, scene, dir, rand, hr);
                 }
             }
 
@@ -901,6 +1003,17 @@ namespace RayTrace
         public void Render(Scene scene, Canvas canvas, int startX, int startY, int numColumns, int numRows)
         {
             Camera camera = scene.Camera;
+
+            int index = 0;
+            lock (RandLock)
+            {
+                index = randIndex++;
+                if (randIndex >= NumRandSeeds) randIndex = 0;
+                //Console.Write("Using index {0} seed {1}\n", index, seeds[index]);
+            }
+
+            //threadRand = new Random(seeds[index]);
+            threadRand = new ThreadLocal<Random>(() => { return new Random(seeds[index]); });
 
             // Calculate Scene size based on camera FOV.
             double sceneWidth = camera.GetSceneWidth();
@@ -939,8 +1052,8 @@ namespace RayTrace
                     if (AntiAlias == AntiAliasType.None)
                     {
                         Colour colour = GetPixelColour(camera, scene, sceneX + sceneStepX / 2, sceneY - sceneStepY / 2);
-                        colour = colour.Exposure(1.2f);
-                        colour.Clamp();
+                        //colour = colour.Exposure(1.2f);
+                        //colour.Clamp();
                         canvas.Set(w, h, colour.ToRGB());
                     }
                     else if (AntiAlias == AntiAliasType.NoiseGrid)

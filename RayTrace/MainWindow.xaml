@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:RayTrace"
         mc:Ignorable="d"
-        Title="RayTrace" Height="800" Width="800">
+        Title="RayTrace" Height="800" Width="1024">
     <RibbonWindow.Resources>
 
         <local:RgbConverter x:Key="RgbConverter"></local:RgbConverter>
@@ -391,7 +391,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition />
         </Grid.RowDefinitions>
-        <Ribbon Grid.Row="0" Grid.ColumnSpan="2">
+        <Ribbon Grid.Row="0" Grid.ColumnSpan="2" Grid.RowSpan="1">
             <Ribbon.ApplicationMenu>
                 <RibbonApplicationMenu KeyTip="F">
                     <RibbonApplicationMenuItem Header="About..." />
@@ -406,12 +406,20 @@
                     <RibbonCheckBox x:Name="checkBoxRefraction" Label="Refraction" ToolTip="Enable refraction for objects with transparency"></RibbonCheckBox>
                     <RibbonCheckBox x:Name="checkBoxShadows" Label="Shadows" ToolTip="Enable shadows"></RibbonCheckBox>
                     <RibbonCheckBox x:Name="checkBoxSoftShadows" Label="Soft Shadows" IsEnabled="{Binding IsChecked, ElementName=checkBoxShadows}" ToolTip="Enable soft shadows"></RibbonCheckBox>
+                    <!-- <RibbonCheckBox x:Name="checkBoxGlobalIllumination" Label="Global Illumination" ToolTip="Enable global illumination"></> -->
                     <RibbonCheckBox x:Name="checkBoxDepthOfField" Label="Depth of Field" ToolTip="Enable depth of field"></RibbonCheckBox>
                     <RibbonSeparator MinWidth="2" MinHeight="55" IsEnabled="True" />
                     <RibbonCheckBox x:Name="checkBoxReflections" Label="Reflections" Click="checkBoxReflections_Click"></RibbonCheckBox>
                     <RibbonTextBox x:Name="textBoxDepth" Label="Depth" IsEnabled="{Binding IsEnabled, ElementName=checkBoxReflections}"></RibbonTextBox>
                 </RibbonGroup>
-                
+
+                <RibbonGroup x:Name="groupGlobalIllumination" Header="Global Illumination">
+                    <RibbonCheckBox x:Name="checkBoxGIEnable" Label="Enable"></RibbonCheckBox>
+                    <RibbonSeparator MinWidth="2" MinHeight="55" IsEnabled="True" />
+                    <RibbonTextBox x:Name="textBoxGINumRays" Label="# Rays" IsEnabled="{Binding IsEnabled, ElementName=checkBoxGIEnable}" ToolTip="Number of scattered rays"></RibbonTextBox>
+                    <RibbonTextBox x:Name="textBoxGIDepth" Label="Depth" IsEnabled="{Binding IsEnabled, ElementName=checkBoxGIEnable}" ToolTip="Maximum recursive depth of scattered rays"></RibbonTextBox>
+                </RibbonGroup>
+
                 <RibbonGroup x:Name="groupAntiAliasing" Header="Anti-Aliasing">
                     <RibbonComboBox Label="Type" MinWidth="100">
                         <RibbonGallery x:Name="comboBoxAntiAlias" SelectedValue="None" SelectionChanged="comboBoxAntiAlias_SelectionChanged">
@@ -421,6 +429,7 @@
                     </RibbonComboBox>
                     <RibbonTextBox x:Name="textBoxAdaptiveSubSamplingDepth" Label="Depth"></RibbonTextBox>
                 </RibbonGroup>
+                
                 <RibbonGroup x:Name="groupEngine" Header="Engine">
                     <RibbonTextBox x:Name="textNumberBlocks" Label="Num. Blocks" Text="{Binding NumRenderBlocks, ElementName=window, Mode=TwoWay}"></RibbonTextBox>
                     <RibbonComboBox SelectionBoxWidth="100" Label="Order">
