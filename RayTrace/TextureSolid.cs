@@ -17,6 +17,18 @@ namespace RayTrace
             Colour = colour;
         }
 
+        public TextureSolid(XMLTextureSolid xmlTextureSolid)
+        {
+            Colour = new Colour(xmlTextureSolid.Colour);
+        }
+
         public override Colour GetColour(HitResult hr) { return Colour; }
+
+        public override XMLTexture ToXML()
+        {
+            XMLTextureSolid xml = new XMLTextureSolid();
+            xml.Colour = Colour.ToXML();
+            return xml;
+        }
     }
 }

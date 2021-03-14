@@ -54,12 +54,45 @@ namespace RayTrace
             reflectivity = 0.0f;
         }
 
+        public Material(XMLMaterial xmlMaterial)
+        {
+            Type = xmlMaterial.Type;
+            PhongDiffuse = xmlMaterial.PhongDiffuse;
+            PhongShininess = xmlMaterial.PhongShininess;
+            PhongSpecular = xmlMaterial.PhongSpecular;
+            roughness = xmlMaterial.roughness;
+            transparency = xmlMaterial.transparency;
+            reflectivity = xmlMaterial.reflectivity;
+            RefractiveIndex = xmlMaterial.RefractiveIndex;
+
+            Texture = xmlMaterial.Texture.Create();
+        }
+
         public virtual Colour GetColour(HitResult hr) { return Texture.GetColour(hr); }
 
         public Vector GetReflection(HitResult hr)
         {
 
             return new Vector() ;
+        }
+
+        public XMLMaterial ToXML()
+        {
+            XMLMaterial xmlMaterial = new XMLMaterial();
+
+            xmlMaterial.Type = Type;
+            xmlMaterial.PhongDiffuse = PhongDiffuse;
+            xmlMaterial.PhongShininess = PhongShininess;
+            xmlMaterial.PhongSpecular = PhongSpecular;
+
+            xmlMaterial.roughness = roughness;
+            xmlMaterial.transparency = transparency;
+            xmlMaterial.reflectivity = reflectivity;
+            xmlMaterial.RefractiveIndex = RefractiveIndex;
+
+            xmlMaterial.Texture = Texture.ToXML();
+
+            return xmlMaterial;
         }
 
         public override string ToString()

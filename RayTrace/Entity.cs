@@ -15,5 +15,18 @@ namespace RayTrace
         {
             Name = GetType().Name;
         }
+
+        protected virtual void AsXMLImpl(XMLEntity xml)
+        {
+            xml.Enabled = Enabled;
+            xml.Name = Name;
+        }
+
+        public virtual XMLEntity ToXML()
+        {
+            XMLEntity xml = new XMLEntity();
+            AsXMLImpl(xml);
+            return xml;
+        }
     }
 }

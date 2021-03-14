@@ -43,7 +43,6 @@ namespace RayTrace
 
             double THRESH = 0.000001;
 
-//            if (mu < 0.0)
             if (mu < THRESH)
             {
                 // Not interested in intersections that happen behind us.
@@ -118,8 +117,8 @@ namespace RayTrace
             if (u < 0.0) u = 1.0f + u;
             if (v < 0.0) v = 1.0f + v;
 
-            hr.u = (float) u;
-            hr.v = (float) v;
+            hr.u = (float)u;
+            hr.v = (float)v;
 
             return hr;
         }
@@ -134,15 +133,16 @@ namespace RayTrace
             Normal = normal;
         }
 
+        public Plane(XMLPlane xmlPlane) : base(xmlPlane)
+        {
+            Normal = new Vector(xmlPlane.Normal);
+        }
+
         public override HitResult HitTest(Camera camera, Ray ray)
         {
             HitResult hr = new HitResult(this);
 
             bool segmentOnly = ray.TMax == 1.0;
-
-            //Point p2 = ray.Origin.Offset(ray.Direction);
-
-            //Vector longRay = ray.Scale(1000.0);
 
             Point p1 = ray.Origin;
             Point p2 = ray.Origin + ray.Direction;
@@ -158,6 +158,23 @@ namespace RayTrace
         public override string ToString()
         {
             return "Plane[" + Normal + "," + Pos.ToString() + "]," + Material.ToString() + "]";
+        }
+
+        protected override void AsXMLImpl(XMLEntity xml)
+        {
+            base.AsXMLImpl(xml);
+
+            if (xml is XMLPlane xmlPlane)
+            {
+                xmlPlane.Normal = Normal.ToXML();
+            }
+        }
+
+        public override XMLEntity ToXML()
+        {
+            XMLPlane xml = new XMLPlane();
+            AsXMLImpl(xml);
+            return xml;
         }
     }
 }

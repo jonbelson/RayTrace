@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Windows;
@@ -9,6 +10,8 @@ namespace RayTrace
     {
         private int width;
         private int height;
+        private String fileName;
+
         private Colour[] texture = null;
 
         private bool LoadTexture(string fileName)
@@ -40,8 +43,9 @@ namespace RayTrace
                         }
                     }
 
-
                     bitmap.UnlockBits(bitmapData);
+
+                    this.fileName = fileName;
 
                     return true;
                 }
@@ -50,6 +54,8 @@ namespace RayTrace
             {
                 MessageBox.Show(e.Message);
             }
+
+            fileName = "";
 
             return false;
         }
@@ -61,6 +67,13 @@ namespace RayTrace
             LoadTexture(fileName);
         }
 
+        public TextureBitmap(XMLTextureBitmap xml)
+        {
+            width = height = 0;
+
+            LoadTexture(xml.fileName);
+        }
+
         public bool IsValid() => texture != null;
 
         public Colour GetColour(float u, float v)
@@ -69,6 +82,8 @@ namespace RayTrace
             {
                 int x = (int)(u * width);
                 int y = (int)(v * height);
+
+                Debug.Assert(y * width + x < texture.Length);
 
                 return texture[y * width + x];
             }
@@ -90,6 +105,15 @@ namespace RayTrace
             }
 
             return Palette.Grey;
+        }
+
+        public override XMLTexture ToXML()
+        {
+            XMLTextureBitmap xml = new XMLTextureBitmap();
+            //xml.width = width;
+            //xml.height = height;
+            xml.fileName = fileName;
+            return xml;
         }
     }
 }

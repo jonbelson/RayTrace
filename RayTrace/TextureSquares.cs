@@ -1,4 +1,5 @@
 ﻿using System;
+
 namespace RayTrace
 {
     public class TextureSquares : Texture
@@ -15,6 +16,13 @@ namespace RayTrace
             Colour2 = colour2;
         }
 
+        public TextureSquares(XMLTextureSquares xml)
+        {
+            Colour1 = new Colour(xml.Colour1);
+            Colour2 = new Colour(xml.Colour1);
+            Scale = xml.Scale;
+        }
+
         public override Colour GetColour(HitResult hr)
         {
             int x = (int)(hr.u * Scale);
@@ -28,6 +36,15 @@ namespace RayTrace
             {
                 if (y % 2 == 0) return Colour1; else return Colour2;
             }
+        }
+
+        public override XMLTexture ToXML()
+        {
+            XMLTextureSquares xml = new XMLTextureSquares();
+            xml.Colour1 = Colour1.ToXML();
+            xml.Colour2 = Colour2.ToXML();
+            xml.Scale = Scale;
+            return xml;
         }
     }
 }

@@ -551,14 +551,14 @@ namespace RayTrace
                                 HitResult hr2 = scene.HitTest(camera, new Ray(hr.Entry + hr.EntryNormal.Scale(0.01), scattered));
                                 if (hr2.HasEntry())
                                 {
-                                    Debug.Assert(hr.shape != hr2.shape);
+                                    //Debug.Assert(hr.shape != hr2.shape);
                                     indirectLight += CalculateColour(camera, scene, scattered, rand, hr2, depth) * dpSN / Math.PI;
                                 }
                             }
                             indirectLight /= numSamples;
                         }
 
-                        diffuse += (directLight + indirectLight) * shape.Material.GetColour(hr);
+                        diffuse += (directLight + indirectLight) * shape/*.Material*/.GetColour(hr);
                     }
                     break;
                 case MaterialType.Phong:

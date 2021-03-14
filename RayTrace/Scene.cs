@@ -27,6 +27,24 @@ namespace RayTrace
             //Size = 100.0;
         }
 
+        public Scene(XMLScene xmlScene)
+        {
+            Camera = new Camera(xmlScene.Camera);
+            Ambient = new Colour(xmlScene.Ambient);
+            Background = new Colour(xmlScene.Background);
+            
+            // or use 'Camera XMLCamera.FromXML()'
+
+            foreach (XMLShape xmlShape in xmlScene.Shapes)
+            {
+                Shapes.Add(xmlShape.Create());
+            }
+            foreach (XMLLight xmlLight in xmlScene.Lights)
+            {
+                Lights.Add(xmlLight.Create());
+            }
+        }
+
         public void CreateCaches()
         {
             Camera.UpdateMatrix();
@@ -148,5 +166,29 @@ namespace RayTrace
         {
             Lights.Add(light);
         }
+
+        public virtual XMLScene ToXML()
+        {
+            XMLScene xml = new XMLScene();
+
+            xml.Ambient = Ambient.ToXML();
+            xml.Camera = Camera.ToXML();
+            xml.Background = Background.ToXML();
+
+            foreach (Shape shape in Shapes)
+            {
+                XMLEntity xmlEntity = shape.ToXML();
+                xml.Shapes.Add(xmlEntity as XMLShape);
+            }
+
+            foreach (Light light in Lights)
+            {
+                XMLEntity xmlEntity = light.ToXML();
+                xml.Lights.Add(xmlEntity as XMLLight);
+            }
+
+            return xml;
+        }
+
     }
 }

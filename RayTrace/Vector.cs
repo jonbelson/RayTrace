@@ -27,6 +27,8 @@ namespace RayTrace
             }
         }
 
+        public Vector(XMLVector xmlVector) => (I, J, K) = (xmlVector.I, xmlVector.J, xmlVector.K);
+
         public static Vector operator+(Vector v1, Vector v2) => new Vector(v1.I + v2.I, v1.J + v2.J, v1.K + v2.K);
 
         public static Vector operator-(Vector v1, Vector v2) => new Vector(v1.I - v2.I, v1.J - v2.J, v1.K - v2.K);
@@ -73,6 +75,11 @@ namespace RayTrace
         {
 //            return "Vector[" + I + "," + J + "," + K + "]";
             return "[" + I.ToString("F2") + "," + J.ToString("F2") + "," + K.ToString("F2") + "]";
+        }
+
+        public XMLVector ToXML()
+        {
+            return new XMLVector() { I = this.I, J = this.J, K = this.K };
         }
     }
 }

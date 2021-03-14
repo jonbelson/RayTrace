@@ -16,6 +16,11 @@ namespace RayTrace
             Radius = 8;// 1;
         }
 
+        public PointLight(XMLPointLight xmlPointLight) : base(xmlPointLight)
+        {
+            Pos = new Point(xmlPointLight.Pos);
+        }
+
         public override Vector GetDirection(Camera camera, Point p)
         {
             Point viewPos = camera.WorldToView*Pos;
@@ -52,6 +57,23 @@ namespace RayTrace
         public override string ToString()
         {
             return "Light[" + Pos.ToString() + "]," + Intensity + "," + Colour.ToString() + "]";
+        }
+
+        protected override void AsXMLImpl(XMLEntity xml)
+        {
+            base.AsXMLImpl(xml);
+
+            if (xml is XMLPointLight xmlPointLight)
+            {
+                xmlPointLight.Pos = Pos.ToXML();
+            }
+        }
+
+        public override XMLEntity ToXML()
+        {
+            XMLPointLight xml = new XMLPointLight();
+            AsXMLImpl(xml);
+            return xml;
         }
     }
 }

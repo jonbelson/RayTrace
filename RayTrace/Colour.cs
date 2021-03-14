@@ -50,6 +50,8 @@ namespace RayTrace
             Blue = b / 255.0f;
         }
 
+        public Colour(XMLColour xmlColour) => (Red, Green, Blue) = (xmlColour.Red, xmlColour.Green, xmlColour.Blue);
+
         public static Colour operator+(Colour c1, Colour c2)
         {
             return new Colour(c1.Red + c2.Red, c1.Green + c2.Green, c1.Blue + c2.Blue);
@@ -187,6 +189,11 @@ namespace RayTrace
         public static Colour Average(Colour col1, Colour col2)
         {
             return (col1 + col2).Scale(0.5f);
+        }
+
+        public XMLColour ToXML()
+        {
+            return new XMLColour() { Red = Red, Green = Green, Blue = Blue };
         }
     }
 }

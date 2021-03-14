@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -14,7 +15,11 @@ namespace RayTrace
     //
     public class ModelData
     {
-        public TextureBitmap texture = null;
+        // Source file name if loaded from a file.
+        public string fileName;
+
+//        public TextureBitmap texture = null;
+        public Texture texture = null;
 
         public struct Texel
         {
@@ -140,6 +145,9 @@ namespace RayTrace
 
             //return new Vector(u, v, w);
 
+            Debug.Assert(u <= 1.0);
+            Debug.Assert(v <= 1.0);
+
             return (u, v);
         }
 
@@ -158,6 +166,13 @@ namespace RayTrace
         {
             float texelU = c0.u * (1.0f - u - v) + c1.u * u + c2.u * v;
             float texelV = c0.v * (1.0f - u - v) + c1.v * u + c2.v * v;
+
+            //texelU = Math.Min(texelU, 1.0f);
+            //texelV = Math.Min(texelV, 1.0f);
+
+            //Debug.Assert(texelU <= 1.0);
+            //Debug.Assert(texelV <= 1.0);
+
 
             return new ModelData.Texel() { u = texelU, v = texelV };
         }
@@ -180,6 +195,52 @@ namespace RayTrace
             //ObjectToWorld = scale;
             //ObjectToWorld = rotate * scale * translate;
             //ObjectToWorld = rotate;
+        }
+
+        public Model(XMLModel xmlModel) : base(xmlModel)
+        {
+            _modelData = new ModelData();
+
+            if (String.IsNullOrEmpty(xmlModel.FileName))
+            {
+
+                _modelData.fileName = xmlModel.FileName;
+
+                List<Point> points = new List<Point>();
+                foreach (XMLPoint p in xmlModel.Points)
+                {
+                    points.Add(new Point(p));
+                }
+                _modelData.points = points.ToArray();
+
+                List<ModelData.Texel> texels = new List<ModelData.Texel>();
+                foreach (XMLTexel t in xmlModel.Texels)
+                {
+                    texels.Add(new ModelData.Texel() { u = t.u, v = t.v });
+                }
+                _modelData.texels = texels.ToArray();
+
+                List<Vector> Normals = new List<Vector>();
+                foreach (XMLVector n in xmlModel.Normals)
+                {
+                    Normals.Add(new Vector() { I = n.I, J = n.J, K = n.K });
+                }
+                _modelData.normals = Normals.ToArray();
+
+                List<ModelData.Triangle> Triangles = new List<ModelData.Triangle>();
+                foreach (XMLTriangle t in xmlModel.Triangles)
+                {
+                    Triangles.Add(new ModelData.Triangle() { v0 = t.v0, v1 = t.v1, v2 = t.v2, t0 = t.t0, t1 = t.t1, t2 = t.t2, n0 = t.n0, n1 = t.n1, n2 = t.n2, n = t.n });
+                }
+                _modelData.triangles = Triangles.ToArray();
+
+                _modelData.texture = xmlModel.Texure.Create();
+            }
+            else
+            {
+                ModelImporter importer = new ModelImporter();
+                _modelData = importer.ImportObj(xmlModel.FileName);
+            }
         }
 
         // Transform all vertices to View space based on current Camera position and orientation.
@@ -407,14 +468,17 @@ namespace RayTrace
             Vector C1 = Intersection - V1;
             Vector C2 = Intersection - V2;
 
-            if (vNormal.DotProduct(edge0.VectorProduct(C0)) < 0.0 &&
-                vNormal.DotProduct(edge1.VectorProduct(C1)) < 0.0 &&
-                vNormal.DotProduct(edge2.VectorProduct(C2)) < 0.0)
+            if (vNormal.DotProduct(edge0.VectorProduct(C0)) <= 0.0 &&
+                vNormal.DotProduct(edge1.VectorProduct(C1)) <= 0.0 &&
+                vNormal.DotProduct(edge2.VectorProduct(C2)) <= 0.0)
             {
                 hr.Entry = Intersection;
                 hr.EntryNormal = vNormal;
 
                 var uv = GetBarymetricCoords(V0, V1, V2, Intersection);
+                Debug.Assert(uv.Item1 <= 1.0);
+                Debug.Assert(uv.Item2 <= 1.0);
+
                 hr.u = (float) uv.Item1;
                 hr.v = (float) uv.Item2;
 
@@ -561,7 +625,8 @@ namespace RayTrace
 
         public override Colour GetColour(HitResult hr)
         {
-            if (_modelData.texture != null)
+            TextureBitmap textureBitmap = _modelData.texture as TextureBitmap;
+            if (textureBitmap != null)
             {
                 ModelData.Texel t0 = _modelData.GetTriangleColour0(hr.Index);
                 ModelData.Texel t1 = _modelData.GetTriangleColour1(hr.Index);
@@ -569,10 +634,76 @@ namespace RayTrace
 
                 ModelData.Texel texel = GetColour(t0, t1, t2, hr.u, hr.v);
 
-                return _modelData.texture.GetColour(texel.u, texel.v);
+                //hr.u = texel.u;
+                //hr.v = texel.v;
+
+                return textureBitmap.GetColour(texel.u, texel.v);
+            }
+            else
+            {
+                return _modelData.texture.GetColour(hr);
             }
 
-            return Palette.Grey;
+            //return Palette.Grey;
+        }
+
+        protected override void AsXMLImpl(XMLEntity xml)
+        {
+            base.AsXMLImpl(xml);
+
+            if (xml is XMLModel xmlModel)
+            {
+                xmlModel.FileName = _modelData.fileName;
+
+                if (String.IsNullOrEmpty(_modelData.fileName))
+                {
+                    // Assume model data created by hand, so write out vertex geometry.
+                    xmlModel.Points = new List<XMLPoint>();
+                    if (_modelData.points != null)
+                    {
+                        foreach (Point p in _modelData.points)
+                        {
+                            xmlModel.Points.Add(new XMLPoint() { X = p.X, Y = p.Y, Z = p.Z });
+                        }
+                    }
+                    xmlModel.Texels = new List<XMLTexel>();
+                    if (_modelData.texels != null)
+                    {
+                        foreach (ModelData.Texel t in _modelData.texels)
+                        {
+                            xmlModel.Texels.Add(new XMLTexel() { u = t.u, v = t.v });
+                        }
+                    }
+                    xmlModel.Normals = new List<XMLVector>();
+                    if (_modelData.normals != null)
+                    {
+                        foreach (Vector v in _modelData.normals)
+                        {
+                            xmlModel.Normals.Add(new XMLVector() { I = v.I, J = v.J, K = v.K });
+                        }
+                    }
+                    xmlModel.Triangles = new List<XMLTriangle>();
+                    if (_modelData.triangles != null)
+                    {
+                        foreach (ModelData.Triangle t in _modelData.triangles)
+                        {
+                            xmlModel.Triangles.Add(new XMLTriangle() { v0 = t.v0, v1 = t.v1, v2 = t.v2, t0 = t.t0, t1 = t.t1, t2 = t.t2, n0 = t.n0, n1 = t.n1, n2 = t.n2, n = t.n });
+                        }
+                    }
+                }
+
+                if (_modelData.texture != null)
+                {
+                    xmlModel.Texure = _modelData.texture.ToXML();
+                }
+            }
+        }
+
+        public override XMLEntity ToXML()
+        {
+            XMLModel xml = new XMLModel();
+            AsXMLImpl(xml);
+            return xml;
         }
     }
 }

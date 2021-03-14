@@ -395,6 +395,8 @@
             <Ribbon.ApplicationMenu>
                 <RibbonApplicationMenu KeyTip="F">
                     <RibbonApplicationMenuItem Header="About..." />
+                    <RibbonApplicationMenuItem Header="Load Scene..." Click="LoadScene_Click" />
+                    <RibbonApplicationMenuItem Header="Save Scene" Click="SaveScene_Click" />
                     <RibbonApplicationMenuItem Header="Exit" />
                 </RibbonApplicationMenu>
             </Ribbon.ApplicationMenu>

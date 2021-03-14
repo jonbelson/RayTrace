@@ -18,6 +18,8 @@ namespace RayTrace
 
         public Point(double x, double y, double z) => (X, Y, Z) = (x, y, z);
 
+        public Point(XMLPoint xmlPoint) => (X, Y, Z) = (xmlPoint.X, xmlPoint.Y, xmlPoint.Z);
+
         public Point Scale(double scale) => new Point(X * scale, Y * scale, Z * scale);
 
         public static Point operator*(Point p, double scale) => new Point(p.X * scale, p.Y * scale, p.Z * scale);
@@ -36,6 +38,11 @@ namespace RayTrace
         {
 //            return "Point[" + X + "," + Y + "," + Z + "]";
             return "[" + X.ToString("F2") + "," + Y.ToString("F2") + "," + Z.ToString("F2") + "]";
+        }
+
+        public XMLPoint ToXML()
+        {
+            return new XMLPoint() { X = X, Y = Y, Z = Z };
         }
     }
 }

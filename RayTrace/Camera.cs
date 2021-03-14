@@ -22,7 +22,8 @@ namespace RayTrace
         public double DepthOfField { get; set; } = 10.0;
         public double Aperture { get; set; } = 30.0;
 
-        public double FovH {
+        public double FovH
+        {
             get => _fovHDegrees;
             set
             {
@@ -58,6 +59,17 @@ namespace RayTrace
             UpdateMatrix();
         }
 
+        public Camera(XMLCamera xmlCamera)
+        {
+            _pos = new Point(xmlCamera.Pos);
+            _target = new Point(xmlCamera.Target);
+            FovH = xmlCamera.FovH;
+            DepthOfField = xmlCamera.DepthOfField;
+            Aperture = xmlCamera.Aperture;
+
+            UpdateMatrix();
+        }
+
         public double GetSceneWidth()
         {
             return 2.0 * Math.Tan(_fovHRadians / 2.0);
@@ -74,5 +86,11 @@ namespace RayTrace
             Vector v = Target - Pos;
             return v;//.Normalise();
         }
+
+        public new virtual XMLCamera ToXML()
+        {
+            return new XMLCamera() { Pos = Pos.ToXML(), Target = Target.ToXML(), Aperture = Aperture, FovH = FovH };
+        }
+
     }
 }

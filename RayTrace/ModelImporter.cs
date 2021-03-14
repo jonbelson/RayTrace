@@ -137,17 +137,18 @@ namespace RayTrace
 
             try
             {
-
                 string[] dirs = Directory.GetFiles(sourcePath, "*.obj");
                 if (dirs.Length > 0)
                 {
                     StreamReader file = new StreamReader(dirs[0]);
 
-                    string line;
                     modelData = new ModelData();
+                    modelData.fileName = path;
+
                     char[] delim = new char[] { ' ' };
                     double d1, d2, d3;
                     float f1, f2, f3;
+                    string line;
                     while ((line = file.ReadLine()) != null)
                     {
                         if (line.Length == 0) continue;

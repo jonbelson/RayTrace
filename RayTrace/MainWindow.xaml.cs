@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -154,16 +155,6 @@ namespace RayTrace
         {
             InitializeComponent();
 
-            //Point p = new Point(1.0, 0, 0);
-            //Matrix m = new Matrix();
-            //m.SetRotationY(-Math.PI/2);
-
-            //Point p2 = m*p;
-            //Console.WriteLine(p2);
-
-//            SampleGrid.GetGrid(new Random(), 20);
-            //SampleGrid.GetOffsetGrid(new Random(), 20);
-
             checkBoxAmbient.IsChecked = renderer.UseAmbient;
             checkBoxLighting.IsChecked = renderer.UseDiffuse;
             checkBoxSpecular.IsChecked = renderer.UseSpecular;
@@ -189,9 +180,9 @@ namespace RayTrace
             //scene = SceneFactory.SoftLightDemoScene();
             //scene = SceneFactory.FovDemoScene();
             //scene = SceneFactory.ModelScene();
-            //scene = SceneFactory.ObjScene();
-//            scene = SceneFactory.GIDemoScene();
-            scene = SceneFactory.GIDemoScene2();
+            scene = SceneFactory.ObjScene();
+            //scene = SceneFactory.GIDemoScene();
+            //scene = SceneFactory.GIDemoScene2();
 
             comboBoxFormat.SelectedItem = ImageFormat.Tiff;
 
@@ -357,7 +348,7 @@ namespace RayTrace
 
             ThreadPool.GetMaxThreads(out int workerThreads, out int completonPortThreads);
 
-            //ThreadPool.SetMaxThreads();
+            ThreadPool.SetMaxThreads(16, completonPortThreads);
 
 
             Stopwatch stopWatch = new Stopwatch();
@@ -387,13 +378,19 @@ namespace RayTrace
                 tasks.Add(renderTask);
                 i++;
             }
-            
+
             //List<Task> Tasks = new List<Task>() { renderTask1, renderTask2 };
             //await Task.WaitAll(Tasks.ToArray());
-
-            foreach (Task task in tasks)
+            try
             {
-                await task;
+                foreach (Task task in tasks)
+                {
+                    await task;
+                }
+            }
+            catch (Exception e)
+            {
+                var m = e.Message;
             }
 
             stopWatch.Stop();
@@ -494,6 +491,35 @@ namespace RayTrace
             var y = bitmap.PixelHeight * pos.Y / image.ActualHeight;
 
             RenderPoint((int) x, (int) y);
+        }
+
+        private void LoadScene_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog dialog = new OpenFileDialog() { Filter = "XML Files | *.xml", FileName = "Scene.xml" };
+            if (dialog.ShowDialog() == true)
+            {
+                string fileName = dialog.FileName;
+                XMLScene xmlScene = Exporter.Import(fileName);
+                if (xmlScene != null)
+                {
+                    scene = new Scene(xmlScene);
+                    MessageBox.Show("Scene loaded successfully.");
+                }
+            }
+        }
+
+        private void SaveScene_Click(object sender, RoutedEventArgs e)
+        {
+            SaveFileDialog dialog = new SaveFileDialog { Filter = "XML Files | *.xml", FileName = "Scene.xml" };
+            if (dialog.ShowDialog() == true)
+            {
+                string fileName = dialog.FileName;
+                XMLScene xmlScene = scene.ToXML();
+                if (!Exporter.Export(xmlScene, fileName))
+                {
+                    MessageBox.Show("Failed to save Scene");
+                }
+            }
         }
     }
 }

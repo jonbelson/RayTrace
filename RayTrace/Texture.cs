@@ -9,6 +9,7 @@ namespace RayTrace
     // Base class of all Textures.
     abstract public class Texture
     {
+        //public abstract Colour GetColour(float u, float v);
 
         public abstract Colour GetColour(HitResult hr);
 
@@ -16,5 +17,7 @@ namespace RayTrace
         {
             return "[" + GetType().Name + "]";
         }
+
+        public virtual /*abstract*/ XMLTexture ToXML() { return null; }
     }
 }

@@ -61,9 +61,11 @@
     <Compile Include="BoundingBox.cs" />
     <Compile Include="Box.cs" />
     <Compile Include="Camera.cs" />
+    <Compile Include="Disc.cs" />
     <Compile Include="DistantLight.cs" />
     <Compile Include="Entity.cs" />
     <Compile Include="EntityTemplateSelector.cs" />
+    <Compile Include="Exporter.cs" />
     <Compile Include="HexGrid.cs" />
     <Compile Include="Matrix.cs" />
     <Compile Include="Model.cs" />
@@ -77,6 +79,7 @@
     <Compile Include="Plane.cs" />
     <Compile Include="PointLight.cs" />
     <Compile Include="Ray.cs" />
+    <Compile Include="Quad.cs" />
     <Compile Include="Refraction.cs" />
     <Compile Include="Renderer.cs" />
     <Compile Include="RgbConverter.cs" />
@@ -90,6 +93,7 @@
     <Compile Include="TextureBitmap.cs" />
     <Compile Include="TextureNoise.cs" />
     <Compile Include="TextureNoiseVolume.cs" />
+    <Compile Include="TexturePerTriangle.cs" />
     <Compile Include="TextureSolid.cs" />
     <Compile Include="TextureSquares.cs" />
     <Compile Include="TreeMaker.cs" />

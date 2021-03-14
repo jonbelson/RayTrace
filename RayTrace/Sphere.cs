@@ -57,6 +57,11 @@ namespace RayTrace
             Radius = radius;
         }
 
+		public Sphere(XMLSphere xmlSphere) : base(xmlSphere)
+		{
+			Radius = xmlSphere.Radius;
+		}
+
         // Hit test between line a sphere.
         // segmentOnly If true, only the line segment defined by p1 and p2 is considered.
         private HitResult HitTestImpl(Camera camera, Point p1, Point p2, bool segmentOnly)
@@ -215,6 +220,23 @@ namespace RayTrace
 		public override string ToString()
 		{
 			return "Sphere[" + Pos.ToString() + "]," + Material.ToString() + "]";
+		}
+
+		protected override void AsXMLImpl(XMLEntity xml)
+		{
+			base.AsXMLImpl(xml);
+
+			if (xml is XMLSphere xmlSphere)
+			{
+				xmlSphere.Radius = Radius;
+			}
+		}
+
+		public override XMLEntity ToXML()
+		{
+			XMLSphere xml = new XMLSphere();
+			AsXMLImpl(xml);
+			return xml;
 		}
 	}
 }

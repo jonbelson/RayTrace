@@ -82,6 +82,13 @@ namespace RayTrace
             Material = material;
         }
 
+        // Constructor.
+        public Shape(XMLShape xmlShape)
+        {
+            Pos = new Point(xmlShape.Pos);
+            Material = new Material(xmlShape.Material);
+        }
+
         // Allow Shape to pre-transform data using the Camera's WorldToView Matrix.
         public virtual void CreateCache(Camera camera) { }
 
@@ -102,5 +109,23 @@ namespace RayTrace
         }
 
         public virtual (Point, Vector) GetRefractedVector(Camera camera, Vector ray, HitResult hr) { return (hr.Entry, ray); }
+
+        protected override void AsXMLImpl(XMLEntity xml)
+        {
+            base.AsXMLImpl(xml);
+
+            if (xml is XMLShape xmlShape)
+            {
+                xmlShape.Pos = Pos.ToXML();
+                xmlShape.Material = Material.ToXML();
+            }
+        }
+
+        public override XMLEntity ToXML()
+        {
+            XMLShape xml = new XMLShape();
+            AsXMLImpl(xml);
+            return xml;
+        }
     }
 }
