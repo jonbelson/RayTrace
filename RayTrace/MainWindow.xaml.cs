@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
@@ -67,8 +68,8 @@ namespace RayTrace
     /// </summary>
     public partial class MainWindow : RibbonWindow
     {
-        private Scene scene = new Scene();
-        private Renderer renderer = new Renderer();
+        private Scene scene = new();
+        private Renderer renderer = new();
    
         private Canvas canvas = null;
         WriteableBitmap bitmap = null;
@@ -89,6 +90,8 @@ namespace RayTrace
 
 //        public List<Entity> Entities { get; set; }
         public ObservableCollection<Entity> Entities { get; set; } = new ObservableCollection<Entity>();
+
+        public ObservableCollection<MaterialTile> MaterialTiles { get; set; } = new ObservableCollection<MaterialTile>();
 
         private readonly List<ImageFormat> saveFormats = new List<ImageFormat>() { ImageFormat.Tiff, ImageFormat.Jpeg, ImageFormat.Bmp, ImageFormat.Png };
         public List<ImageFormat> SaveFormats { get { return saveFormats; } }
@@ -151,6 +154,28 @@ namespace RayTrace
             }
         }
 
+        // https://social.msdn.microsoft.com/Forums/vstudio/en-US/29936562-3fa5-45e9-a76a-626f8a212a00/createbitmapsourcefromhbitmap-dpi
+        private WriteableBitmap BitmapToWriteableBitmap(Bitmap bmp)
+        {
+            // Lock the bitmap's bits.
+            System.Drawing.Rectangle rect = new System.Drawing.Rectangle(0, 0, bmp.Width, bmp.Height);
+            System.Drawing.Imaging.BitmapData bmpData = bmp.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadWrite, System.Drawing.Imaging.PixelFormat.Format32bppRgb);
+
+            // Declare an array to hold the bytes of the bitmap.
+            int bufferSize = bmpData.Stride * bmp.Height;
+
+            WriteableBitmap wb = new WriteableBitmap(bmp.Width, bmp.Height, bmp.HorizontalResolution, bmp.VerticalResolution, PixelFormats.Bgr32, null);
+
+            wb.WritePixels(new Int32Rect(0, 0, bmp.Width, bmp.Height), bmpData.Scan0, bufferSize, bmpData.Stride);
+
+            // Unlock the bits.
+            bmp.UnlockBits(bmpData);
+
+            //ShowMe.Source = wb;
+
+            return wb;
+        }
+
         public MainWindow()
         {
             InitializeComponent();
@@ -173,14 +198,14 @@ namespace RayTrace
             textBoxGIDepth.Text = renderer.GIDepth.ToString();
 
             //scene = SceneFactory.PhongDemoScene();
-            //scene = SceneFactory.TexturedSpheresDemoScene();
+            scene = SceneFactory.TexturedSpheresDemoScene();
             //scene = SceneFactory.RefractionDemoScene();
             //scene = SceneFactory.BoxDemoScene();
             //scene = SceneFactory.SphereDemoScene();
             //scene = SceneFactory.SoftLightDemoScene();
             //scene = SceneFactory.FovDemoScene();
             //scene = SceneFactory.ModelScene();
-            scene = SceneFactory.ObjScene();
+            //scene = SceneFactory.ObjScene();
             //scene = SceneFactory.GIDemoScene();
             //scene = SceneFactory.GIDemoScene2();
 
@@ -193,6 +218,7 @@ namespace RayTrace
             //Entities = new List<Entity>();
             //Entities = new ObservableCollection<Entity>();
             //listView.ItemsSource = null;
+
             Entities.Add(scene.Camera);
             foreach (var light in scene.Lights)
             {
@@ -204,6 +230,23 @@ namespace RayTrace
             }
 
             //listView.ItemsSource = Entities;
+
+            ///*
+            MaterialTiles.Clear();
+            MaterialTileMaker materialTileMaker = new() { Size = 150 };
+            foreach (Material mat in scene.Materials)
+            {
+                MaterialTile materialTile = materialTileMaker.MakeTile(mat);
+
+                materialTile.WriteableBitmap = BitmapToWriteableBitmap(materialTile.Bitmap);
+
+                MaterialTiles.Add(materialTile);
+            }
+
+            //materialListBox.ItemsSource = Entities;// MaterialTiles;
+
+           // materialListBox.Items.Add();
+//*/
         }
 
         // Render a single pixel from the current Canvas.
@@ -399,7 +442,7 @@ namespace RayTrace
 
             // Format and display the TimeSpan value.
             string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
-            Console.WriteLine("REader time: " + elapsedTime);
+            Console.WriteLine("Render time: " + elapsedTime);
 
             buttonRender.IsEnabled = true;
 
@@ -519,6 +562,54 @@ namespace RayTrace
                 {
                     MessageBox.Show("Failed to save Scene");
                 }
+            }
+        }
+
+        private void materialListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            //MessageBox.Show("Edit material");
+
+            MaterialTile materialTile = (MaterialTile)materialListBox.SelectedItem;
+
+            if (materialTile != null)
+            {
+                MaterialEditorDialog dlg = new(materialTile.Material);
+                dlg.Owner = this;
+                //dlg.Margin = this.documentTextBox.Margin;
+
+                bool? result = dlg.ShowDialog();
+                if (result == true)
+                {
+                    MaterialTileMaker materialTileMaker = new() { Size = 150 };
+
+                    MaterialTile newTile = materialTileMaker.MakeTile(materialTile.Material);
+
+                    materialTile.Name = newTile.Name;
+                    materialTile.Bitmap = newTile.Bitmap;
+                    materialTile.WriteableBitmap = newTile.Bitmap.ToWriteableBitmap();
+                    materialListBox.Items.Refresh();
+                }
+            }
+        }
+
+        private void comboBoxMaterialType_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            //ListBox listBox;
+
+            ComboBox comboBox = sender as ComboBox;
+            if (comboBox != null)
+            {
+                var selectedValue = comboBox.SelectedValue;
+                var selectedItem = comboBox.SelectedItem;
+
+                MaterialTile materialTile = (MaterialTile) comboBox.SelectedItem;
+
+                Shape shape = listBox.SelectedItem as Shape;
+                if (shape != null)
+                {
+                    shape.Material = materialTile.Material;
+                }
+
             }
         }
     }

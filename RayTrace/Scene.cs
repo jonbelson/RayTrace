@@ -13,6 +13,9 @@ namespace RayTrace
         public List<Shape> Shapes = new List<Shape>();
         public List<Light> Lights = new List<Light>();
 
+        private Material defaultMaterial = new Material(Palette.Grey);
+        public List<Material> Materials = new List<Material>();
+
         [NotifyParentProperty(true)]
         public Camera Camera { get; } = new Camera(new Point(0, 0, 0), new Point(0, 0, 1));
 
@@ -165,6 +168,26 @@ namespace RayTrace
         public void AddLight(Light light)
         {
             Lights.Add(light);
+        }
+
+        public void AddMaterial(Material material)
+        {
+            if (!Materials.Contains(material))
+            {
+                Materials.Add(material);
+            }
+        }
+
+        public Material GetMaterial(Guid guid)
+        {
+            Material material = Materials.Find(x => x.Guid == guid);
+
+            if (material != null)
+            {
+                return material;
+            }
+
+            return defaultMaterial;
         }
 
         public virtual XMLScene ToXML()

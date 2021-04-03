@@ -178,9 +178,9 @@ namespace RayTrace
             ratio = Math.Max(ratio, 0.0f);
             ratio = Math.Min(ratio, 1.0f);
 
-            float r = col1.Red * ratio + (1 - ratio) * col2.Red;
-            float g = col1.Green * ratio + (1 - ratio) * col2.Green;
-            float b = col1.Blue * ratio + (1 - ratio) * col2.Blue;
+            float r = col2.Red * ratio + (1 - ratio) * col1.Red;
+            float g = col2.Green * ratio + (1 - ratio) * col1.Green;
+            float b = col2.Blue * ratio + (1 - ratio) * col1.Blue;
 
             return new Colour(r, g, b);
         }

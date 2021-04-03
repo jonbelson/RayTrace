@@ -43,6 +43,8 @@ namespace RayTrace
         public Point Pos { get; set; }
         public Material Material { get; set; }
 
+        //public Guid MaterialGuid { get; set; }
+
         private Matrix _objectToWorld = new Matrix();
         private Matrix _objectToWorldNormal = new Matrix();
         public Matrix ObjectToWorld {

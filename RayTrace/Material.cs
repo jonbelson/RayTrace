@@ -1,5 +1,6 @@
 ﻿
 using System;
+using System.ComponentModel;
 using System.Drawing;
 
 namespace RayTrace
@@ -12,15 +13,20 @@ namespace RayTrace
     // Characteristics of a Shape's physical form.
     public class Material
     {
+        [NotifyParentProperty(true)]
+        public String Name { get; set; } = "Material";
+        public Guid Guid { get; set; } = Guid.NewGuid();
+
+        ///[NotifyParentProperty(true)]
         public MaterialType Type { get; set; } = MaterialType.Diffuse;
 
         // Ratio of reflected light to incident light (Pd), i.e. how much light is reflected.
         //public Colour Albedo { get; set; } = new Colour(0.18f, 0.18f, 0.18f);
 
         // Phong reflection constants.
-        public double PhongDiffuse = 0.75;      // Phong specular coefficient ('kd')
-        public double PhongSpecular = 0.5;      // Specular reflection coefficient/constant ('ks')
-        public double PhongShininess = 4.0;     // 'Shininess' of surface, 1.0 (matt) - 100 (shiny) ('ns'), 'specular exponent'
+        public double PhongDiffuse { get; set; } = 0.75;      // Phong specular coefficient ('kd')
+        public double PhongSpecular { get; set; } = 0.5;      // Specular reflection coefficient/constant ('ks')
+        public double PhongShininess { get; set; } = 4.0;     // 'Shininess' of surface, 1.0 (matt) - 100 (shiny) ('ns'), 'specular exponent'
 
         private float roughness;
         private float transparency; // Transparency coefficient kt, range 0.0 to 1.0.

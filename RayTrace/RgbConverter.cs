@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
 
@@ -19,6 +20,8 @@ namespace RayTrace
             {
                 return Binding.DoNothing;
             }
+
+            if (values[0] == DependencyProperty.UnsetValue) return Binding.DoNothing;
 
             var red = System.Convert.ToSingle(values[0]);
             var green = System.Convert.ToSingle(values[1]);

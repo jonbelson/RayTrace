@@ -583,7 +583,7 @@ namespace RayTrace
                         if (dpLN > 0.0)
                         {
                             // diffuse += light.GetIntensityAtPoint(camera, hr.Entry) * dpLN * shape.Material.Albedo;
-                            diffuse += lightIntensity * dpLN * shape.Material.GetColour(hr) * hr.shape.Material.PhongDiffuse;
+                            diffuse += lightIntensity * dpLN * shape.GetColour(hr) * hr.shape.Material.PhongDiffuse;
 
                             if (UseSpecular)
                             {

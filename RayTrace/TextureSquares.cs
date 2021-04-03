@@ -10,8 +10,11 @@ namespace RayTrace
         public int Scale { get; set; } = 20;
 
         public TextureSquares() : this(Palette.Blue, Palette.White) { }
+
         public TextureSquares(Colour colour1, Colour colour2)
         {
+            Name = "Squares";
+
             Colour1 = colour1;
             Colour2 = colour2;
         }
@@ -19,7 +22,7 @@ namespace RayTrace
         public TextureSquares(XMLTextureSquares xml)
         {
             Colour1 = new Colour(xml.Colour1);
-            Colour2 = new Colour(xml.Colour1);
+            Colour2 = new Colour(xml.Colour2);
             Scale = xml.Scale;
         }
 

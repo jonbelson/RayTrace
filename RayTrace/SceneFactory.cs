@@ -41,20 +41,41 @@ namespace RayTrace
         {
             Scene scene = new Scene();
 
+            Material matTransparent = new Material();
+            //material.Type = MaterialType.Diffuse;
+            //material.Type = MaterialType.Reflective;
+            matTransparent.Type = MaterialType.RefractiveAndReflective;
+            matTransparent.Texture = new TextureSolid(Palette.Black);
+            matTransparent.Transparency = 1.0f;
+
+            scene.AddMaterial(matTransparent);
+
+            Material matSquares = new() { Name = "Squares" };
+            matSquares.Type = MaterialType.Diffuse;
+            matSquares.Texture = new TextureSquares();
+
+            scene.AddMaterial(matSquares);
+
+            Material matPlane = new() { Name="Ground" };
+            matPlane.Texture = new TextureSquares(Palette.Black, Palette.White) { Scale = /*32*/ 8 };
+            scene.AddMaterial(matPlane);
+
             Sphere sphere = new Sphere(new Point(-20, 0, 50), 20, Palette.White);
             //sphere.Material.Texture = new TextureSquares();
-            sphere.Material.Type = MaterialType.Diffuse;
-            sphere.Material.Type = MaterialType.Reflective;
-            sphere.Material.Type = MaterialType.RefractiveAndReflective;
-            sphere.Material.Texture = new TextureSolid(Palette.Black);
-            sphere.Material.Transparency = 1.0f;
+            //sphere.Material.Type = MaterialType.Diffuse;
+            //sphere.Material.Type = MaterialType.Reflective;
+            //sphere.Material.Type = MaterialType.RefractiveAndReflective;
+            //sphere.Material.Texture = new TextureSolid(Palette.Black);
+            //sphere.Material.Transparency = 1.0f;
+            sphere.Material = matTransparent;
             scene.AddShape(sphere);
 
             sphere = new Sphere(new Point(20, 0, 50), 20, Palette.White);
-            sphere.Material.Texture = new TextureSquares();
-            //            sphere.Material.Texture = new TextureNoise(Palette.White, Palette.Black);
-            //            sphere.Material.Texture = new TextureNoise(Palette.Red, Palette.Green) { Function = TextureNoise.ColourFunction.Blend, Scale = 5 };
-            sphere.Material.Type = MaterialType.Diffuse;
+            //sphere.Material.Texture = new TextureSquares();
+            //sphere.Material.Texture = new TextureNoise(Palette.White, Palette.Black);
+            //sphere.Material.Texture = new TextureNoise(Palette.Red, Palette.Green) { Function = TextureNoise.ColourFunction.Blend, Scale = 5 };
+            //sphere.Material.Type = MaterialType.Diffuse;
+            sphere.Material= matSquares;
             scene.AddShape(sphere);
 
             sphere = new Sphere(new Point(0, 0, 90), 20, Palette.Red);
@@ -65,9 +86,10 @@ namespace RayTrace
 
             Plane plane = new Plane(new Vector(0.0, 1.0, 0.0), new Point(0.0, -30.0, 0.0));
             //plane.Material.Texture = new TextureSquares();
-            plane.Material.Texture = new TextureSolid(Palette.Black);
-            plane.Material.Texture = new TextureSquares(Palette.Black, Palette.White) { Scale = /*32*/ 8 };
+            //plane.Material.Texture = new TextureSolid(Palette.Black);
+            //plane.Material.Texture = new TextureSquares(Palette.Black, Palette.White) { Scale = /*32*/ 8 };
             //plane.Material.Reflectivity = 1.0f;
+            plane.Material = matPlane;
             scene.AddShape(plane);
 
             //Light light = new PointLight(new Point(-50, 0, 0), /*0.5f*/ 5000.0f, new Colour(1.0f, 0.0f, 0.0f));
@@ -75,7 +97,7 @@ namespace RayTrace
             //light = new PointLight(new Point(50, 50, 0), /*.85f*/ 5000.0f, new Colour(1.0f, 1.0f, 1.0f));
             //            scene.AddLight(light);
 
-            Light light = new PointLight(new Point(0, 100, 0), /*.85f*/ 5000.0f, new Colour(1.0f, 1.0f, 1.0f));
+            Light light = new PointLight(new Point(0, 50, 0), /*.85f*/ 5000.0f, new Colour(1.0f, 1.0f, 1.0f));
             scene.AddLight(light);
 
             light = new DistantLight(new Vector(-50, 50, 50).Negate(), 5, Palette.White);

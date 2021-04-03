@@ -52,7 +52,11 @@ namespace RayTrace
 			hr.v = (float) v;
         }
 
-        public Sphere(Point p, int radius, Colour col) : base(p, col)
+		public Sphere(Point p, int radius) : this(p, radius, Palette.Grey)
+        {
+        }
+
+		public Sphere(Point p, int radius, Colour col) : base(p, col)
         {
             Radius = radius;
         }
@@ -215,6 +219,11 @@ namespace RayTrace
 
 			// Didn't mange to get e refracted ray, so return values passed.
 			return (hr.Entry, ray);	// XXX Or return Vector.Null()?
+		}
+
+		public override Colour GetColour(HitResult hr)
+		{
+			return Material.GetColour(hr);
 		}
 
 		public override string ToString()

@@ -64,22 +64,19 @@ namespace RayTrace
             return Save(path, ImageFormat.Tiff);
         }
 
-        public bool Save(string path, ImageFormat format)
+        public Bitmap GetAsBitmap()
         {
-            bool success = false;
-
-            // Transfer data to Bitmap.
+            Bitmap bitmap = null;
 
             try
             {
-                Bitmap bitmap = new Bitmap(Width, Height, PixelFormat.Format32bppRgb);
+                bitmap = new Bitmap(Width, Height, PixelFormat.Format32bppRgb);
                 Graphics g = Graphics.FromImage(bitmap);
-                g.DrawLine(new Pen(Color.White), 0, 0, Width, Height);
+                //g.DrawLine(new Pen(Color.White), 0, 0, Width, Height);
 
+                // Transfer data to Bitmap.
                 BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, Width, Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb);
                 //IntPtr dest = bitmapData.Scan0;
-
-                //bitmap.
 
                 int[] row = new int[Width];
 
@@ -98,8 +95,27 @@ namespace RayTrace
 
                 bitmap.UnlockBits(bitmapData);
 
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message);
+            }
+
+            return bitmap;
+        }
+
+        public bool Save(string path, ImageFormat format)
+        {
+            bool success = false;
+
+            try
+            {
+                Bitmap bitmap = GetAsBitmap();
+
                 path += "." + format.ToString();
                 bitmap.Save(path, format);
+
+                success = true;
             }
             catch (Exception e)
             {

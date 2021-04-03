@@ -62,6 +62,8 @@ namespace RayTrace
 
         public TextureBitmap(string fileName)
         {
+            Name = "Bitmap";
+
             width = height = 0;
 
             LoadTexture(fileName);

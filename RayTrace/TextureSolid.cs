@@ -12,8 +12,12 @@ namespace RayTrace
         public Colour Colour { get; set; }              // Diffuse colour
         //public Colour ColourSpecular { get; set; }    // Colour for specular reflections.
 
+        public TextureSolid() : this(Palette.Grey) { }
+
         public TextureSolid(Colour colour)
         {
+            Name = "Solid";
+
             Colour = colour;
         }
 
