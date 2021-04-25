@@ -13,8 +13,14 @@ namespace RayTrace
         public List<Shape> Shapes = new List<Shape>();
         public List<Light> Lights = new List<Light>();
 
-        private Material defaultMaterial = new Material(Palette.Grey);
-        public List<Material> Materials = new List<Material>();
+        private Material defaultMaterial = new Material(Palette.Grey) { Name = "Default" };
+
+        private List<Material> materials = new List<Material>();
+
+        public List<Material> Materials
+        {
+            get { return materials; }
+        }
 
         [NotifyParentProperty(true)]
         public Camera Camera { get; } = new Camera(new Point(0, 0, 0), new Point(0, 0, 1));
@@ -28,6 +34,8 @@ namespace RayTrace
             //Ambient = new Colour(0.2f, 0.2f, 0.2f);
 
             //Size = 100.0;
+
+            materials.Add(defaultMaterial);
         }
 
         public Scene(XMLScene xmlScene)

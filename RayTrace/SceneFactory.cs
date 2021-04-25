@@ -60,7 +60,7 @@ namespace RayTrace
             matPlane.Texture = new TextureSquares(Palette.Black, Palette.White) { Scale = /*32*/ 8 };
             scene.AddMaterial(matPlane);
 
-            Sphere sphere = new Sphere(new Point(-20, 0, 50), 20, Palette.White);
+            Sphere sphere = new Sphere(new Point(-20, 0, 50), 25, Palette.White);
             //sphere.Material.Texture = new TextureSquares();
             //sphere.Material.Type = MaterialType.Diffuse;
             //sphere.Material.Type = MaterialType.Reflective;
@@ -364,6 +364,10 @@ namespace RayTrace
             // model = ModelFactory.Cube();
             //model = ModelFactory.Tetahedron();
             scene.AddShape(model);
+
+            Sphere sphere = new(new Point(-2.0, 0, 0), 1);
+            sphere.Material.Type = MaterialType.Diffuse;
+            scene.AddShape(sphere);
 
             double floorHeight = model.MinY;
             Plane floor = new Plane(new Vector(0, 1, 0), new Point(0, floorHeight, 0), new Colour(Colors.LightGray));

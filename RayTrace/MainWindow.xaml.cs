@@ -18,6 +18,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Media.Media3D;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
@@ -74,6 +75,8 @@ namespace RayTrace
         private Canvas canvas = null;
         WriteableBitmap bitmap = null;
 
+        private OutputWindow outputWindow = new OutputWindow();
+
         public int NumRenderBlocks { get; set; } = 8;
 
         public enum RenderDirection
@@ -112,7 +115,7 @@ namespace RayTrace
                 dpiY = 96.0 * source.CompositionTarget.TransformToDevice.M22;
             }
         }
-
+/*
         public void Update()
         {
             Update(0, 0, canvas.Width, canvas.Height);
@@ -146,13 +149,15 @@ namespace RayTrace
                 }
                 bitmap.AddDirtyRect(new Int32Rect(0, 0, canvas.Width, canvas.Height));
 
-                image.Source = bitmap;
+                //image.Source = bitmap;
+                outputWindow.image.Source = bitmap;
             }
             finally
             {
                 bitmap.Unlock();
             }
         }
+*/
 
         // https://social.msdn.microsoft.com/Forums/vstudio/en-US/29936562-3fa5-45e9-a76a-626f8a212a00/createbitmapsourcefromhbitmap-dpi
         private WriteableBitmap BitmapToWriteableBitmap(Bitmap bmp)
@@ -198,16 +203,20 @@ namespace RayTrace
             textBoxGIDepth.Text = renderer.GIDepth.ToString();
 
             //scene = SceneFactory.PhongDemoScene();
-            scene = SceneFactory.TexturedSpheresDemoScene();
+            //scene = SceneFactory.TexturedSpheresDemoScene();
             //scene = SceneFactory.RefractionDemoScene();
             //scene = SceneFactory.BoxDemoScene();
             //scene = SceneFactory.SphereDemoScene();
             //scene = SceneFactory.SoftLightDemoScene();
             //scene = SceneFactory.FovDemoScene();
             //scene = SceneFactory.ModelScene();
-            //scene = SceneFactory.ObjScene();
+            scene = SceneFactory.ObjScene();
             //scene = SceneFactory.GIDemoScene();
             //scene = SceneFactory.GIDemoScene2();
+
+
+            UpdateViewport3D();
+
 
             comboBoxFormat.SelectedItem = ImageFormat.Tiff;
 
@@ -393,11 +402,29 @@ namespace RayTrace
 
             ThreadPool.SetMaxThreads(16, completonPortThreads);
 
+            outputWindow.Owner = this;
+            outputWindow.Canvas = canvas;
+            outputWindow.Scene = scene;
+            outputWindow.Renderer = renderer;
+            //outputWindow.image = image;
+            outputWindow.Bitmap = bitmap;
+
+            outputWindow.BlocksToDo = renderBlocks.Count;
+            outputWindow.BlocksDone = 0;
+
+            outputWindow.Visibility = Visibility.Visible;
+            outputWindow.Show();
+
 
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            List<Task> tasks = new List<Task>();
+            List<Task> tasks = new();
+
+            CancellationTokenSource tokenSource = new();
+            CancellationToken token = tokenSource.Token;
+
+            outputWindow.TokenSource = tokenSource;
 
             int i = 0;
             foreach (RenderBlock rb in renderBlocks)
@@ -405,6 +432,7 @@ namespace RayTrace
                 int idx = i;
                 Task renderTask = Task.Factory.StartNew(() =>
                 {
+                    if (token.IsCancellationRequested) return;
                     Thread.CurrentThread.Name = $"Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...";
                     Console.WriteLine($"Starting Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...");
                     renderer.Render(scene, canvas, rb.StartX, rb.StartY, rb.Width, rb.Height);
@@ -414,13 +442,14 @@ namespace RayTrace
                                         (ThreadStart)delegate ()
                                         {
                                             //Console.WriteLine($"Updating {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...");
-                                            Update(rb.StartX, rb.StartY, rb.Width, rb.Height);
+                                            outputWindow.Update(rb.StartX, rb.StartY, rb.Width, rb.Height);
                                         }
                     );
-                });
+                }, token);
                 tasks.Add(renderTask);
                 i++;
             }
+
 
             //List<Task> Tasks = new List<Task>() { renderTask1, renderTask2 };
             //await Task.WaitAll(Tasks.ToArray());
@@ -434,6 +463,12 @@ namespace RayTrace
             catch (Exception e)
             {
                 var m = e.Message;
+
+                if (e is TaskCanceledException)
+                {
+                    outputWindow.BlocksDone = 0;
+                    outputWindow.BlocksToDo = 0;
+                }
             }
 
             stopWatch.Stop();
@@ -449,7 +484,7 @@ namespace RayTrace
             bool success = true;
             if (success)
             {
-                Update();
+                outputWindow.Update();
 
                 if ((bool)checkBoxSaveImage.IsChecked)
                 {
@@ -463,6 +498,85 @@ namespace RayTrace
             }
 
             return true;
+        }
+
+        private void UpdateViewport3D()
+        {
+            Visual3DCollection children = viewport3D.Children;
+            //Visual3D visual = children.ElementAt(0);
+
+            Model3DGroup group = new Model3DGroup();
+
+            //var rotation = new AxisAngleRotation3D(new Vector3D(0 ,0 ,1), 10);
+            //group.Transform = new RotateTransform3D(rotation);
+
+            group.Transform = new ScaleTransform3D(1.0, 1.0, -1.0);
+
+            Point cameraPos = scene.Camera.Pos;
+            Vector cameraView = scene.Camera.GetViewVector().Normalise();
+            viewport3D.Camera = new PerspectiveCamera(new Point3D(cameraPos.X, cameraPos.Y, -cameraPos.Z), new Vector3D(cameraView.I, cameraView.J, -cameraView.K), new Vector3D(0.0, 1.0, 0.0), scene.Camera.FovH);
+            //viewport3D.Camera.Transform = new ScaleTransform3D(-1.0, -1.0, 1.0);
+
+            // Handy lambda expressions for converting to Wpf format.
+            Func<Point, Point3D> PointToPoint3D = (p) => new Point3D(p.X, p.Y, p.Z);
+            Func<Vector, Vector3D> VectorToVector3D = (v) => new Vector3D(v.I, v.J, v.K);
+            Func<Colour, System.Windows.Media.Color> ColourToColor = (c) => new System.Windows.Media.Color() { ScR = c.Red, ScG = c.Green, ScB = c.Blue };
+
+
+            foreach (Light light in scene.Lights)
+            {
+                if (light is PointLight)
+                {
+                    PointLight pointLight = light as PointLight;
+
+                    System.Windows.Media.Media3D.PointLight l = new(ColourToColor(pointLight.Output), PointToPoint3D(pointLight.Pos));
+
+                    group.Children.Add(l);
+                }
+                else if (light is DistantLight)
+                {
+                    DistantLight distantLight = light as DistantLight;
+
+                    System.Windows.Media.Media3D.DirectionalLight l = new(ColourToColor(distantLight.Output), VectorToVector3D(distantLight.Direction));
+
+                    group.Children.Add(l);
+                }
+            }
+
+            AmbientLight al = new(ColourToColor(scene.Ambient));
+            group.Children.Add(al);
+
+            foreach (Shape shape in scene.Shapes)
+            {
+                Sphere sphere = shape as Sphere;
+                if (sphere != null)
+                {
+                    GeometryModel3D model2 = GeometryModel3DFactory.MakeSphere(sphere);
+
+                    group.Children.Add(model2);
+                }
+                else if (shape is Plane)
+                {
+                    Plane plane = (Plane)shape;
+
+                    GeometryModel3D model2 = GeometryModel3DFactory.MakePlane(plane);
+
+                    group.Children.Add(model2);
+                }
+                else if (shape is Model)
+                {
+                    Model model = (Model)shape;
+
+                    GeometryModel3D geometryModel = GeometryModel3DFactory.MakeModel(model);
+
+                    group.Children.Add(geometryModel);
+                }
+            }
+
+            ModelVisual3D modelVisual = new();
+            modelVisual.Content = group;
+
+            viewport3D.Children.Add(modelVisual);
         }
 
         private void buttonRender_Click(object sender, RoutedEventArgs e)
@@ -518,20 +632,20 @@ namespace RayTrace
         private void image_MouseMove(object sender, MouseEventArgs e)
         {
             //sender;
-            var pos = e.GetPosition(image /*(IInputElement) sender*/);
+            var pos = e.GetPosition(outputWindow.image /*(IInputElement) sender*/);
 
-            var x = bitmap.PixelWidth * pos.X / image.ActualWidth;
-            var y = bitmap.PixelHeight* pos.Y / image.ActualHeight;
+            var x = bitmap.PixelWidth * pos.X / outputWindow.image.ActualWidth;
+            var y = bitmap.PixelHeight* pos.Y / outputWindow.image.ActualHeight;
 
             //Console.WriteLine(x + ", " + y);
         }
 
         private void image_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            var pos = e.GetPosition(image /*(IInputElement) sender*/);
+            var pos = e.GetPosition(outputWindow.image /*(IInputElement) sender*/);
 
-            var x = bitmap.PixelWidth * pos.X / image.ActualWidth;
-            var y = bitmap.PixelHeight * pos.Y / image.ActualHeight;
+            var x = bitmap.PixelWidth * pos.X / outputWindow.image.ActualWidth;
+            var y = bitmap.PixelHeight * pos.Y / outputWindow.image.ActualHeight;
 
             RenderPoint((int) x, (int) y);
         }

@@ -12,6 +12,7 @@ namespace RayTrace
         public static Colour White { get { return new Colour(1.0f, 1.0f, 1.0f); } }
         public static Colour Black { get { return new Colour(0.0f, 0.0f, 0.0f); } }
         public static Colour Grey { get { return new Colour(0.7f, 0.7f, 0.7f); } }
+        public static Colour Copper { get { return new Colour(0.72f, 0.45f, 0.20f); } }
     }
 
     public class Colour

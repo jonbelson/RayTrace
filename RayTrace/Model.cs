@@ -75,6 +75,8 @@ namespace RayTrace
     {
         private ModelData _modelData;
 
+        public ModelData GetModelData() => _modelData;
+
         // Cached vertices and normal vectors converted to View space.
         private Point[] _viewPoints = null;
         private Vector[] _viewNormals = null;
@@ -93,7 +95,7 @@ namespace RayTrace
         public Vector GetTriangleNormal1(int index) => _viewNormals[_modelData.triangles[index].n1];
         public Vector GetTriangleNormal2(int index) => _viewNormals[_modelData.triangles[index].n2];
 
-        // If nromal index is set to -1, assume that there are no vertex normals for this triangle.
+        // If normal index is set to -1, assume that there are no vertex normals for this triangle.
         public bool HasVectorNormal(int index) => _modelData.triangles[index].n0 != -1;
 
         public Vector GetTriangleNormal(int index) => _viewNormals[_modelData.triangles[index].n];
