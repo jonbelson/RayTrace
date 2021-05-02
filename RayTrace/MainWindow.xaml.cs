@@ -72,8 +72,8 @@ namespace RayTrace
         private Scene scene = new();
         private Renderer renderer = new();
    
-        private Canvas canvas = null;
-        WriteableBitmap bitmap = null;
+        //private Canvas canvas = null;
+        //WriteableBitmap bitmap = null;
 
         private OutputWindow outputWindow = new OutputWindow();
 
@@ -100,6 +100,10 @@ namespace RayTrace
         public List<ImageFormat> SaveFormats { get { return saveFormats; } }
 
         public ImageFormat SelectedFormat { get; set; }
+
+        // Flags for Scene Preview.
+        public bool PreviewGroundPlane { get; set; } = true;
+        public bool PreviewAxis { get; set; } = true;
 
         private void GetDpi(out double dpiX, out double dpiY)
         {
@@ -210,10 +214,11 @@ namespace RayTrace
             //scene = SceneFactory.SoftLightDemoScene();
             //scene = SceneFactory.FovDemoScene();
             //scene = SceneFactory.ModelScene();
-            scene = SceneFactory.ObjScene();
+            //scene = SceneFactory.ObjScene();
             //scene = SceneFactory.GIDemoScene();
             //scene = SceneFactory.GIDemoScene2();
 
+            scene = SceneFactory.EmptyScene();
 
             UpdateViewport3D();
 
@@ -256,21 +261,6 @@ namespace RayTrace
 
            // materialListBox.Items.Add();
 //*/
-        }
-
-        // Render a single pixel from the current Canvas.
-        private void RenderPoint(int x, int y)
-        {
-            if (canvas != null)
-            {
-                x = Math.Min(x, canvas.Width - 1);
-                y = Math.Min(y, canvas.Height - 1);
-
-                x = Math.Max(x, 0);
-                y = Math.Max(y, 0);
-
-                renderer.Render(scene, canvas, x, y, 1, 1);
-            }
         }
 
         private async Task<bool> Render()
@@ -348,11 +338,13 @@ namespace RayTrace
 
             int height = width;
 
-            canvas = new Canvas(width, height);
+            //canvas = new Canvas(width, height);
 
-            GetDpi(out double dpiX, out double dpiY);
+            //GetDpi(out double dpiX, out double dpiY);
 
-            bitmap = new WriteableBitmap(canvas.Width, canvas.Height, dpiX, dpiY, PixelFormats.Bgr32, null);
+            //bitmap = new WriteableBitmap(canvas.Width, canvas.Height, dpiX, dpiY, PixelFormats.Bgr32, null);
+
+            outputWindow.SetOutputSize(width, height);
 
             buttonRender.IsEnabled = false;
 
@@ -390,7 +382,7 @@ namespace RayTrace
 
             switch (direction)
             {
-                case RenderDirection.CentreOut: renderBlocks.Sort(new TopToBottomComparer(canvas.Width / 2, canvas.Height / 2));  break;
+                case RenderDirection.CentreOut: renderBlocks.Sort(new TopToBottomComparer(width / 2, height / 2));  break;
                 case RenderDirection.Diagonal:  renderBlocks.Sort(new DiagonalComparer());  break;
                 case RenderDirection.TopToBottom:  /* The default */ break;
             }
@@ -402,12 +394,11 @@ namespace RayTrace
 
             ThreadPool.SetMaxThreads(16, completonPortThreads);
 
-            outputWindow.Owner = this;
-            outputWindow.Canvas = canvas;
+            //outputWindow.Canvas = canvas;
             outputWindow.Scene = scene;
             outputWindow.Renderer = renderer;
             //outputWindow.image = image;
-            outputWindow.Bitmap = bitmap;
+            //outputWindow.Bitmap = bitmap;
 
             outputWindow.BlocksToDo = renderBlocks.Count;
             outputWindow.BlocksDone = 0;
@@ -435,7 +426,7 @@ namespace RayTrace
                     if (token.IsCancellationRequested) return;
                     Thread.CurrentThread.Name = $"Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...";
                     Console.WriteLine($"Starting Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...");
-                    renderer.Render(scene, canvas, rb.StartX, rb.StartY, rb.Width, rb.Height);
+                    renderer.Render(scene, outputWindow.canvas, rb.StartX, rb.StartY, rb.Width, rb.Height);
                     Console.WriteLine($"Done Task {idx}...");
 
                     this.Dispatcher.Invoke(DispatcherPriority.Normal,
@@ -492,7 +483,7 @@ namespace RayTrace
                     string fileName = textFileName.Text;
                     if (!String.IsNullOrEmpty(fileName))
                     {
-                        canvas.Save(fileName, format);
+                        outputWindow.canvas.Save(fileName, format);
                     }
                 }
             }
@@ -502,10 +493,17 @@ namespace RayTrace
 
         private void UpdateViewport3D()
         {
-            Visual3DCollection children = viewport3D.Children;
+            //Visual3DCollection children = viewport3D.Children;
             //Visual3D visual = children.ElementAt(0);
 
+            viewport3D.Visibility = Visibility.Hidden;
+            viewport3D.Children.Clear();
+
             Model3DGroup group = new Model3DGroup();
+
+            ModelVisual3D modelVisual = new();
+            modelVisual.Content = group;
+            viewport3D.Children.Add(modelVisual);
 
             //var rotation = new AxisAngleRotation3D(new Vector3D(0 ,0 ,1), 10);
             //group.Transform = new RotateTransform3D(rotation);
@@ -573,10 +571,87 @@ namespace RayTrace
                 }
             }
 
-            ModelVisual3D modelVisual = new();
-            modelVisual.Content = group;
+            //ModelVisual3D modelVisual = new();
+            //modelVisual.Content = group;
+            //viewport3D.Children.Add(modelVisual);
 
-            viewport3D.Children.Add(modelVisual);
+            if (PreviewGroundPlane)
+            {
+                int planeSize = 64;
+
+                for (int z = -planeSize / 2; z <= planeSize / 2; z += 2)
+                {
+                    _3DTools.ScreenSpaceLines3D line = new();
+                    line.Points.Add(new Point3D(-planeSize / 2, 0, z));
+                    line.Points.Add(new Point3D(planeSize / 2, 0, z));
+
+                    line.Color = System.Windows.Media.Colors.DarkGray;
+                    line.Thickness = (z % 10 == 0) ? 2 : 1;
+
+                    viewport3D.Children.Add(line);
+                }
+
+
+                for (int x = -planeSize / 2; x <= planeSize / 2; x += 2)
+                {
+                    _3DTools.ScreenSpaceLines3D line = new();
+                    line.Points.Add(new Point3D(x, 0, -planeSize / 2));
+                    line.Points.Add(new Point3D(x, 0, planeSize / 2));
+
+                    line.Color = System.Windows.Media.Colors.DarkGray;
+                    line.Thickness = (x % 10 == 0) ? 2 : 1;
+
+                    viewport3D.Children.Add(line);
+                }
+            }
+
+
+            if (PreviewAxis)
+            {
+                int axisSize = 10;
+                {
+                    _3DTools.ScreenSpaceLines3D lines = new();
+
+                    //lines.Transform = new ScaleTransform3D(0, 0, -1);
+
+                    //System.Windows.Media.Color axisColor = System.Windows.Media.Colors.White;
+                    lines.Points.Add(new Point3D(0, 0, 0));
+                    lines.Points.Add(new Point3D(axisSize, 0, 0));
+
+                    lines.Thickness = 3;
+                    lines.Color = System.Windows.Media.Colors.Red;
+
+                    viewport3D.Children.Add(lines);
+                }
+                {
+                    _3DTools.ScreenSpaceLines3D lines = new();
+
+                    lines.Points.Add(new Point3D(0, 0, 0));
+                    lines.Points.Add(new Point3D(0, axisSize, 0));
+
+                    lines.Points.Add(new Point3D(0, 0, 0));
+                    lines.Points.Add(new Point3D(0, 0, -axisSize));
+
+                    lines.Thickness = 3;
+                    lines.Color = System.Windows.Media.Colors.Green;
+
+                    viewport3D.Children.Add(lines);
+
+                }
+                {
+                    _3DTools.ScreenSpaceLines3D lines = new();
+
+                    lines.Points.Add(new Point3D(0, 0, 0));
+                    lines.Points.Add(new Point3D(0, 0, -axisSize));
+
+                    lines.Thickness = 3;
+                    lines.Color = System.Windows.Media.Colors.Blue;
+
+                    viewport3D.Children.Add(lines);
+                }
+            }
+
+            viewport3D.Visibility = Visibility.Visible;
         }
 
         private void buttonRender_Click(object sender, RoutedEventArgs e)
@@ -627,27 +702,6 @@ namespace RayTrace
         {
             Renderer.AntiAliasType antiAlias = (Renderer.AntiAliasType)comboBoxAntiAlias.SelectedItem;
             textBoxAdaptiveSubSamplingDepth.IsEnabled = antiAlias == Renderer.AntiAliasType.AdaptiveSupersampling;
-        }
-
-        private void image_MouseMove(object sender, MouseEventArgs e)
-        {
-            //sender;
-            var pos = e.GetPosition(outputWindow.image /*(IInputElement) sender*/);
-
-            var x = bitmap.PixelWidth * pos.X / outputWindow.image.ActualWidth;
-            var y = bitmap.PixelHeight* pos.Y / outputWindow.image.ActualHeight;
-
-            //Console.WriteLine(x + ", " + y);
-        }
-
-        private void image_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            var pos = e.GetPosition(outputWindow.image /*(IInputElement) sender*/);
-
-            var x = bitmap.PixelWidth * pos.X / outputWindow.image.ActualWidth;
-            var y = bitmap.PixelHeight * pos.Y / outputWindow.image.ActualHeight;
-
-            RenderPoint((int) x, (int) y);
         }
 
         private void LoadScene_Click(object sender, RoutedEventArgs e)
@@ -725,6 +779,23 @@ namespace RayTrace
                 }
 
             }
+        }
+
+        private void window_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            // We need to do this to make sure the Render Window closes when the MainWindow closes.
+            // However, we can't do this until the Main Window has been shown.
+            outputWindow.Owner = this;
+        }
+
+        private void checkBoxGroundPlane_Click(object sender, RoutedEventArgs e)
+        {
+            UpdateViewport3D();
+        }
+
+        private void checkBoxAxis_Click(object sender, RoutedEventArgs e)
+        {
+            UpdateViewport3D();
         }
     }
 }

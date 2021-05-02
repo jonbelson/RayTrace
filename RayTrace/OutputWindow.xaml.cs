@@ -23,12 +23,12 @@ namespace RayTrace
     /// </summary>
     public partial class OutputWindow : Window, INotifyPropertyChanged
     {
-        public Canvas Canvas { get; set; }
+        public Canvas canvas { get; set; }
 
         public Scene Scene { get; set; }
         public Renderer Renderer { get; set; }
 
-        public WriteableBitmap Bitmap { get; set; }
+        public WriteableBitmap bitmap { get; set; }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -51,12 +51,6 @@ namespace RayTrace
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
-
-        //private Canvas _canvas = null;
-        //private WriteableBitmap _bitmap = null;
-
-        //private Scene _scene;
-        //private Renderer _renderer;
 
         //private int _width = 0;
         //private int _height = 0;
@@ -97,21 +91,32 @@ namespace RayTrace
             }
         }
 
+        public void SetOutputSize(int width, int height)
+        {
+            canvas = new(width, height);
+
+            GetDpi(out double dpiX, out double dpiY);
+
+            bitmap = new WriteableBitmap(canvas.Width, canvas.Height, dpiX, dpiY, PixelFormats.Bgr32, null);
+
+            image.MinWidth = width;
+            image.MinHeight = height;
+        }
 
         public void Update()
         {
-            Update(0, 0, Canvas.Width, Canvas.Height);
+            Update(0, 0, canvas.Width, canvas.Height);
         }
 
         public void Update(int startX, int startY, int numColumns, int numRows)
         {
             try
             {
-                Bitmap.Lock();
+                bitmap.Lock();
 
                 for (int y = startY; y < startY + numRows; y++)
                 {
-                    IntPtr buffer = Bitmap.BackBuffer + y * Bitmap.BackBufferStride;
+                    IntPtr buffer = bitmap.BackBuffer + y * bitmap.BackBufferStride;
                     //                  for (int x = 0; x < canvas.Width; x++)
                     buffer += 4 * startX;
                     for (int x = startX; x < startX + numColumns; x++)
@@ -120,7 +125,7 @@ namespace RayTrace
                         //val %= palettes[currentPalette].colours.Count;
                         //Color c = palettes[currentPalette].colours[val];
 
-                        UInt32 c = Canvas.Get(x, y);
+                        UInt32 c = canvas.Get(x, y);
 
                         //System.Runtime.InteropServices.Marshal.WriteInt32(buffer, GetColour(0, 0, (byte)val));
                         System.Runtime.InteropServices.Marshal.WriteInt32(buffer, (int)c);
@@ -129,16 +134,31 @@ namespace RayTrace
                     }
 
                 }
-                Bitmap.AddDirtyRect(new Int32Rect(0, 0, Canvas.Width, Canvas.Height));
+                bitmap.AddDirtyRect(new Int32Rect(0, 0, canvas.Width, canvas.Height));
 
                 //image.Source = bitmap;
-                image.Source = Bitmap;
+                image.Source = bitmap;
 
                 BlocksDone++;
             }
             finally
             {
-                Bitmap.Unlock();
+                bitmap.Unlock();
+            }
+        }
+
+        // Render a single pixel from the current Canvas.
+        private void RenderPoint(int x, int y)
+        {
+            if (canvas != null)
+            {
+                x = Math.Min(x, canvas.Width - 1);
+                y = Math.Min(y, canvas.Height - 1);
+
+                x = Math.Max(x, 0);
+                y = Math.Max(y, 0);
+
+                Renderer.Render(Scene, canvas, x, y, 1, 1);
             }
         }
 
@@ -155,6 +175,16 @@ namespace RayTrace
             e.Cancel = true;
 
             Visibility = Visibility.Hidden;
+        }
+
+        private void image_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            var pos = e.GetPosition(image /*(IInputElement) sender*/);
+
+            var x = bitmap.PixelWidth * pos.X / image.ActualWidth;
+            var y = bitmap.PixelHeight * pos.Y / image.ActualHeight;
+
+            RenderPoint((int)x, (int)y);
         }
 
 

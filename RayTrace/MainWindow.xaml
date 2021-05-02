@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:RayTrace"
         mc:Ignorable="d"
-        Title="RayTrace" Height="800" Width="1024">
+        Title="RayTrace" Height="800" Width="1024" IsVisibleChanged="window_IsVisibleChanged">
 
     <RibbonWindow.InputBindings>
         <KeyBinding Key="R" Command="{Binding buttonRender}" />
@@ -417,6 +417,15 @@
                     <RibbonApplicationMenuItem Header="Exit" />
                 </RibbonApplicationMenu>
             </Ribbon.ApplicationMenu>
+            
+            <!-- Preview tab -->
+            <RibbonTab x:Name="tabPreview" Header="Preview">
+                <RibbonGroup x:Name="groupPreviewOptions" Header="Options">
+                    <RibbonCheckBox x:Name="checkBoxGroundPlane" Label="Ground Plane" IsChecked="{Binding ElementName=window, Path=PreviewGroundPlane, Mode=TwoWay}" ToolTip="Enable ground plane" Click="checkBoxGroundPlane_Click"></RibbonCheckBox>
+                    <RibbonCheckBox x:Name="checkBoxAxis" Label="Axis"  IsChecked="{Binding  ElementName=window, Path=PreviewAxis, Mode=TwoWay}" ToolTip="Enable axis" Click="checkBoxAxis_Click"></RibbonCheckBox>
+                </RibbonGroup>
+            </RibbonTab>
+            
             <!-- Render tab -->
             <RibbonTab x:Name="tabRender" Header="Render">
                 <RibbonGroup x:Name="groupOptions" Header="Options">

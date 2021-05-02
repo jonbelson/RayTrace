@@ -50,7 +50,7 @@ namespace _3DTools
             this.Content = _model;
             this.Points = new Point3DCollection();
 
-            CompositionTarget.Rendering += OnRender;
+            //CompositionTarget.Rendering += OnRender;
         }
 
         public static readonly DependencyProperty ColorProperty =
@@ -61,6 +61,34 @@ namespace _3DTools
                 new PropertyMetadata(
                     Colors.White,
                     OnColorChanged));
+
+        private bool AttachedToCompositionTargetRendering { get; set; }
+
+        protected override void OnVisualParentChanged(DependencyObject oldParent)
+        {
+            base.OnVisualParentChanged(oldParent);
+
+            var parent = VisualTreeHelper.GetParent(this);
+
+            if (parent == null)
+            {
+                if (AttachedToCompositionTargetRendering)
+                {
+                    CompositionTarget.Rendering -= OnRender;
+
+                    AttachedToCompositionTargetRendering = false;
+                }
+            }
+            else
+            {
+                if (!AttachedToCompositionTargetRendering)
+                {
+                    CompositionTarget.Rendering += OnRender;
+
+                    AttachedToCompositionTargetRendering = true;
+                }
+            }
+        }
 
         private static void OnColorChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
         {

@@ -11,6 +11,27 @@ namespace RayTrace
 {
     class SceneFactory
     {
+        public static Scene EmptyScene()
+        {
+            Scene scene = new();
+
+            Material mat = new Material() { Name = "Gradient" };
+            mat.Texture = new TextureGradient() { Type = TextureGradient.GradientType.Radial };
+
+            scene.AddMaterial(mat);
+
+            Sphere sphere = new Sphere(new Point(0, 0, 00), 2, Palette.Red);
+            sphere.Material = mat;
+            scene.AddShape(sphere);
+
+            scene.Camera.Pos = new Point(3, 5, -16);
+            scene.Camera.Target = new Point(0, 0, 0);
+
+            //scene.AddLight(new PointLight(new Point(0, 10, 0), 1000, Palette.White));
+
+            return scene;
+        }
+
         public static Scene PhongDemoScene()
         {
             Scene scene = new Scene();
