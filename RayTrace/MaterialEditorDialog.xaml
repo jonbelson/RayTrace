@@ -7,23 +7,54 @@
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
         x:Name="dialog"
-        Title="Material Editor" Height="400" Width="300">
+        Title="Material Editor" Height="400" Width="300"  ResizeMode="NoResize" SizeToContent="WidthAndHeight">
 
     <Window.Resources>
 
+        <!--
+            Layout hints for controls
+        -->
         <Style TargetType="TextBlock">
             <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="Margin" Value="0, 3" />
         </Style>
 
-        <ObjectDataProvider x:Key="dataFromEnum" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
+        <Style TargetType="ComboBox">
+            <Setter Property="Margin" Value="0, 3" />
+        </Style>
+
+        <Style TargetType="TextBox">
+            <Setter Property="Margin" Value="0, 3" />
+        </Style>
+
+
+        <ObjectDataProvider x:Key="dataFromColourFunctionEnum" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
             <ObjectDataProvider.MethodParameters>
                 <x:Type TypeName="local:TextureNoise+ColourFunction"/>
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
 
+        <ObjectDataProvider x:Key="dataFromGradientTypeEnum" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="local:TextureGradient+GradientType"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+
+        <ObjectDataProvider x:Key="dataFromBlendTypeEnum" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="local:TextureGradient+BlendType"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+
+
+
 
         <local:RgbConverter x:Key="RgbConverter"></local:RgbConverter>
 
+        
+        <!--
+            Material template
+        -->
         <Border x:Shared="False" x:Key="MaterialContent" >
 
             <StackPanel>
@@ -256,25 +287,58 @@
                     <TextBox Grid.Column="3" Grid.Row="2" Text="{Binding ElementName=dialog, Path=material.Texture.Scale, Mode=TwoWay, NotifyOnSourceUpdated=True}" MinWidth="50" SourceUpdated="Control_SourceUpdated"></TextBox>
 
                     <TextBlock Grid.Row="3" Text="Function:" HorizontalAlignment="Right"></TextBlock>
-                    <ComboBox Grid.Row="3" Grid.Column="3" Name="comboBoxBlendType" ItemsSource="{Binding Source={StaticResource dataFromEnum}, NotifyOnSourceUpdated=True}" SelectedItem="{Binding ElementName=dialog, Path=material.Texture.Function}"  SourceUpdated="Control_SourceUpdated" HorizontalAlignment="Left" MinWidth="200" SelectionChanged="comboBoxBlendType_SelectionChanged"></ComboBox>
+                    <ComboBox Grid.Row="3" Grid.Column="3" Name="comboBoxBlendType" ItemsSource="{Binding Source={StaticResource dataFromColourFunctionEnum}, NotifyOnSourceUpdated=True}" SelectedItem="{Binding ElementName=dialog, Path=material.Texture.Function}"  SourceUpdated="Control_SourceUpdated" HorizontalAlignment="Left" MinWidth="200" SelectionChanged="comboBoxBlendType_SelectionChanged"></ComboBox>
 
 
                 </Grid>
             </StackPanel>
         </DataTemplate>
 
+        
+        <!--
+            Gradient Texture template.
+        -->
+        <DataTemplate x:Key="TextureGradientTemplate">
+            <StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="8" />
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
+                    <ContentPresenter Grid.Row="0" Grid.ColumnSpan="3" Content="{StaticResource Colour1Content}"></ContentPresenter>
+                    <ContentPresenter Grid.Row="1" Grid.ColumnSpan="3" Content="{StaticResource Colour2Content}"></ContentPresenter>
+
+                    <TextBlock Grid.Row="2" Text="Direction:" HorizontalAlignment="Right"></TextBlock>
+                    <ComboBox Grid.Row="2" Grid.Column="3" Name="comboBoxGradientType" ItemsSource="{Binding Source={StaticResource dataFromGradientTypeEnum}, NotifyOnSourceUpdated=True}" SelectedItem="{Binding ElementName=dialog, Path=material.Texture.Gradient}"  SourceUpdated="Control_SourceUpdated" HorizontalAlignment="Left" MinWidth="200" SelectionChanged="comboBoxGradientType_SelectionChanged"></ComboBox>
+
+                    <TextBlock Grid.Row="3" Text="Blend:" HorizontalAlignment="Right"></TextBlock>
+                    <ComboBox Grid.Row="3" Grid.Column="3" Name="comboBoxBlendType" ItemsSource="{Binding Source={StaticResource dataFromBlendTypeEnum}, NotifyOnSourceUpdated=True}" SelectedItem="{Binding ElementName=dialog, Path=material.Texture.Blend}"  SourceUpdated="Control_SourceUpdated" HorizontalAlignment="Left" MinWidth="200" SelectionChanged="comboBoxGradientBlendType_SelectionChanged"></ComboBox>
+
+                </Grid>
+            </StackPanel>
+        </DataTemplate>
 
 
         <!--
             Diffuse Material template.
         -->
         <DataTemplate x:Key="DiffuseTemplate">
-
+            <!-- From https://stackoverflow.com/questions/2476305/wpf-some-styles-not-applied-on-datatemplate-controls -->
+            <DataTemplate.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}" />
+            </DataTemplate.Resources>
             <StackPanel>
                 <Grid>
                     <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="100"/>
                         <ColumnDefinition Width="8" />
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
@@ -284,22 +348,29 @@
                     </Grid.RowDefinitions>
 
                     <TextBlock Grid.Row="0" Text="Texture:" HorizontalAlignment="Right"></TextBlock>
-                    <ComboBox Grid.Column="2" Name="comboBoxTexture" ItemsSource="{Binding  ElementName=dialog, Path=Textures}" SelectedItem="{Binding Path=Texture}" SelectionChanged="comboBoxTexture_SelectionChanged"></ComboBox>
+                    <ComboBox Grid.Column="2" Name="comboBoxTexture" ItemsSource="{Binding  ElementName=dialog, Path=Textures}"  SelectedItem="{Binding ElementName=dialog, Path=textureType, Mode=TwoWay}"  SelectionChanged="comboBoxTexture_SelectionChanged"></ComboBox>
                                
-                    <ContentControl Grid.Row="1" Grid.ColumnSpan="3" Content="{Binding  Path=Texture, Mode=Twoway}">
+                    <ContentControl x:Name="textureTemplate" Grid.Row="1" Grid.ColumnSpan="3" Content="{Binding  Path=Texture, Mode=Twoway}">
                         <ContentControl.Style>
                             <Style TargetType="{x:Type ContentControl}">
 
                                 <!--<Setter Property="ContentTemplate" Value="{StaticResource TextureNoiseTemplate}" />-->
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Path=SelectedValue, ElementName=comboBoxTexture}" Value="{x:Static local:MaterialEditorDialog+TextureType.Perlin}">
+                                    <!--<DataTrigger Binding="{Binding Path=SelectedItem, ElementName=comboBoxTexture}" Value="{x:Static local:TextureType.Perlin}">-->
+                                    <DataTrigger Binding="{Binding Path=textureType, ElementName=dialog, Mode=TwoWay}" Value="{x:Static local:TextureType.Perlin}">
                                         <Setter Property="ContentTemplate" Value="{StaticResource TextureNoiseTemplate}"></Setter>
                                     </DataTrigger>
-                                    <DataTrigger Binding="{Binding Path=SelectedValue, ElementName=comboBoxTexture}" Value="{x:Static local:MaterialEditorDialog+TextureType.Solid}">
+                                    <!--<DataTrigger Binding="{Binding Path=SelectedValue, ElementName=comboBoxTexture}" Value="{x:Static local:TextureType.Solid}">-->
+                                    <DataTrigger Binding="{Binding Path=textureType, ElementName=dialog, Mode=TwoWay}" Value="{x:Static local:TextureType.Solid}">
                                         <Setter Property="ContentTemplate" Value="{StaticResource TextureSolidTemplate}"></Setter>
                                     </DataTrigger>
-                                    <DataTrigger Binding="{Binding Path=SelectedValue, ElementName=comboBoxTexture}" Value="{x:Static local:MaterialEditorDialog+TextureType.Squares}">
+                                    <!--<DataTrigger Binding="{Binding Path=SelectedValue, ElementName=comboBoxTexture}" Value="{x:Static local:TextureType.Squares}">-->
+                                    <DataTrigger Binding="{Binding Path=textureType, ElementName=dialog}" Value="{x:Static local:TextureType.Squares}">
                                         <Setter Property="ContentTemplate" Value="{StaticResource TextureSquaresTemplate}"></Setter>
+                                    </DataTrigger>
+                                    <!--<DataTrigger Binding="{Binding Path=SelectedValue, ElementName=comboBoxTexture}" Value="{x:Static local:TextureType.Gradient}">-->
+                                    <DataTrigger Binding="{Binding Path=textureType, ElementName=dialog}" Value="{x:Static local:TextureType.Gradient}">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource TextureGradientTemplate}"></Setter>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
@@ -321,25 +392,60 @@
                 <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}" />
             </DataTemplate.Resources>
             <StackPanel>
-                <Grid Margin="5">
+                <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="100"/>
                         <ColumnDefinition Width="8" />
-                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition />
                         <RowDefinition />
                         <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
                     </Grid.RowDefinitions>
-                    <TextBlock Text="Diffuse:" Grid.Row="0"></TextBlock>
-                    <TextBlock Text="Specular:" Grid.Row="1"></TextBlock>
-                    <TextBlock Text="Shiness:" Grid.Row="2"></TextBlock>
 
-                    <TextBox Text="{Binding ElementName=dialog, Path=material.PhongDiffuse, Mode=TwoWay, NotifyOnSourceUpdated=True}" Grid.Column="2" Grid.Row="0" MinWidth="50" SourceUpdated="Control_SourceUpdated"></TextBox>
-                    <TextBox Text="{Binding ElementName=dialog, Path=material.PhongSpecular, Mode=TwoWay, NotifyOnSourceUpdated=True}" Grid.Column="2" Grid.Row="1" MinWidth="50" SourceUpdated="Control_SourceUpdated"></TextBox>
-                    <TextBox Text="{Binding ElementName=dialog, Path=material.PhongShininess, Mode=TwoWay, NotifyOnSourceUpdated=True}" Grid.Column="2" Grid.Row="2" MinWidth="50" SourceUpdated="Control_SourceUpdated"></TextBox>
+                    <TextBlock Grid.Row="0" Text="Texture:" HorizontalAlignment="Right"></TextBlock>
+                    <ComboBox Grid.Column="2" Name="comboBoxTexture" ItemsSource="{Binding  ElementName=dialog, Path=Textures}" SelectedItem="{Binding ElementName=dialog, Path=textureType, Mode=TwoWay}" SelectionChanged="comboBoxTexture_SelectionChanged"></ComboBox>
+
+                    <ContentControl Grid.Row="1" Grid.ColumnSpan="3" Content="{Binding  Path=Texture, Mode=Twoway}">
+                        <ContentControl.Style>
+                            <Style TargetType="{x:Type ContentControl}">
+
+                                <!--<Setter Property="ContentTemplate" Value="{StaticResource TextureNoiseTemplate}" />-->
+                                <Style.Triggers>
+                                    <!--<DataTrigger Binding="{Binding Path=SelectedValue, ElementName=comboBoxTexture}" Value="{x:Static local:TextureType.Perlin}">-->
+                                    <DataTrigger Binding="{Binding Path=textureType, ElementName=dialog}" Value="{x:Static local:TextureType.Perlin}">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource TextureNoiseTemplate}"></Setter>
+                                    </DataTrigger>
+                                    <!--<DataTrigger Binding="{Binding Path=SelectedValue, ElementName=comboBoxTexture}" Value="{x:Static local:TextureType.Solid}">-->
+                                    <DataTrigger Binding="{Binding Path=textureType, ElementName=dialog}" Value="{x:Static local:TextureType.Solid}">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource TextureSolidTemplate}"></Setter>
+                                    </DataTrigger>
+                                    <!--<DataTrigger Binding="{Binding Path=SelectedValue, ElementName=comboBoxTexture}" Value="{x:Static local:TextureType.Squares}">-->
+                                    <DataTrigger Binding="{Binding Path=textureType, ElementName=dialog}" Value="{x:Static local:TextureType.Squares}">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource TextureSquaresTemplate}"></Setter>
+                                    </DataTrigger>
+                                    <!--<DataTrigger Binding="{Binding Path=SelectedValue, ElementName=comboBoxTexture}" Value="{x:Static local:TextureType.Gradient}">-->
+                                    <DataTrigger Binding="{Binding Path=textureType, ElementName=dialog}" Value="{x:Static local:TextureType.Gradient}">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource TextureGradientTemplate}"></Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ContentControl.Style>
+
+                    </ContentControl>
+
+
+                    <TextBlock Text="Diffuse:" Grid.Row="2"></TextBlock>
+                    <TextBlock Text="Specular:" Grid.Row="3"></TextBlock>
+                    <TextBlock Text="Shiness:" Grid.Row="4"></TextBlock>
+
+                    <TextBox Text="{Binding ElementName=dialog, Path=material.PhongDiffuse, Mode=TwoWay, NotifyOnSourceUpdated=True}" Grid.Column="2" Grid.Row="2" MinWidth="50" SourceUpdated="Control_SourceUpdated"></TextBox>
+                    <TextBox Text="{Binding ElementName=dialog, Path=material.PhongSpecular, Mode=TwoWay, NotifyOnSourceUpdated=True}" Grid.Column="2" Grid.Row="3" MinWidth="50" SourceUpdated="Control_SourceUpdated"></TextBox>
+                    <TextBox Text="{Binding ElementName=dialog, Path=material.PhongShininess, Mode=TwoWay, NotifyOnSourceUpdated=True}" Grid.Column="2" Grid.Row="4" MinWidth="50" SourceUpdated="Control_SourceUpdated"></TextBox>
                 </Grid>
             </StackPanel>
         </DataTemplate>
@@ -392,7 +498,7 @@
     </Window.Resources>
     
     
-    <Grid Margin="8,8,8,0" ShowGridLines="True">
+    <Grid Margin="8,8,8,0" ShowGridLines="False">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="100"></ColumnDefinition>
             <ColumnDefinition Width="8"></ColumnDefinition>

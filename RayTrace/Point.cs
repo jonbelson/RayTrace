@@ -5,14 +5,22 @@ using System.ComponentModel;
 namespace RayTrace
 {
     // Represent a point in 3D space.
-    public class /*struct*/ Point
+    public class /*struct*/ Point : INotifyPropertyChanged
     {
-        [NotifyParentProperty(true)]
-        public double X { get ;set; }
-        [NotifyParentProperty(true)]
-        public double Y { get; set; }
-        [NotifyParentProperty(true)]
-        public double Z { get; set; }
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        private void Notify(string propName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
+        }
+
+        private double x;
+        private double y;
+        private double z;
+
+        public double X { get { return x; } set { if (x != value) { x = value; Notify("X"); } } }
+        public double Y { get { return y; } set { if (y != value) { y = value; Notify("Y"); } } }
+        public double Z { get { return z; } set { if (z != value) { z = value; Notify("Z"); } } }
 
         public Point() : this(0.0, 0.0, 0.0) { }
 

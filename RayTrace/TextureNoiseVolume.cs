@@ -9,6 +9,8 @@ namespace RayTrace
 {
     public class TextureNoiseVolume : Texture
     {
+        public override TextureType Type { get; } = TextureType.NoiseVolume;
+
         private double noiseRange = Perlin.GetRange();
 
         public Colour Colour { get; set; }

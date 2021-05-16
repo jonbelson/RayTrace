@@ -9,6 +9,8 @@ namespace RayTrace
     // Simple texture that just returns asingle colour.
     public class TextureSolid : Texture
     {
+        public override TextureType Type { get; } = TextureType.Solid;
+
         public Colour Colour { get; set; }              // Diffuse colour
         //public Colour ColourSpecular { get; set; }    // Colour for specular reflections.
 

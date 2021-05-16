@@ -7,7 +7,11 @@ namespace RayTrace
 {
     public class Sphere : Shape
     {
-        public int Radius { get; set; }
+		private int radius;
+
+        public int Radius {
+			get { return radius; }
+			set { radius = value; Notify("Radius"); } }
 
         public void CalculateUV(Camera camera, HitResult hr)
         {
@@ -59,9 +63,16 @@ namespace RayTrace
 		public Sphere(Point p, int radius, Colour col) : base(p, col)
         {
             Radius = radius;
+
+            Pos.PropertyChanged += Pos_PropertyChanged;
         }
 
-		public Sphere(XMLSphere xmlSphere) : base(xmlSphere)
+        private void Pos_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+			Notify("Pos");
+        }
+
+        public Sphere(XMLSphere xmlSphere) : base(xmlSphere)
 		{
 			Radius = xmlSphere.Radius;
 		}
@@ -101,6 +112,13 @@ namespace RayTrace
 
 				Point p = p1 + dp.Scale(u);
 				hr.Entry = p;
+
+				Point hp = p + dp.Scale(u);
+
+				//Vector surfaceNormal = sc.Difference(hit);
+				//surfaceNormal = surfaceNormal.Normalise();
+
+				hr.EntryNormal = sc.Difference(hp).Normalise();
 
 				CalculateUV(camera, hr);
 

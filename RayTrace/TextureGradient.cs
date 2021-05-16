@@ -8,6 +8,8 @@ namespace RayTrace
 {
     class TextureGradient : Texture
     {
+        public override TextureType Type { get; } = TextureType.Gradient;
+
         public Colour Colour1 { get; set; }
         public Colour Colour2 { get; set; }
 
@@ -16,7 +18,14 @@ namespace RayTrace
             Vertical, Horizontal, Diagonal, Radial
         }
 
-        public GradientType Type { get; set; } = GradientType.Vertical;
+        public enum BlendType
+        {
+            Linear, Smooth, Step
+        }
+
+        public GradientType Gradient { get; set; } = GradientType.Vertical;
+
+        public BlendType Blend { get; set; } = TextureGradient.BlendType.Smooth;
 
         public TextureGradient() : this(Palette.Blue, Palette.Green) { }
 
@@ -35,15 +44,26 @@ namespace RayTrace
         //      Type = xml.Type;
         //}
 
+        public delegate Colour Blender(Colour c1, Colour c2, float ratio);
+
         public override Colour GetColour(HitResult hr)
         {
-            switch (Type)
+            Blender handler = null;
+
+            switch (Blend)
+            {
+                case BlendType.Linear: handler = Colour.LinearBlend;    break;
+                case BlendType.Smooth: handler = Colour.SmoothBlend; break;
+                case BlendType.Step: handler = Colour.StepBlend; break;
+            }
+
+            switch (Gradient)
             {
                 case GradientType.Vertical:
-                    return Colour.Blend(Colour1, Colour2, hr.v);
+                    return handler?.Invoke(Colour1, Colour2, hr.v);
 
                 case GradientType.Horizontal:
-                    return Colour.Blend(Colour1, Colour2, hr.u);
+                    return handler?.Invoke(Colour1, Colour2, hr.u);
 
                 case GradientType.Diagonal:
                     // Find shortest distance from 0,0 to 1,1 and use 'm' as blend.
@@ -52,7 +72,7 @@ namespace RayTrace
                 case GradientType.Radial:
                     Vector v = new Point(0.5, 0.5, 0) - new Point(hr.u, hr.v, 0);
                     double distance = v.Magnitude();
-                    return Colour.Blend(Colour1, Colour2, (float) distance);
+                    return handler?.Invoke(Colour1, Colour2, (float) distance);
 
             }
 

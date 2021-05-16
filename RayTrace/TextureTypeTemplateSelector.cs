@@ -13,6 +13,7 @@ namespace RayTrace
         public DataTemplate TextureSolidTemplate { get; set; }
         public DataTemplate TextureSquaresTemplate { get; set; }
         public DataTemplate TextureNoiseTemplate { get; set; }
+        public DataTemplate TextureGradientTemplate { get; set; }
         //public DataTemplate ReflectiveTemplate { get; set; }
         //public DataTemplate RefractiveAndReflectiveTemplate { get; set; }
 
@@ -21,6 +22,7 @@ namespace RayTrace
             if (item is TextureSolid) return TextureSolidTemplate;
             if (item is TextureSquares) return TextureSquaresTemplate;
             if (item is TextureNoise) return TextureNoiseTemplate;
+            if (item is TextureGradient) return TextureGradientTemplate;
 
             /*
                         MaterialType type = (MaterialType)item;

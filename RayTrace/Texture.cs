@@ -6,6 +6,11 @@ using System.Threading.Tasks;
 
 namespace RayTrace
 {
+    public enum TextureType
+    {
+        Solid, Perlin, Squares, Gradient, Bitmap, PerTriangle, NoiseVolume
+    }
+
     // Base class of all Textures.
     abstract public class Texture
     {
@@ -14,6 +19,8 @@ namespace RayTrace
         public string Name { get; set; }
 
         public abstract Colour GetColour(HitResult hr);
+
+        public abstract TextureType Type { get; }
 
         public override string ToString()
         {

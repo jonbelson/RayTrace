@@ -18,6 +18,46 @@ using System.Windows.Threading;
 
 namespace RayTrace
 {
+    public struct RenderBlock
+    {
+        public int StartX;
+        public int StartY;
+        public int Width;
+        public int Height;
+        public int CentreX { get { return StartX + Width / 2; } }
+        public int CentreY { get { return StartY + Height / 2; } }
+    }
+
+    public class TopToBottomComparer : IComparer<RenderBlock>
+    {
+        private readonly int centreX;
+        private readonly int centreY;
+
+        public TopToBottomComparer(int _centreX, int _centreY) { centreX = _centreX; centreY = _centreY; }
+
+        public int Compare(RenderBlock rb1, RenderBlock rb2)
+        {
+            float distSquared1 = (centreX - rb1.CentreX) * (centreX - rb1.CentreX) + (centreY - rb1.CentreY) * (centreY - rb1.CentreY);
+            float distSquared2 = (centreX - rb2.CentreX) * (centreX - rb2.CentreX) + (centreY - rb2.CentreY) * (centreY - rb2.CentreY);
+            if (distSquared1 > distSquared2) return 1;
+            if (distSquared1 < distSquared2) return -1;
+            return 0;
+        }
+    }
+
+    public class DiagonalComparer : IComparer<RenderBlock>
+    {
+        public int Compare(RenderBlock rb1, RenderBlock rb2)
+        {
+            float distSquared1 = rb1.CentreX * rb1.CentreX + rb1.CentreY * rb1.CentreY;
+            float distSquared2 = rb2.CentreX * rb2.CentreX + rb2.CentreY * rb2.CentreY;
+            if (distSquared1 > distSquared2) return 1;
+            if (distSquared1 < distSquared2) return -1;
+            return 0;
+        }
+    }
+
+
     /// <summary>
     /// Interaction logic for OutputWindow.xaml
     /// </summary>
@@ -29,6 +69,8 @@ namespace RayTrace
         public Renderer Renderer { get; set; }
 
         public WriteableBitmap bitmap { get; set; }
+
+        public CancellationTokenSource tokenSource = new();
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -187,153 +229,129 @@ namespace RayTrace
             RenderPoint((int)x, (int)y);
         }
 
+        private List<RenderBlock> CalcRenderBlocks(int NumRenderBlocks, MainWindow.RenderDirection direction)
+        {
+            int width = canvas.Width;
+            int height = canvas.Height;
 
-        /*
-                private async Task<bool> DoRender()
+            float floatStep = ((float)height) / NumRenderBlocks;
+            int intStep = (int)floatStep;
+
+            // Make list of blocks to render.
+            List<RenderBlock> renderBlocks = new List<RenderBlock>();
+
+            int intY = 0;
+            float floatY = 0.0f;
+            for (int y = 0; y < NumRenderBlocks; y++)
+            {
+                int intX = 0;
+                float floatX = 0.0f;
+
+                int blockHeight = intStep;
+                if (floatY > intY) blockHeight++;
+
+                for (int x = 0; x < NumRenderBlocks; x++)
                 {
-                    _canvas = new Canvas(_width, _height);
+                    int blockWidth = intStep;
+                    if (floatX > intX) blockWidth++;
 
-                    GetDpi(out double dpiX, out double dpiY);
+                    RenderBlock renderBlock = new RenderBlock() { StartX = intX, StartY = intY, Width = blockWidth, Height = blockHeight };
+                    renderBlocks.Add(renderBlock);
 
-                    _bitmap = new WriteableBitmap(_canvas.Width, _canvas.Height, dpiX, dpiY, PixelFormats.Bgr32, null);
-
-                    _scene.Camera.UpdateMatrix();    // XXX Needed?
-                    _scene.CreateCaches();
-
-                    ThreadPool.GetMaxThreads(out int workerThreads, out int completonPortThreads);
-
-                    ThreadPool.SetMaxThreads(16, completonPortThreads);
-
-
-                    Stopwatch stopWatch = new Stopwatch();
-                    stopWatch.Start();
-
-                    List<Task> tasks = new List<Task>();
-
-                    int i = 0;
-                    foreach (RenderBlock rb in renderBlocks)
-                    {
-                        int idx = i;
-                        Task renderTask = Task.Factory.StartNew(() =>
-                        {
-                            Thread.CurrentThread.Name = $"Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...";
-                            Console.WriteLine($"Starting Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...");
-                            _renderer.Render(_scene, _canvas, rb.StartX, rb.StartY, rb.Width, rb.Height);
-                            Console.WriteLine($"Done Task {idx}...");
-
-                            this.Dispatcher.Invoke(DispatcherPriority.Normal,
-                                                (ThreadStart)delegate ()
-                                                {
-                                                    //Console.WriteLine($"Updating {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...");
-                                                    Update(rb.StartX, rb.StartY, rb.Width, rb.Height);
-                                                }
-                            );
-                        });
-                        tasks.Add(renderTask);
-                        i++;
-                    }
-
-                    //List<Task> Tasks = new List<Task>() { renderTask1, renderTask2 };
-                    //await Task.WaitAll(Tasks.ToArray());
-                    try
-                    {
-                        foreach (Task task in tasks)
-                        {
-                            await task;
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        var m = e.Message;
-                    }
-
-                    return true;
+                    intX += blockWidth;
+                    floatX += floatStep;
                 }
 
+                intY += blockHeight;
+                floatY += floatStep;
+            }
 
-                private  void Update()
+            switch (direction)
+            {
+                case MainWindow.RenderDirection.CentreOut: renderBlocks.Sort(new TopToBottomComparer(width / 2, height / 2)); break;
+                case MainWindow.RenderDirection.Diagonal: renderBlocks.Sort(new DiagonalComparer()); break;
+                case MainWindow.RenderDirection.TopToBottom:  /* The default */ break;
+            }
+
+            return renderBlocks;
+        }
+
+        public async Task<bool> DoRender(int NumRenderBlocks, MainWindow.RenderDirection direction)
+        {
+            var renderBlocks = CalcRenderBlocks(NumRenderBlocks, direction);
+
+            BlocksDone = 0;
+            BlocksToDo = renderBlocks.Count;
+
+            //canvas = new Canvas(canvas.Width, canvas.Height);
+
+            GetDpi(out double dpiX, out double dpiY);
+
+            //_bitmap = new WriteableBitmap(_canvas.Width, _canvas.Height, dpiX, dpiY, PixelFormats.Bgr32, null);
+
+            canvas.Clear();
+
+            Scene.Camera.UpdateMatrix();    // XXX Needed?
+            Scene.CreateCaches();
+
+            ThreadPool.GetMaxThreads(out int workerThreads, out int completonPortThreads);
+
+            ThreadPool.SetMaxThreads(16, completonPortThreads);
+
+            CancellationToken token = tokenSource.Token;
+
+            //Stopwatch stopWatch = new Stopwatch();
+            //stopWatch.Start();
+
+            List<Task> tasks = new List<Task>();
+
+            int i = 0;
+            foreach (RenderBlock rb in renderBlocks)
+            {
+                int idx = i;
+                Task renderTask = Task.Factory.StartNew(() =>
                 {
-                    Update(0, 0, _canvas.Width, _canvas.Height);
+                    if (token.IsCancellationRequested) return;
+
+                    Thread.CurrentThread.Name = $"Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...";
+                    Console.WriteLine($"Starting Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...");
+                    Renderer.Render(Scene, canvas, rb.StartX, rb.StartY, rb.Width, rb.Height);
+                    Console.WriteLine($"Done Task {idx}...");
+
+                    this.Dispatcher.Invoke(DispatcherPriority.Normal,
+                                        (ThreadStart)delegate ()
+                                        {
+                                            //Console.WriteLine($"Updating {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...");
+                                            Update(rb.StartX, rb.StartY, rb.Width, rb.Height);
+                                        }
+                    );
+                });
+                tasks.Add(renderTask);
+                i++;
+            }
+
+            //List<Task> Tasks = new List<Task>() { renderTask1, renderTask2 };
+            //await Task.WaitAll(Tasks.ToArray());
+            try
+            {
+                foreach (Task task in tasks)
+                {
+                    await task;
+                }
+            }
+            catch (Exception e)
+            {
+                var m = e.Message;
+
+                if (e is TaskCanceledException)
+                {
+                    outputWindow.BlocksDone = 0;
+                    outputWindow.BlocksToDo = 0;
                 }
 
-                private void Update(int startX, int startY, int numColumns, int numRows)
-                {
-                    try
-                    {
-                        _bitmap.Lock();
+            }
 
-                        for (int y = startY; y < startY + numRows; y++)
-                        {
-                            IntPtr buffer = _bitmap.BackBuffer + y * _bitmap.BackBufferStride;
-                            //                  for (int x = 0; x < canvas.Width; x++)
-                            buffer += 4 * startX;
-                            for (int x = startX; x < startX + numColumns; x++)
-                            {
-                                //int val = data[y * width + x];
-                                //val %= palettes[currentPalette].colours.Count;
-                                //Color c = palettes[currentPalette].colours[val];
-
-                                UInt32 c = _canvas.Get(x, y);
-
-                                //System.Runtime.InteropServices.Marshal.WriteInt32(buffer, GetColour(0, 0, (byte)val));
-                                System.Runtime.InteropServices.Marshal.WriteInt32(buffer, (int)c);
-
-                                buffer += 4;
-                            }
-
-                        }
-                        _bitmap.AddDirtyRect(new Int32Rect(0, 0, _canvas.Width, _canvas.Height));
-
-                        image.Source = _bitmap;
-                    }
-                    finally
-                    {
-                        _bitmap.Unlock();
-                    }
-                }
-        */
-
-
-        /*
-
-                public void Update()
-                {
-                    double dpiX, dpiY;
-                    GetDpi(out dpiX, out dpiY);
-
-                    WriteableBitmap bitmap = new WriteableBitmap(_canvas.Width, _canvas.Height, dpiX, dpiY, PixelFormats.Bgr32, null);
-
-                    try
-                    {
-                        bitmap.Lock();
-
-                        for (int y = 0; y < Height; y++)
-                        {
-                            IntPtr buffer = bitmap.BackBuffer + y * bitmap.BackBufferStride;
-                            for (int x = 0; x < _canvas.Width; x++)
-                            {
-                                //int val = data[y * width + x];
-                                //val %= palettes[currentPalette].colours.Count;
-                                //Color c = palettes[currentPalette].colours[val];
-
-                                UInt32 c = _canvas.Get(x, y);
-
-                                //System.Runtime.InteropServices.Marshal.WriteInt32(buffer, GetColour(0, 0, (byte)val));
-                                System.Runtime.InteropServices.Marshal.WriteInt32(buffer, (int)c);
-
-                                buffer += 4;
-                            }
-
-                        }
-                        bitmap.AddDirtyRect(new Int32Rect(0, 0, _canvas.Width, _canvas.Height));
-
-                        image.Source = bitmap;
-                    }
-                    finally
-                    {
-                        bitmap.Unlock();
-                    }
-                }
-        */
+            return true;
+        }
     }
 }

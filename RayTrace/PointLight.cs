@@ -14,11 +14,20 @@ namespace RayTrace
         {
             Pos = p;
             Radius = 8;// 1;
+
+            Pos.PropertyChanged += Pos_PropertyChanged;
+        }
+
+        private void Pos_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            Notify("Pos");
         }
 
         public PointLight(XMLPointLight xmlPointLight) : base(xmlPointLight)
         {
             Pos = new Point(xmlPointLight.Pos);
+
+            Pos.PropertyChanged += Pos_PropertyChanged;
         }
 
         public override Vector GetDirection(Camera camera, Point p)

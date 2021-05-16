@@ -173,7 +173,7 @@ namespace RayTrace
             Vector test2 = align * test;
 
 
-            // Create matricies to rotation from Z axis to vecToLight.
+            // Create matrices to rotation from Z axis to vecToLight.
             Matrix xrotation2 = new Matrix();
             xrotation2.SetRotationX(-xrot);
 

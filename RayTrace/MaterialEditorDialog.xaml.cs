@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -19,8 +20,10 @@ namespace RayTrace
     /// <summary>
     /// Interaction logic for MaterialEditorDialog.xaml
     /// </summary>
-    public partial class MaterialEditorDialog : Window
+    public partial class MaterialEditorDialog : Window, INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler PropertyChanged;
+
         private readonly List<MaterialType> materialTypes = new() { MaterialType.Diffuse, MaterialType.Reflective, MaterialType.RefractiveAndReflective, MaterialType.Phong };
 
         private readonly MaterialTileMaker materialTileMaker = new();
@@ -30,11 +33,20 @@ namespace RayTrace
         //private readonly Material material;
         //[NotifyParentProperty(true)]
         public Material material { get; set; } = null;
+        public Texture texture { get; set; } = null;
+
+        private TextureType tt;
+        public TextureType textureType { get { return tt; } set { tt = value; Notify(); }  }
 
         public ObservableCollection<Material> Materials { get; set; } = new();
 
-        public enum TextureType { Solid, Perlin, Squares };
-        public ObservableCollection<TextureType> Textures { get; set; } = new() { TextureType.Solid, TextureType.Perlin, TextureType.Squares };
+        //public enum TextureType { Solid, Perlin, Squares, Gradient };
+        public ObservableCollection<TextureType> Textures { get; set; } = new() { TextureType.Solid, TextureType.Perlin, TextureType.Squares, TextureType.Gradient };
+
+        private void Notify([CallerMemberName] String propName="")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
+        }
 
         private void UpdatePreview()
         {
@@ -49,6 +61,8 @@ namespace RayTrace
         public MaterialEditorDialog(Material mat)
         {
             material = mat;
+            texture = material.Texture;
+            textureType = material.Texture.Type;
 
             InitializeComponent();
 
@@ -109,7 +123,12 @@ namespace RayTrace
                     case TextureType.Solid: material.Texture = new TextureSolid(); break;
                     case TextureType.Squares: material.Texture = new TextureSquares(); break;
                     case TextureType.Perlin: material.Texture = new TextureNoise(); break;
+                    case TextureType.Gradient: material.Texture = new TextureGradient(); break;
                 }
+
+                texture = material.Texture;
+
+                textureType = texture.Type;
 
                 UpdatePreview();
 
@@ -120,6 +139,44 @@ namespace RayTrace
             else
             {
                 comboBox.SelectedItem = material.Texture;
+            }
+        }
+
+        private void comboBoxGradientType_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ComboBox comboBox = (ComboBox)sender;
+            if (comboBox.SelectedItem != null)
+            {
+                TextureGradient.GradientType function = (TextureGradient.GradientType)comboBox.SelectedItem;
+
+                TextureGradient texture = (TextureGradient)material.Texture;
+
+                texture.Gradient = function;
+
+                UpdatePreview();
+
+                //var currentSelector = contentControl.ContentTemplateSelector;
+                //contentControl.ContentTemplateSelector = null;
+                //contentControl.ContentTemplateSelector = currentSelector;
+            }
+        }
+
+        private void comboBoxGradientBlendType_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ComboBox comboBox = (ComboBox)sender;
+            if (comboBox.SelectedItem != null)
+            {
+                TextureGradient.BlendType function = (TextureGradient.BlendType)comboBox.SelectedItem;
+
+                TextureGradient texture = (TextureGradient)material.Texture;
+
+                texture.Blend = function;
+
+                UpdatePreview();
+
+                //var currentSelector = contentControl.ContentTemplateSelector;
+                //contentControl.ContentTemplateSelector = null;
+                //contentControl.ContentTemplateSelector = currentSelector;
             }
         }
 

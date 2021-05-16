@@ -4,6 +4,8 @@ namespace RayTrace
 {
     public class TextureSquares : Texture
     {
+        public override TextureType Type { get; } = TextureType.Squares;
+
         public Colour Colour1 { get; set; }
         public Colour Colour2 { get; set; }
 

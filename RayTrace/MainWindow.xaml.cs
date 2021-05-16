@@ -25,6 +25,7 @@ using System.Windows.Threading;
 
 namespace RayTrace
 {
+    /*
     public struct RenderBlock
     {
         public int StartX;
@@ -63,6 +64,7 @@ namespace RayTrace
             return 0;
         }
     }
+    */
 
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -95,6 +97,7 @@ namespace RayTrace
         public ObservableCollection<Entity> Entities { get; set; } = new ObservableCollection<Entity>();
 
         public ObservableCollection<MaterialTile> MaterialTiles { get; set; } = new ObservableCollection<MaterialTile>();
+        public List<Material> Materials { get; set; } = new();
 
         private readonly List<ImageFormat> saveFormats = new List<ImageFormat>() { ImageFormat.Tiff, ImageFormat.Jpeg, ImageFormat.Bmp, ImageFormat.Png };
         public List<ImageFormat> SaveFormats { get { return saveFormats; } }
@@ -119,49 +122,6 @@ namespace RayTrace
                 dpiY = 96.0 * source.CompositionTarget.TransformToDevice.M22;
             }
         }
-/*
-        public void Update()
-        {
-            Update(0, 0, canvas.Width, canvas.Height);
-        }
-
-        public void Update(int startX, int startY, int numColumns, int numRows)
-        {
-            try
-            {
-                bitmap.Lock();
-
-                for (int y = startY; y < startY + numRows; y++)
-                {
-                    IntPtr buffer = bitmap.BackBuffer + y * bitmap.BackBufferStride;
-                    //                  for (int x = 0; x < canvas.Width; x++)
-                    buffer += 4 * startX;
-                    for (int x = startX; x < startX + numColumns; x++)
-                    {
-                        //int val = data[y * width + x];
-                        //val %= palettes[currentPalette].colours.Count;
-                        //Color c = palettes[currentPalette].colours[val];
-
-                        UInt32 c = canvas.Get(x, y);
-
-                        //System.Runtime.InteropServices.Marshal.WriteInt32(buffer, GetColour(0, 0, (byte)val));
-                        System.Runtime.InteropServices.Marshal.WriteInt32(buffer, (int)c);
-
-                        buffer += 4;
-                    }
-
-                }
-                bitmap.AddDirtyRect(new Int32Rect(0, 0, canvas.Width, canvas.Height));
-
-                //image.Source = bitmap;
-                outputWindow.image.Source = bitmap;
-            }
-            finally
-            {
-                bitmap.Unlock();
-            }
-        }
-*/
 
         // https://social.msdn.microsoft.com/Forums/vstudio/en-US/29936562-3fa5-45e9-a76a-626f8a212a00/createbitmapsourcefromhbitmap-dpi
         private WriteableBitmap BitmapToWriteableBitmap(Bitmap bmp)
@@ -207,7 +167,7 @@ namespace RayTrace
             textBoxGIDepth.Text = renderer.GIDepth.ToString();
 
             //scene = SceneFactory.PhongDemoScene();
-            //scene = SceneFactory.TexturedSpheresDemoScene();
+            scene = SceneFactory.TexturedSpheresDemoScene();
             //scene = SceneFactory.RefractionDemoScene();
             //scene = SceneFactory.BoxDemoScene();
             //scene = SceneFactory.SphereDemoScene();
@@ -218,10 +178,21 @@ namespace RayTrace
             //scene = SceneFactory.GIDemoScene();
             //scene = SceneFactory.GIDemoScene2();
 
-            scene = SceneFactory.EmptyScene();
+            //scene = SceneFactory.EmptyScene();
 
             UpdateViewport3D();
-
+/*
+            // Subscribe to PropertyChanged events for each Entity.
+            foreach (Entity entity in scene.Shapes)
+            {
+                entity.PropertyChanged += Entity_PropertyChanged;
+            }
+            foreach (Entity entity in scene.Lights)
+            {
+                entity.PropertyChanged += Entity_PropertyChanged;
+            }
+            scene.Camera.PropertyChanged += Entity_PropertyChanged;
+*/
 
             comboBoxFormat.SelectedItem = ImageFormat.Tiff;
 
@@ -243,7 +214,16 @@ namespace RayTrace
                 Entities.Add(shape);
             }
 
+            foreach (Entity entity in Entities)
+            {
+                entity.PropertyChanged += Entity_PropertyChanged;
+            }
+
+
+
             //listView.ItemsSource = Entities;
+
+            Materials = scene.Materials;
 
             ///*
             MaterialTiles.Clear();
@@ -261,6 +241,11 @@ namespace RayTrace
 
            // materialListBox.Items.Add();
 //*/
+        }
+
+        private void Entity_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            UpdateViewport3D();
         }
 
         private async Task<bool> Render()
@@ -348,6 +333,7 @@ namespace RayTrace
 
             buttonRender.IsEnabled = false;
 
+            /*
             float floatStep = ((float)height) / NumRenderBlocks;
             int intStep = (int)floatStep;
 
@@ -384,8 +370,10 @@ namespace RayTrace
             {
                 case RenderDirection.CentreOut: renderBlocks.Sort(new TopToBottomComparer(width / 2, height / 2));  break;
                 case RenderDirection.Diagonal:  renderBlocks.Sort(new DiagonalComparer());  break;
-                case RenderDirection.TopToBottom:  /* The default */ break;
+                case RenderDirection.TopToBottom:  / The default / break;
             }
+        */
+
 
             scene.Camera.UpdateMatrix();    // XXX Needed?
             scene.CreateCaches();
@@ -394,14 +382,11 @@ namespace RayTrace
 
             ThreadPool.SetMaxThreads(16, completonPortThreads);
 
-            //outputWindow.Canvas = canvas;
             outputWindow.Scene = scene;
             outputWindow.Renderer = renderer;
-            //outputWindow.image = image;
-            //outputWindow.Bitmap = bitmap;
 
-            outputWindow.BlocksToDo = renderBlocks.Count;
-            outputWindow.BlocksDone = 0;
+            //outputWindow.BlocksToDo = renderBlocks.Count;
+            //outputWindow.BlocksDone = 0;
 
             outputWindow.Visibility = Visibility.Visible;
             outputWindow.Show();
@@ -417,6 +402,9 @@ namespace RayTrace
 
             outputWindow.TokenSource = tokenSource;
 
+            await outputWindow.DoRender(numRenderBlocks, direction);
+
+/*
             int i = 0;
             foreach (RenderBlock rb in renderBlocks)
             {
@@ -461,7 +449,7 @@ namespace RayTrace
                     outputWindow.BlocksToDo = 0;
                 }
             }
-
+*/
             stopWatch.Stop();
             // Get the elapsed time as a TimeSpan value.
             TimeSpan ts = stopWatch.Elapsed;
@@ -512,7 +500,7 @@ namespace RayTrace
 
             Point cameraPos = scene.Camera.Pos;
             Vector cameraView = scene.Camera.GetViewVector().Normalise();
-            viewport3D.Camera = new PerspectiveCamera(new Point3D(cameraPos.X, cameraPos.Y, -cameraPos.Z), new Vector3D(cameraView.I, cameraView.J, -cameraView.K), new Vector3D(0.0, 1.0, 0.0), scene.Camera.FovH);
+            viewport3D.Camera = new PerspectiveCamera(new Point3D(cameraPos.X, cameraPos.Y, -cameraPos.Z), new Vector3D(cameraView.I, cameraView.J, -cameraView.K), new Vector3D(0.0, 1.0, 0.0), scene.Camera.FovH /* /2 */);
             //viewport3D.Camera.Transform = new ScaleTransform3D(-1.0, -1.0, 1.0);
 
             // Handy lambda expressions for converting to Wpf format.
@@ -523,11 +511,18 @@ namespace RayTrace
 
             foreach (Light light in scene.Lights)
             {
+                if (!light.Enabled) continue;
+
                 if (light is PointLight)
                 {
                     PointLight pointLight = light as PointLight;
 
                     System.Windows.Media.Media3D.PointLight l = new(ColourToColor(pointLight.Output), PointToPoint3D(pointLight.Pos));
+
+                    // Attenuation formula based on distance (D):
+                    // ConstantAttenuation + LinearAttenuation * D + QuadraticAttenuation * D^2
+                    l.QuadraticAttenuation = 0.001;
+                    //l.LinearAttenuation = 0.01;
 
                     group.Children.Add(l);
                 }
@@ -546,6 +541,8 @@ namespace RayTrace
 
             foreach (Shape shape in scene.Shapes)
             {
+                if (!shape.Enabled) continue;
+
                 Sphere sphere = shape as Sphere;
                 if (sphere != null)
                 {
@@ -770,12 +767,13 @@ namespace RayTrace
                 var selectedValue = comboBox.SelectedValue;
                 var selectedItem = comboBox.SelectedItem;
 
-                MaterialTile materialTile = (MaterialTile) comboBox.SelectedItem;
+//                MaterialTile materialTile = (MaterialTile) comboBox.SelectedItem;
+//                Material material = (Material)comboBox.SelectedItem;
 
                 Shape shape = listBox.SelectedItem as Shape;
                 if (shape != null)
                 {
-                    shape.Material = materialTile.Material;
+                    shape.Material = (Material) selectedValue;
                 }
 
             }

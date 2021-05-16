@@ -9,15 +9,30 @@ namespace RayTrace
 {
     public class Camera : Entity
     {
-        private Point _pos = new Point(0, 0, 0);
-        private Point _target = new Point(0, 0, 1.0f);
+        private Point _pos;// = new Point(0, 0, 0);
+        private Point _target;// = new Point(0, 0, 1.0f);
+
         private double _fovHRadians;
         private double _fovHDegrees;
 
-        [NotifyParentProperty(true)]
-        public Point Pos { get { return _pos; } set { _pos = value; UpdateMatrix(); } }
-        [NotifyParentProperty(true)]
-        public Point Target { get { return _target; } set { _target = value; UpdateMatrix(); } }
+        public Point Pos {
+            get { return _pos; }
+            set {
+                _pos = value;
+                UpdateMatrix();
+                Pos.PropertyChanged += Pos_PropertyChanged;
+                Notify("Pos");
+            }
+        }
+        public Point Target {
+            get { return _target; }
+            set {
+                _target = value;
+                UpdateMatrix();
+                Target.PropertyChanged += Target_PropertyChanged;
+                Notify("Target");
+            }
+        }
 
         public double DepthOfField { get; set; } = 10.0;
         public double Aperture { get; set; } = 30.0;
@@ -29,6 +44,7 @@ namespace RayTrace
             {
                 _fovHDegrees = value;
                 _fovHRadians = (value / 180.0) * Math.PI;
+                Notify("FovH");
             }
         }
 
@@ -51,12 +67,27 @@ namespace RayTrace
         // Constructor.
         public Camera(Point from, Point to)
         {
+            //Pos = from;
+            //Target = to;
             _pos = from;
             _target = to;
 
             FovH = 90.0;
 
             UpdateMatrix();
+
+            Pos.PropertyChanged += Pos_PropertyChanged;
+            Target.PropertyChanged += Target_PropertyChanged;
+        }
+
+        private void Target_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            Notify("Target");
+        }
+
+        private void Pos_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            Notify("Pos");
         }
 
         public Camera(XMLCamera xmlCamera)
@@ -68,6 +99,9 @@ namespace RayTrace
             Aperture = xmlCamera.Aperture;
 
             UpdateMatrix();
+
+            Pos.PropertyChanged += Pos_PropertyChanged;
+            Target.PropertyChanged += Target_PropertyChanged;
         }
 
         public double GetSceneWidth()

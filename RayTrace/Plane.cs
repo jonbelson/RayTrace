@@ -8,7 +8,11 @@ namespace RayTrace
 {
     public class Plane : Shape
     {
-        public Vector Normal { get; set; }
+        private Vector normal;
+        public Vector Normal {
+            get { return normal; }
+            set { if (normal != value) { normal = value; Notify("Normal"); } }
+        }
         //public Point Point { get; set; }
 
         private HitResult HitTestImpl(Camera camera, Point p1, Point p2, bool segmentOnly)
@@ -123,19 +127,31 @@ namespace RayTrace
             return hr;
         }
 
+        private void Normal_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            Notify("Vector");
+        }
+
         public Plane(Vector normal, Point p) : base(p)
         {
             Normal = normal;
+
+            Normal.PropertyChanged += Normal_PropertyChanged;
         }
 
         public Plane(Vector normal, Point p, Colour c) : base(p, c)
         {
             Normal = normal;
+
+            Normal.PropertyChanged += Normal_PropertyChanged;
         }
+
 
         public Plane(XMLPlane xmlPlane) : base(xmlPlane)
         {
             Normal = new Vector(xmlPlane.Normal);
+
+            Normal.PropertyChanged += Normal_PropertyChanged;
         }
 
         public override HitResult HitTest(Camera camera, Ray ray)

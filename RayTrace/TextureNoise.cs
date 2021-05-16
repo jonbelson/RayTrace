@@ -9,6 +9,8 @@ namespace RayTrace
 {
     public class TextureNoise : Texture
     {
+        public override TextureType Type { get; } = TextureType.Perlin;
+
         private double noiseRange = Perlin.GetRange();
 
         public enum ColourFunction
@@ -58,7 +60,7 @@ namespace RayTrace
                         //Debug.Assert(ratio >= 0.0);
                         //Debug.Assert(ratio <= 1.0);
 
-                        c = Colour.Blend(Colour1, Colour2, ratio);
+                        c = Colour.SmoothBlend(Colour1, Colour2, ratio);
 
                         Debug.Assert(c.Red >= 0.0 && c.Red <= 1.0);
                         Debug.Assert(c.Green >= 0.0 && c.Green <= 1.0);

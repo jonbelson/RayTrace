@@ -16,7 +16,7 @@ namespace RayTrace
             Scene scene = new();
 
             Material mat = new Material() { Name = "Gradient" };
-            mat.Texture = new TextureGradient() { Type = TextureGradient.GradientType.Radial };
+            mat.Texture = new TextureGradient() { Gradient = TextureGradient.GradientType.Radial };
 
             scene.AddMaterial(mat);
 
@@ -62,9 +62,7 @@ namespace RayTrace
         {
             Scene scene = new Scene();
 
-            Material matTransparent = new Material();
-            //material.Type = MaterialType.Diffuse;
-            //material.Type = MaterialType.Reflective;
+            Material matTransparent = new() { Name = "Glass" };
             matTransparent.Type = MaterialType.RefractiveAndReflective;
             matTransparent.Texture = new TextureSolid(Palette.Black);
             matTransparent.Transparency = 1.0f;
@@ -77,39 +75,43 @@ namespace RayTrace
 
             scene.AddMaterial(matSquares);
 
+            Material matSolid = new() { Name = "Solid" };
+            matSolid.Texture = new TextureSolid(Palette.Red);
+            matSolid.Type = MaterialType.Diffuse;
+
+            scene.AddMaterial(matSolid);
+
             Material matPlane = new() { Name="Ground" };
             matPlane.Texture = new TextureSquares(Palette.Black, Palette.White) { Scale = /*32*/ 8 };
             scene.AddMaterial(matPlane);
 
-            Sphere sphere = new Sphere(new Point(-20, 0, 50), 25, Palette.White);
-            //sphere.Material.Texture = new TextureSquares();
-            //sphere.Material.Type = MaterialType.Diffuse;
-            //sphere.Material.Type = MaterialType.Reflective;
-            //sphere.Material.Type = MaterialType.RefractiveAndReflective;
-            //sphere.Material.Texture = new TextureSolid(Palette.Black);
-            //sphere.Material.Transparency = 1.0f;
+            Material matGradient = new() { Name = "Gradient" };
+            matGradient.Texture = new TextureGradient(Palette.Red, Palette.Blue) { Blend = TextureGradient.BlendType.Smooth };
+            matGradient.Type = MaterialType.Diffuse;
+            scene.AddMaterial(matGradient);
+
+            Material matGradient2 = new() { Name = "Gradient2" };
+            matGradient2.Texture = new TextureGradient(Palette.Red, Palette.Blue) { Blend = TextureGradient.BlendType.Linear };
+            matGradient2.Type = MaterialType.Diffuse;
+            scene.AddMaterial(matGradient2);
+
+
+            Sphere sphere = new Sphere(new Point(-20, 0, 20), 10, Palette.White);
             sphere.Material = matTransparent;
+            sphere.Material = matGradient;
             scene.AddShape(sphere);
 
-            sphere = new Sphere(new Point(20, 0, 50), 20, Palette.White);
-            //sphere.Material.Texture = new TextureSquares();
-            //sphere.Material.Texture = new TextureNoise(Palette.White, Palette.Black);
-            //sphere.Material.Texture = new TextureNoise(Palette.Red, Palette.Green) { Function = TextureNoise.ColourFunction.Blend, Scale = 5 };
-            //sphere.Material.Type = MaterialType.Diffuse;
+            sphere = new Sphere(new Point(20, 0, 20), 10, Palette.White);
             sphere.Material= matSquares;
+            sphere.Material = matGradient2;
             scene.AddShape(sphere);
 
-            sphere = new Sphere(new Point(0, 0, 90), 20, Palette.Red);
+            sphere = new Sphere(new Point(0, 0, 40), 10, Palette.Red);
+            sphere.Material = matSolid;
             scene.AddShape(sphere);
-            //sphere.Material.Texture = new TextureSquares();
-            //scene.AddShape(box);
 
-
-            Plane plane = new Plane(new Vector(0.0, 1.0, 0.0), new Point(0.0, -30.0, 0.0));
-            //plane.Material.Texture = new TextureSquares();
-            //plane.Material.Texture = new TextureSolid(Palette.Black);
-            //plane.Material.Texture = new TextureSquares(Palette.Black, Palette.White) { Scale = /*32*/ 8 };
-            //plane.Material.Reflectivity = 1.0f;
+            Plane plane = new Plane(new Vector(0.0, 1.0, 0.0), new Point(0.0, -10.0, 0.0));
+//            Plane plane = new Plane(new Vector(0.707, 0.707, 0.0), new Point(0.0, -10.0, 0.0));
             plane.Material = matPlane;
             scene.AddShape(plane);
 
@@ -129,6 +131,9 @@ namespace RayTrace
             //            scene.AddLight(light);
 
             scene.Background = new Colour(Colors.SkyBlue);
+
+            scene.Camera.Pos = new Point(0, 5, -50);
+            scene.Camera.Target = new Point(0, 0, 50);
 
             return scene;
         }

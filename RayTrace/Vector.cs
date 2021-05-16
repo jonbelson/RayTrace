@@ -1,13 +1,26 @@
 ﻿using System;
+using System.ComponentModel;
+
 namespace RayTrace
 {
-    public struct Vector
+    public class Vector : INotifyPropertyChanged
     {
-        public double I { get; set; }
-        public double J { get; set; }
-        public double K { get; set; }
+        private double i;
+        private double j;
+        private double k;
 
-        //public Vector() : this(0.0, 0.0, 0.0) { }
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        private void Notify(string propName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
+        }
+
+        public double I { get { return i; } set { if (i != value) { i = value; Notify("I"); } } }
+        public double J { get { return j; } set { if (j != value) { j = value; Notify("J"); } } }
+        public double K { get { return k; } set { if (k != value) { k = value; Notify("K"); } } }
+
+        public Vector() : this(0.0, 0.0, 0.0) { }
 
         public Vector(double i, double j, double k, bool normalise = false)
         {

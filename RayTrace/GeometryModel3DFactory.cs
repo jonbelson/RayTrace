@@ -11,6 +11,7 @@ namespace RayTrace
 {
     static class GeometryModel3DFactory
     {
+        public static System.Windows.Media.Color DefaultColour { get; set; } = System.Windows.Media.Colors.LightGray;
 
         private static double[] cubePositions = new double[] {
                                         -0.5, -0.5, -0.5,   0.5, -0.5, -0.5,
@@ -61,11 +62,26 @@ namespace RayTrace
             return mesh;
         }
 
-        public static MeshGeometry3D MakePlane(int slices = 40)
+        public static MeshGeometry3D MakePlane(Vector normal, int slices = 40)
         {
+            // Make two orthogonal Vectors on the plane.
+            Vector v = new Vector(normal.I, normal.K, normal.J);
+            if ((v - normal).Magnitude() < 0.01)
+            {
+                v = new Vector(normal.K, normal.J, normal.I);
+            }
+            Vector vec1 = normal.VectorProduct(v);
+            Vector vec2 = normal.VectorProduct(vec1);
+
+            vec1 = vec1.Normalise();
+            vec2 = vec2.Normalise();
+
             MeshGeometry3D mesh = new();
 
             double step = 1.0 / slices;
+
+            vec1 = vec1 * step;
+            vec2 = vec2 * step;
 
             int numSteps = slices + 1;
 
@@ -74,14 +90,20 @@ namespace RayTrace
             for (int z = 0; z < numSteps; z++)
             {
                 double zval = -0.5 + z * step;
+                Vector zpos = vec1*-0.5 + vec1 * z;
 
                 int sliceIndex = pointIndex;
 
                 for (int x = 0; x < numSteps; x++)
                 {
                     double xval = -0.5 + (x * step);
+                    Vector xpos = vec2 * -0.5 + vec2 * x;
 
-                    mesh.Positions.Add(new Point3D(xval, 0.0, zval));
+                    Vector p = zpos + xpos;
+
+//                    mesh.Positions.Add(new Point3D(xval, 0.0, zval));
+                    mesh.Positions.Add(new Point3D(xval, zval, 0.0));
+                    //                    mesh.Positions.Add(new Point3D(p.I, p.J, p.K));
 
                     // Can't start adding points until the second row.
                     if (z > 0)
@@ -188,7 +210,7 @@ namespace RayTrace
             GeometryModel3D model = new();
             model.Geometry = mesh;
 
-            model.Material = new DiffuseMaterial(new SolidColorBrush(System.Windows.Media.Colors.DarkGray));
+            model.Material = new DiffuseMaterial(new SolidColorBrush(DefaultColour));
 
             var scale = new ScaleTransform3D(sphere.Radius, sphere.Radius, sphere.Radius);
             var translate = new TranslateTransform3D(sphere.Pos.X, sphere.Pos.Y, sphere.Pos.Z);
@@ -207,21 +229,101 @@ namespace RayTrace
         {
             GeometryModel3D model = new();
 
-            MeshGeometry3D mesh = MakePlane();
+            MeshGeometry3D mesh = MakePlane(plane.Normal);
             model.Geometry = mesh;
 
 //            model.Material = new DiffuseMaterial(new SolidColorBrush(System.Windows.Media.Colors.Purple));
-            model.Material = new DiffuseMaterial(new SolidColorBrush(System.Windows.Media.Colors.DarkGray));
+            model.Material = new DiffuseMaterial(new SolidColorBrush(DefaultColour));
 
-            var scale = new ScaleTransform3D(1000, 1, 1000);
+            if (false)
+            {
+                /////////////////////////////////////////////////////////////
+                // Rotate to match specified normal vector.
+                Matrix3D lookAt = new Matrix3D();
+                lookAt.SetIdentity();
+
+                //Point cameraTarget = to;
+                //Point cameraPosition = from;
+                //Vector zaxis = cameraTarget - cameraPosition;
+                //            Vector zaxis = cameraPosition - cameraTarget;
+
+                Vector3D zaxis = new(plane.Normal.I, plane.Normal.J, plane.Normal.K);
+                //            Vector3D zaxis = new(0, 1, 0);
+                zaxis.Normalize();
+
+                //zaxis = zaxis.Normalise();
+                //Vector cameraUpVector = new Vector(0, 1, 0);
+
+                Vector3D cameraUpVector = new(0, 1, 0);
+
+                if (Vector3D.DotProduct(zaxis, cameraUpVector) < 0.01)
+                {
+
+                }
+
+                Vector3D xaxis = Vector3D.CrossProduct(cameraUpVector, zaxis);
+                xaxis.Normalize();
+
+                //                        Vector xaxis = cameraUpVector.VectorProduct(zaxis);
+                //xaxis = zaxis.VectorProduct(cameraUpVector);
+                //                        xaxis = xaxis.Normalise();
+
+                Vector3D yaxis = Vector3D.CrossProduct(zaxis, xaxis);
+
+                //                        Vector yaxis = zaxis.VectorProduct(xaxis);
+                //yaxis = xaxis.VectorProduct(zaxis);
+
+                Vector3D vecPosition = new(0, 0, 0);
+
+                //                        Vector vecPosition = new Vector(cameraPosition.X, cameraPosition.Y, cameraPosition.Z);
+
+                lookAt.M11 = xaxis.X;
+                lookAt.M21 = xaxis.Y;
+                lookAt.M31 = xaxis.Z;
+
+                lookAt.M12 = yaxis.X;
+                lookAt.M22 = yaxis.Y;
+                lookAt.M32 = yaxis.Z;
+
+                lookAt.M13 = zaxis.X;
+                lookAt.M23 = zaxis.Y;
+                lookAt.M33 = zaxis.Z;
+
+                lookAt.OffsetX = Vector3D.DotProduct(xaxis, -vecPosition);
+                lookAt.OffsetY = Vector3D.DotProduct(yaxis, -vecPosition);
+                lookAt.OffsetZ = Vector3D.DotProduct(zaxis, -vecPosition);
+            }
+
+            Vector up = new Vector(0, 0, -1);
+            Vector axis = up.VectorProduct(plane.Normal);
+
+            double cosangle = up.DotProduct(plane.Normal);
+            double angle = Math.Acos(cosangle);
+
+            var axisRotation = new AxisAngleRotation3D(new Vector3D(axis.I, axis.J, axis.K), angle/(2*Math.PI)*360);
+            var rotate = new RotateTransform3D(axisRotation);
+
+
+//            var scale = new ScaleTransform3D(1000, 1, 1000);
+            var scale = new ScaleTransform3D(100, 100, 1);
             var translate = new TranslateTransform3D(plane.Pos.X, plane.Pos.Y, plane.Pos.Z);
 
             Transform3DGroup transformGroup = new();
 
+           // var transform = new MatrixTransform3D(lookAt);
+
             transformGroup.Children.Add(scale);
+            transformGroup.Children.Add(rotate);
             transformGroup.Children.Add(translate);
 
+
+
             model.Transform = transformGroup;
+
+
+            //model.Material = new DiffuseMaterial(new SolidColorBrush(Colors.Red));
+            //model.BackMaterial = new DiffuseMaterial(new SolidColorBrush(Colors.Green));
+
 
             return model;
         }
@@ -316,7 +418,7 @@ namespace RayTrace
 
             geometryModel.Geometry = mesh;
 
-            geometryModel.Material = new DiffuseMaterial(new SolidColorBrush(System.Windows.Media.Colors.DarkGray));
+            geometryModel.Material = new DiffuseMaterial(new SolidColorBrush(DefaultColour));
             //geometryModel.BackMaterial = new DiffuseMaterial(new SolidColorBrush(System.Windows.Media.Colors.Blue));
 
             //var scale = new ScaleTransform3D(1, 1, 1);

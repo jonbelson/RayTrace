@@ -83,8 +83,8 @@ namespace RayTrace
             materialTile.Bitmap = canvas.GetAsBitmap();
             materialTile.Material = material;
 
-            string documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            canvas.Save(documents + "/" + material.Guid.ToString());
+            //string documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            //canvas.Save(documents + "/" + material.Guid.ToString());
 
             return materialTile;
         }

@@ -6,7 +6,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:RayTrace"
         mc:Ignorable="d"
-        Title="Output Window" Height="400" Width="400" Closing="outputWindow_Closing">
+        Title="Output Window" Height="800" Width="800" Closing="outputWindow_Closing">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition></ColumnDefinition>
@@ -23,7 +23,7 @@
                 <ColumnDefinition Width="Auto"></ColumnDefinition>
             </Grid.ColumnDefinitions>
             <ProgressBar x:Name="progress"  HorizontalAlignment="Stretch" Height="10" VerticalAlignment="Center" MinWidth="100" HorizontalContentAlignment="Stretch" Margin="8,0,8,0" Maximum="{Binding Path=BlocksToDo}" Value="{Binding Path=BlocksDone}" />
-            <Button x:Name="buttonCancel" Content="Cancel" HorizontalAlignment="Right" VerticalAlignment="Top" Grid.Column="1" Margin="0,4,8,4" Width="44" Click="buttonCancel_Click"/>
+            <Button x:Name="buttonCancel" Content="Cancel" HorizontalAlignment="Right" VerticalAlignment="Top" Grid.Column="1" Margin="0,8,8,8" Width="44" Click="buttonCancel_Click"/>
             <!--<Label x:Name="label" Content="{Binding ElementName=outputWindow, Path=BlocksDone, Mode=TwoWay}" HorizontalAlignment="Center"  VerticalAlignment="Center" /> -->
         </Grid>
     </Grid>

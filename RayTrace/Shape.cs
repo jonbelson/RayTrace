@@ -39,8 +39,9 @@ namespace RayTrace
     {
         protected double noiseRange = Perlin.GetRange();
 
-        [NotifyParentProperty(true)]
-        public Point Pos { get; set; }
+        private Point pos;
+
+        public Point Pos { get { return pos; } set { pos = value; Notify("Pos"); } }
         public Material Material { get; set; }
 
         //public Guid MaterialGuid { get; set; }

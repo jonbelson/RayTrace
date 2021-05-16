@@ -159,9 +159,10 @@
                     </Grid.RowDefinitions>
 
                     <TextBlock Text="Material:" Grid.Column="0" Grid.Row="0"></TextBlock>
-                    <ComboBox Grid.Row="0" Grid.Column="2" x:Name="comboBoxMaterialType" ItemsSource="{Binding ElementName=window, Path=MaterialTiles}" SelectedValue="{Binding Path=Material.Name}" HorizontalAlignment="Left" MinWidth="100" SelectionChanged="comboBoxMaterialType_SelectionChanged"></ComboBox>
+                    <!--<ComboBox Grid.Row="0" Grid.Column="2" x:Name="comboBoxMaterialType" ItemsSource="{Binding ElementName=window, Path=MaterialTiles}" SelectedValue="{Binding  Path=Name, Mode=TwoWay}" HorizontalAlignment="Left" MinWidth="100" SelectionChanged="comboBoxMaterialType_SelectionChanged"></ComboBox>-->
+                    <ComboBox Grid.Row="0" Grid.Column="2" x:Name="comboBoxMaterialType" ItemsSource="{Binding ElementName=window, Path=Materials}" SelectedValue="{Binding Path=Material,  Mode=TwoWay}" HorizontalAlignment="Left" MinWidth="100" SelectionChanged="comboBoxMaterialType_SelectionChanged"></ComboBox>
 
-<!--
+                    <!--
                     <TextBlock Text="Roughness" Grid.Row="0"></TextBlock>
                     <TextBlock Text="Transparency" Grid.Row="1"></TextBlock>
                     <TextBlock Text="Reflectivity" Grid.Row="2"></TextBlock>
@@ -581,7 +582,7 @@
                 <DataTemplate>
                     <StackPanel>
                         <Image Source="{Binding WriteableBitmap}"></Image>
-                        <TextBlock Text="{Binding Name}"></TextBlock>
+                        <TextBlock Text="{Binding Name}" HorizontalAlignment="Center"></TextBlock>
                     </StackPanel>                        
                 </DataTemplate>
             </ListBox.ItemTemplate>

@@ -15,16 +15,20 @@ namespace RayTrace
         public static Colour Copper { get { return new Colour(0.72f, 0.45f, 0.20f); } }
     }
 
-    public class Colour
+    public class Colour : INotifyPropertyChanged
     {
-        [NotifyParentProperty(true)]
-        public float Red { get; set; }
-        [NotifyParentProperty(true)]
-        public float Blue { get; set; }
-        [NotifyParentProperty(true)]
-        public float Green { get; set; }
+        private float red, green, blue;
 
-        //public float Alpha { get; set; }
+        public float Red { get { return red; } set { red = value; Notify("Red"); } }
+        public float Blue { get { return green; } set { green = value; Notify("Blue"); } }
+        public float Green { get { return blue; } set { blue = value; Notify("Green"); } }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void Notify(string propName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
+        }
 
         public Colour(System.Windows.Media.Color color) : this(color.ScR, color.ScG, color.ScB)
         {
@@ -172,9 +176,19 @@ namespace RayTrace
             return "[" + Red + "," + Green + "," + Blue + "]";
         }
 
+        // Select one of two colours
+        // ratio       Return col1 if ratio < 0.5, else col2.
+        public static Colour StepBlend(Colour col1, Colour col2, float ratio)
+        {
+            ratio = Math.Max(ratio, 0.0f);
+            ratio = Math.Min(ratio, 1.0f);
+
+            return (ratio < 0.5) ? col1 : col2;
+        }
+
         // Blend two Colours in the specified ratio.
         // ratio       Ranges from 0.0 (all col1) to 1.0 (all col2).
-        public static Colour Blend(Colour col1, Colour col2, float ratio)
+        public static Colour LinearBlend(Colour col1, Colour col2, float ratio)
         {
             ratio = Math.Max(ratio, 0.0f);
             ratio = Math.Min(ratio, 1.0f);
@@ -183,6 +197,43 @@ namespace RayTrace
             float g = col2.Green * ratio + (1 - ratio) * col1.Green;
             float b = col2.Blue * ratio + (1 - ratio) * col1.Blue;
 
+            return new Colour(r, g, b);
+        }
+
+        // From https://en.wikipedia.org/wiki/Smoothstep
+        private static float SmoothStep(float edge0, float edge1, float x)
+        {
+            // Scale, bias and saturate x to 0..1 range
+            x = Math.Clamp((x - edge0) / (edge1 - edge0), 0.0f, 1.0f);
+
+            // Evaluate polynomial
+            return x * x * (3 - 2 * x);
+        }
+
+        // Perlin's variation.
+        private static float SmootherStep(float edge0, float edge1, float x)
+        {
+            // Scale, bias and saturate x to 0..1 range
+            x = Math.Clamp((x - edge0) / (edge1 - edge0), 0.0f, 1.0f);
+
+            // Evaluate polynomial
+            return x * x * x * (x * (x * 6 - 15) + 10);
+        }
+
+        public static Colour SmoothBlend(Colour col1, Colour col2, float ratio)
+        {
+//            ratio = SmoothStep(0.0f, 1.0f, ratio);
+            ratio = SmootherStep(0.0f, 1.0f, ratio);
+
+            float r = col2.Red * ratio + (1 - ratio) * col1.Red;
+            float g = col2.Green * ratio + (1 - ratio) * col1.Green;
+            float b = col2.Blue * ratio + (1 - ratio) * col1.Blue;
+
+/*
+            float r = SmoothStep(col1.Red, col2.Red, ratio);
+            float g = SmoothStep(col1.Green, col2.Green, ratio);
+            float b = SmoothStep(col1.Blue, col2.Blue, ratio);
+*/
             return new Colour(r, g, b);
         }
 

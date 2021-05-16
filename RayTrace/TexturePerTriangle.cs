@@ -8,6 +8,8 @@ namespace RayTrace
 {
     class TexturePerTriangle : Texture
     {
+        public override TextureType Type { get; } = TextureType.PerTriangle;
+
         private Dictionary<int, Colour> _colourLookup = new Dictionary<int, Colour>();
 
         public Dictionary<int, Colour> CloneDictionary() => new Dictionary<int, Colour>(_colourLookup);

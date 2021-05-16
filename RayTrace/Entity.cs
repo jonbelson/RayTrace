@@ -1,14 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace RayTrace
 {
-    public class Entity
+    public class Entity : INotifyPropertyChanged
     {
-        public bool Enabled { get; set; } = true;
+        private bool enabled = true;
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void Notify(string propName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName)); 
+        }
+
+        public bool Enabled {
+            get { return enabled; }
+            set { if (enabled != value) { enabled = value; Notify("Enabled"); } }
+        }
+
         public string Name { get; set; }
         
         public Entity()

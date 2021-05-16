@@ -8,6 +8,8 @@ namespace RayTrace
 {
     public class TextureBitmap : Texture
     {
+        public override TextureType Type { get; } = TextureType.Bitmap;
+
         private int width;
         private int height;
         private String fileName;
