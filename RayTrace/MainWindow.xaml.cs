@@ -245,7 +245,7 @@ namespace RayTrace
 
         private void Entity_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            UpdateViewport3D();
+            UpdateViewport3D(e.PropertyName);
         }
 
         private async Task<bool> Render()
@@ -404,52 +404,6 @@ namespace RayTrace
 
             await outputWindow.DoRender(numRenderBlocks, direction);
 
-/*
-            int i = 0;
-            foreach (RenderBlock rb in renderBlocks)
-            {
-                int idx = i;
-                Task renderTask = Task.Factory.StartNew(() =>
-                {
-                    if (token.IsCancellationRequested) return;
-                    Thread.CurrentThread.Name = $"Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...";
-                    Console.WriteLine($"Starting Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...");
-                    renderer.Render(scene, outputWindow.canvas, rb.StartX, rb.StartY, rb.Width, rb.Height);
-                    Console.WriteLine($"Done Task {idx}...");
-
-                    this.Dispatcher.Invoke(DispatcherPriority.Normal,
-                                        (ThreadStart)delegate ()
-                                        {
-                                            //Console.WriteLine($"Updating {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...");
-                                            outputWindow.Update(rb.StartX, rb.StartY, rb.Width, rb.Height);
-                                        }
-                    );
-                }, token);
-                tasks.Add(renderTask);
-                i++;
-            }
-
-
-            //List<Task> Tasks = new List<Task>() { renderTask1, renderTask2 };
-            //await Task.WaitAll(Tasks.ToArray());
-            try
-            {
-                foreach (Task task in tasks)
-                {
-                    await task;
-                }
-            }
-            catch (Exception e)
-            {
-                var m = e.Message;
-
-                if (e is TaskCanceledException)
-                {
-                    outputWindow.BlocksDone = 0;
-                    outputWindow.BlocksToDo = 0;
-                }
-            }
-*/
             stopWatch.Stop();
             // Get the elapsed time as a TimeSpan value.
             TimeSpan ts = stopWatch.Elapsed;
@@ -479,99 +433,33 @@ namespace RayTrace
             return true;
         }
 
-        private void UpdateViewport3D()
+        private void UpdateViewport3D(string propName = "")
         {
-            //Visual3DCollection children = viewport3D.Children;
-            //Visual3D visual = children.ElementAt(0);
+            // Set up camera.
+            Point cameraPos = scene.Camera.Pos;
+            Vector cameraView = scene.Camera.GetViewVector().Normalise();
+            viewport3D.Camera = new PerspectiveCamera(new Point3D(cameraPos.X, cameraPos.Y, -cameraPos.Z), new Vector3D(cameraView.I, cameraView.J, -cameraView.K), new Vector3D(0.0, 1.0, 0.0), scene.Camera.FovH /* /2 */);
+
+            if (propName == "Pos" || propName=="Target")
+            {
+                viewport3D.Visibility = Visibility.Visible;
+                return;
+            }
 
             viewport3D.Visibility = Visibility.Hidden;
             viewport3D.Children.Clear();
 
-            Model3DGroup group = new Model3DGroup();
+            // Add Entities to preview.
+            Preview3D preview3D = new(scene);
 
-            ModelVisual3D modelVisual = new();
-            modelVisual.Content = group;
-            viewport3D.Children.Add(modelVisual);
+            preview3D.Update();
 
-            //var rotation = new AxisAngleRotation3D(new Vector3D(0 ,0 ,1), 10);
-            //group.Transform = new RotateTransform3D(rotation);
-
-            group.Transform = new ScaleTransform3D(1.0, 1.0, -1.0);
-
-            Point cameraPos = scene.Camera.Pos;
-            Vector cameraView = scene.Camera.GetViewVector().Normalise();
-            viewport3D.Camera = new PerspectiveCamera(new Point3D(cameraPos.X, cameraPos.Y, -cameraPos.Z), new Vector3D(cameraView.I, cameraView.J, -cameraView.K), new Vector3D(0.0, 1.0, 0.0), scene.Camera.FovH /* /2 */);
-            //viewport3D.Camera.Transform = new ScaleTransform3D(-1.0, -1.0, 1.0);
-
-            // Handy lambda expressions for converting to Wpf format.
-            Func<Point, Point3D> PointToPoint3D = (p) => new Point3D(p.X, p.Y, p.Z);
-            Func<Vector, Vector3D> VectorToVector3D = (v) => new Vector3D(v.I, v.J, v.K);
-            Func<Colour, System.Windows.Media.Color> ColourToColor = (c) => new System.Windows.Media.Color() { ScR = c.Red, ScG = c.Green, ScB = c.Blue };
+            viewport3D.Children.Add(preview3D);
 
 
-            foreach (Light light in scene.Lights)
-            {
-                if (!light.Enabled) continue;
+            Func<Point3D, Point3D, Point3DCollection> CreateLine = delegate (Point3D p1, Point3D p2) { return new Point3DCollection(new List<Point3D>() { p1, p2 }); };
 
-                if (light is PointLight)
-                {
-                    PointLight pointLight = light as PointLight;
-
-                    System.Windows.Media.Media3D.PointLight l = new(ColourToColor(pointLight.Output), PointToPoint3D(pointLight.Pos));
-
-                    // Attenuation formula based on distance (D):
-                    // ConstantAttenuation + LinearAttenuation * D + QuadraticAttenuation * D^2
-                    l.QuadraticAttenuation = 0.001;
-                    //l.LinearAttenuation = 0.01;
-
-                    group.Children.Add(l);
-                }
-                else if (light is DistantLight)
-                {
-                    DistantLight distantLight = light as DistantLight;
-
-                    System.Windows.Media.Media3D.DirectionalLight l = new(ColourToColor(distantLight.Output), VectorToVector3D(distantLight.Direction));
-
-                    group.Children.Add(l);
-                }
-            }
-
-            AmbientLight al = new(ColourToColor(scene.Ambient));
-            group.Children.Add(al);
-
-            foreach (Shape shape in scene.Shapes)
-            {
-                if (!shape.Enabled) continue;
-
-                Sphere sphere = shape as Sphere;
-                if (sphere != null)
-                {
-                    GeometryModel3D model2 = GeometryModel3DFactory.MakeSphere(sphere);
-
-                    group.Children.Add(model2);
-                }
-                else if (shape is Plane)
-                {
-                    Plane plane = (Plane)shape;
-
-                    GeometryModel3D model2 = GeometryModel3DFactory.MakePlane(plane);
-
-                    group.Children.Add(model2);
-                }
-                else if (shape is Model)
-                {
-                    Model model = (Model)shape;
-
-                    GeometryModel3D geometryModel = GeometryModel3DFactory.MakeModel(model);
-
-                    group.Children.Add(geometryModel);
-                }
-            }
-
-            //ModelVisual3D modelVisual = new();
-            //modelVisual.Content = group;
-            //viewport3D.Children.Add(modelVisual);
-
+            // Add ground plane to preview.
             if (PreviewGroundPlane)
             {
                 int planeSize = 64;
@@ -579,10 +467,9 @@ namespace RayTrace
                 for (int z = -planeSize / 2; z <= planeSize / 2; z += 2)
                 {
                     _3DTools.ScreenSpaceLines3D line = new();
-                    line.Points.Add(new Point3D(-planeSize / 2, 0, z));
-                    line.Points.Add(new Point3D(planeSize / 2, 0, z));
 
-                    line.Color = System.Windows.Media.Colors.DarkGray;
+                    line.Points = CreateLine(new Point3D(-planeSize / 2, 0, z), new Point3D(planeSize / 2, 0, z));
+                    line.Color = Colors.DarkGray;
                     line.Thickness = (z % 10 == 0) ? 2 : 1;
 
                     viewport3D.Children.Add(line);
@@ -592,57 +479,43 @@ namespace RayTrace
                 for (int x = -planeSize / 2; x <= planeSize / 2; x += 2)
                 {
                     _3DTools.ScreenSpaceLines3D line = new();
-                    line.Points.Add(new Point3D(x, 0, -planeSize / 2));
-                    line.Points.Add(new Point3D(x, 0, planeSize / 2));
 
-                    line.Color = System.Windows.Media.Colors.DarkGray;
+                    line.Points = CreateLine(new Point3D(x, 0, -planeSize / 2), new Point3D(x, 0, planeSize / 2));
+                    line.Color = Colors.DarkGray;
                     line.Thickness = (x % 10 == 0) ? 2 : 1;
 
                     viewport3D.Children.Add(line);
                 }
             }
 
-
+            // Add axis to preview.
             if (PreviewAxis)
             {
                 int axisSize = 10;
                 {
                     _3DTools.ScreenSpaceLines3D lines = new();
 
-                    //lines.Transform = new ScaleTransform3D(0, 0, -1);
-
-                    //System.Windows.Media.Color axisColor = System.Windows.Media.Colors.White;
-                    lines.Points.Add(new Point3D(0, 0, 0));
-                    lines.Points.Add(new Point3D(axisSize, 0, 0));
-
+                    lines.Points = CreateLine(new Point3D(0, 0, 0), new Point3D(axisSize, 0, 0));
                     lines.Thickness = 3;
-                    lines.Color = System.Windows.Media.Colors.Red;
+                    lines.Color = Colors.Red;
 
                     viewport3D.Children.Add(lines);
                 }
                 {
                     _3DTools.ScreenSpaceLines3D lines = new();
 
-                    lines.Points.Add(new Point3D(0, 0, 0));
-                    lines.Points.Add(new Point3D(0, axisSize, 0));
-
-                    lines.Points.Add(new Point3D(0, 0, 0));
-                    lines.Points.Add(new Point3D(0, 0, -axisSize));
-
+                    lines.Points = CreateLine(new Point3D(0, 0, 0), new Point3D(0, axisSize, 0));
                     lines.Thickness = 3;
-                    lines.Color = System.Windows.Media.Colors.Green;
+                    lines.Color = Colors.Green;
 
                     viewport3D.Children.Add(lines);
-
                 }
                 {
                     _3DTools.ScreenSpaceLines3D lines = new();
 
-                    lines.Points.Add(new Point3D(0, 0, 0));
-                    lines.Points.Add(new Point3D(0, 0, -axisSize));
-
+                    lines.Points = CreateLine(new Point3D(0, 0, 0), new Point3D(0, 0, -axisSize));
                     lines.Thickness = 3;
-                    lines.Color = System.Windows.Media.Colors.Blue;
+                    lines.Color = Colors.Blue;
 
                     viewport3D.Children.Add(lines);
                 }
@@ -794,6 +667,113 @@ namespace RayTrace
         private void checkBoxAxis_Click(object sender, RoutedEventArgs e)
         {
             UpdateViewport3D();
+        }
+
+        private void viewport3D_MouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            int delta = e.Delta;
+
+            Vector v = scene.Camera.GetViewVector().Normalise();
+
+            if (delta < 0) v = -v;
+
+            scene.Camera.Pos += v;
+
+            e.Handled = true;
+        }
+
+        public Point LeftClickPoint { get; set; } = new();
+
+        private void viewport3D_MouseMove(object sender, MouseEventArgs e)
+        {
+            bool ctrlPressed = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
+            bool shiftPressed = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
+
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                System.Windows.Point p = e.GetPosition(viewport3D);
+
+                double xDiff = p.X - LeftClickPoint.X;
+                double yDiff = p.Y - LeftClickPoint.Y;
+
+                if (!ctrlPressed && !shiftPressed)
+                {
+                    // Move camera Target
+
+                    //Vector left = scene.Camera.GetViewVector().VectorProduct(new Vector(0, 1, 0));
+
+                    // Rotate around camera target? Maybe with modifier key.
+                    //double radius = scene.Camera.GetViewVector().Magnitude();
+
+                    Vector offset = new Vector(-xDiff, 0, 0 /*yDiff*/);
+                    scene.Camera.Target += offset;
+
+                    Vector offset2 = new Vector(/*-xDiff*/ 0, yDiff, 0);
+                    scene.Camera.Target += offset2;
+                }
+                else if (ctrlPressed && !shiftPressed)
+                {
+                    // Move camera in its plane.
+
+                    Vector view = scene.Camera.GetViewVector().Normalise();
+
+                    Vector left = view.VectorProduct(new Vector(0, 1, 0));
+
+                    Vector up = view.VectorProduct(left);
+
+                    Vector offset = left * xDiff - up * yDiff;
+
+                    scene.Camera.Pos += offset;
+                    scene.Camera.Target += offset;
+                }
+                else if (!ctrlPressed && shiftPressed)
+                {
+                    // Move camera in XZ plane
+
+                    Vector view = scene.Camera.GetViewVector().Normalise();
+
+                    Vector left = view.VectorProduct(new Vector(0, 1, 0));
+
+                    left.J = 0.0;
+
+                    view.J = 0.0;
+
+                    Vector offset = left * xDiff + view * yDiff;
+
+                    scene.Camera.Pos += offset;
+                    scene.Camera.Target += offset;
+                }
+                else if (ctrlPressed && shiftPressed)
+                {
+                    // Rotate camera around target.
+
+                    Vector view = scene.Camera.GetViewVector();
+
+                    Vector targetToCamera = -view;
+
+                    Point target = scene.Camera.Target;
+
+                    //Matrix toOrigin = Matrix.GetTranslation(-target.X, -target.Y, -target.Z);
+                    Matrix rotation = Matrix.GetRotationY((float) (xDiff/10.0));
+                    //Matrix fromOrigin = Matrix.GetTranslation(target.X, target.Y, target.Z);
+
+                    //targetToCamera = toOrigin * targetToCamera;
+                    targetToCamera = rotation * targetToCamera;
+                    //targetToCamera = fromOrigin * targetToCamera;
+
+                    scene.Camera.Pos = scene.Camera.Target + targetToCamera;
+                }
+
+
+                LeftClickPoint.X = p.X;
+                LeftClickPoint.Y = p.Y;
+            }
+        }
+
+        private void viewport3D_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            LeftClickPoint.X = e.GetPosition(viewport3D).X;
+            LeftClickPoint.Y = e.GetPosition(viewport3D).Y;
         }
     }
 }

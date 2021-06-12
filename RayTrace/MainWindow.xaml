@@ -12,13 +12,13 @@
     </RibbonWindow.InputBindings>
     
     <RibbonWindow.Resources>
-
+<!--
         <MeshGeometry3D x:Key="CubeMesh"
                         TriangleIndices="0,1,2 3,4,5 6,7,8 9,10,11 12,13,14 15,16,17 18,19,20 21,22,23 24,25,26 27,28,29 30,31,32 33,34,35 "
                         Normals="0,0,-1 0,0,-1 0,0,-1 0,0,-1 0,0,-1 0,0,-1 0,0,1 0,0,1 0,0,1 0,0,1 0,0,1 0,0,1 0,-1,0 0,-1,0 0,-1,0 0,-1,0 0,-1,0 0,-1,0 1,0,0 1,0,0 1,0,0 1,0,0 1,0,0 1,0,0 0,1,0 0,1,0 0,1,0 0,1,0 0,1,0 0,1,0 -1,0,0 -1,0,0 -1,0,0 -1,0,0 -1,0,0 -1,0,0 "
                         TextureCoordinates="1,0 1,1 0,1 0,1 0,0 1,0 0,0 1,0 1,1 1,1 0,1 0,0 0,0 1,0 1,1 1,1 0,1 0,0 1,0 1,1 0,1 0,1 0,0 1,0 1,1 0,1 0,0 0,0 1,0 1,1 0,1 0,0 1,0 1,0 1,1 0,1 "
                         Positions="-0.5,-0.5,-0.5 -0.5,0.5,-0.5 0.5,0.5,-0.5 0.5,0.5,-0.5 0.5,-0.5,-0.5 -0.5,-0.5,-0.5 -0.5,-0.5,0.5 0.5,-0.5,0.5 0.5,0.5,0.5 0.5,0.5,0.5 -0.5,0.5,0.5 -0.5,-0.5,0.5 -0.5,-0.5,-0.5 0.5,-0.5,-0.5 0.5,-0.5,0.5 0.5,-0.5,0.5 -0.5,-0.5,0.5 -0.5,-0.5,-0.5 0.5,-0.5,-0.5 0.5,0.5,-0.5 0.5,0.5,0.5 0.5,0.5,0.5 0.5,-0.5,0.5 0.5,-0.5,-0.5 0.5,0.5,-0.5 -0.5,0.5,-0.5 -0.5,0.5,0.5 -0.5,0.5,0.5 0.5,0.5,0.5 0.5,0.5,-0.5 -0.5,0.5,-0.5 -0.5,-0.5,-0.5 -0.5,-0.5,0.5 -0.5,-0.5,0.5 -0.5,0.5,0.5 -0.5,0.5,-0.5 " />
-
+-->
 
         <local:RgbConverter x:Key="RgbConverter"></local:RgbConverter>
 
@@ -183,6 +183,9 @@
         </DataTemplate>
 -->        
         
+        <!--
+            Camera DataTemplate
+        -->
         <DataTemplate x:Key="CameraTemplate">
             <StackPanel>
                 <TextBlock FontWeight="Bold" Background="LightGray" Text="{Binding Path=Name}" ></TextBlock>
@@ -222,6 +225,9 @@
             </StackPanel>
         </Border>
 
+        <!--
+            Sphere DataTemplate
+        -->
         <DataTemplate x:Key="SphereTemplate">
             <StackPanel>
 
@@ -258,7 +264,9 @@
             </StackPanel>
         </DataTemplate>
         
-        
+        <!--
+            Plane DataTemplate
+        -->
         <DataTemplate x:Key="PlaneTemplate">
             <StackPanel>
 
@@ -284,7 +292,9 @@
             </StackPanel>
         </DataTemplate>
 
-
+        <!--
+            Model DataTemplate
+        -->
         <DataTemplate x:Key="ModelTemplate">
             <StackPanel>
 
@@ -309,7 +319,9 @@
             </StackPanel>
         </DataTemplate>
 
-
+        <!--
+            DistantLight DataTemplate
+        -->
         <DataTemplate x:Key="DistantLightTemplate">
             <StackPanel>
 
@@ -335,7 +347,9 @@
             </StackPanel>
         </DataTemplate>
         
-
+        <!--
+            PointLight DataTemplate
+        -->
         <DataTemplate x:Key="PointLightTemplate">
             <StackPanel>
 
@@ -364,7 +378,9 @@
             </StackPanel>
         </DataTemplate>
         
-        
+        <!--
+            Spotlight DataTemplate
+        -->
         <DataTemplate x:Key="SpotLightTemplate">
             <StackPanel>
 
@@ -397,6 +413,9 @@
         </DataTemplate> 
     </RibbonWindow.Resources>
     
+    <!--
+        Main window layout
+    -->
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
@@ -501,7 +520,7 @@
             <Image x:Name="image" HorizontalAlignment="Center" VerticalAlignment="Center" DockPanel.Dock="Left" MouseMove="image_MouseMove" MouseLeftButtonDown="image_MouseLeftButtonDown" MinWidth="400" MinHeight="400"/>
 -->
             <Border  DockPanel.Dock="Right"  Background="Gray">
-            <Viewport3D x:Name="viewport3D" MinWidth="200" MinHeight="200" Panel.ZIndex="2">
+            <Viewport3D x:Name="viewport3D" MinWidth="200" MinHeight="200" Panel.ZIndex="2" MouseWheel="viewport3D_MouseWheel" MouseMove="viewport3D_MouseMove" MouseDown="viewport3D_MouseDown">
                 <Viewport3D.Camera>
                     <PerspectiveCamera Position="0, 0, 6" LookDirection="0, 0, -1" UpDirection="0, 1, 0" FieldOfView="45" />
                 </Viewport3D.Camera>
