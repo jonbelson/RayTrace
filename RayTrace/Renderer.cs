@@ -386,7 +386,8 @@ namespace RayTrace
             else
             {
                 // Reflection didn't hit anything, so just use the Scene backgorund colour.
-                c = scene.Background;
+//                c = scene.Background;
+                c = scene.Skydome.GetColour(camera, R);
             }
 
             return c;
@@ -413,7 +414,8 @@ namespace RayTrace
             else
             {
                 // Refraction didn't hit anything, so just use the Scene backgorund colour.
-                c = scene.Background;
+                //c = scene.Background;
+                c = scene.Skydome.GetColour(camera, result.Item2);
             }
 
             return c;
@@ -617,171 +619,9 @@ namespace RayTrace
                 ambient = shape.GetColour(hr).Multiply(scene.Ambient);
             }
 
-
             Colour finalColour = ambient + diffuse + reflected + refracted + specular;
+
             return finalColour;
-
-            /*
-
-
-
-                        if (UseRefraction)
-                        {
-                            if (shape.HasTransparency())
-                            {
-                                // Hit object refracts, so work out direction of refracted ray (in then out) and check if it hits anything.
-                                var result = shape.GetRefractedVector(camera, ray, hr);
-
-                                // Schlicks approximation of Fresnal's factor.
-                                // L = k_fresnal * L_reflected_ + (1 - k_fresnal) * L_refracted
-                                float n1 = RefractiveIndex.Vacuum;
-                                float n2 = shape.Material.RefractiveIndex;
-                                float R0 = ((n1 - n2) / (n1 + n2)) * ((n1 - n2) / (n1 + n2));
-
-                                Vector vecToViewer = ray.Scale(-1.0f).Normalise();
-                                //vecToViewer = vecToViewer.Normalise();
-                                float cosTheta = (float) vecToViewer.DotProduct(hr.EntryNormal);
-
-                                float Rtheta = R0 + (1.0f - R0) * (1.0f * cosTheta);
-                                float fresnalFactor = Rtheta;
-
-                                Debug.Assert(fresnalFactor >= 0.0);
-                                Debug.Assert(fresnalFactor <= 1.0);
-
-                                Colour fresnalReflect = GetReflectedColour(camera, scene, ray, hr, depth);
-                                Colour fresnalRefract = GetRefractedColour(camera, scene, ray, hr, depth);
-
-            //                    refracted = fresnalReflect * fresnalFactor + fresnalRefract*(1.0f - fresnalFactor);
-                                refracted = fresnalRefract * fresnalFactor + fresnalReflect * (1.0f - fresnalFactor);
-
-                                //refracted = fresnalRefract;
-                                //refracted = Palette.Red * fresnalFactor + Palette.Green * (1.0f - fresnalFactor);
-                            }
-                        }
-
-                        if (UseReflections)
-                        {
-                            if (shape.HasReflectivity())
-                            {
-                                reflected = GetReflectedColour(camera, scene, ray, hr, depth);
-                            }
-                        }
-
-                        if (UseDiffuse)
-                        {
-                            foreach (Light light in scene.Lights)
-                            {
-                                if (!light.Enabled) continue;
-
-                                PointLight pointLight = light as PointLight;
-                                if (pointLight == null)
-                                {
-                                    continue;
-                                }
-
-                                float visibleFraction = 0.0f;
-                                if (!UseShadows)
-                                {
-                                    visibleFraction = 1.0f;
-                                }
-                                else
-                                {
-                                    if (UseSoftShadows && pointLight.Radius > 0)
-                                    {
-                                        visibleFraction = GetSoftShadow(camera, scene, hr.Entry, ray, pointLight);
-                                    }
-                                    else
-                                    {
-                                        Point pos = hr.Entry;
-                                        Point lightPos = camera.WorldToView * pointLight.Pos;
-
-                                        if (scene.HitTestFast(camera, pos, lightPos))
-                                        {
-                                            continue;
-                                        }
-                                        visibleFraction = 1.0f;
-
-                                    }
-                                }
-                                if (visibleFraction == 0.0f)
-                                {
-                                    continue;
-                                }
-
-                                Point p = hr.Entry;
-                                Vector vecToLight = light.GetDirection(camera, p).Negate();
-
-                                // Assume light attenuation is 1 over distance squared.
-                                double lightAttenuation = light.GetAttenuation(camera, p);
-
-                                vecToLight = vecToLight.Normalise();
-
-                                Vector shapeNormal = hr.EntryNormal;
-
-                                double dpLN = vecToLight.DotProduct(shapeNormal);
-
-                                if (dpLN > 0.0)
-                                {
-                                    // For distant light (doesn't take distance into account).
-                                    Colour incidentColour = shape.Material.Albedo/Math.PI * light.Output * shape.GetColour(hr).Scale((float)dpLN);
-
-                                    // For point light sufaces.
-                                    Vector vecToLight2 = light.GetDirection(camera, p).Negate();
-                                    double dDistanceSqr = vecToLight2.MagnitudeSquared();
-                                    incidentColour = light.Output / (4.0 * Math.PI * dDistanceSqr) * shape.GetColour(hr).Scale((float)dpLN);
-
-                                    //incidentColour = incidentColour.Scale((float) lightAttenuation);
-
-                                    incidentColour = incidentColour.Scale(visibleFraction);
-
-                                    //Trace.Assert(false);
-                                    Debug.Assert(incidentColour.Red >= 0.0f && incidentColour.Green >= 0.0f && incidentColour.Blue >= 0.0);
-
-                                    diffuse += incidentColour;
-                                }
-
-                                if (UsePhong)
-                                {
-                                    // Phong shading.
-                                    Vector R = shapeNormal.Scale(2.0 * dpLN) - vecToLight;
-                                    R = R.Normalise();
-
-                                    Vector vecToViewer = ray.Scale(-1.0f);
-
-                                    double Il = light.Intensity;// 1.0;    // Intensity of light source.
-                                    double dpVR = vecToViewer.DotProduct(R);
-
-                                    // Ignore negative dp as it means the vectors are pointing away from each other.
-                                    if (dpVR > 0.0)
-                                    {
-                                        double k = shape.Material.Specular;    // 0.5;     // Specular reflection coefficient/constant.
-                                        double ns = shape.Material.Shininess;  // 4.0;    // 'Shininess' of surface.
-
-                                        double d = Math.Pow(dpVR, ns);
-
-                                        double Ispec = k * Il * d;
-                                        //Ispec = Math.Pow(Ispec, ns);
-
-                                        Colour spec = new Colour(1f, 1f, 1f);
-                                        //spec = light.Colour;
-                                        double factor = Ispec * lightAttenuation;
-                                        Colour specularColour = spec * (float)factor;
-
-                                        specular += specularColour;
-                                    }
-                                }
-
-                            }
-                        }
-
-                        // Combine all the colour components.
-                        Colour colour = ambient + diffuse + specular;
-
-                        float transparency = shape.Material.Transparency;
-                        colour += refracted.Scale(transparency) + reflected.Scale(1.0f - transparency);
-
-                        return colour;
-            */
         }
 
         // Render entire Scene to the Canvas.
@@ -994,6 +834,10 @@ namespace RayTrace
                 {
                     colour = CalculateColour(camera, scene, dir, rand, hr);
                 }
+                else
+                {
+                    colour = scene.Skydome.GetColour(camera, dir);
+                }
             }
 
             return colour;
@@ -1067,24 +911,24 @@ namespace RayTrace
 
                         }
                         colour = colour.Scale(1.0f/grid.GetLength(0));
-                        colour = colour.Exposure(1.2f);
-                        colour.Clamp();
+                        //colour = colour.Exposure(1.2f);
+                        //colour.Clamp();
                         canvas.Set(w, h, colour.ToRGB());
                     }
                     else if (AntiAlias == AntiAliasType.SuperSampling)
                     {
                         //SubSample subSample = new SubSample(x, y, x + sceneStepX, y - sceneStepY);
                         Colour colour = GetSubPixelColour(camera, scene, colourBuffer, w - startX, h - startY, sceneX, sceneY, /*sceneX +*/ sceneStepX, /*sceneY -*/ sceneStepY);
-                        colour = colour.Exposure(1.2f);
-                        colour.Clamp();
+                        //colour = colour.Exposure(1.2f);
+                        //colour.Clamp();
                         canvas.Set(w, h, colour.ToRGB());
                     }
                     else
                     {
                         SubSample subSample = new SubSample(sceneX, sceneY, sceneX + sceneStepX, sceneY - sceneStepY);
                         Colour colour = GetSubPixelColour(camera, scene, subSample, 1);
-                        colour = colour.Exposure(1.2f);
-                        colour.Clamp();
+                        //colour = colour.Exposure(1.2f);
+                        //colour.Clamp();
                         canvas.Set(w, h, colour.ToRGB());
                     }
 

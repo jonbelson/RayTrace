@@ -208,7 +208,8 @@ namespace RayTrace
 
         private void buttonCancel_Click(object sender, RoutedEventArgs e)
         {
-            TokenSource.Cancel();
+//            TokenSource.Cancel();
+            tokenSource.Cancel();
         }
 
         // Don't actually close the window, just hide it.
@@ -298,6 +299,7 @@ namespace RayTrace
 
             ThreadPool.SetMaxThreads(16, completonPortThreads);
 
+            tokenSource = new();
             CancellationToken token = tokenSource.Token;
 
             //Stopwatch stopWatch = new Stopwatch();

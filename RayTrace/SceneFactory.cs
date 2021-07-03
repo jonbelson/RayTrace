@@ -113,7 +113,13 @@ namespace RayTrace
             Plane plane = new Plane(new Vector(0.0, 1.0, 0.0), new Point(0.0, -10.0, 0.0));
 //            Plane plane = new Plane(new Vector(0.707, 0.707, 0.0), new Point(0.0, -10.0, 0.0));
             plane.Material = matPlane;
-            scene.AddShape(plane);
+            //scene.AddShape(plane);
+
+
+            Disc disc = new Disc(new Point(0.0, -10.0, 0.0), new Vector(0.0, 1.0, 0.0), 200);
+            disc.Material = matPlane;
+            scene.AddShape(disc);
+
 
             //Light light = new PointLight(new Point(-50, 0, 0), /*0.5f*/ 5000.0f, new Colour(1.0f, 0.0f, 0.0f));
             //            scene.AddLight(light);
@@ -134,6 +140,11 @@ namespace RayTrace
 
             scene.Camera.Pos = new Point(0, 5, -50);
             scene.Camera.Target = new Point(0, 0, 50);
+
+            scene.Skydome = new SkydomeGradient(Palette.Red, Palette.Green, Palette.Blue);
+
+            scene.Skydome = new SkydomeBitmap("C:\\Users\\Jon\\Documents\\Projects\\RayTrace\\RayTrace\\Data\\skydomes\\immenstadter_horn_2048.jpg");
+
 
             return scene;
         }

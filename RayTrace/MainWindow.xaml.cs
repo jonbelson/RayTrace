@@ -180,6 +180,24 @@ namespace RayTrace
 
             //scene = SceneFactory.EmptyScene();
 
+/*
+            Matrix m = new Matrix(new double[] { 2, 5, 1, 4,  4, 1, 6, 3,  5, 3, 7, 2,  1, 0, 2, 4 });
+
+            double det = m.GetDeterminant();
+
+
+            Debug.WriteLine(m.ToString());
+
+
+            Matrix inverse = m.GetInverse();
+
+            Debug.WriteLine(inverse.ToString());
+
+            Matrix product = m * inverse;
+
+            Debug.WriteLine(product.ToString());
+*/
+
             UpdateViewport3D();
 /*
             // Subscribe to PropertyChanged events for each Entity.
@@ -669,32 +687,38 @@ namespace RayTrace
             UpdateViewport3D();
         }
 
-        private void viewport3D_MouseWheel(object sender, MouseWheelEventArgs e)
+        bool dragging = false;
+        private System.Windows.Point clickPoint = new();
+
+        private void Border_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            int delta = e.Delta;
-
-            Vector v = scene.Camera.GetViewVector().Normalise();
-
-            if (delta < 0) v = -v;
-
-            scene.Camera.Pos += v;
-
-            e.Handled = true;
+            clickPoint = e.GetPosition(viewport3D);
+            dragging = true;
         }
 
-        public Point LeftClickPoint { get; set; } = new();
+        private void Border_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            dragging = false;
+        }
 
-        private void viewport3D_MouseMove(object sender, MouseEventArgs e)
+        private void Border_MouseMove(object sender, MouseEventArgs e)
         {
             bool ctrlPressed = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
             bool shiftPressed = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
+
+            if (!dragging)
+            {
+                clickPoint = e.GetPosition(viewport3D);
+                dragging = true;
+                return;
+            }
 
             if (e.LeftButton == MouseButtonState.Pressed)
             {
                 System.Windows.Point p = e.GetPosition(viewport3D);
 
-                double xDiff = p.X - LeftClickPoint.X;
-                double yDiff = p.Y - LeftClickPoint.Y;
+                double xDiff = p.X - clickPoint.X;
+                double yDiff = p.Y - clickPoint.Y;
 
                 if (!ctrlPressed && !shiftPressed)
                 {
@@ -754,7 +778,7 @@ namespace RayTrace
                     Point target = scene.Camera.Target;
 
                     //Matrix toOrigin = Matrix.GetTranslation(-target.X, -target.Y, -target.Z);
-                    Matrix rotation = Matrix.GetRotationY((float) (xDiff/10.0));
+                    Matrix rotation = Matrix.GetRotationY((float)(xDiff / 10.0));
                     //Matrix fromOrigin = Matrix.GetTranslation(target.X, target.Y, target.Z);
 
                     //targetToCamera = toOrigin * targetToCamera;
@@ -764,16 +788,21 @@ namespace RayTrace
                     scene.Camera.Pos = scene.Camera.Target + targetToCamera;
                 }
 
-
-                LeftClickPoint.X = p.X;
-                LeftClickPoint.Y = p.Y;
+                clickPoint = p;
             }
         }
 
-        private void viewport3D_MouseDown(object sender, MouseButtonEventArgs e)
+        private void Border_MouseWheel(object sender, MouseWheelEventArgs e)
         {
-            LeftClickPoint.X = e.GetPosition(viewport3D).X;
-            LeftClickPoint.Y = e.GetPosition(viewport3D).Y;
+            int delta = e.Delta;
+
+            Vector v = scene.Camera.GetViewVector().Normalise();
+
+            if (delta < 0) v = -v;
+
+            scene.Camera.Pos += v;
+
+            e.Handled = true;
         }
     }
 }

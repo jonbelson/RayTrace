@@ -72,7 +72,7 @@ namespace RayTrace
             _pos = from;
             _target = to;
 
-            FovH = 90.0;
+            FovH = 60.0;
 
             UpdateMatrix();
 

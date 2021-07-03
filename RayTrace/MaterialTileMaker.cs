@@ -45,21 +45,24 @@ namespace RayTrace
             scene.Camera.Pos = new Point(0.0, 0.0, -0.0);
             scene.Camera.Target = new Point(0.0, 0.0, 1.0);
 
-            sphere = new Sphere(new Point(0.0, 0.0, 4.0), 2, Palette.White);
+            sphere = new Sphere(new Point(0.0, 0.0, 5.0), 2, Palette.White);
             scene.AddShape(sphere);
 
             scene.AddLight(new PointLight(new Point(-6.0, 4.0, 0.0), 500, Palette.White));
 
             Plane plane = new Plane(new Vector(0.0, 0.0, -1.0), new Point(0.0, 0.0, 20.0));
             //plane.Material.Texture = new TextureSquares(new Colour(System.Windows.Media.Colors.DarkGray), new Colour(System.Windows.Media.Colors.Gray)) { Scale = 50 };
+            Disc disc = new Disc(new Point(0.0, 0.0, 20.0), new Vector(0.0, 0.0, -1.0), 20);
 
             Material matSquares = new Material();
             matSquares.Type = MaterialType.Diffuse;
             matSquares.PhongShininess = 1.0;
             matSquares.Texture = new TextureSquares(new Colour(System.Windows.Media.Colors.DarkGray), new Colour(System.Windows.Media.Colors.Gray)) { Scale = 500 };
-            plane.Material = matSquares;
+            disc.Material = matSquares;
 
-            scene.AddShape(plane);
+            scene.AddShape(disc);
+
+            scene.Skydome = new SkydomeBitmap("C:\\Users\\Jon\\Documents\\Projects\\RayTrace\\RayTrace\\Data\\skydomes\\immenstadter_horn_1024.jpg");
 
             scene.Camera.UpdateMatrix();    // XXX Needed?
             scene.CreateCaches();

@@ -29,6 +29,8 @@ namespace RayTrace
 
         public Colour Background { get; set; } = Palette.Black;
 
+        public Skydome Skydome { get; set; } = new SkydomeGradient();
+
         public Scene()
         {
             //Ambient = new Colour(0.2f, 0.2f, 0.2f);

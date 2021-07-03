@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Security.Permissions;
 using System.Text;
@@ -21,7 +22,7 @@ namespace RayTrace
         private static readonly int Size = 4;
         private static readonly int NumElements = Size * Size;
 
-        public double[] M { get; set;  } = new double[NumElements];
+        public double[] M { get; set; } = new double[NumElements];
 
         // M|row|column
         public double M11 { get { return M[0]; } set { M[0] = value; } }
@@ -55,6 +56,18 @@ namespace RayTrace
         public Matrix(Matrix other)
         {
             other.M.CopyTo(M, 0);
+        }
+
+        public Matrix(double[] values)
+        {
+            if (values.Length == 16)
+            {
+                values.CopyTo(M, 0);
+            }
+            else
+            {
+                SetIdentity();
+            }
         }
 
         private static Matrix NewMatrix { get { return new Matrix(); } }
@@ -104,6 +117,18 @@ namespace RayTrace
             return mm;
         }
 
+        public static Matrix operator*(Matrix m, double factor)
+        {
+            Matrix mm = new Matrix();
+
+            for (int i=0; i<Size*Size; i++)
+            {
+                mm.M[i] = m.M[i] * factor;
+            }
+
+            return mm;
+        }
+
         // Set all values to 0. Also known as a zero matrix.
         public void SetNull()
         {
@@ -136,16 +161,108 @@ namespace RayTrace
             return m;
         }
 
-        //public double GetDeterminant()
-        //{
-
-        //}
-
         public static Matrix GetTranslation(double x, double y, double z)
         {
             Matrix m = new Matrix();
             m.SetTranslation(x, y, z);
             return m;
+        }
+
+        // Utility function to compute the determinant of the 3x3 matrix in the top left of the Matrix.
+        private double GetDeterminant33()
+        {
+            double a11 = M11 * ((M22 * M33) - (M32 * M23));
+            double a12 = M12 * ((M21 * M33) - (M31 * M23));
+            double a13 = M13 * ((M21 * M32) - (M31 * M22));
+
+            return a11 - a12 + a13;
+        }
+
+        // Create 3x3 matrix in top left of Matrix by removing top row and column 'column'.
+        // 'Expansion by top row'.
+        // Return its determinant.
+        private double GetCofactor(int skipRow, int skipColumn)
+        {
+            Matrix m = new Matrix();
+
+            int src;
+            int dest;
+
+            int srcRow = 0;
+            int destRow = 0;
+
+            for (int row = 0; row < Size; row++)
+            {
+                src = srcRow * Size;
+                dest = destRow * Size;
+
+                if (row != skipRow)
+                {
+                    for (int col = 0; col < Size; col++)
+                    {
+                        if (col != skipColumn)
+                        {
+                            m.M[dest] = M[src];
+                            dest++;
+                        }
+
+                        src++;
+                    }
+
+                    destRow++;
+                }
+
+                srcRow++;
+            }
+
+            //Debug.WriteLine(m.ToString());
+
+            return m.GetDeterminant33();
+        }
+
+        // Calculate determinant of Matrix.
+        // Based on method shown in Mathematical Techniques (Jordan, Smith).
+        public double GetDeterminant()
+        {
+            double a11 = M11 * GetCofactor(0, 0);
+            double a12 = M12 * GetCofactor(0, 1);
+            double a13 = M13 * GetCofactor(0, 2);
+            double a14 = M14 * GetCofactor(0, 3);
+
+            return a11 - a12 + a13 - a14;
+        }
+
+        public Matrix GetInverse()
+        {
+            double determinant = GetDeterminant();
+
+            // If determinant is zero, no inverse exists.
+            if (determinant == 0.0) return GetIdentity();
+
+            // Create adjoint matrix (a matrix of cofactors).
+            Matrix adjoint = new Matrix();
+            int index = 0;
+            for (int skipRow = 0; skipRow < Size; skipRow++)
+            {
+                for (int skipColumn = 0; skipColumn < Size; skipColumn++)
+                {
+                    adjoint.M[index] = GetCofactor(skipRow, skipColumn);
+                    //adjoint.M[index] = GetCofactor(skipColumn, skipRow);
+
+                    if ((skipRow + skipColumn)%2 == 1)
+                    {
+                        adjoint.M[index] *= -1;
+                    }
+
+                    index++;
+                }
+            }
+
+            adjoint.Transpose();
+
+            // The inverse is 1/det * adjoint.
+
+            return adjoint * (1.0 / determinant);
         }
 
         //public static Matrix GetScale(double sx, double sy, double sz)
@@ -328,7 +445,7 @@ namespace RayTrace
             for (int i=0; i<NumElements; i++)
             {
                 if ((i % Size) == 0) s.Append("\n");
-                s.Append(M[i] + " ");
+                s.Append(M[i].ToString("F3") + " ");
             }
 
             return s.ToString();

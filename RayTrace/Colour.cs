@@ -151,6 +151,16 @@ namespace RayTrace
             return diffSquared < MinDiff * MinDiff;
         }
 
+        // Return gamma-corrected version of this Colour.
+        public Colour ApplyGamma(float gamma)
+        {
+            double gammaRed = Math.Pow(Red, gamma);
+            double gammaGreen = Math.Pow(Green, gamma);
+            double gammaBlue = Math.Pow(Blue, gamma);
+
+            return new Colour((float)gammaRed, (float)gammaGreen, (float)gammaBlue);
+        }
+
         public uint ToRGB(float gamma=1/2.2f)
         {
             double gammaRed = Math.Pow(Red, gamma);
