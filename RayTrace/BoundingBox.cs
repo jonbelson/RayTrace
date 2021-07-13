@@ -9,37 +9,37 @@ namespace RayTrace
 {
     public class BoundingBox
     {
-        private void Swap(ref double d1, ref double d2)
+        private void Swap(ref float d1, ref float d2)
         {
-            double temp = d1;
+            float temp = d1;
             d1 = d2;
             d2 = temp;
         }
 
-        public double MinX { get; set; }
-        public double MaxX { get; set; }
-        public double MinY { get; set; }
-        public double MaxY { get; set; }
-        public double MinZ { get; set; }
-        public double MaxZ { get; set; }
+        public float MinX { get; set; }
+        public float MaxX { get; set; }
+        public float MinY { get; set; }
+        public float MaxY { get; set; }
+        public float MinZ { get; set; }
+        public float MaxZ { get; set; }
 
         public enum Axis { X, Y, Z };
 
-        public Point GetCentre()
+        public SPoint GetCentre()
         {
-            return new Point()
-            {
-                X = (MinX + MaxX) / 2.0,
-                Y = (MinY + MaxY) / 2.0,
-                Z = (MinZ + MaxZ) / 2.0
-            };
+            return new SPoint
+            (
+                (MinX + MaxX) / 2.0f,
+                (MinY + MaxY) / 2.0f,
+                (MinZ + MaxZ) / 2.0f
+            );
         }
 
         public Axis GetLongestAxis()
         {
-            double width = Math.Abs(MaxX - MinX);
-            double height = Math.Abs(MaxY - MinY);
-            double depth = Math.Abs(MaxZ - MinZ);
+            float width = Math.Abs(MaxX - MinX);
+            float height = Math.Abs(MaxY - MinY);
+            float depth = Math.Abs(MaxZ - MinZ);
 
             if (width > height)
             {
@@ -54,15 +54,15 @@ namespace RayTrace
         // Default BoundingBox that contains, well, nothing.
         public BoundingBox()
         {
-            MinX = Double.MaxValue;
-            MinY = Double.MaxValue;
-            MinZ = Double.MaxValue;
-            MaxX = Double.MinValue;
-            MaxY = Double.MinValue;
-            MaxZ = Double.MinValue;
+            MinX = float.MaxValue;
+            MinY = float.MaxValue;
+            MinZ = float.MaxValue;
+            MaxX = float.MinValue;
+            MaxY = float.MinValue;
+            MaxZ = float.MinValue;
         }
 
-        public BoundingBox(double minX, double maxX, double minY, double maxY, double minZ, double maxZ)
+        public BoundingBox(float minX, float maxX, float minY, float maxY, float minZ, float maxZ)
         {
             MinX = minX;
             MaxX = maxX;
@@ -77,7 +77,7 @@ namespace RayTrace
         }
 
         // Increase size of box to contain specified Point.
-        public void AddPoint(Point p)
+        public void AddPoint(SPoint p)
         {
             MinX = Math.Min(MinX, p.X);
             MaxX = Math.Max(MaxX, p.X);
@@ -93,15 +93,15 @@ namespace RayTrace
         public BoundingBox Transform(Matrix matrix)
         {
             // Rate each of the eight corner points and create a BoundingBox that contains them all.
-            Point p1 = matrix * new Point(MinX, MinY, MinZ);
-            Point p2 = matrix * new Point(MinX, MaxY, MinZ);
-            Point p3 = matrix * new Point(MaxX, MaxY, MinZ);
-            Point p4 = matrix * new Point(MaxX, MinY, MinZ);
+            SPoint p1 = matrix * new SPoint(MinX, MinY, MinZ);
+            SPoint p2 = matrix * new SPoint(MinX, MaxY, MinZ);
+            SPoint p3 = matrix * new SPoint(MaxX, MaxY, MinZ);
+            SPoint p4 = matrix * new SPoint(MaxX, MinY, MinZ);
 
-            Point p5 = matrix * new Point(MinX, MinY, MaxZ);
-            Point p6 = matrix * new Point(MinX, MaxY, MaxZ);
-            Point p7 = matrix * new Point(MaxX, MaxY, MaxZ);
-            Point p8 = matrix * new Point(MaxX, MinY, MaxZ);
+            SPoint p5 = matrix * new SPoint(MinX, MinY, MaxZ);
+            SPoint p6 = matrix * new SPoint(MinX, MaxY, MaxZ);
+            SPoint p7 = matrix * new SPoint(MaxX, MaxY, MaxZ);
+            SPoint p8 = matrix * new SPoint(MaxX, MinY, MaxZ);
 
             BoundingBox bb = new BoundingBox();
             bb.AddPoint(p1);
@@ -116,22 +116,22 @@ namespace RayTrace
             return bb;
         }
 
-        public bool Intersects(Point p1, Point p2)
+        public bool Intersects(SPoint p1, SPoint p2)
         {
             // Get bounding box extents.
-            Point B0 = new Point(MinX, MinY, MinZ);
-            Point B1 = new Point(MaxX, MaxY, MaxZ);
+            SPoint B0 = new SPoint(MinX, MinY, MinZ);
+            SPoint B1 = new SPoint(MaxX, MaxY, MaxZ);
 
-            Vector D = p2 - p1;
+            SVector D = p2 - p1;
             //D = D.Normalise();
 
-            double tnear = Double.MinValue;   // -9999999999;
-            double tfar = Double.MaxValue;  // 999999999;
+            float tnear = float.MinValue;   // -9999999999;
+            float tfar = float.MaxValue;  // 999999999;
 
             // X
-            double InvDI = 1.0 / D.I;
-            double t0x = (B0.X - p1.X) * InvDI;
-            double t1x = (B1.X - p1.X) * InvDI;
+            float InvDI = 1.0f / D.I;
+            float t0x = (B0.X - p1.X) * InvDI;
+            float t1x = (B1.X - p1.X) * InvDI;
 
             if (t0x > t1x) Swap(ref t0x, ref t1x);
 
@@ -142,9 +142,9 @@ namespace RayTrace
             if (tfar < 0) return false;
 
             // Y
-            double InvDJ = 1.0 / D.J;
-            double t0y = (B0.Y - p1.Y) * InvDJ;
-            double t1y = (B1.Y - p1.Y) * InvDJ;
+            float InvDJ = 1.0f / D.J;
+            float t0y = (B0.Y - p1.Y) * InvDJ;
+            float t1y = (B1.Y - p1.Y) * InvDJ;
 
             if (t0y > t1y) Swap(ref t0y, ref t1y);
 
@@ -155,9 +155,9 @@ namespace RayTrace
             if (tfar < 0) return false;
 
             // Z
-            double InvDK = 1.0 / D.K;
-            double t0z = (B0.Z - p1.Z) * InvDK;
-            double t1z = (B1.Z - p1.Z) * InvDK;
+            float InvDK = 1.0f / D.K;
+            float t0z = (B0.Z - p1.Z) * InvDK;
+            float t1z = (B1.Z - p1.Z) * InvDK;
 
             if (t0z > t1z) Swap(ref t0z, ref t1z);
 

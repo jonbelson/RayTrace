@@ -11,16 +11,20 @@ namespace RayTrace
 
         public int Radius {
 			get { return radius; }
-			set { radius = value; Notify("Radius"); } }
+			set { radius = value; Notify("Radius"); }
+        }
 
-        public void CalculateUV(Camera camera, HitResult hr)
+		// Precalculated values to speed up calculations.
+		private SPoint pos;
+
+		public void CalculateUV(Camera camera, ref HitResult hr)
         {
             // Sn   Normal vector at point of interest.
             // Sp   Vector of north pole.
             // Se   Vector to reference point on equator.
 
-			Vector Sn = hr.EntryNormal;
-			Vector Sp = new Vector(0.0, 1.0, 0.0);
+			SVector Sn = hr.EntryNormal;
+			SVector Sp = new SVector(0.0f, 1.0f, 0.0f);
 			Sp = camera.NormalMatrix*Sp;
 			double dp = Sn.DotProduct(Sp);
 			double phi = Math.Acos(-dp);
@@ -29,7 +33,7 @@ namespace RayTrace
 
 			double v = phi / Math.PI;
 
-			Vector Se = new Vector(0.0, 0.0, 1.0);
+			SVector Se = new SVector(0.0f, 0.0f, 1.0f);
 			Se = camera.NormalMatrix * Se;
 			dp = Se.DotProduct(Sn);
 
@@ -44,7 +48,7 @@ namespace RayTrace
 
 			double u = theta;
 
-			Vector Spe = Sp.VectorProduct(Se);
+			SVector Spe = Sp.VectorProduct(Se);
 			if (Spe.DotProduct(Sn) <= 0.0)
 			{
 				u = 1.0 - theta;
@@ -77,29 +81,35 @@ namespace RayTrace
 			Radius = xmlSphere.Radius;
 		}
 
-        // Hit test between line a sphere.
-        // segmentOnly If true, only the line segment defined by p1 and p2 is considered.
-        private HitResult HitTestImpl(Camera camera, Point p1, Point p2, bool segmentOnly)
+		// Allow Shape to pre-transform data using the Camera's WorldToView Matrix.
+		public override void CreateCache(Camera camera)
+		{
+			pos = new(Pos.X, Pos.Y, Pos.Z);
+		}
+
+		// Hit test between line a sphere.
+		// segmentOnly If true, only the line segment defined by p1 and p2 is considered.
+		private HitResult HitTestImpl(Camera camera, SPoint p1, SPoint p2, bool segmentOnly)
         {
 			HitResult hr = new HitResult(this);
 
-			Point sc = camera.WorldToView * Pos;
+			SPoint sc = camera.WorldToView * pos;
 
-			double r = Radius;
+			float r = Radius;
 
-			const double EPS = 0.00001;
+			const float EPS = 0.00001f;
 
 			// Vector from p1 to p2.
-			Vector dp = p2 - p1;
+			SVector dp = p2 - p1;
 
-			double a = dp.MagnitudeSquared();
-			double b = 2 * (dp.I * (p1.X - sc.X) + dp.J * (p1.Y - sc.Y) + dp.K * (p1.Z - sc.Z));
-			double c = sc.X * sc.X + sc.Y * sc.Y + sc.Z * sc.Z;
+			float a = dp.MagnitudeSquared();
+			float b = 2 * (dp.I * (p1.X - sc.X) + dp.J * (p1.Y - sc.Y) + dp.K * (p1.Z - sc.Z));
+			float c = sc.X * sc.X + sc.Y * sc.Y + sc.Z * sc.Z;
 			c += p1.X * p1.X + p1.Y * p1.Y + p1.Z * p1.Z;
 			c -= 2 * (sc.X * p1.X + sc.Y * p1.Y + sc.Z * p1.Z);
 			c -= r * r;
 
-			double bb4ac = b * b - 4 * a * c;
+			float bb4ac = b * b - 4 * a * c;
 			if (Math.Abs(a) < EPS || bb4ac < 0)
 			{
 				return hr;
@@ -108,30 +118,30 @@ namespace RayTrace
 			// Check if line is tangental to the sphere.
 			if (bb4ac == 0.0)
 			{
-				double u = -b / (2 * a);
+				float u = -b / (2 * a);
 
-				Point p = p1 + dp.Scale(u);
+				SPoint p = p1 + dp.Scale(u);
 				hr.Entry = p;
 
-				Point hp = p + dp.Scale(u);
+				SPoint hp = p + dp.Scale(u);
 
 				//Vector surfaceNormal = sc.Difference(hit);
 				//surfaceNormal = surfaceNormal.Normalise();
 
 				hr.EntryNormal = sc.Difference(hp).Normalise();
 
-				CalculateUV(camera, hr);
+				CalculateUV(camera, ref hr);
 
 				return hr;
 			}
 
-			double mu1 = (-b + Math.Sqrt(bb4ac)) / (2 * a);
-			double mu2 = (-b - Math.Sqrt(bb4ac)) / (2 * a);
+			float mu1 = (float)((-b + Math.Sqrt(bb4ac)) / (2 * a));
+			float mu2 = (float)((-b - Math.Sqrt(bb4ac)) / (2 * a));
 
 			bool mu1Valid = true;
 			bool mu2Valid = true;
 
-			double THRESH = 0.000001;
+			float THRESH = 0.001f;
 
 			// Generally we're not interested in hits that are very close to start position.
 			if (mu1 < THRESH)	{ mu1Valid = false;	}
@@ -144,7 +154,7 @@ namespace RayTrace
 				if (mu2 > 1.0 - THRESH) mu2Valid = false;
 			}
 
-			double mu;
+			float mu;
 			if (mu1Valid && mu2Valid)
 				mu = Math.Min(mu1, mu2);
 			else if (mu1Valid)
@@ -157,29 +167,29 @@ namespace RayTrace
 				return hr;
 			}
 
-			Point hit = p1 + dp.Scale(mu);
+			SPoint hit = p1 + dp.Scale(mu);
 
-			Vector surfaceNormal = /*Pos*/ sc.Difference(hit);
+			SVector surfaceNormal = sc.Difference(hit);
 			surfaceNormal = surfaceNormal.Normalise();
 
 			hr.Entry = hit;
 			hr.EntryNormal = surfaceNormal;
 
-			CalculateUV(camera, hr);
+			CalculateUV(camera, ref hr);
 
 			// XXX Should normal perturbation affect surface texture?
 			if (HasRoughness())
 			{
-				double Scale = 10;
+				float Scale = 10;
 
-				Vector normal = hr.EntryNormal;
+				SVector normal = hr.EntryNormal;
 
-				double val = Perlin.Noise(Scale * normal.I, Scale * normal.J, Scale * normal.K);
+				float val = (float) Perlin.Noise(Scale * normal.I, Scale * normal.J, Scale * normal.K);
 				val /= 10;
 
 				//val = (val + noiseRange) / (2.0 * noiseRange);
 
-				normal = normal.Add(new Vector(val, val, val));
+				normal = normal.Add(new SVector(val, val, val));
 				normal = normal.Normalise();
 
 				hr.EntryNormal = normal;
@@ -196,7 +206,8 @@ namespace RayTrace
 
 			//Debug.Assert(!segmentOnly);
 
-			Point p2 = ray.Origin.Offset(ray.Direction);
+			SPoint p2 = ray.Origin.Offset(ray.Direction);
+
 
 			return HitTestImpl(camera, ray.Origin, p2, segmentOnly);
 
@@ -210,7 +221,7 @@ namespace RayTrace
 		//	return HitTestImpl(camera, p1, p2, true);
 		//}
 
-		public override (Point, Vector) GetRefractedVector(Camera camera, Vector ray, HitResult hr)
+		public override (SPoint, SVector) GetRefractedVector(Camera camera, SVector ray, HitResult hr)
 		{
 			Debug.Assert(hr.HasEntry());
 
@@ -218,7 +229,7 @@ namespace RayTrace
 			float n2 = hr.shape.Material.RefractiveIndex;
 
 			//			Vector refraction1 = Refraction.GetAngle(ray, hr.EntryNormal, RefractiveIndex.Vacuum, RefractiveIndex.WindowGlass);
-			Vector refraction1 = Refraction.GetAngle(ray, hr.EntryNormal, n1, n2);
+			SVector refraction1 = Refraction.GetAngle(ray, hr.EntryNormal, n1, n2);
 
 			if (!refraction1.IsNull())
 			{
@@ -229,7 +240,7 @@ namespace RayTrace
 				if (hrInternal.HasEntry())
 				{
 					// Found the exit point, so calculate refraction as ray exits the sphere.
-					Vector refraction2 = Refraction.GetAngle(refraction1, hrInternal.EntryNormal.Negate(), n2, n1);
+					SVector refraction2 = Refraction.GetAngle(refraction1, hrInternal.EntryNormal.Negate(), n2, n1);
 
 					return (hrInternal.Entry, refraction2);
 				}

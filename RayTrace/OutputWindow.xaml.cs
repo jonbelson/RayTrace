@@ -305,6 +305,8 @@ namespace RayTrace
             //Stopwatch stopWatch = new Stopwatch();
             //stopWatch.Start();
 
+            Renderer.NumRays = 0;
+
             List<Task> tasks = new List<Task>();
 
             int i = 0;
@@ -332,6 +334,10 @@ namespace RayTrace
                 i++;
             }
 
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Reset();
+            stopwatch.Start();
+
             //List<Task> Tasks = new List<Task>() { renderTask1, renderTask2 };
             //await Task.WaitAll(Tasks.ToArray());
             try
@@ -352,6 +358,18 @@ namespace RayTrace
                 }
 
             }
+
+            stopwatch.Stop();
+
+            TimeSpan ts = stopwatch.Elapsed;
+
+            // Format and display the TimeSpan value.
+            string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
+            Trace.WriteLine("Render time: " + elapsedTime);
+
+            Trace.WriteLine("Number rays: " + Renderer.NumRays);
+            Trace.WriteLine("Rays per second: " + 1000.0*Renderer.NumRays/stopwatch.ElapsedMilliseconds);
+
 
             return true;
         }

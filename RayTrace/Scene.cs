@@ -66,6 +66,10 @@ namespace RayTrace
             {
                 shape.CreateCache(Camera);
             }
+            foreach (Light light in Lights)
+            {
+                light.CreateCache(Camera);
+            }
         }
 
         // Return closest hit object.
@@ -97,7 +101,7 @@ namespace RayTrace
         // Return closest hit object.
         public HitResult HitTest(Camera camera, Point p1, Point p2)
         {
-            Ray ray = new Ray(p1, p2);
+            Ray ray = new Ray(new SPoint(p1), new SPoint(p2));
             return HitTest(camera, ray);
         }
 
@@ -120,14 +124,14 @@ namespace RayTrace
         // Return true if an object is intersected.
         public bool HitTestFast(Camera camera, Point p1, Point p2)
         {
-            Ray ray = new Ray(p1, p2);
+            Ray ray = new Ray(new SPoint(p1), new SPoint(p2));
 
             return HitTestFast(camera, ray);
         }
 
         public List<Light> IsIlluminated(Camera camera, HitResult hr)
         {
-            Point pos = hr.Entry;
+            Point pos = new(hr.Entry);
 
             List<Light> lights = new List<Light>();
 

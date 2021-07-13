@@ -28,9 +28,9 @@ namespace RayTrace
 
         private Matrix _objectToView = new Matrix();
 
-        private Point GetTrianglePointV0(ModelData modelData, int index) => _objectToView * modelData.points[modelData.triangles[index].v0];
-        private Point GetTrianglePointV1(ModelData modelData, int index) => _objectToView * modelData.points[modelData.triangles[index].v1];
-        private Point GetTrianglePointV2(ModelData modelData, int index) => _objectToView * modelData.points[modelData.triangles[index].v2];
+        private SPoint GetTrianglePointV0(ModelData modelData, int index) => _objectToView * modelData.points[modelData.triangles[index].v0];
+        private SPoint GetTrianglePointV1(ModelData modelData, int index) => _objectToView * modelData.points[modelData.triangles[index].v1];
+        private SPoint GetTrianglePointV2(ModelData modelData, int index) => _objectToView * modelData.points[modelData.triangles[index].v2];
 
         // Get centroid of all vertices for specified triangles.
         private Point GetCentroid(ModelData modelData, List<int> triangles)
@@ -39,9 +39,9 @@ namespace RayTrace
 
             foreach (int i in triangles)
             {
-                Point p0 = GetTrianglePointV0(modelData, i);
-                Point p1 = GetTrianglePointV1(modelData, i);
-                Point p2 = GetTrianglePointV2(modelData, i);
+                SPoint p0 = GetTrianglePointV0(modelData, i);
+                SPoint p1 = GetTrianglePointV1(modelData, i);
+                SPoint p2 = GetTrianglePointV2(modelData, i);
 
                 p.X += p0.X + p1.X + p2.X;
                 p.Y += p0.Y + p1.Y + p2.Y;
@@ -50,7 +50,7 @@ namespace RayTrace
 
             int numPoints = triangles.Count() * 3;  // Three vertices for each triangle.
 
-            return p.Scale(1.0/numPoints);
+            return p.Scale(1.0f/numPoints);
         }
 
         // Get BoundingBox containing all vertices from specified triangles.

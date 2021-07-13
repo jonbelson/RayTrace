@@ -30,6 +30,9 @@ namespace RayTrace
             Name = GetType().Name;
         }
 
+        // Allow Shape to pre-transform data using the Camera's WorldToView Matrix.
+        public virtual void CreateCache(Camera camera) { }
+
         protected virtual void AsXMLImpl(XMLEntity xml)
         {
             xml.Enabled = Enabled;

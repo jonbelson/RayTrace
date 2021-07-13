@@ -8,36 +8,46 @@ namespace RayTrace
 {
     public class Plane : Shape
     {
-        private Vector normal;
+        private Vector _normal;
         public Vector Normal {
-            get { return normal; }
-            set { if (normal != value) { normal = value; Notify("Normal"); } }
+            get { return _normal; }
+            set { if (_normal != value) { _normal = value; Notify("Normal"); } }
         }
-        //public Point Point { get; set; }
 
-        private HitResult HitTestImpl(Camera camera, Point p1, Point p2, bool segmentOnly)
+        // Precalculated values to speed up calculations.
+        private SPoint pos;
+        private SVector normal;
+
+        // Allow Shape to pre-transform data using the Camera's WorldToView Matrix.
+        public override void CreateCache(Camera camera)
+        {
+            pos = new(Pos.X, Pos.Y, Pos.Z);
+            normal = new(Normal.I, Normal.J, Normal.K);
+        }
+
+        private HitResult HitTestImpl(Camera camera, SPoint p1, SPoint p2, bool segmentOnly)
         {
             HitResult hr = new HitResult(this);
 
-            Point vPos = camera.WorldToView * Pos;
-            Vector vNormal = camera.NormalMatrix * Normal;
+            SPoint vPos = camera.WorldToView * pos;
+            SVector vNormal = camera.NormalMatrix * normal;
 
-            double A = vNormal.I;
-            double B = vNormal.J;
-            double C = vNormal.K;
+            float A = vNormal.I;
+            float B = vNormal.J;
+            float C = vNormal.K;
 
             // Since Ax + By + Cz + D = 0...
-            double D = -(A * vPos.X + B * vPos.Y + C * vPos.Z);
+            float D = -(A * vPos.X + B * vPos.Y + C * vPos.Z);
 
-            double num = A * p1.X + B * p1.Y + C * p1.Z + D;
-            double denom = A * (p1.X - p2.X) + B * (p1.Y - p2.Y) + C * (p1.Z - p2.Z);
+            float num = A * p1.X + B * p1.Y + C * p1.Z + D;
+            float denom = A * (p1.X - p2.X) + B * (p1.Y - p2.Y) + C * (p1.Z - p2.Z);
 
             if (denom == 0)
             {
                 return hr;
             }
 
-            double mu = num / denom;
+            float mu = num / denom;
 
             if (mu == 0.0)
             {
@@ -62,9 +72,9 @@ namespace RayTrace
                 }
             }
 
-            Vector vecP2P1 = p2 - p1;
+            SVector vecP2P1 = p2 - p1;
             //Vector vecP2P1 = p1 - p2;
-            Point Intersection = p1 + vecP2P1.Scale(mu);
+            SPoint Intersection = p1 + vecP2P1.Scale(mu);
 
             hr.Entry = Intersection;
 
@@ -88,19 +98,19 @@ namespace RayTrace
             //            hr.v = (float) v.J;
 
             // https://gamedev.stackexchange.com/questions/172352/finding-texture-coordinates-for-plane
-            Vector e1 = vNormal.VectorProduct(new Vector(1.0, 0.0, 0.0));
+            SVector e1 = vNormal.VectorProduct(new SVector(1, 0, 0));
             e1 = e1.Normalise();
             if (e1.I == 0.0 && e1.J == 0.0 && e1.K == 0.0)
             {
-                e1 = vNormal.VectorProduct(new Vector(0.0, 0.0, 1.0));
+                e1 = vNormal.VectorProduct(new SVector(0, 0, 1));
                 e1 = e1.Normalise();
             }
 
             e1 = camera.NormalMatrix * e1;
-            Vector e2 = vNormal.VectorProduct(e1);
+            SVector e2 = vNormal.VectorProduct(e1);
             e2 = e2.Normalise();
 
-            Vector vecIntersection = new Vector(Intersection.X, Intersection.Y, Intersection.Z);
+            SVector vecIntersection = new SVector(Intersection.X, Intersection.Y, Intersection.Z);
             double mag = vecIntersection.Magnitude();
             vecIntersection = vecIntersection.Normalise();
 
@@ -160,8 +170,8 @@ namespace RayTrace
 
             bool segmentOnly = ray.TMax == 1.0;
 
-            Point p1 = ray.Origin;
-            Point p2 = ray.Origin + ray.Direction;
+            SPoint p1 = ray.Origin;
+            SPoint p2 = ray.Origin + ray.Direction;
 
             return HitTestImpl(camera, p1, p2, segmentOnly);
         }

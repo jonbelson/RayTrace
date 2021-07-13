@@ -22,25 +22,25 @@ namespace RayTrace
         private static readonly int Size = 4;
         private static readonly int NumElements = Size * Size;
 
-        public double[] M { get; set; } = new double[NumElements];
+        public float[] M { get; set; } = new float[NumElements];
 
         // M|row|column
-        public double M11 { get { return M[0]; } set { M[0] = value; } }
-        public double M12 { get { return M[1]; } set { M[1] = value; } }
-        public double M13 { get { return M[2]; } set { M[2] = value; } }
-        public double M14 { get { return M[3]; } set { M[3] = value; } }
+        public float M11 { get { return M[0]; } set { M[0] = value; } }
+        public float M12 { get { return M[1]; } set { M[1] = value; } }
+        public float M13 { get { return M[2]; } set { M[2] = value; } }
+        public float M14 { get { return M[3]; } set { M[3] = value; } }
 
-        public double M21 { get { return M[4]; } set { M[4] = value; } }
-        public double M22 { get { return M[5]; } set { M[5] = value; } }
-        public double M23 { get { return M[6]; } set { M[6] = value; } }
-        public double M24 { get { return M[7]; } set { M[7] = value; } }
+        public float M21 { get { return M[4]; } set { M[4] = value; } }
+        public float M22 { get { return M[5]; } set { M[5] = value; } }
+        public float M23 { get { return M[6]; } set { M[6] = value; } }
+        public float M24 { get { return M[7]; } set { M[7] = value; } }
 
-        public double M31 { get { return M[8]; } set { M[8] = value; } }
-        public double M32 { get { return M[9]; } set { M[9] = value; } }
-        public double M33 { get { return M[10]; } set { M[10] = value; } }
-        public double M34 { get { return M[11]; } set { M[11] = value; } }
+        public float M31 { get { return M[8]; } set { M[8] = value; } }
+        public float M32 { get { return M[9]; } set { M[9] = value; } }
+        public float M33 { get { return M[10]; } set { M[10] = value; } }
+        public float M34 { get { return M[11]; } set { M[11] = value; } }
 
-        public double M44 { get { return M[15]; } set { M[15] = value; } }
+        public float M44 { get { return M[15]; } set { M[15] = value; } }
 
         //
         // Constructor.
@@ -72,13 +72,40 @@ namespace RayTrace
 
         private static Matrix NewMatrix { get { return new Matrix(); } }
 
+        public static SVector operator*(Matrix m, SVector v)
+        {
+            SVector vv = new SVector
+            (
+                m.M11 * v.I + m.M12 * v.J + m.M13 * v.K + m.M14 * 1.0f,
+                m.M21 * v.I + m.M22 * v.J + m.M23 * v.K + m.M24 * 1.0f,
+                m.M31 * v.I + m.M32 * v.J + m.M33 * v.K + m.M34 * 1.0f
+            );
+
+            return vv;
+        }
+
+        public static SPoint operator*(Matrix m, SPoint p)
+        {
+            SPoint pp = new SPoint
+            (
+                m.M11 * p.X + m.M12 * p.Y + m.M13 * p.Z + m.M14 * 1.0f,
+                m.M21 * p.X + m.M22 * p.Y + m.M23 * p.Z + m.M24 * 1.0f,
+                m.M31 * p.X + m.M32 * p.Y + m.M33 * p.Z + m.M34 * 1.0f
+            );
+
+            return pp;
+        }
+
+
+
+
         public static Vector operator*(Matrix m, Vector v)
         {
             Vector vv = new Vector
             {
-                I = m.M11 * v.I + m.M12 * v.J + m.M13 * v.K + m.M14 * 1.0,
-                J = m.M21 * v.I + m.M22 * v.J + m.M23 * v.K + m.M24 * 1.0,
-                K = m.M31 * v.I + m.M32 * v.J + m.M33 * v.K + m.M34 * 1.0
+                I = m.M11 * v.I + m.M12 * v.J + m.M13 * v.K + m.M14 * 1.0f,
+                J = m.M21 * v.I + m.M22 * v.J + m.M23 * v.K + m.M24 * 1.0f,
+                K = m.M31 * v.I + m.M32 * v.J + m.M33 * v.K + m.M34 * 1.0f
             };
 
             return vv;
@@ -88,9 +115,9 @@ namespace RayTrace
         {
             Point pp = new Point
             {
-                X = m.M11 * p.X + m.M12 * p.Y + m.M13 * p.Z + m.M14 * 1.0,
-                Y = m.M21 * p.X + m.M22 * p.Y + m.M23 * p.Z + m.M24 * 1.0,
-                Z = m.M31 * p.X + m.M32 * p.Y + m.M33 * p.Z + m.M34 * 1.0
+                X = m.M11 * p.X + m.M12 * p.Y + m.M13 * p.Z + m.M14 * 1.0f,
+                Y = m.M21 * p.X + m.M22 * p.Y + m.M23 * p.Z + m.M24 * 1.0f,
+                Z = m.M31 * p.X + m.M32 * p.Y + m.M33 * p.Z + m.M34 * 1.0f
             };
 
             return pp;
@@ -105,7 +132,7 @@ namespace RayTrace
             {
                 for (int j = 0; j < Size; j++)
                 {
-                    double sum = 0.0;
+                    float sum = 0.0f;
                     for (int k = 0; k < Size; k++)
                     {
                         sum += m2.M[k * Size + i] * m1.M[j * Size + k];
@@ -117,7 +144,7 @@ namespace RayTrace
             return mm;
         }
 
-        public static Matrix operator*(Matrix m, double factor)
+        public static Matrix operator*(Matrix m, float factor)
         {
             Matrix mm = new Matrix();
 
@@ -134,7 +161,7 @@ namespace RayTrace
         {
             for (int i=0; i<NumElements; i++)
             {
-                M[i] = 0.0;
+                M[i] = 0.0f;
             }
         }
 
@@ -161,7 +188,7 @@ namespace RayTrace
             return m;
         }
 
-        public static Matrix GetTranslation(double x, double y, double z)
+        public static Matrix GetTranslation(float x, float y, float z)
         {
             Matrix m = new Matrix();
             m.SetTranslation(x, y, z);
@@ -169,11 +196,11 @@ namespace RayTrace
         }
 
         // Utility function to compute the determinant of the 3x3 matrix in the top left of the Matrix.
-        private double GetDeterminant33()
+        private float GetDeterminant33()
         {
-            double a11 = M11 * ((M22 * M33) - (M32 * M23));
-            double a12 = M12 * ((M21 * M33) - (M31 * M23));
-            double a13 = M13 * ((M21 * M32) - (M31 * M22));
+            float a11 = M11 * ((M22 * M33) - (M32 * M23));
+            float a12 = M12 * ((M21 * M33) - (M31 * M23));
+            float a13 = M13 * ((M21 * M32) - (M31 * M22));
 
             return a11 - a12 + a13;
         }
@@ -181,7 +208,7 @@ namespace RayTrace
         // Create 3x3 matrix in top left of Matrix by removing top row and column 'column'.
         // 'Expansion by top row'.
         // Return its determinant.
-        private double GetCofactor(int skipRow, int skipColumn)
+        private float GetCofactor(int skipRow, int skipColumn)
         {
             Matrix m = new Matrix();
 
@@ -222,19 +249,19 @@ namespace RayTrace
 
         // Calculate determinant of Matrix.
         // Based on method shown in Mathematical Techniques (Jordan, Smith).
-        public double GetDeterminant()
+        public float GetDeterminant()
         {
-            double a11 = M11 * GetCofactor(0, 0);
-            double a12 = M12 * GetCofactor(0, 1);
-            double a13 = M13 * GetCofactor(0, 2);
-            double a14 = M14 * GetCofactor(0, 3);
+            float a11 = M11 * GetCofactor(0, 0);
+            float a12 = M12 * GetCofactor(0, 1);
+            float a13 = M13 * GetCofactor(0, 2);
+            float a14 = M14 * GetCofactor(0, 3);
 
             return a11 - a12 + a13 - a14;
         }
 
         public Matrix GetInverse()
         {
-            double determinant = GetDeterminant();
+            float determinant = GetDeterminant();
 
             // If determinant is zero, no inverse exists.
             if (determinant == 0.0) return GetIdentity();
@@ -262,7 +289,7 @@ namespace RayTrace
 
             // The inverse is 1/det * adjoint.
 
-            return adjoint * (1.0 / determinant);
+            return adjoint * (1.0f / determinant);
         }
 
         //public static Matrix GetScale(double sx, double sy, double sz)
@@ -272,7 +299,7 @@ namespace RayTrace
         //    return m;
         //}
 
-        public static Matrix GetScale(double sx, double sy, double sz) => NewMatrix.SetScale(sx, sy, sz);
+        public static Matrix GetScale(float sx, float sy, float sz) => NewMatrix.SetScale(sx, sy, sz);
 
         public static Matrix GetRotationX(float radians) => NewMatrix.SetRotationX(radians);
         public static Matrix GetRotationY(float radians) => NewMatrix.SetRotationY(radians);
@@ -281,13 +308,13 @@ namespace RayTrace
         public void SetIdentity()
         {
             SetNull();
-            M11 = 1.0;
-            M22 = 1.0;
-            M33 = 1.0;
-            M44 = 1.0;
+            M11 = 1.0f;
+            M22 = 1.0f;
+            M33 = 1.0f;
+            M44 = 1.0f;
         }
 
-        public void SetTranslation(double x, double y, double z)
+        public void SetTranslation(float x, float y, float z)
         {
             SetIdentity();
             M14 = x;
@@ -295,7 +322,7 @@ namespace RayTrace
             M34 = z;
         }
 
-        public Matrix SetScale(double sx, double sy, double sz)
+        public Matrix SetScale(float sx, float sy, float sz)
         {
             SetIdentity();
             M11 = sx;
@@ -309,10 +336,10 @@ namespace RayTrace
         public Matrix SetRotationX(double radians)
         {
             SetIdentity();
-            M22 = Math.Cos(radians);
-            M23 = -Math.Sin(radians);
-            M32 = Math.Sin(radians);
-            M33 = Math.Cos(radians);
+            M22 = (float) Math.Cos(radians);
+            M23 = (float) -Math.Sin(radians);
+            M32 = (float) Math.Sin(radians);
+            M33 = (float) Math.Cos(radians);
 
             return this;
         }
@@ -321,10 +348,10 @@ namespace RayTrace
         public Matrix SetRotationY(double radians)
         {
             SetIdentity();
-            M11 = Math.Cos(radians);
-            M13 = Math.Sin(radians);
-            M31 = -Math.Sin(radians);
-            M33 = Math.Cos(radians);
+            M11 = (float) Math.Cos(radians);
+            M13 = (float) Math.Sin(radians);
+            M31 = (float) -Math.Sin(radians);
+            M33 = (float) Math.Cos(radians);
 
             return this;
         }
@@ -333,10 +360,10 @@ namespace RayTrace
         public Matrix SetRotationZ(double radians)
         {
             SetIdentity();
-            M11 = Math.Cos(radians);
-            M12 = -Math.Sin(radians);
-            M21 = Math.Sin(radians);
-            M22 = Math.Cos(radians);
+            M11 = (float) Math.Cos(radians);
+            M12 = (float) -Math.Sin(radians);
+            M21 = (float) Math.Sin(radians);
+            M22 = (float) Math.Cos(radians);
 
             return this;
         }
@@ -403,7 +430,7 @@ namespace RayTrace
             Vector forward = to - from;
             forward = forward.Normalise();
 
-            Vector temp = new Vector(0.0, 1.0, 0.0);
+            Vector temp = new Vector(0.0f, 1.0f, 0.0f);
             Vector right = temp.VectorProduct(forward);
             Vector up = forward.VectorProduct(right);
 

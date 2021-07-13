@@ -17,32 +17,44 @@ namespace RayTrace
         public double Width { get; set; }
         public double Height { get; set; }
 
-        private HitResult HitTestImpl(Camera camera, Point p1, Point p2, bool segmentOnly)
+        private SPoint _pos;
+        private SVector _up;
+        private SVector _right;
+
+        // Allow Shape to pre-transform data using the Camera's WorldToView Matrix.
+        public override void CreateCache(Camera camera)
+        {
+            _pos = new(Pos);
+            _up = new SVector(Up);
+            _right = new(Right);
+        }
+
+        private HitResult HitTestImpl(Camera camera, SPoint p1, SPoint p2, bool segmentOnly)
         {
             HitResult hr = new HitResult(this);
 
-            Point vPos = camera.WorldToView * Pos;
-            Vector vUp = camera.NormalMatrix * Up;
-            Vector vRight = camera.NormalMatrix * Right;
+            SPoint vPos = camera.WorldToView * _pos;
+            SVector vUp = camera.NormalMatrix * _up;
+            SVector vRight = camera.NormalMatrix * _right;
 
-            Vector vNormal = vUp.VectorProduct(vRight);
+            SVector vNormal = vUp.VectorProduct(vRight);
 
-            double A = vNormal.I;
-            double B = vNormal.J;
-            double C = vNormal.K;
+            float A = vNormal.I;
+            float B = vNormal.J;
+            float C = vNormal.K;
 
             // Since Ax + By + Cz + D = 0...
-            double D = -(A * vPos.X + B * vPos.Y + C * vPos.Z);
+            float D = -(A * vPos.X + B * vPos.Y + C * vPos.Z);
 
-            double num = A * p1.X + B * p1.Y + C * p1.Z + D;
-            double denom = A * (p1.X - p2.X) + B * (p1.Y - p2.Y) + C * (p1.Z - p2.Z);
+            float num = A * p1.X + B * p1.Y + C * p1.Z + D;
+            float denom = A * (p1.X - p2.X) + B * (p1.Y - p2.Y) + C * (p1.Z - p2.Z);
 
             if (denom == 0)
             {
                 return hr;
             }
 
-            double mu = num / denom;
+            float mu = num / denom;
 
             if (mu == 0.0)
             {
@@ -50,7 +62,7 @@ namespace RayTrace
                 return hr;
             }
 
-            double THRESH = 0.000001;
+            float THRESH = 0.000001f;
 
             if (mu < THRESH)
             {
@@ -67,9 +79,9 @@ namespace RayTrace
                 }
             }
 
-            Vector vecP2P1 = p2 - p1;
+            SVector vecP2P1 = p2 - p1;
             //Vector vecP2P1 = p1 - p2;
-            Point Intersection = p1 + vecP2P1.Scale(mu);
+            SPoint Intersection = p1 + vecP2P1.Scale(mu);
 
             hr.Entry = Intersection;
             hr.EntryNormal = vNormal;
@@ -95,8 +107,8 @@ namespace RayTrace
 
             bool segmentOnly = ray.TMax == 1.0;
 
-            Point p1 = ray.Origin;
-            Point p2 = ray.Origin + ray.Direction;
+            SPoint p1 = ray.Origin;
+            SPoint p2 = ray.Origin + ray.Direction;
 
             return HitTestImpl(camera, p1, p2, segmentOnly);
         }

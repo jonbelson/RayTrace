@@ -4,6 +4,28 @@ using System.ComponentModel;
 
 namespace RayTrace
 {
+    public readonly struct SPoint
+    {
+        public float X { get; }
+        public float Y { get; }
+        public float Z { get; }
+
+        public SPoint(Point p) => (X, Y, Z) = (p.X, p.Y, p.Z);  // Temporary
+
+        //public SPoint() => (X, Y, Z) = (0, 0, 0);
+
+        public SPoint(float x, float y, float z) => (X, Y, Z) = (x, y, z);
+
+        public SPoint Scale(float scale) => new(X * scale, Y * scale, Z * scale);
+        public SVector Difference(SPoint p) => new(p.X - X, p.Y - Y, p.Z - Z);
+        public SPoint Offset(SVector v) => new(X + v.I, Y + v.J, Z + v.K);
+        public double Distance(SPoint p) => Difference(p).Magnitude();
+
+        public static SPoint operator*(SPoint p, float scale) => new(p.X * scale, p.Y * scale, p.Z * scale);
+        public static SVector operator-(SPoint p1, SPoint p2) => new(p1.X - p2.X, p1.Y - p2.Y, p1.Z - p2.Z);
+        public static SPoint operator+(SPoint p, SVector v) => new(p.X + v.I, p.Y + v.J, p.Z + v.K);
+    }
+
     // Represent a point in 3D space.
     public class /*struct*/ Point : INotifyPropertyChanged
     {
@@ -14,25 +36,27 @@ namespace RayTrace
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
         }
 
-        private double x;
-        private double y;
-        private double z;
+        private float x;
+        private float y;
+        private float z;
 
-        public double X { get { return x; } set { if (x != value) { x = value; Notify("X"); } } }
-        public double Y { get { return y; } set { if (y != value) { y = value; Notify("Y"); } } }
-        public double Z { get { return z; } set { if (z != value) { z = value; Notify("Z"); } } }
+        public float X { get { return x; } set { if (x != value) { x = value; Notify("X"); } } }
+        public float Y { get { return y; } set { if (y != value) { y = value; Notify("Y"); } } }
+        public float Z { get { return z; } set { if (z != value) { z = value; Notify("Z"); } } }
 
-        public Point() : this(0.0, 0.0, 0.0) { }
+        public Point(SPoint p) => (X, Y, Z) = (p.X, p.Y, p.Z);  // Temporary
 
-        public Point(double x, double y, double z) => (X, Y, Z) = (x, y, z);
+        public Point() : this(0.0f, 0.0f, 0.0f) { }
+
+        public Point(float x, float y, float z) => (X, Y, Z) = (x, y, z);
 
         public Point(XMLPoint xmlPoint) => (X, Y, Z) = (xmlPoint.X, xmlPoint.Y, xmlPoint.Z);
 
-        public Point Scale(double scale) => new Point(X * scale, Y * scale, Z * scale);
+        public Point Scale(float scale) => new Point(X * scale, Y * scale, Z * scale);
 
-        public static Point operator*(Point p, double scale) => new Point(p.X * scale, p.Y * scale, p.Z * scale);
+        public static Point operator*(Point p, float scale) => new Point(p.X * scale, p.Y * scale, p.Z * scale);
 
-        public static Vector operator -(Point p1, Point p2) => new Vector(p1.X - p2.X, p1.Y - p2.Y, p1.Z - p2.Z);
+        public static Vector operator-(Point p1, Point p2) => new Vector(p1.X - p2.X, p1.Y - p2.Y, p1.Z - p2.Z);
 
         public Vector Difference(Point p) => new Vector(p.X - X, p.Y - Y, p.Z - Z);
 

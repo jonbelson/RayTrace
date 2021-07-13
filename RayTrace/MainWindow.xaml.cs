@@ -174,7 +174,7 @@ namespace RayTrace
             //scene = SceneFactory.SoftLightDemoScene();
             //scene = SceneFactory.FovDemoScene();
             //scene = SceneFactory.ModelScene();
-            //scene = SceneFactory.ObjScene();
+ //           scene = SceneFactory.ObjScene();
             //scene = SceneFactory.GIDemoScene();
             //scene = SceneFactory.GIDemoScene2();
 
@@ -717,8 +717,8 @@ namespace RayTrace
             {
                 System.Windows.Point p = e.GetPosition(viewport3D);
 
-                double xDiff = p.X - clickPoint.X;
-                double yDiff = p.Y - clickPoint.Y;
+                float xDiff = (float)(p.X - clickPoint.X);
+                float yDiff = (float)(p.Y - clickPoint.Y);
 
                 if (!ctrlPressed && !shiftPressed)
                 {
@@ -758,9 +758,9 @@ namespace RayTrace
 
                     Vector left = view.VectorProduct(new Vector(0, 1, 0));
 
-                    left.J = 0.0;
+                    left.J = 0.0f;
 
-                    view.J = 0.0;
+                    view.J = 0.0f;
 
                     Vector offset = left * xDiff + view * yDiff;
 

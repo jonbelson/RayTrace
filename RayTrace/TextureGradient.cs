@@ -70,7 +70,7 @@ namespace RayTrace
                     throw new NotImplementedException();
 
                 case GradientType.Radial:
-                    Vector v = new Point(0.5, 0.5, 0) - new Point(hr.u, hr.v, 0);
+                    Vector v = new Point(0.5f, 0.5f, 0) - new Point(hr.u, hr.v, 0);
                     double distance = v.Magnitude();
                     return handler?.Invoke(Colour1, Colour2, (float) distance);
 

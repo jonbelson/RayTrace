@@ -13,7 +13,7 @@ namespace RayTrace
         public override HitResult HitTest(Camera camera, Ray ray)
         {
 
-            return null;
+            return new HitResult(this);
         }
 
     }

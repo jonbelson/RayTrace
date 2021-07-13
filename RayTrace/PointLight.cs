@@ -30,9 +30,17 @@ namespace RayTrace
             Pos.PropertyChanged += Pos_PropertyChanged;
         }
 
-        public override Vector GetDirection(Camera camera, Point p)
+        /*private*/ public SPoint _pos; // XXX
+
+        // Allow Shape to pre-transform data using the Camera's WorldToView Matrix.
+        public override void CreateCache(Camera camera)
         {
-            Point viewPos = camera.WorldToView*Pos;
+            _pos = new SPoint(Pos);
+        }
+
+        public override SVector GetDirection(Camera camera, SPoint p)
+        {
+            SPoint viewPos = camera.WorldToView*_pos;
             return viewPos.Difference(p);
 
 /*
@@ -43,12 +51,12 @@ namespace RayTrace
 */
         }
 
-        public override float GetAttenuation(Camera camera, Point p)
+        public override float GetAttenuation(Camera camera, SPoint p)
         {
-            Point viewPos = camera.WorldToView * Pos;
+            SPoint viewPos = camera.WorldToView * _pos;
 
             //Vector vecToLight = p.Difference(Pos).Negate();
-            Vector vecToLight = viewPos.Difference(p);
+            SVector vecToLight = viewPos.Difference(p);
 
             // Assume light attenuatiaon is 1 over distance squared.
             double lightAttenuation = 1.0 / vecToLight.MagnitudeSquared();
@@ -56,9 +64,9 @@ namespace RayTrace
             return (float) lightAttenuation;
         }
 
-        public override Colour GetIntensityAtPoint(Camera camera, Point p)
+        public override Colour GetIntensityAtPoint(Camera camera, SPoint p)
         {
-            Vector vecToLight = GetDirection(camera, p);
+            SVector vecToLight = GetDirection(camera, p);
             double dDistanceSqr = vecToLight.MagnitudeSquared();
             return Output / (4.0 * Math.PI * dDistanceSqr);
         }

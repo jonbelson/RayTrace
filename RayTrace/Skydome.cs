@@ -10,6 +10,6 @@ namespace RayTrace
     {
         public Skydome() { }
 
-        public abstract Colour GetColour(Camera camera, Vector ray);
+        public abstract Colour GetColour(Camera camera, SVector ray);
     }
 }

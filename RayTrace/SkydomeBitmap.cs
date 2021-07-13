@@ -108,14 +108,14 @@ namespace RayTrace
             return false;
         }
 
-        private (float u, float v) CalculateUV(Camera camera, Vector ray)
+        private (float u, float v) CalculateUV(Camera camera, SVector ray)
         {
             // Sn   Normal vector at point of interest.
             // Sp   Vector of north pole.
             // Se   Vector to reference point on equator.
 
-            Vector Sn = ray;// hr.EntryNormal;
-            Vector Sp = new Vector(0.0, 1.0, 0.0);
+            SVector Sn = ray;// hr.EntryNormal;
+            SVector Sp = new SVector(0.0f, 1.0f, 0.0f);
             Sp = camera.NormalMatrix * Sp;
             double dp = Sn.DotProduct(Sp);
             double phi = Math.Acos(-dp);
@@ -124,7 +124,7 @@ namespace RayTrace
 
             double v = phi / Math.PI;
 
-            Vector Se = new Vector(0.0, 0.0, 1.0);
+            SVector Se = new SVector(0, 0, 1);
             Se = camera.NormalMatrix * Se;
             dp = Se.DotProduct(Sn);
 
@@ -139,7 +139,7 @@ namespace RayTrace
 
             double u = theta;
 
-            Vector Spe = Sp.VectorProduct(Se);
+            SVector Spe = Sp.VectorProduct(Se);
             if (Spe.DotProduct(Sn) <= 0.0)
             {
                 u = 1.0 - theta;
@@ -163,7 +163,7 @@ namespace RayTrace
             LoadTexture(fileName);
         }
 
-        public override Colour GetColour(Camera camera, Vector ray)
+        public override Colour GetColour(Camera camera, SVector ray)
         {
             if (texture != null)
             {

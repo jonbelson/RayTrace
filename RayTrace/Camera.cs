@@ -12,8 +12,8 @@ namespace RayTrace
         private Point _pos;// = new Point(0, 0, 0);
         private Point _target;// = new Point(0, 0, 1.0f);
 
-        private double _fovHRadians;
-        private double _fovHDegrees;
+        private float _fovHRadians;
+        private float _fovHDegrees;
 
         public Point Pos {
             get { return _pos; }
@@ -34,16 +34,16 @@ namespace RayTrace
             }
         }
 
-        public double DepthOfField { get; set; } = 10.0;
-        public double Aperture { get; set; } = 30.0;
+        public float DepthOfField { get; set; } = 10.0f;
+        public float Aperture { get; set; } = 30.0f;
 
-        public double FovH
+        public float FovH
         {
             get => _fovHDegrees;
             set
             {
                 _fovHDegrees = value;
-                _fovHRadians = (value / 180.0) * Math.PI;
+                _fovHRadians = (value / 180.0f) * (float)Math.PI;
                 Notify("FovH");
             }
         }
@@ -59,9 +59,9 @@ namespace RayTrace
             WorldToView.SetLookAt(_pos, _target);
 
             NormalMatrix = new Matrix(WorldToView);
-            NormalMatrix.M14 = 0.0;
-            NormalMatrix.M24 = 0.0;
-            NormalMatrix.M34 = 0.0;
+            NormalMatrix.M14 = 0.0f;
+            NormalMatrix.M24 = 0.0f;
+            NormalMatrix.M34 = 0.0f;
         }
 
         // Constructor.
@@ -72,7 +72,7 @@ namespace RayTrace
             _pos = from;
             _target = to;
 
-            FovH = 60.0;
+            FovH = 60.0f;
 
             UpdateMatrix();
 
@@ -104,14 +104,14 @@ namespace RayTrace
             Target.PropertyChanged += Target_PropertyChanged;
         }
 
-        public double GetSceneWidth()
+        public float GetSceneWidth()
         {
-            return 2.0 * Math.Tan(_fovHRadians / 2.0);
+            return 2.0f * (float)Math.Tan(_fovHRadians / 2.0f);
         }
 
-        public double GetSceneHeight()
+        public float GetSceneHeight()
         {
-            return 2.0 * Math.Tan(_fovHRadians / 2.0);
+            return 2.0f * (float)Math.Tan(_fovHRadians / 2.0f);
         }
 
         // Return normalised Vector from camera position to viewed point.

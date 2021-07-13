@@ -24,25 +24,25 @@ namespace RayTrace
             return triangle;
         }
 
-        static public Model CornellBox(double width=20.0, double height=20.0, double depth=20.0)
+        static public Model CornellBox(float width =20, float height =20, float depth =20)
         {
             ModelData modelData = new ModelData();
 
-            List<Point> points = new List<Point>();
-            List<Vector> normals = new List<Vector>();
+            List<SPoint> points = new List<SPoint>();
+            List<SVector> normals = new List<SVector>();
             List<ModelData.Triangle> triangles = new List<ModelData.Triangle>();
 
 
-            points.Add(new Point(0, 0, 0)); // Dummy point.
+            points.Add(new SPoint(0, 0, 0)); // Dummy point.
 
-            points.Add(new Point(width/2, height, depth));
-            points.Add(new Point(width / 2, height, 0));
-            points.Add(new Point(width / 2, 0, depth));
-            points.Add(new Point(width / 2, 0, 0));
-            points.Add(new Point(-width / 2, height, depth));
-            points.Add(new Point(-width / 2, height, 0));
-            points.Add(new Point(-width / 2, 0, depth));
-            points.Add(new Point(-width / 2, 0, 0));
+            points.Add(new SPoint(width/2, height, depth));
+            points.Add(new SPoint(width / 2, height, 0));
+            points.Add(new SPoint(width / 2, 0, depth));
+            points.Add(new SPoint(width / 2, 0, 0));
+            points.Add(new SPoint(-width / 2, height, depth));
+            points.Add(new SPoint(-width / 2, height, 0));
+            points.Add(new SPoint(-width / 2, 0, depth));
+            points.Add(new SPoint(-width / 2, 0, 0));
 
             // Right
             triangles.Add(MakeTriangle(2, 1, 3));
@@ -70,9 +70,9 @@ namespace RayTrace
 
             foreach (ModelData.Triangle triangle in triangles)
             {
-                Vector v1 = points[triangle.v1] - points[triangle.v0];
-                Vector v2 = points[triangle.v2] - points[triangle.v0];
-                Vector normal = v1.VectorProduct(v2);
+                SVector v1 = points[triangle.v1] - points[triangle.v0];
+                SVector v2 = points[triangle.v2] - points[triangle.v0];
+                SVector normal = v1.VectorProduct(v2);
 //                Vector normal = v2.VectorProduct(v1);
                 normals.Add(normal.Normalise());
                 triangle.n = normals.Count - 1;
@@ -100,20 +100,20 @@ namespace RayTrace
         {
             ModelData modelData = new ModelData();
 
-            List<Point> points = new List<Point>();
-            List<Vector> normals = new List<Vector>();
+            List<SPoint> points = new List<SPoint>();
+            List<SVector> normals = new List<SVector>();
             List<ModelData.Triangle> triangles = new List<ModelData.Triangle>();
 
-            points.Add(new Point(0, 0, 0)); // Dummy point.
+            points.Add(new SPoint(0, 0, 0)); // Dummy point.
 
-            points.Add(new Point(1, 1, 1));
-            points.Add(new Point(1, 1, -1));
-            points.Add(new Point(1, -1, 1));
-            points.Add(new Point(1, -1, -1));
-            points.Add(new Point(-1, 1, 1));
-            points.Add(new Point(-1, 1, -1));
-            points.Add(new Point(-1, -1, 1));
-            points.Add(new Point(-1, -1, -1));
+            points.Add(new SPoint(1, 1, 1));
+            points.Add(new SPoint(1, 1, -1));
+            points.Add(new SPoint(1, -1, 1));
+            points.Add(new SPoint(1, -1, -1));
+            points.Add(new SPoint(-1, 1, 1));
+            points.Add(new SPoint(-1, 1, -1));
+            points.Add(new SPoint(-1, -1, 1));
+            points.Add(new SPoint(-1, -1, -1));
 
             triangles.Add(MakeTriangle(2, 1, 3));
             triangles.Add(MakeTriangle(2, 3, 4));
@@ -135,9 +135,9 @@ namespace RayTrace
 
             foreach (ModelData.Triangle triangle in triangles)
             {
-                Vector v1 = points[triangle.v1] - points[triangle.v0];
-                Vector v2 = points[triangle.v2] - points[triangle.v0];
-                Vector normal = v1.VectorProduct(v2);
+                SVector v1 = points[triangle.v1] - points[triangle.v0];
+                SVector v2 = points[triangle.v2] - points[triangle.v0];
+                SVector normal = v1.VectorProduct(v2);
                 normals.Add(normal.Normalise());
                 triangle.n = normals.Count - 1;
             }
@@ -154,18 +154,18 @@ namespace RayTrace
         {
             ModelData modelData = new ModelData();
 
-            List<Point> points = new List<Point>();
-            List<Vector> normals = new List<Vector>();
+            List<SPoint> points = new List<SPoint>();
+            List<SVector> normals = new List<SVector>();
             List<ModelData.Triangle> triangles = new List<ModelData.Triangle>();
 
-            points.Add(new Point(0, 0, 0)); // Dummy point.
+            points.Add(new SPoint(0, 0, 0)); // Dummy point.
 
-            points.Add(new Point(1, 0, 0));
-            points.Add(new Point(-1, 0, 0));
-            points.Add(new Point(0, 1, 0));
-            points.Add(new Point(0, -1, 0));
-            points.Add(new Point(0, 0, 1));
-            points.Add(new Point(0, 0, -1));
+            points.Add(new SPoint(1, 0, 0));
+            points.Add(new SPoint(-1, 0, 0));
+            points.Add(new SPoint(0, 1, 0));
+            points.Add(new SPoint(0, -1, 0));
+            points.Add(new SPoint(0, 0, 1));
+            points.Add(new SPoint(0, 0, -1));
 
             triangles.Add(MakeTriangle(1, 3, 5));
             triangles.Add(MakeTriangle(3, 1, 6));
@@ -178,9 +178,9 @@ namespace RayTrace
 
             foreach (ModelData.Triangle triangle in triangles)
             {
-                Vector v1 = points[triangle.v1] - points[triangle.v0];
-                Vector v2 = points[triangle.v2] - points[triangle.v0];
-                Vector normal = v1.VectorProduct(v2);
+                SVector v1 = points[triangle.v1] - points[triangle.v0];
+                SVector v2 = points[triangle.v2] - points[triangle.v0];
+                SVector normal = v1.VectorProduct(v2);
                 normals.Add(normal.Normalise());
                 triangle.n = normals.Count - 1;
             }
@@ -197,16 +197,16 @@ namespace RayTrace
         {
             ModelData modelData = new ModelData();
 
-            List<Point> points = new List<Point>();
-            List<Vector> normals = new List<Vector>();
+            List<SPoint> points = new List<SPoint>();
+            List<SVector> normals = new List<SVector>();
             List<ModelData.Triangle> triangles = new List<ModelData.Triangle>();
 
-            points.Add(new Point(0, 0, 0)); // Dummy point.
+            points.Add(new SPoint(0, 0, 0)); // Dummy point.
 
-            points.Add(new Point(1, 1, 1));
-            points.Add(new Point(1, -1, -1));
-            points.Add(new Point(-1, 1, -1));
-            points.Add(new Point(-1, -1, 1));
+            points.Add(new SPoint(1, 1, 1));
+            points.Add(new SPoint(1, -1, -1));
+            points.Add(new SPoint(-1, 1, -1));
+            points.Add(new SPoint(-1, -1, 1));
 
             //triangles.Add(MakeTriangle(4, 3, 2));
             //triangles.Add(MakeTriangle(3, 4, 1));
@@ -220,9 +220,9 @@ namespace RayTrace
 
             foreach (ModelData.Triangle triangle in triangles)
             {
-                Vector v1 = points[triangle.v1] - points[triangle.v0];
-                Vector v2 = points[triangle.v2] - points[triangle.v0];
-                Vector normal = v1.VectorProduct(v2);
+                SVector v1 = points[triangle.v1] - points[triangle.v0];
+                SVector v2 = points[triangle.v2] - points[triangle.v0];
+                SVector normal = v1.VectorProduct(v2);
                 normals.Add(normal.Normalise());
                 triangle.n = normals.Count - 1;
             }

@@ -5,17 +5,17 @@ using System.Dynamic;
 namespace RayTrace
 {
     // Result of an intersection test.
-    public class HitResult
+    public struct HitResult
     {
         public Shape shape;
 
-        private Point _entry;
-        private bool _hasEntry = false;
+        private SPoint _entry;
+        private bool _hasEntry;// = false;
 
         public bool HasEntry () => _hasEntry;
 
-        public Point Entry { get { return _entry; } set { _entry = value; _hasEntry = true; } }
-        public Vector EntryNormal;  // Normal vector at intersetion point.
+        public SPoint Entry { get { return _entry; } set { _entry = value; _hasEntry = true; } }
+        public SVector EntryNormal;  // Normal vector at intersetion point.
 
         // Ray that resulted in this HitResult.
         public Vector Ray { get; set; }
@@ -27,10 +27,25 @@ namespace RayTrace
         // Optional value used by certain Shapes (e.g. triangle that was hit in a Model).
         public int Index { get; set; }
 
+        public void Reset()
+        {
+            u = v = 0.0f;
+            _entry = new SPoint();
+            _hasEntry = false;
+            Ray = null;
+            EntryNormal = new SVector();
+            Index = 0;
+        }
+
         public HitResult(Shape shape)
         {
             this.shape = shape;
             u = v = 0.0f;
+            _entry = new SPoint();
+            _hasEntry = false;
+            Ray = null;
+            EntryNormal = new SVector();
+            Index = 0;
         }
     }
 
@@ -55,9 +70,9 @@ namespace RayTrace
                 _objectToWorldNormal = new Matrix(_objectToWorld)
                 {
                     // Remove translation component.
-                    M14 = 0.0,
-                    M24 = 0.0,
-                    M34 = 0.0,
+                    M14 = 0.0f,
+                    M24 = 0.0f,
+                    M34 = 0.0f,
                 };
             }
         }
@@ -92,9 +107,6 @@ namespace RayTrace
             Material = new Material(xmlShape.Material);
         }
 
-        // Allow Shape to pre-transform data using the Camera's WorldToView Matrix.
-        public virtual void CreateCache(Camera camera) { }
-
         // Get colour at hit point.
         // Default implementation just returns the Material's colour at that point.
         public virtual Colour GetColour(HitResult hr)
@@ -111,7 +123,7 @@ namespace RayTrace
             return hr.HasEntry();
         }
 
-        public virtual (Point, Vector) GetRefractedVector(Camera camera, Vector ray, HitResult hr) { return (hr.Entry, ray); }
+        public virtual (SPoint, SVector) GetRefractedVector(Camera camera, SVector ray, HitResult hr) { return (hr.Entry, ray); }
 
         protected override void AsXMLImpl(XMLEntity xml)
         {

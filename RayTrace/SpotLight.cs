@@ -25,26 +25,35 @@ namespace RayTrace
             Width = widthDeg;
         }
 
-        public override Vector GetDirection(Camera camera, Point p)
+        private SVector _direction = new SVector();
+
+        // Allow Shape to pre-transform data using the Camera's WorldToView Matrix.
+        public override void CreateCache(Camera camera)
         {
-            Point viewPos = camera.WorldToView * Pos;
+            base.CreateCache(camera);
+            _direction = new SVector(Direction);
+        }
+
+        public override SVector GetDirection(Camera camera, SPoint p)
+        {
+            SPoint viewPos = camera.WorldToView * _pos;
 
             //Vector vecToLight = Pos.Difference(p);
-            Vector vecToLight = viewPos.Difference(p);
+            SVector vecToLight = viewPos.Difference(p);
 
             return vecToLight;
         }
 
-        public override float GetAttenuation(Camera camera, Point p)
+        public override float GetAttenuation(Camera camera, SPoint p)
         {
-            Point viewPos = camera.WorldToView * Pos;
-            Vector viewDirection = camera.NormalMatrix*Direction;
+            SPoint viewPos = camera.WorldToView * _pos;
+            SVector viewDirection = camera.NormalMatrix*_direction;
 
             //Vector vecFromLight = p.Difference(Pos).Negate();
             //Vector vecFromLight = p.Difference(viewPos).Negate();
-            Vector vecFromLight = viewPos.Difference(p);
+            SVector vecFromLight = viewPos.Difference(p);
 
-            Vector vecNorm = vecFromLight;
+            SVector vecNorm = vecFromLight;
             vecNorm = vecNorm.Normalise();
 
             double dp = vecNorm.DotProduct(viewDirection);

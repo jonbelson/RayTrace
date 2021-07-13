@@ -52,7 +52,7 @@ namespace RayTrace
                 }
             }
             //Light light = new PointLight(new Point(-50, 0, 0), /*0.5f*/ 50000.0f, new Colour(1.0f, 1.0f, 1.0f));
-            Light light = new DistantLight(new Vector(1.0, 0.0, 1.0), 2, Palette.White);
+            Light light = new DistantLight(new Vector(1, 0, 1), 2, Palette.White);
             scene.AddLight(light);
 
             return scene;
@@ -110,15 +110,15 @@ namespace RayTrace
             sphere.Material = matSolid;
             scene.AddShape(sphere);
 
-            Plane plane = new Plane(new Vector(0.0, 1.0, 0.0), new Point(0.0, -10.0, 0.0));
+            Plane plane = new Plane(new Vector(0, 1, 0), new Point(0, -10, 0));
 //            Plane plane = new Plane(new Vector(0.707, 0.707, 0.0), new Point(0.0, -10.0, 0.0));
             plane.Material = matPlane;
             //scene.AddShape(plane);
 
 
-            Disc disc = new Disc(new Point(0.0, -10.0, 0.0), new Vector(0.0, 1.0, 0.0), 200);
+            Disc disc = new Disc(new Point(0, -10, 0), new Vector(0, 1, 0), 200);
             disc.Material = matPlane;
-            scene.AddShape(disc);
+            ///scene.AddShape(disc);
 
 
             //Light light = new PointLight(new Point(-50, 0, 0), /*0.5f*/ 5000.0f, new Colour(1.0f, 0.0f, 0.0f));
@@ -141,7 +141,7 @@ namespace RayTrace
             scene.Camera.Pos = new Point(0, 5, -50);
             scene.Camera.Target = new Point(0, 0, 50);
 
-            scene.Skydome = new SkydomeGradient(Palette.Red, Palette.Green, Palette.Blue);
+//           scene.Skydome = new SkydomeGradient(Palette.Red, Palette.Green, Palette.Blue);
 
             scene.Skydome = new SkydomeBitmap("C:\\Users\\Jon\\Documents\\Projects\\RayTrace\\RayTrace\\Data\\skydomes\\immenstadter_horn_2048.jpg");
 
@@ -179,7 +179,7 @@ namespace RayTrace
             //scene.AddShape(box);
 
 
-            Plane plane = new Plane(new Vector(0.0, 0.0, -1.0), new Point(0.0, 0.0, 150.0));
+            Plane plane = new Plane(new Vector(0, 0, -1), new Point(0, 0, 150));
             //Plane plane = new Plane(new Vector(0.0, 1.0, 0.0), new Point(0.0, -30.0, 0.0), Palette.Grey);
             plane.Material.Reflectivity = 0.0f;
             //plane.Material.Texture = new TextureSolid(Palette.Blue);
@@ -205,7 +205,7 @@ namespace RayTrace
             box.Material.Texture = new TextureSquares() { Scale = 40 };
             scene.AddShape(box);
 
-            Plane plane = new Plane(new Vector(0.0, 1.0, 0.0), new Point(0.0, -30.0, 0.0), Palette.Grey);
+            Plane plane = new Plane(new Vector(0, 1, 0), new Point(0, -30, 0), Palette.Grey);
             plane.Material.Reflectivity = 1.0f;
             //plane.Material.Texture = new TextureSolid(Palette.Blue);
             //plane.Material.Texture = new TextureSquares() { Scale = 20 };
@@ -223,9 +223,9 @@ namespace RayTrace
         {
             Scene scene = new Scene();
 
-            double floorHeight = -60;
-            double radius = 8;
-            double bigRadius = 40;
+            float floorHeight = -60;
+            float radius = 8;
+            float bigRadius = 40;
             //double sceneWidth = 200;
 
             Plane floor = new Plane(new Vector(0, 1, 0), new Point(0, floorHeight, 0), new Colour(Colors.LightGray));
@@ -237,17 +237,17 @@ namespace RayTrace
 
             Colour[] cols = new Colour[] { new Colour(Colors.LightPink), new Colour(Colors.LightGreen), new Colour(Colors.LightYellow) };
 
-            double spacing = 30;
+            float spacing = 30;
 
             for (int i = 0; i < 20; i++)
             {
                 for (int j = -10; j < 10; j++)
                 {
-                    double x = j * spacing;
-                    double z = 130 + 5 * spacing * i;
+                    float x = j * spacing;
+                    float z = 130 + 5 * spacing * i;
 
-                    x += random.NextDouble() * (spacing / 2 - radius);
-                    z += random.NextDouble() * (spacing / 2 - radius);
+                    x += (float)random.NextDouble() * (spacing / 2 - radius);
+                    z += (float)random.NextDouble() * (spacing / 2 - radius);
 
                     Sphere sphere = new Sphere(new Point(x, floorHeight + radius, z), (int)radius, Palette.Red);
 
@@ -377,7 +377,7 @@ namespace RayTrace
             Matrix objectToWorld = new Matrix();
 
             ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\pbr-low-poly-fox-character");
-            scene.Camera.Pos = new Point(-3.5, 4, -5);
+            scene.Camera.Pos = new Point(-3.5f, 4, -5);
             scene.Camera.Target = new Point(0, 3, 1);
 
             /*
@@ -393,7 +393,7 @@ namespace RayTrace
             //ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\day-18-office-rat");
 
 
-            Model model = new Model(new Point(0.0, 0.0, 10.0), modelData);
+            Model model = new Model(new Point(0, 0, 10), modelData);
             model.ObjectToWorld = objectToWorld;
             model.Material.Type = MaterialType.Diffuse;
             model.Material.Texture = new TextureSolid(Palette.White);
@@ -402,11 +402,11 @@ namespace RayTrace
             //model = ModelFactory.Tetahedron();
             scene.AddShape(model);
 
-            Sphere sphere = new(new Point(-2.0, 0, 0), 1);
+            Sphere sphere = new(new Point(-2, 0, 0), 1);
             sphere.Material.Type = MaterialType.Diffuse;
             scene.AddShape(sphere);
 
-            double floorHeight = model.MinY;
+            float floorHeight = model.MinY;
             Plane floor = new Plane(new Vector(0, 1, 0), new Point(0, floorHeight, 0), new Colour(Colors.LightGray));
             //floor.Material.Texture = new TextureSquares(Palette.Black, Palette.White);
             //floor.Material.Reflectivity = 0.1f;
@@ -458,17 +458,17 @@ namespace RayTrace
             //Plane plane = new Plane(new Vector(0.0, 1.0, 0.0), new Point(0.0, -5.0, 0.0), Palette.Grey);
             //plane.Material.Reflectivity = 0.0f;
 
-            RayTrace.Disc disc = new Disc(new Point(0.0, -5.0, 23.0), new Vector(0.0, 1.0, 0.0), 25);
+            RayTrace.Disc disc = new Disc(new Point(0, -5, 23), new Vector(0, 1, 0), 25);
             disc.Material.Texture = new TextureSolid(Palette.Grey);
 
             //plane.Material.Texture = new TextureSolid(Palette.Blue);
             //plane.Material.Texture = new TextureSquares() { Scale = 20 };
             scene.AddShape(disc);
 
-            Plane left = new Plane(new Vector(1.0, 0.0, 0.0), new Point(-18, 0.0, 0.0), new Colour(0.5f, 0.5f, 0.5f));
+            Plane left = new Plane(new Vector(1, 0, 0), new Point(-18, 0, 0), new Colour(0.5f, 0.5f, 0.5f));
            // scene.AddShape(left);
 
-            Plane back = new Plane(new Vector(0.0, 0.0, -1.0), new Point(0.0, 0.0, 50.0), new Colour(0.5f, 0.5f, 0.5f));
+            Plane back = new Plane(new Vector(0, 0, -1), new Point(0, 0, 50), new Colour(0.5f, 0.5f, 0.5f));
             //scene.AddShape(back);
 
             Light light = new PointLight(new Point(-50, 0, 0), 3000.0f, new Colour(1.0f, 0.0f, 0.0f));
@@ -494,7 +494,7 @@ namespace RayTrace
 
             Model cornellBox = ModelFactory.CornellBox(14, 12, 16);
             cornellBox.Material.Texture = new TextureSolid(Palette.Grey);
-            cornellBox.ObjectToWorld = Matrix.GetTranslation(0.0, 0.0, 2.0);
+            cornellBox.ObjectToWorld = Matrix.GetTranslation(0, 0, 2);
 
             scene.AddShape(cornellBox);
 

@@ -30,9 +30,9 @@ namespace RayTrace
 
             Shape space = hr.shape;
 
-            Point start = hr.Entry;
-            Vector step = hr.Ray.Normalise();
-            step = step.Scale(0.1);
+            SPoint start = hr.Entry;
+            SVector step = new(hr.Ray.Normalise());
+            step = step.Scale(0.1f);
 
             do
             {

@@ -19,14 +19,14 @@ namespace RayTrace
     public class XMLVector
     {
         [XmlAttribute]
-        public double I, J, K;
+        public float I, J, K;
     }
 
     [Serializable]
     public class XMLPoint
     {
         [XmlAttribute]
-        public double X, Y, Z;
+        public float X, Y, Z;
     }
 
     [Serializable]
@@ -186,9 +186,9 @@ namespace RayTrace
     {
         public XMLPoint Pos;
         public XMLPoint Target;
-        public double DepthOfField;
-        public double Aperture;
-        public double FovH;
+        public float DepthOfField;
+        public float Aperture;
+        public float FovH;
     }
 
     [Serializable]

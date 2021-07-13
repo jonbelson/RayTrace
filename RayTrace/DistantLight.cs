@@ -20,17 +20,25 @@ namespace RayTrace
             Direction = new Vector(xmlDistantLight.Direction);
         }
 
-        public override Vector GetDirection(Camera camera, Point p)
+        private SVector _direction = new SVector();
+
+        // Allow Shape to pre-transform data using the Camera's WorldToView Matrix.
+        public override void CreateCache(Camera camera)
         {
-            return Direction * 10000;
+            _direction = new SVector(Direction);
         }
 
-        public override float GetAttenuation(Camera camera, Point p)
+        public override SVector GetDirection(Camera camera, SPoint p)
+        {
+            return _direction * 10000;
+        }
+
+        public override float GetAttenuation(Camera camera, SPoint p)
         {
             return 1.0f;
         }
 
-        public override Colour GetIntensityAtPoint(Camera camera, Point p)
+        public override Colour GetIntensityAtPoint(Camera camera, SPoint p)
         {
             return Output / Math.PI;
         }

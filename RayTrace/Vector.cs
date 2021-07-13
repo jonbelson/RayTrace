@@ -3,11 +3,67 @@ using System.ComponentModel;
 
 namespace RayTrace
 {
+    public readonly struct SVector
+    {
+        public float I { get; }
+        public float J { get; }
+        public float K { get; }
+
+        //public SVector() => (I, J, K) = (0, 0, 0);
+
+        public SVector(Vector v) => (I, J, K) = (v.I, v.J, v.K);
+
+        public SVector(float i, float j, float k) => (I, J, K) = (i, j, k);
+
+        public float DotProduct(SVector v) => I * v.I + J * v.J + K * v.K;
+        public SVector VectorProduct(SVector v) => new(J * v.K - K * v.J, K * v.I - I * v.K, I * v.J - J * v.I);
+        public SVector Add(SVector v) => new(I + v.I, J + v.J, K + v.K);
+        public SVector Subtract(SVector v) => new(I - v.I, J - v.J, K - v.K);
+        public SVector Scale(float scale) => new(I * scale, J * scale, K * scale);
+        public SVector Negate() => new(-I, -J, -K);
+
+        // Return angle between Vectors in radians.
+        public float Angle(SVector v)
+        {
+            float dp = DotProduct(v);
+            if (dp > 1.0) return 0.0f;
+            if (dp < -1.0) return (float) Math.PI;
+
+            return (float) Math.Cos(dp);
+        }
+
+        public float Magnitude() => (float) Math.Sqrt(I * I + J * J + K * K);
+        public float MagnitudeSquared() => I * I + J * J + K * K;
+
+        public bool IsNull() => I == 0.0 && J == 0.0 && K == 0.0;
+
+        public SVector Normalise()
+        {
+            float magnitude = Magnitude();
+            if (magnitude == 0.0f)
+            {
+                magnitude = 1.0f;
+            }
+
+            return new SVector(I/magnitude, J/magnitude, K/magnitude);
+        }
+
+        public SPoint AsPoint() => new(I, J, K);
+
+        // Return a null vector, i.e. one with all components set to 0.
+        public static SVector Null() => new(0.0f, 0.0f, 0.0f);
+
+        public static SVector operator+(SVector v1, SVector v2) => new(v1.I + v2.I, v1.J + v2.J, v1.K + v2.K);
+        public static SVector operator-(SVector v1, SVector v2) => new(v1.I - v2.I, v1.J - v2.J, v1.K - v2.K);
+        public static SVector operator-(SVector v) => new(-v.I, -v.J, -v.K);
+        public static SVector operator*(SVector v, float scale) => new(v.I * scale, v.J * scale, v.K * scale);
+    }
+
     public class Vector : INotifyPropertyChanged
     {
-        private double i;
-        private double j;
-        private double k;
+        private float i;
+        private float j;
+        private float k;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -16,13 +72,15 @@ namespace RayTrace
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
         }
 
-        public double I { get { return i; } set { if (i != value) { i = value; Notify("I"); } } }
-        public double J { get { return j; } set { if (j != value) { j = value; Notify("J"); } } }
-        public double K { get { return k; } set { if (k != value) { k = value; Notify("K"); } } }
+        public float I { get { return i; } set { if (i != value) { i = value; Notify("I"); } } }
+        public float J { get { return j; } set { if (j != value) { j = value; Notify("J"); } } }
+        public float K { get { return k; } set { if (k != value) { k = value; Notify("K"); } } }
 
-        public Vector() : this(0.0, 0.0, 0.0) { }
+        public Vector(SVector v) => (I, J, K) = (v.I, v.J, v.K);  // Temporary
 
-        public Vector(double i, double j, double k, bool normalise = false)
+        public Vector() : this(0.0f, 0.0f, 0.0f) { }
+
+        public Vector(float i, float j, float k, bool normalise = false)
         {
             I = i;
             J = j;
@@ -30,7 +88,7 @@ namespace RayTrace
 
             if (normalise)
             {
-                double magnitude = Magnitude();
+                float magnitude = Magnitude();
                 if (magnitude != 0.0)
                 {
                     I /= magnitude;
@@ -48,9 +106,9 @@ namespace RayTrace
 
         public static Vector operator -(Vector v) => new Vector(-v.I, -v.J, -v.K);
 
-        public static Vector operator*(Vector v, double scale) => new Vector(v.I * scale, v.J * scale, v.K * scale);
+        public static Vector operator*(Vector v, float scale) => new Vector(v.I * scale, v.J * scale, v.K * scale);
 
-        public double DotProduct(Vector v) => I* v.I + J* v.J + K* v.K;
+        public float DotProduct(Vector v) => I* v.I + J* v.J + K* v.K;
 
         public Vector VectorProduct(Vector v) => new Vector(J * v.K - K * v.J, K * v.I - I * v.K, I * v.J - J * v.I);
 
@@ -58,27 +116,27 @@ namespace RayTrace
 
         public Vector Subtract(Vector v) => new Vector(I - v.I, J - v.J, K - v.K);
 
-        public Vector Scale(double scale) => new Vector(I * scale, J * scale, K * scale);
+        public Vector Scale(float scale) => new Vector(I * scale, J * scale, K * scale);
 
         public Vector Negate() => new Vector(-I, -J, -K);
 
         // Return angle between Vectors in radians.
-        public double Angle(Vector v)
+        public float Angle(Vector v)
         {
-            double dp = DotProduct(v);
-            if (dp > 1.0) return 0.0;
-            if (dp < -1.0) return Math.PI;
+            float dp = DotProduct(v);
+            if (dp > 1.0) return 0.0f;
+            if (dp < -1.0) return (float) Math.PI;
 
-            return Math.Cos(dp);
+            return (float) Math.Cos(dp);
         }
 
-        public double Magnitude() => Math.Sqrt(I * I + J * J + K * K);
-        public double MagnitudeSquared() => I * I + J * J + K * K;
+        public float Magnitude() => (float) Math.Sqrt(I * I + J * J + K * K);
+        public float MagnitudeSquared() => I * I + J * J + K * K;
 
         public Vector Normalise() => new Vector(I, J, K, true);
 
         // Return a null vector, i.e. one with all components set to 0.
-        public static Vector Null() => new Vector(0.0, 0.0, 0.0);
+        public static Vector Null() => new Vector(0.0f, 0.0f, 0.0f);
 
         public bool IsNull() => I == 0.0 && J == 0.0 && K == 0.0;
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -35,7 +36,7 @@ namespace RayTrace
          * 
          * Return   Vector of refracted ray.
          */
-        public static Vector GetAngle(Vector I, Vector N, float n1, float n2)
+        public static SVector GetAngle(SVector I, SVector N, float n1, float n2)
         {
             /*
             double eta = n1 / n2;
@@ -52,16 +53,25 @@ namespace RayTrace
             */
 
             float nit = n1 / n2;
-            double Ci = N.DotProduct(I.Negate());   // cos(θi)
-            double v = (1.0 - nit * nit * (1.0 - Ci * Ci));
+            /*float*/ double Ci = N.DotProduct(I.Negate());   // cos(θi)
+            /*float*/ double v = (1.0f - nit * nit * (1.0f - Ci * Ci));
+
+            Debug.Assert(!float.IsNaN(nit));
+            //Debug.Assert(!float.IsNaN(Ci));
+            //Debug.Assert(!float.IsNaN(v));
 
             if (v < 0.0)
             {
                 // Total internal reflection, so no light transmission occurs.
-                return Vector.Null();
+                return SVector.Null();
             }
 
-            Vector vT = I.Scale(nit) + N.Scale(nit * Ci - Math.Sqrt(v));
+//            SVector vT = I.Scale(nit) + N.Scale(nit * Ci - (float)Math.Sqrt(v));
+            SVector vT = I.Scale(nit) + N.Scale((float)(nit * Ci - Math.Sqrt(v)));
+
+            Debug.Assert(!float.IsNaN(vT.I));
+            Debug.Assert(!float.IsNaN(vT.J));
+            Debug.Assert(!float.IsNaN(vT.K));
 
             return vT;
         }

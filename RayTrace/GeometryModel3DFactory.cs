@@ -78,7 +78,7 @@ namespace RayTrace
 
             MeshGeometry3D mesh = new();
 
-            double step = 1.0 / slices;
+            float step = 1.0f / slices;
 
             vec1 = vec1 * step;
             vec2 = vec2 * step;
@@ -89,15 +89,15 @@ namespace RayTrace
 
             for (int z = 0; z < numSteps; z++)
             {
-                double zval = -0.5 + z * step;
-                Vector zpos = vec1*-0.5 + vec1 * z;
+                float zval = -0.5f + z * step;
+                Vector zpos = vec1*-0.5f + vec1 * z;
 
                 int sliceIndex = pointIndex;
 
                 for (int x = 0; x < numSteps; x++)
                 {
-                    double xval = -0.5 + (x * step);
-                    Vector xpos = vec2 * -0.5 + vec2 * x;
+                    float xval = -0.5f + (x * step);
+                    Vector xpos = vec2 * -0.5f + vec2 * x;
 
                     Vector p = zpos + xpos;
 
@@ -334,8 +334,8 @@ namespace RayTrace
 
             MeshGeometry3D mesh = new();
 
-            Func<Point, Point3D> PointToPoint3D = (p) => new Point3D(p.X, p.Y, p.Z);
-            Func<Vector, Vector3D> VectorToVector3D = (v) => new Vector3D(v.I, v.J, v.K);
+            Func<SPoint, Point3D> PointToPoint3D = (p) => new Point3D(p.X, p.Y, p.Z);
+            Func<SVector, Vector3D> VectorToVector3D = (v) => new Vector3D(v.I, v.J, v.K);
 
             ModelData modelData =  model.GetModelData();
 
@@ -345,7 +345,7 @@ namespace RayTrace
 
             // Add all the vertices.
             Point3DCollection pointCollection = new(numPoints);
-            foreach (Point p in modelData.points)
+            foreach (SPoint p in modelData.points)
             {
                 pointCollection.Add(PointToPoint3D(p));
             }
@@ -370,7 +370,7 @@ namespace RayTrace
                         }
             */
 
-            Vector[] pointNormals = new Vector[numPoints];
+            SVector[] pointNormals = new SVector[numPoints];
 
             // Add vector normals.
             int numTriangles = modelData.triangles.Length;
@@ -401,19 +401,22 @@ namespace RayTrace
 */
             }
 
-            foreach (Vector v in pointNormals)
+            foreach (SVector v in pointNormals)
             {
-                Vector v2 = v;//.Negate();
+                SVector v2 = v;//.Negate();
 
                 //v2.I = -v2.I;
                 //v2.J = -v2.J;
 
-                Vector3D v3d = VectorToVector3D(v2);
-                //v3d.Z = -v3d.Z;
+                //if (v2 != null)
+                {
+                    Vector3D v3d = VectorToVector3D(v2);
+                    //v3d.Z = -v3d.Z;
 
-                //v3d = -v3d;
+                    //v3d = -v3d;
 
-                mesh.Normals.Add(v3d);
+                    mesh.Normals.Add(v3d);
+                }
             }
 
             geometryModel.Geometry = mesh;

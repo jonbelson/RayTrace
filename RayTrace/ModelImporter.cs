@@ -11,11 +11,11 @@ namespace RayTrace
 {
     public class ModelImporter
     {
-        private Vector GetNormal(List<Point> points, ModelData.Triangle triangle)
+        private SVector GetNormal(List<SPoint> points, ModelData.Triangle triangle)
         {
-            Vector v1 = points[triangle.v1] - points[triangle.v0];
-            Vector v2 = points[triangle.v2] - points[triangle.v0];
-            Vector normal = v1.VectorProduct(v2);
+            SVector v1 = points[triangle.v1] - points[triangle.v0];
+            SVector v2 = points[triangle.v2] - points[triangle.v0];
+            SVector normal = v1.VectorProduct(v2);
             return normal.Normalise();
         }
 
@@ -35,18 +35,18 @@ namespace RayTrace
             return count;
         }
 
-        private int Parse(string[] tokens, out double f1, out double f2, out double f3)
+        private int Parse(string[] tokens, out float f1, out float f2, out float f3)
         {
-            f1 = f2 = f3 = 0.0;
+            f1 = f2 = f3 = 0.0f;
 
             int count = 0;
-            if (Double.TryParse(tokens[1], out f1))
+            if (float.TryParse(tokens[1], out f1))
             {
                 count++;
-                if (Double.TryParse(tokens[2], out f2))
+                if (float.TryParse(tokens[2], out f2))
                 {
                     count++;
-                    if (Double.TryParse(tokens[3], out f3))
+                    if (float.TryParse(tokens[3], out f3))
                     {
                         count++;
                     }
@@ -125,14 +125,14 @@ namespace RayTrace
             string sourcePath = path + @"\source";
             string texturesPath = path + @"\textures";
 
-            List<Point> points = new List<Point>();
-            List<Vector> normals = new List<Vector>();
+            List<SPoint> points = new List<SPoint>();
+            List<SVector> normals = new List<SVector>();
             List<ModelData.Texel> texels = new List<ModelData.Texel>();
             List<Face> faces = new List<Face>();
 
             // Indexes start at '1' so add a dummy entry to each list.
-            points.Add(new Point(0.0, 0.0, 0.0));
-            normals.Add(new Vector(0.0, 0.0, 0.0));
+            points.Add(new SPoint(0.0f, 0.0f, 0.0f));
+            normals.Add(new SVector(0.0f, 0.0f, 0.0f));
             texels.Add(new ModelData.Texel());
 
             try
@@ -146,7 +146,7 @@ namespace RayTrace
                     modelData.fileName = path;
 
                     char[] delim = new char[] { ' ' };
-                    double d1, d2, d3;
+                    //double d1, d2, d3;
                     float f1, f2, f3;
                     string line;
                     while ((line = file.ReadLine()) != null)
@@ -162,17 +162,17 @@ namespace RayTrace
 
                         if (tokens[0] == "v")
                         {
-                            if (tokens.Length >= 4 && Parse(tokens, out d1, out d2, out d3) == 3)
+                            if (tokens.Length >= 4 && Parse(tokens, out f1, out f2, out f3) == 3)
                             {
-                                Point p = new Point(d1, d2, -d3);
+                                SPoint p = new SPoint(f1, f2, -f3);
                                 points.Add(p);
                             }
                         }
                         else if (tokens[0] == "vn")
                         {
-                            if (tokens.Length == 4 && Parse(tokens, out d1, out d2, out d3) == 3)
+                            if (tokens.Length == 4 && Parse(tokens, out f1, out f2, out f3) == 3)
                             {
-                                Vector v = new Vector(d1, d2, -d3);
+                                SVector v = new SVector(f1, f2, -f3);
                                 normals.Add(v);
                             }
                         }
@@ -214,10 +214,10 @@ namespace RayTrace
                 //modelData.normals = normals.ToArray();
                 modelData.texels = texels.ToArray();
 
-                modelData.minX = modelData.minY = modelData.minZ = Double.MaxValue;
-                modelData.maxX = modelData.maxY = modelData.maxZ = Double.MinValue;
+                modelData.minX = modelData.minY = modelData.minZ = float.MaxValue;
+                modelData.maxX = modelData.maxY = modelData.maxZ = float.MinValue;
 
-                foreach (Point p in modelData.points)
+                foreach (SPoint p in modelData.points)
                 {
                     modelData.minX = Math.Min(p.X, modelData.minX);
                     modelData.minY = Math.Min(p.Y, modelData.minY);
@@ -251,7 +251,7 @@ namespace RayTrace
 
                         //Debug.Assert(triangle.n != 1);
 
-                        Vector n = GetNormal(points, triangle);
+                        SVector n = GetNormal(points, triangle);
                         normals.Add(n);
                         triangle.n = normals.Count() - 1;
 
@@ -275,7 +275,7 @@ namespace RayTrace
 
                         Debug.Assert(triangle.n != 1);
 
-                        Vector n = GetNormal(points, triangle);
+                        SVector n = GetNormal(points, triangle);
                         normals.Add(n);
                         triangle.n = normals.Count() - 1;
 

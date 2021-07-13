@@ -8,7 +8,7 @@ namespace RayTrace
 {
     public class SkydomeGradient : Skydome
     {
-        public Vector Up { get; set; } = new Vector(0.0, 1.0, 0.0);
+        public Vector Up { get; set; } = new Vector(0, 1, 0);
 
         public Colour Top { get; set; }
         public Colour Middle { get; set; }
@@ -25,9 +25,9 @@ namespace RayTrace
 
         public SkydomeGradient() : this(Palette.Black, Palette.Black) { }
 
-        public override Colour GetColour(Camera camera, Vector ray)
+        public override Colour GetColour(Camera camera, SVector ray)
         {
-            double dp = ray.DotProduct(Up);
+            double dp = ray.DotProduct(new(Up));
 
             if (dp < 0)
             {
