@@ -15,15 +15,15 @@ namespace RayTrace
 
         public SVector(float i, float j, float k) => (I, J, K) = (i, j, k);
 
-        public float DotProduct(SVector v) => I * v.I + J * v.J + K * v.K;
-        public SVector VectorProduct(SVector v) => new(J * v.K - K * v.J, K * v.I - I * v.K, I * v.J - J * v.I);
-        public SVector Add(SVector v) => new(I + v.I, J + v.J, K + v.K);
-        public SVector Subtract(SVector v) => new(I - v.I, J - v.J, K - v.K);
+        public float DotProduct(in SVector v) => I * v.I + J * v.J + K * v.K;
+        public SVector VectorProduct(in SVector v) => new(J * v.K - K * v.J, K * v.I - I * v.K, I * v.J - J * v.I);
+        public SVector Add(in SVector v) => new(I + v.I, J + v.J, K + v.K);
+        public SVector Subtract(in SVector v) => new(I - v.I, J - v.J, K - v.K);
         public SVector Scale(float scale) => new(I * scale, J * scale, K * scale);
         public SVector Negate() => new(-I, -J, -K);
 
         // Return angle between Vectors in radians.
-        public float Angle(SVector v)
+        public float Angle(in SVector v)
         {
             float dp = DotProduct(v);
             if (dp > 1.0) return 0.0f;
@@ -53,10 +53,10 @@ namespace RayTrace
         // Return a null vector, i.e. one with all components set to 0.
         public static SVector Null() => new(0.0f, 0.0f, 0.0f);
 
-        public static SVector operator+(SVector v1, SVector v2) => new(v1.I + v2.I, v1.J + v2.J, v1.K + v2.K);
-        public static SVector operator-(SVector v1, SVector v2) => new(v1.I - v2.I, v1.J - v2.J, v1.K - v2.K);
-        public static SVector operator-(SVector v) => new(-v.I, -v.J, -v.K);
-        public static SVector operator*(SVector v, float scale) => new(v.I * scale, v.J * scale, v.K * scale);
+        public static SVector operator+(in SVector v1, in SVector v2) => new(v1.I + v2.I, v1.J + v2.J, v1.K + v2.K);
+        public static SVector operator-(in SVector v1, in SVector v2) => new(v1.I - v2.I, v1.J - v2.J, v1.K - v2.K);
+        public static SVector operator-(in SVector v) => new(-v.I, -v.J, -v.K);
+        public static SVector operator*(in SVector v, float scale) => new(v.I * scale, v.J * scale, v.K * scale);
     }
 
     public class Vector : INotifyPropertyChanged

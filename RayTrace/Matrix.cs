@@ -72,7 +72,7 @@ namespace RayTrace
 
         private static Matrix NewMatrix { get { return new Matrix(); } }
 
-        public static SVector operator*(Matrix m, SVector v)
+        public static SVector operator*(Matrix m, in SVector v)
         {
             SVector vv = new SVector
             (
@@ -84,7 +84,7 @@ namespace RayTrace
             return vv;
         }
 
-        public static SPoint operator*(Matrix m, SPoint p)
+        public static SPoint operator*(Matrix m, in SPoint p)
         {
             SPoint pp = new SPoint
             (

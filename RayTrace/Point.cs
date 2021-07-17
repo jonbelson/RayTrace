@@ -17,13 +17,13 @@ namespace RayTrace
         public SPoint(float x, float y, float z) => (X, Y, Z) = (x, y, z);
 
         public SPoint Scale(float scale) => new(X * scale, Y * scale, Z * scale);
-        public SVector Difference(SPoint p) => new(p.X - X, p.Y - Y, p.Z - Z);
-        public SPoint Offset(SVector v) => new(X + v.I, Y + v.J, Z + v.K);
-        public double Distance(SPoint p) => Difference(p).Magnitude();
+        public SVector Difference(in SPoint p) => new(p.X - X, p.Y - Y, p.Z - Z);
+        public SPoint Offset(in SVector v) => new(X + v.I, Y + v.J, Z + v.K);
+        public double Distance(in SPoint p) => Difference(p).Magnitude();
 
-        public static SPoint operator*(SPoint p, float scale) => new(p.X * scale, p.Y * scale, p.Z * scale);
-        public static SVector operator-(SPoint p1, SPoint p2) => new(p1.X - p2.X, p1.Y - p2.Y, p1.Z - p2.Z);
-        public static SPoint operator+(SPoint p, SVector v) => new(p.X + v.I, p.Y + v.J, p.Z + v.K);
+        public static SPoint operator*(in SPoint p, float scale) => new(p.X * scale, p.Y * scale, p.Z * scale);
+        public static SVector operator-(in SPoint p1, in SPoint p2) => new(p1.X - p2.X, p1.Y - p2.Y, p1.Z - p2.Z);
+        public static SPoint operator+(in SPoint p, in SVector v) => new(p.X + v.I, p.Y + v.J, p.Z + v.K);
     }
 
     // Represent a point in 3D space.

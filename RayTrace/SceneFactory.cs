@@ -118,7 +118,7 @@ namespace RayTrace
 
             Disc disc = new Disc(new Point(0, -10, 0), new Vector(0, 1, 0), 200);
             disc.Material = matPlane;
-            ///scene.AddShape(disc);
+            scene.AddShape(disc);
 
 
             //Light light = new PointLight(new Point(-50, 0, 0), /*0.5f*/ 5000.0f, new Colour(1.0f, 0.0f, 0.0f));

@@ -108,6 +108,20 @@ namespace RayTrace
         public float MaxY => _modelData.maxY;
         public float MaxZ => _modelData.maxZ;
 
+        private class FatTriangle
+        {
+            public SPoint v0, v1, v2;
+            public ModelData.Texel t0, t1, t2;
+            public SVector n0, n1, n2;
+            public SVector n;
+
+            //public int v0, v1, v2;  // Indices into Point array.
+            //public int t0, t1, t2;  // Indexes into Texel array.
+            //public int n0, n1, n2;  // Indices into normal array.
+            //public int n;           // Index into normal array for triangle normal.
+        }
+
+        private FatTriangle[] fatTriangles;
 
         private SVector GetNormal(SPoint P0, SPoint P1, SPoint P2)
         {
@@ -275,6 +289,29 @@ namespace RayTrace
 
                 TreeMaker treeMaker = new TreeMaker();
                 _root = treeMaker.MakeTree(_modelData, ObjectToView);
+
+                // Populate the fat triangle list.
+                fatTriangles = new FatTriangle[_modelData.triangles.Length];
+
+                for (int i=0; i<_modelData.triangles.Length; i++)
+                {
+                    FatTriangle fatTriangle = new FatTriangle();
+                    fatTriangle.v0 = GetTrianglePointV0(i);
+                    fatTriangle.v1 = GetTrianglePointV1(i);
+                    fatTriangle.v2 = GetTrianglePointV2(i);
+
+                    fatTriangle.n0 = GetTriangleNormal0(i);
+                    fatTriangle.n1 = GetTriangleNormal1(i);
+                    fatTriangle.n2 = GetTriangleNormal2(i);
+
+                    fatTriangle.n = GetTriangleNormal(i).Negate();
+
+                    fatTriangle.t0 = _modelData.GetTriangleColour0(i);
+                    fatTriangle.t1 = _modelData.GetTriangleColour1(i);
+                    fatTriangle.t2 = _modelData.GetTriangleColour2(i);
+
+                    fatTriangles[i] = fatTriangle;
+                }
             }
         }
 
@@ -291,13 +328,15 @@ namespace RayTrace
             // Does ray passes through us?
             if (node.Box.Intersects(p1, p2))
             {
+                SVector ray = p2 - p1;
+
                 if (node.Left == null && node.Right == null)
                 {
                     // We're a leaf node, so test our triangles.
                     foreach (int i in node.Triangles)
                     {
                         hr.Reset();
-                        /*HitResult hr =*/ HitTestTriangle(ref hr, i, p1, p2, segmentOnly);
+                        /*HitResult hr =*/ HitTestTriangle(ref hr, i, p1, p2, ray, segmentOnly);
                         if (hr.HasEntry())
                         {
                             hitResults.Add(hr);
@@ -393,7 +432,7 @@ namespace RayTrace
 */
         }
 
-        private HitResult HitTestTriangle(ref HitResult hr, int index, SPoint p1, SPoint p2, bool segmentOnly)
+        private HitResult HitTestTriangle(ref HitResult hr, int index, in SPoint p1, in SPoint p2, in SVector ray, bool segmentOnly)
         {
             //HitResult hr = new HitResult(this);
             /*
@@ -403,20 +442,23 @@ namespace RayTrace
                         if (_modelData.points.Length <= _modelData.triangles[index].v2) return hr;
                         if (_modelData.normals.Length <= _modelData.triangles[index].n) return hr;
             */
+
             //Vector Normal = _modelData.GetTriangleNormal(index).Negate();
 
-            ModelData.Triangle tri = _modelData.triangles[index];
+            //ModelData.Triangle tri = _modelData.triangles[index];
+            FatTriangle tri = fatTriangles[index];
 
-            //Point vPos = ObjectToView * _modelData.GetTrianglePointV0(index);
             //SPoint vPos = GetTrianglePointV0(index);
-            SPoint vPos = _viewPoints[tri.v0];
+            //SPoint vPos = _viewPoints[tri.v0];
+            SPoint vPos = tri.v0;
 
-            //Vector vNormal = ObjectToViewNormal * Normal;
             // SVector vNormal = GetTriangleNormal(index).Negate();
-            SVector vNormal = _viewNormals[tri.n].Negate();
+
+            //SVector vNormal = _viewNormals[tri.n].Negate();
+            SVector vNormal = tri.n;//.Negate();
 
             // Check if face is pointing away from us.
-            SVector ray = p2 - p1;
+            //SVector ray = p2 - p1;
             float dp = vNormal.DotProduct(ray);
             if (dp > 0.0f) return hr;    // Check >0 since vectors point in opposite directions.
 
@@ -426,6 +468,7 @@ namespace RayTrace
 
             // Since Ax + By + Cz + D = 0...
             float D = -(A * vPos.X + B * vPos.Y + C * vPos.Z);
+//            float D = -(A * tri.v0.X + B * tri.v0.Y + C * tri.v0.Z);
 
             float num = A * p1.X + B * p1.Y + C * p1.Z + D;
             float denom = A * (p1.X - p2.X) + B * (p1.Y - p2.Y) + C * (p1.Z - p2.Z);
@@ -466,14 +509,15 @@ namespace RayTrace
             // We have a hit against the trianlge's plane, so see if the intersection point actually lies within the triangle itself.
             // From https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/ray-triangle-intersection-geometric-solution
 
-            SPoint V0 = vPos;
-            //Point V1 = ObjectToView * _modelData.GetTrianglePointV1(index);
-            //Point V2 = ObjectToView * _modelData.GetTrianglePointV2(index);
+            //SPoint V0 = vPos;
+            SPoint V0 = tri.v0;
 
             //SPoint V1 = GetTrianglePointV1(index);
             //SPoint V2 = GetTrianglePointV2(index);
-            SPoint V1 = _viewPoints[tri.v1];
-            SPoint V2 = _viewPoints[tri.v2];
+            //SPoint V1 = _viewPoints[tri.v1];
+            //SPoint V2 = _viewPoints[tri.v2];
+            SPoint V1 = tri.v1;
+            SPoint V2 = tri.v2;
 
             SVector edge0 = V1 - V0;
             SVector edge1 = V2 - V1;
@@ -502,9 +546,14 @@ namespace RayTrace
 
                 if (HasVectorNormal(index))
                 {
-                    SVector n0 = GetTriangleNormal0(index);
-                    SVector n1 = GetTriangleNormal1(index);
-                    SVector n2 = GetTriangleNormal2(index);
+                    //SVector n0 = GetTriangleNormal0(index);
+                    //SVector n1 = GetTriangleNormal1(index);
+                    //SVector n2 = GetTriangleNormal2(index);
+
+                    SVector n0 = tri.n0;
+                    SVector n1 = tri.n1;
+                    SVector n2 = tri.n2;
+
 
                     SVector N = GetNormal(n0, n1, n2, uv.Item1, uv.Item2);
                     //N = ObjectToViewNormal * N; // XXX Check normal is being treated correctly re. transforms.

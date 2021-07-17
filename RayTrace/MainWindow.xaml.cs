@@ -167,16 +167,16 @@ namespace RayTrace
             textBoxGIDepth.Text = renderer.GIDepth.ToString();
 
             //scene = SceneFactory.PhongDemoScene();
-            scene = SceneFactory.TexturedSpheresDemoScene();
             //scene = SceneFactory.RefractionDemoScene();
             //scene = SceneFactory.BoxDemoScene();
             //scene = SceneFactory.SphereDemoScene();
             //scene = SceneFactory.SoftLightDemoScene();
             //scene = SceneFactory.FovDemoScene();
             //scene = SceneFactory.ModelScene();
- //           scene = SceneFactory.ObjScene();
             //scene = SceneFactory.GIDemoScene();
             //scene = SceneFactory.GIDemoScene2();
+//            scene = SceneFactory.TexturedSpheresDemoScene();
+            scene = SceneFactory.ObjScene();
 
             //scene = SceneFactory.EmptyScene();
 
