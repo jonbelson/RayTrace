@@ -518,5 +518,46 @@ namespace RayTrace
 
             return scene;
         }
+
+        public static Scene BRDFScene()
+        {
+            Scene scene = new Scene();
+
+            const int radius = 2;
+            const int DiscRadius = 10;
+
+            Material mat = new Material() { Name = "Lambertian (BRDF)" };
+            Lambertian lambertian = new();
+            lambertian.Colour = Palette.Copper;
+            mat.Brdf = lambertian;
+
+            mat.Type = MaterialType.BRDF;
+
+            scene.AddMaterial(mat);
+
+            Sphere sphere = new Sphere(new Point(-2f, radius, 11), radius, new Colour(0.25f, 0.25f, 0.25f)  /* Palette.White*/);
+            sphere.Material = mat;
+            scene.AddShape(sphere);
+
+            sphere = new Sphere(new Point(2f, radius, 11), radius, new Colour(0.0f, 0.0f, 0.5f) /*new Colour(0.25f, 0.25f, 0.25f)*/);
+            scene.AddShape(sphere);
+
+            Disc disc = new Disc(new Point(0, 0, 11), new Vector(0, 1, 0), DiscRadius);
+            disc.Material.Texture = new TextureSolid(Palette.Red);
+            scene.AddShape(disc);
+
+            disc = new Disc(new Point(-4.5f, 0, 11), new Vector(1, 0, 0), DiscRadius);
+            disc.Material.Texture = new TextureSolid(Palette.Green);
+            scene.AddShape(disc);
+
+            Light light = new PointLight(new Point(0, 9, 0), 2000.0f, new Colour(1.0f, 1.0f, 1.0f));
+            scene.AddLight(light);
+
+            scene.Camera.Pos = new Point(0, 4, -2);
+            scene.Camera.Target = new Point(0, 4, 1);
+
+            return scene;
+        }
+
     }
 }

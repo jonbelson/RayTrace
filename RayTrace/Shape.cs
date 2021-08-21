@@ -18,7 +18,7 @@ namespace RayTrace
         public SVector EntryNormal;  // Normal vector at intersetion point.
 
         // Ray that resulted in this HitResult.
-        public Vector Ray { get; set; }
+        public SVector Ray { get; set; }
 
         // Texture cordinates.
         public float u;
@@ -32,7 +32,7 @@ namespace RayTrace
             u = v = 0.0f;
             _entry = new SPoint();
             _hasEntry = false;
-            Ray = null;
+            Ray = new SVector();
             EntryNormal = new SVector();
             Index = 0;
         }
@@ -43,7 +43,7 @@ namespace RayTrace
             u = v = 0.0f;
             _entry = new SPoint();
             _hasEntry = false;
-            Ray = null;
+            Ray = new SVector();
             EntryNormal = new SVector();
             Index = 0;
         }

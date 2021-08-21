@@ -76,6 +76,7 @@ namespace RayTrace
             renderer.UseAmbient = true;
             renderer.UseShadows = false;
             //scene.Ambient = new Colour(0.5f, 0.5f, 0.5f);
+            renderer.NumBRDFSamples = 200;
             Canvas canvas = new(Size, Size, Palette.Red);
             renderer.Render(scene, canvas);
 

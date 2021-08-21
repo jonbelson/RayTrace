@@ -7,7 +7,7 @@ namespace RayTrace
 {
     public enum MaterialType
     {
-        Diffuse, Reflective, RefractiveAndReflective, Phong
+        Diffuse, Reflective, RefractiveAndReflective, Phong, BRDF
     }
 
     // Characteristics of a Shape's physical form.
@@ -44,6 +44,8 @@ namespace RayTrace
         //public bool IsSolid { get; set; }
 
         public float RefractiveIndex { get; set; } = RayTrace.RefractiveIndex.WindowGlass;
+
+        public BRDF Brdf { get; set; }
 
         public Texture Texture { get; set; }
 

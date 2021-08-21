@@ -73,7 +73,7 @@ namespace RayTrace
             SPoint Intersection = p1 + vecP2P1.Scale(mu);
 
             // Check we are within the radius of the disc.
-            if ((Intersection - pos).MagnitudeSquared() > _radiusSquared)
+            if ((Intersection - vPos).MagnitudeSquared() > _radiusSquared)
             {
                 return hr;
             }

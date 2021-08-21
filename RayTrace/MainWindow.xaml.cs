@@ -25,46 +25,13 @@ using System.Windows.Threading;
 
 namespace RayTrace
 {
-    /*
-    public struct RenderBlock
+    // Model for Entities displayed in the TreeView.
+    public class TreeViewEntityModel
     {
-        public int StartX;
-        public int StartY;
-        public int Width;
-        public int Height;
-        public int CentreX { get { return StartX + Width / 2; } }
-        public int CentreY { get { return StartY + Height / 2; } }
+        public string Category { get; set; }
+        public Entity Instance { get; set; }
+        public IEnumerable<TreeViewEntityModel> Children { get; set; }
     }
-
-    public class TopToBottomComparer : IComparer<RenderBlock>
-    {
-        private readonly int centreX;
-        private readonly int centreY;
-
-        public TopToBottomComparer(int _centreX, int _centreY) { centreX = _centreX; centreY = _centreY; }
-
-        public int Compare(RenderBlock rb1, RenderBlock rb2)
-        {
-            float distSquared1 = (centreX - rb1.CentreX) * (centreX - rb1.CentreX) + (centreY - rb1.CentreY) * (centreY - rb1.CentreY);
-            float distSquared2 = (centreX - rb2.CentreX) * (centreX - rb2.CentreX) + (centreY - rb2.CentreY) * (centreY - rb2.CentreY);
-            if (distSquared1 > distSquared2) return 1;
-            if (distSquared1 < distSquared2) return -1;
-            return 0;
-        }
-    }
-
-    public class DiagonalComparer : IComparer<RenderBlock>
-    {
-        public int Compare(RenderBlock rb1, RenderBlock rb2)
-        {
-            float distSquared1 = rb1.CentreX * rb1.CentreX + rb1.CentreY * rb1.CentreY;
-            float distSquared2 = rb2.CentreX * rb2.CentreX + rb2.CentreY * rb2.CentreY;
-            if (distSquared1 > distSquared2) return 1;
-            if (distSquared1 < distSquared2) return -1;
-            return 0;
-        }
-    }
-    */
 
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -95,6 +62,7 @@ namespace RayTrace
 
 //        public List<Entity> Entities { get; set; }
         public ObservableCollection<Entity> Entities { get; set; } = new ObservableCollection<Entity>();
+        public ObservableCollection<Entity> SelectedEntity { get; set; } = new ObservableCollection<Entity>();
 
         public ObservableCollection<MaterialTile> MaterialTiles { get; set; } = new ObservableCollection<MaterialTile>();
         public List<Material> Materials { get; set; } = new();
@@ -107,6 +75,22 @@ namespace RayTrace
         // Flags for Scene Preview.
         public bool PreviewGroundPlane { get; set; } = true;
         public bool PreviewAxis { get; set; } = true;
+
+        // Update the Entity TreeView from teh current Entity list.
+        private void UpdateEntityTreeView()
+        {
+//            var category = Entities.OfType<Shape>().Select(x => new TreeViewEntityModel() { Category = "Shape", Children = x.Select(y => new TreeViewEntityModel() { }).ToArray() });
+//            var category = Entities.OfType<Shape>().GroupBy(x => x.GetType().Name).Select(y => new TreeViewEntityModel() { Category = y.Key, Children = y.Select(k => new TreeViewEntityModel() { Category=k.Name }).ToArray() });
+
+            IEnumerable<TreeViewEntityModel> shapes = Entities.OfType<Shape>().GroupBy(x => typeof(Shape).ToString()).Select(y => new TreeViewEntityModel() { Category = "Shapes" /*y.Key*/, Children = y.Select(k => new TreeViewEntityModel() { Category = k.Name, Instance = k }).ToArray() });
+            IEnumerable<TreeViewEntityModel> lights = Entities.OfType<Light>().GroupBy(x => typeof(Light).ToString()).Select(y => new TreeViewEntityModel() { Category = "Lights" /*y.Key*/, Children = y.Select(k => new TreeViewEntityModel() { Category = k.Name, Instance = k }).ToArray() });
+            IEnumerable<TreeViewEntityModel> categories = shapes.Concat(lights);
+
+            categories = categories.Prepend(new TreeViewEntityModel() { Category = "Camera", Instance = scene.Camera });
+
+            //entityTreeView.Items = null;
+            entityTreeView.ItemsSource = categories;
+        }
 
         private void GetDpi(out double dpiX, out double dpiY)
         {
@@ -163,7 +147,7 @@ namespace RayTrace
             textBoxAdaptiveSubSamplingDepth.Text = renderer.AdaptiveSuperSamplingDepth.ToString();
             textBoxAdaptiveSubSamplingDepth.IsEnabled = false;
 
-            textBoxGINumRays.Text = renderer.GINumRays.ToString();
+            textBoxGINumRays.Text = renderer.NumGIRays.ToString();
             textBoxGIDepth.Text = renderer.GIDepth.ToString();
 
             //scene = SceneFactory.PhongDemoScene();
@@ -176,27 +160,28 @@ namespace RayTrace
             //scene = SceneFactory.GIDemoScene();
             //scene = SceneFactory.GIDemoScene2();
 //            scene = SceneFactory.TexturedSpheresDemoScene();
-            scene = SceneFactory.ObjScene();
+            //scene = SceneFactory.ObjScene();
+            scene = SceneFactory.BRDFScene();
 
             //scene = SceneFactory.EmptyScene();
 
-/*
-            Matrix m = new Matrix(new double[] { 2, 5, 1, 4,  4, 1, 6, 3,  5, 3, 7, 2,  1, 0, 2, 4 });
+            /*
+                        Matrix m = new Matrix(new double[] { 2, 5, 1, 4,  4, 1, 6, 3,  5, 3, 7, 2,  1, 0, 2, 4 });
 
-            double det = m.GetDeterminant();
-
-
-            Debug.WriteLine(m.ToString());
+                        double det = m.GetDeterminant();
 
 
-            Matrix inverse = m.GetInverse();
+                        Debug.WriteLine(m.ToString());
 
-            Debug.WriteLine(inverse.ToString());
 
-            Matrix product = m * inverse;
+                        Matrix inverse = m.GetInverse();
 
-            Debug.WriteLine(product.ToString());
-*/
+                        Debug.WriteLine(inverse.ToString());
+
+                        Matrix product = m * inverse;
+
+                        Debug.WriteLine(product.ToString());
+            */
 
             UpdateViewport3D();
 /*
@@ -255,10 +240,14 @@ namespace RayTrace
                 MaterialTiles.Add(materialTile);
             }
 
+
+            UpdateEntityTreeView();
+
+
             //materialListBox.ItemsSource = Entities;// MaterialTiles;
 
-           // materialListBox.Items.Add();
-//*/
+            // materialListBox.Items.Add();
+            //*/
         }
 
         private void Entity_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -301,7 +290,7 @@ namespace RayTrace
                 return false;
             }
 
-            renderer.GINumRays = giNumRays;
+            renderer.NumGIRays = giNumRays;
 
             Renderer.AntiAliasType antiAlias = (Renderer.AntiAliasType)comboBoxAntiAlias.SelectedItem;
             renderer.AntiAlias = antiAlias;
@@ -803,6 +792,29 @@ namespace RayTrace
             scene.Camera.Pos += v;
 
             e.Handled = true;
+        }
+
+        private void entityTreeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            TreeViewEntityModel model = e.NewValue as TreeViewEntityModel;
+            if (model != null)
+            {
+                // Only interested in leaf nodes.
+                if (model.Children == null || !model.Children.Any())
+                {
+                    if (model.Instance != null)
+                    {
+                        SelectedEntity.Clear();
+                        SelectedEntity.Add(model.Instance);
+                    }
+                }
+                else
+                {
+                    SelectedEntity.Clear();
+                }
+
+                //var v = entityTreeView.SelectedItem;
+            }
         }
     }
 }

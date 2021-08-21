@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace RayTrace
 {
     // Represents an axis-aligned Box centred at Pos.
-    [ObsoleteAttribute]
+    //[ObsoleteAttribute]
     public class Box : Shape
     {
         public float Width { get; set; }       // X

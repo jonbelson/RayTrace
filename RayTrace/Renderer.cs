@@ -40,8 +40,15 @@ namespace RayTrace
         public int GIDepth { set { if (value >= 0) _GIDepth = value; } get { return _GIDepth; } }
 
         // Number of scattered rays for each diffuse intersection when tracing scattered rays.
-        private int _GINumRays = 20;
-        public int GINumRays { set { if (value >= 0) _GINumRays = value; } get { return _GINumRays; } }
+        private int _numGIRays = 20;
+        public int NumGIRays { set { if (value >= 0) _numGIRays = value; } get { return _numGIRays; } }
+
+        // Number of integrated samples when evaluating a BRDF at a point.
+        private int _numBRDFSamples = 500;
+        public int NumBRDFSamples {
+            get { return _numBRDFSamples; }
+            set { if (value >= 0) _numBRDFSamples = Math.Max(1, value); }
+        }
 
         // Size of rendered area, so that it ranges from -Size/2 to +Size/2 in the
         //  x axis and -Size/2 to +Size/2 in the y axis.
@@ -488,6 +495,66 @@ namespace RayTrace
 
             switch (shape.Material.Type)
             {
+                case MaterialType.BRDF:
+                    {
+                        Colour L = new();
+
+                        for (int i = 0; i < NumBRDFSamples; i++)
+                        {
+                            SPoint p = hr.Entry + hr.EntryNormal + GetSVectorInSphere(rand);
+                            SVector scattered = p - hr.Entry;
+                            scattered = scattered.Normalise();
+
+                            // Check scattered Vector is in the corect hemishere
+                            double dpSN = scattered.DotProduct(hr.EntryNormal);
+                            if (dpSN < 0.0)
+                            {
+                                // Reverse the direction on the Vector.
+                                scattered = -scattered;
+                                dpSN = scattered.DotProduct(hr.EntryNormal);
+                            }
+
+                            Debug.Assert(scattered.DotProduct(hr.EntryNormal) >= 0);
+                            Debug.Assert(dpSN >= 0.0);
+
+                            HitResult hr2 = scene.HitTest(camera, new Ray(hr.Entry + hr.EntryNormal.Scale(0.01f), scattered));
+                            if (hr2.HasEntry())
+                            {
+                                // Calculate light arriving from the random direction.
+                                Colour incoming = CalculateColour(camera, scene, scattered, rand, hr2, depth);
+                                L += hr.shape.Material.Brdf.GetColour(hr, scattered, incoming);
+                            }
+                        }
+
+                        L /= NumBRDFSamples;
+
+                        foreach (Light light in scene.Lights)
+                        {
+                            if (!light.Enabled) continue;
+
+                            PointLight pointLight = light as PointLight;
+                            if (pointLight != null)
+                            {
+                                bool gotHit = scene.HitTestFast(camera, hr.Entry, pointLight._pos);
+                                if (!gotHit)
+                                {
+                                    SVector toLight = pointLight._pos - hr.Entry;
+                                    toLight = toLight.Normalise();
+                                    //SVector vecToLight = vecToLight.Normalise();
+                                    double dpLN = 1.0;// toLight.DotProduct(hr.EntryNormal);
+
+                                    Colour incoming = pointLight.GetIntensityAtPoint(camera, hr.Entry) * dpLN;
+                                    L += hr.shape.Material.Brdf.GetColour(hr, toLight, incoming);
+                                    //L += c;
+                                }
+
+                            }
+
+                        }
+
+                        diffuse = L;
+                    }
+                    break;
                 case MaterialType.Reflective:
                     {
                         reflected = GetReflectedColour(camera, scene, ray, rand, hr, depth) * 0.8;
@@ -577,9 +644,8 @@ namespace RayTrace
                             // Indirect illumination from other objects in the scene.
 
                             //Random rand = new Random(/*24680*/);
-                            int numSamples = GINumRays;
                             //Colour giColour = Palette.Black;
-                            for (int i = 0; i < numSamples; i++)
+                            for (int i = 0; i < NumGIRays; i++)
                             {
                                 /*
                                 // Get random vector around surface normal to use as a reflection vector.
@@ -609,7 +675,7 @@ namespace RayTrace
                                     indirectLight += CalculateColour(camera, scene, scattered, rand, hr2, depth) * dpSN / Math.PI;
                                 }
                             }
-                            indirectLight /= numSamples;
+                            indirectLight /= NumGIRays;
                         }
 
                         diffuse += (directLight + indirectLight) * shape/*.Material*/.GetColour(hr);
@@ -666,7 +732,7 @@ namespace RayTrace
                     break;
             }
 
-            if (UseAmbient)
+            if (UseAmbient && hr.shape.Material.Type != MaterialType.BRDF)
             {
                 ambient = shape.GetColour(hr).Multiply(scene.Ambient);
             }

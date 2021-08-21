@@ -208,8 +208,9 @@ namespace RayTrace
 
 			SPoint p2 = ray.Origin.Offset(ray.Direction);
 
-
-			return HitTestImpl(camera, ray.Origin, p2, segmentOnly);
+			HitResult hr = HitTestImpl(camera, ray.Origin, p2, segmentOnly);
+			hr.Ray = ray.Direction;
+			return hr;
 
 			// Based on http://paulbourke.net/geometry/circlesphere/index.html#linesphere
 

@@ -12,7 +12,21 @@
     </RibbonWindow.InputBindings>
     
     <RibbonWindow.Resources>
+
 <!--
+       <HierarchicalDataTemplate DataType="{x:Type local:Shape}" ItemsSource="{Binding Entities, ElementName=window, Mode=TwoWay}">
+            <TextBlock Text="{Binding Path=Name}"></TextBlock>
+        </HierarchicalDataTemplate>
+-->
+        
+        <!--
+        <HierarchicalDataTemplate DataType="{x:Type local:Light}" ItemsSource="{Binding Entities, ElementName=window, Mode=TwoWay}">
+            <TextBlock Text="{Binding Path=Name}"></TextBlock>
+        </HierarchicalDataTemplate>
+        -->
+
+        <!--
+       
         <MeshGeometry3D x:Key="CubeMesh"
                         TriangleIndices="0,1,2 3,4,5 6,7,8 9,10,11 12,13,14 15,16,17 18,19,20 21,22,23 24,25,26 27,28,29 30,31,32 33,34,35 "
                         Normals="0,0,-1 0,0,-1 0,0,-1 0,0,-1 0,0,-1 0,0,-1 0,0,1 0,0,1 0,0,1 0,0,1 0,0,1 0,0,1 0,-1,0 0,-1,0 0,-1,0 0,-1,0 0,-1,0 0,-1,0 1,0,0 1,0,0 1,0,0 1,0,0 1,0,0 1,0,0 0,1,0 0,1,0 0,1,0 0,1,0 0,1,0 0,1,0 -1,0,0 -1,0,0 -1,0,0 -1,0,0 -1,0,0 -1,0,0 "
@@ -20,7 +34,12 @@
                         Positions="-0.5,-0.5,-0.5 -0.5,0.5,-0.5 0.5,0.5,-0.5 0.5,0.5,-0.5 0.5,-0.5,-0.5 -0.5,-0.5,-0.5 -0.5,-0.5,0.5 0.5,-0.5,0.5 0.5,0.5,0.5 0.5,0.5,0.5 -0.5,0.5,0.5 -0.5,-0.5,0.5 -0.5,-0.5,-0.5 0.5,-0.5,-0.5 0.5,-0.5,0.5 0.5,-0.5,0.5 -0.5,-0.5,0.5 -0.5,-0.5,-0.5 0.5,-0.5,-0.5 0.5,0.5,-0.5 0.5,0.5,0.5 0.5,0.5,0.5 0.5,-0.5,0.5 0.5,-0.5,-0.5 0.5,0.5,-0.5 -0.5,0.5,-0.5 -0.5,0.5,0.5 -0.5,0.5,0.5 0.5,0.5,0.5 0.5,0.5,-0.5 -0.5,0.5,-0.5 -0.5,-0.5,-0.5 -0.5,-0.5,0.5 -0.5,-0.5,0.5 -0.5,0.5,0.5 -0.5,0.5,-0.5 " />
 -->
 
+        <Style x:Key="TreeViewItemStyle_ExpandAll" TargetType="{x:Type TreeViewItem}">
+            <Setter Property="IsExpanded" Value="True"/>
+        </Style>
+
         <local:RgbConverter x:Key="RgbConverter"></local:RgbConverter>
+        <local:DebugExtension x:Key="DebugExtension"></local:DebugExtension>
 
         <Border x:Shared="False" x:Key="EntityContent" Width="{Binding ElementName=listBox, Path=Width}">
                 <Grid Margin="5,5,5,0">
@@ -34,9 +53,9 @@
                         <RowDefinition />
                         <RowDefinition />
                     </Grid.RowDefinitions>
-                    <TextBlock FontWeight="Bold" Background="LightGray" Text="{Binding Path=Name}" Grid.Row="0" Grid.ColumnSpan="3"></TextBlock>
+                <TextBlock FontWeight="Bold" Background="LightGray" Text="{Binding Path=Name}" Grid.Row="0" Grid.ColumnSpan="3"></TextBlock>
                     <TextBlock Text="Enabled" Grid.Row="1"></TextBlock>
-                    <CheckBox IsChecked="{Binding Path=Enabled, Mode=TwoWay}" Grid.Column="2" Grid.Row="1"></CheckBox>
+                    <CheckBox IsChecked="{Binding Path=Enabled, Mode=TwoWay, Converter={StaticResource DebugExtension}}" Grid.Column="2" Grid.Row="1"></CheckBox>
                 </Grid>
         </Border>
 
@@ -160,16 +179,8 @@
 
                     <TextBlock Text="Material:" Grid.Column="0" Grid.Row="0"></TextBlock>
                     <!--<ComboBox Grid.Row="0" Grid.Column="2" x:Name="comboBoxMaterialType" ItemsSource="{Binding ElementName=window, Path=MaterialTiles}" SelectedValue="{Binding  Path=Name, Mode=TwoWay}" HorizontalAlignment="Left" MinWidth="100" SelectionChanged="comboBoxMaterialType_SelectionChanged"></ComboBox>-->
-                    <ComboBox Grid.Row="0" Grid.Column="2" x:Name="comboBoxMaterialType" ItemsSource="{Binding ElementName=window, Path=Materials}" SelectedValue="{Binding Path=Material,  Mode=TwoWay}" HorizontalAlignment="Left" MinWidth="100" SelectionChanged="comboBoxMaterialType_SelectionChanged"></ComboBox>
+                    <ComboBox Grid.Row="0" Grid.Column="2" x:Name="comboBoxMaterialType" ItemsSource="{Binding ElementName=window, Path=Materials, Converter={StaticResource DebugExtension}}" SelectedValue="{Binding Path=Material,  Mode=TwoWay}" HorizontalAlignment="Left" MinWidth="100" SelectionChanged="comboBoxMaterialType_SelectionChanged"></ComboBox>
 
-                    <!--
-                    <TextBlock Text="Roughness" Grid.Row="0"></TextBlock>
-                    <TextBlock Text="Transparency" Grid.Row="1"></TextBlock>
-                    <TextBlock Text="Reflectivity" Grid.Row="2"></TextBlock>
-                    <TextBox Text="{Binding Path=Material.Roughness, Mode=TwoWay}" Grid.Column="2" Grid.Row="0"></TextBox>
-                    <TextBox Text="{Binding Path=Material.Transparency, Mode=TwoWay}" Grid.Column="2" Grid.Row="1"></TextBox>
-                    <TextBox Text="{Binding Path=Material.Reflectivity, Mode=TwoWay}" Grid.Column="2" Grid.Row="2"></TextBox>
--->
                 </Grid>
             </StackPanel>
         </Border>
@@ -244,19 +255,6 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
- <!--                   <StackPanel.Style>
-                        <Style>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Path=IsSelected, RelativeSource={
-                                    RelativeSource Mode=FindAncestor, AncestorType={x:Type ListBoxItem}
-                                             }}"
-                                             Value="False">
-                                    <Setter Property="StackPanel.Visibility" Value="Collapsed" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </StackPanel.Style>
--->
                         <TextBlock Text="Radius" Grid.Row="0"></TextBlock>
                         <TextBox Text="{Binding Path=Radius, Mode=TwoWay}" Grid.Column="2" Grid.Row="0"></TextBox>
                     </Grid>
@@ -272,26 +270,34 @@
 
                 <ContentPresenter Content="{StaticResource ShapeContent}"></ContentPresenter>
                 <ContentPresenter Content="{StaticResource NormalContent}"></ContentPresenter>
-<!--
-                <StackPanel>
-                    <Grid Margin="5">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="60"/>
-                            <ColumnDefinition Width="8" />
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-                        <TextBlock Text="Texture" Grid.Row="2"></TextBlock>
 
-                        <TextBlock Text="{Binding Path=Material.Texture}" Grid.Column="2" Grid.Row="1"></TextBlock>
-                    </Grid>
-                </StackPanel>  
--->
             </StackPanel>
         </DataTemplate>
 
+        <!--
+            Disc DataTemplate
+        -->
+        <DataTemplate x:Key="DiscTemplate">
+            <StackPanel>
+
+                <ContentPresenter Content="{StaticResource ShapeContent}"></ContentPresenter>
+                <ContentPresenter Content="{StaticResource NormalContent}"></ContentPresenter>
+                <Grid Margin="5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="60"/>
+                        <ColumnDefinition Width="8" />
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="Radius" Grid.Row="0"></TextBlock>
+                    <TextBox Text="{Binding Path=Radius, Mode=TwoWay}" Grid.Column="2" Grid.Row="0"></TextBox>
+                </Grid>
+            </StackPanel>
+        </DataTemplate>
+        
         <!--
             Model DataTemplate
         -->
@@ -424,6 +430,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition />
+            <RowDefinition />
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         
@@ -511,8 +518,8 @@
             </RibbonTab>
         </Ribbon>
 
-        <!-- Tool buttons and outpput image -->
-        <DockPanel Grid.Column="0" Grid.Row="1" Margin="0">
+        <!-- Tool buttons and output image -->
+        <DockPanel Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" Margin="0">
 <!--            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
                 <Button x:Name="buttonRender2" Content="Render" VerticalAlignment="Bottom" HorizontalAlignment="Center" Width="75"  Click="buttonRender_Click" Margin="8,8,0,0"/>
             </StackPanel> -->
@@ -572,11 +579,25 @@
             </Viewport3D>
             </Border>
         </DockPanel>
-        
-        <!-- Entity list -->
-        <ListBox Grid.Column="1" Grid.Row="1" Grid.RowSpan="2" x:Name="listBox" VerticalAlignment="Stretch" MinWidth="120" ItemsSource="{Binding Entities, ElementName=window, Mode=TwoWay}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Center">
+
+<!--        <TreeView x:Name="treeView" Grid.Column="1" Grid.Row="1" ItemsSource="{Binding Entities, ElementName=window, Mode=TwoWay}"/> -->
+        <TreeView x:Name="entityTreeView" Grid.Column="1" Grid.Row="1" SelectedItemChanged="entityTreeView_SelectedItemChanged" ItemContainerStyle="{StaticResource TreeViewItemStyle_ExpandAll}">
+            <TreeView.ItemTemplate>
+                <HierarchicalDataTemplate ItemsSource="{Binding Children}">
+                    <TextBlock Text="{Binding Category}"></TextBlock>
+                </HierarchicalDataTemplate>
+            </TreeView.ItemTemplate>
+            <!--<TreeViewItem ItemsSource="{Binding Entities, ElementName=window, Mode=TwoWay}" Header="Entities"></TreeViewItem>-->
+        </TreeView>
+
+        <!-- Entity properties -->
+        <ListBox Grid.Column="1" Grid.Row="2" Grid.RowSpan="2" x:Name="listBox" VerticalAlignment="Stretch" MinWidth="120" ItemsSource="{Binding SelectedEntity, ElementName=window, Mode=TwoWay}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Center">
             <ListBox.ItemTemplateSelector>
-                <local:EntityTemplateSelector CameraTemplate="{StaticResource CameraTemplate}" SphereTemplate="{StaticResource SphereTemplate}" PlaneTemplate="{StaticResource PlaneTemplate}" ModelTemplate="{StaticResource ModelTemplate}" DistantLightTemplate="{StaticResource DistantLightTemplate}" PointLightTemplate="{StaticResource PointLightTemplate}" SpotLightTemplate="{StaticResource SpotLightTemplate}">
+                <local:EntityTemplateSelector CameraTemplate="{StaticResource CameraTemplate}" SphereTemplate="{StaticResource SphereTemplate}"
+                                              PlaneTemplate="{StaticResource PlaneTemplate}" DiscTemplate="{StaticResource DiscTemplate}" 
+                                              ModelTemplate="{StaticResource ModelTemplate}" DistantLightTemplate="{StaticResource DistantLightTemplate}"
+                                              PointLightTemplate="{StaticResource PointLightTemplate}"
+                                              SpotLightTemplate="{StaticResource SpotLightTemplate}">
                 </local:EntityTemplateSelector>
             </ListBox.ItemTemplateSelector>
             <ListBox.ItemContainerStyle>
@@ -591,7 +612,7 @@
         </ListBox>
        
         <!-- Material Tile list -->
-        <ListBox Grid.Column="0" Grid.ColumnSpan="1" Grid.Row="2"  x:Name="materialListBox" MaxHeight="200" MinWidth="120" ItemsSource="{Binding MaterialTiles, ElementName=window, Mode=TwoWay}" HorizontalAlignment="Left" ScrollViewer.VerticalScrollBarVisibility="Disabled" MouseDoubleClick="materialListBox_MouseDoubleClick" HorizontalContentAlignment="Stretch" >
+        <ListBox Grid.Column="0" Grid.ColumnSpan="1" Grid.Row="3"  x:Name="materialListBox" MaxHeight="200" MinWidth="120" ItemsSource="{Binding MaterialTiles, ElementName=window, Mode=TwoWay}" HorizontalAlignment="Left" ScrollViewer.VerticalScrollBarVisibility="Disabled" MouseDoubleClick="materialListBox_MouseDoubleClick" HorizontalContentAlignment="Stretch" >
             <ListBox.ItemsPanel>
                 <ItemsPanelTemplate>
                     <StackPanel Orientation="Horizontal" />
@@ -607,7 +628,9 @@
             </ListBox.ItemTemplate>
         </ListBox>
 
-        <GridSplitter Grid.Column="1" Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Stretch" Width="5" />
+        <GridSplitter Grid.Column="1" Grid.Row="1" Grid.RowSpan="2" HorizontalAlignment="Left" VerticalAlignment="Stretch" Width="5" />
+
+        <GridSplitter Grid.Column="1" Grid.Row="1" Grid.RowSpan="1" VerticalAlignment="Bottom" Height="5" HorizontalAlignment="Stretch" />
 
     </Grid>
 
