@@ -15,6 +15,10 @@ namespace RayTrace
         public DataTemplate ReflectiveTemplate { get; set; }
         public DataTemplate RefractiveAndReflectiveTemplate { get; set; }
 
+        public DataTemplate BRDF_LambertianTemplate { get; set; }
+        public DataTemplate BRDF_CookTorrenceTemplate { get; set; }
+
+
         public override DataTemplate SelectTemplate(object item, DependencyObject container)
         {
 /*
@@ -33,7 +37,12 @@ namespace RayTrace
             if (material.Type == MaterialType.Phong) return PhongTemplate;
             if (material.Type == MaterialType.Reflective) return ReflectiveTemplate;
             if (material.Type == MaterialType.RefractiveAndReflective) return RefractiveAndReflectiveTemplate;
-//*/
+
+            if (material.Type == MaterialType.BRDF_Lambertian) return BRDF_LambertianTemplate;
+            if (material.Type == MaterialType.BRDF_CookTorrence) return BRDF_CookTorrenceTemplate;
+
+
+            //*/
             /*
                         if (entity is Sphere) return SphereTemplate;
                         if (entity is Plane) return PlaneTemplate;

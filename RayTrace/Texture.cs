@@ -20,6 +20,8 @@ namespace RayTrace
 
         public abstract Colour GetColour(HitResult hr);
 
+        public /*abstract*/ virtual Colour GetBaseColour() => Palette.Grey;
+
         public abstract TextureType Type { get; }
 
         public override string ToString()

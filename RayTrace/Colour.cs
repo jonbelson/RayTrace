@@ -12,7 +12,10 @@ namespace RayTrace
         public static Colour White { get { return new Colour(1.0f, 1.0f, 1.0f); } }
         public static Colour Black { get { return new Colour(0.0f, 0.0f, 0.0f); } }
         public static Colour Grey { get { return new Colour(0.7f, 0.7f, 0.7f); } }
-        public static Colour Copper { get { return new Colour(0.72f, 0.45f, 0.20f); } }
+        public static Colour Copper { get { return new Colour(0.82f, 0.475f, 0.23f); } }
+        public static Colour MetallicGold { get { return new Colour(212/255f, 175/255f, 55/255f); } }
+        public static Colour MetallicSilver { get { return new Colour(170/255f, 169 / 255f, 173 / 255f); } }
+        public static Colour Iron { get { return new Colour(161 / 255f, 157 / 255f, 148 / 255f); } }
     }
 
     public class Colour : INotifyPropertyChanged
@@ -20,8 +23,8 @@ namespace RayTrace
         private float red, green, blue;
 
         public float Red { get { return red; } set { red = value; Notify("Red"); } }
-        public float Blue { get { return green; } set { green = value; Notify("Blue"); } }
-        public float Green { get { return blue; } set { blue = value; Notify("Green"); } }
+        public float Blue { get { return blue; } set { blue = value; Notify("Blue"); } }
+        public float Green { get { return green; } set { green = value; Notify("Green"); } }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -30,7 +33,7 @@ namespace RayTrace
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
         }
 
-        public Colour(System.Windows.Media.Color color) : this(color.ScR, color.ScG, color.ScB)
+        public Colour(System.Windows.Media.Color color) : this(color.R/255f, color.G/255f, color.B/255f)
         {
         }
 
@@ -41,10 +44,9 @@ namespace RayTrace
             Red = red;
             Green = green;
             Blue = blue;
-            //Alpha = alpha;
         }
 
-        public Colour(UInt32 rgb)
+        public Colour(uint rgb)
         {
             byte r = (byte) (rgb >> 16);
             byte g = (byte) (rgb >> 8);

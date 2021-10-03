@@ -174,10 +174,24 @@ namespace RayTrace
                 float u = result.u;
                 float v = result.v;
 
-                int x = (int)(u * width);
-                int y = (int)(v * height);
+                u = Math.Clamp(u, 0, 1);
+                v = Math.Clamp(v, 0, 1);
 
-                return texture[y * width + x];
+                int x = (int)(u * (width - 1));
+                int y = (int)(v * (height - 1));
+
+                Debug.Assert(y * width + x < texture.Length);
+
+                try
+                {
+                    Colour c = texture[y * width + x];
+                    return c;
+                }
+                catch (Exception e)
+                {
+
+                    MessageBox.Show(e.Message);
+                }
             }
 
             return Palette.Black;

@@ -79,6 +79,12 @@ namespace RayTrace
             return Palette.Grey;
         }
 
+        public override Colour GetBaseColour()
+        {
+            return Colour.SmoothBlend(Colour1, Colour2, 0.5f);
+
+        }
+
         //public override XMLTexture ToXML()
         //{
         //    XMLTextureGradient xml = new();

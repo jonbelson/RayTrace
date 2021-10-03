@@ -7,17 +7,15 @@ namespace RayTrace
 {
     public enum MaterialType
     {
-        Diffuse, Reflective, RefractiveAndReflective, Phong, BRDF
+        Diffuse, Reflective, RefractiveAndReflective, Phong, BRDF_Lambertian, BRDF_CookTorrence
     }
 
     // Characteristics of a Shape's physical form.
     public class Material
     {
-        [NotifyParentProperty(true)]
-        public String Name { get; set; } = "Material";
+        public string Name { get; set; } = "Material";
         public Guid Guid { get; set; } = Guid.NewGuid();
 
-        ///[NotifyParentProperty(true)]
         public MaterialType Type { get; set; } = MaterialType.Diffuse;
 
         // Ratio of reflected light to incident light (Pd), i.e. how much light is reflected.
@@ -32,13 +30,24 @@ namespace RayTrace
         private float transparency; // Transparency coefficient kt, range 0.0 to 1.0.
         private float reflectivity;
 
-        public float Roughness { get { return roughness; } set { roughness = Math.Min(1.0f, Math.Max(0.0f, value)); } }
-        public float Transparency { get { return transparency; } set { transparency = Math.Min(1.0f, Math.Max(0.0f, value)); } }
-        public float Reflectivity { get { return reflectivity; } set { reflectivity = Math.Min(1.0f, Math.Max(0.0f, value)); } }
+        public float Roughness { get => roughness; set => roughness = Math.Clamp(value, 0.0f, 1.0f); }
+        public float Transparency { get => transparency; set => transparency = Math.Clamp(value, 0.0f, 1.0f); }
+        public float Reflectivity { get => reflectivity; set => reflectivity = Math.Clamp(value, 0.0f, 1.0f); }
 
-        public bool HasRoughness() => Roughness > 0.0f;
-        public bool HasTransparency() => Transparency > 0.0f;
-        public bool HasReflectivity() => Reflectivity > 0.0f;
+        public bool HasRoughness()
+        {
+            return Roughness > 0.0f;
+        }
+
+        public bool HasTransparency()
+        {
+            return Transparency > 0.0f;
+        }
+
+        public bool HasReflectivity()
+        {
+            return Reflectivity > 0.0f;
+        }
 
         //// True if the Shape is considered solid, or false if at least part of the interior is empty.
         //public bool IsSolid { get; set; }
@@ -46,7 +55,6 @@ namespace RayTrace
         public float RefractiveIndex { get; set; } = RayTrace.RefractiveIndex.WindowGlass;
 
         public BRDF Brdf { get; set; }
-
         public Texture Texture { get; set; }
 
         public Material() : this(Palette.White) { }
@@ -76,17 +84,37 @@ namespace RayTrace
             Texture = xmlMaterial.Texture.Create();
         }
 
-        public virtual Colour GetColour(HitResult hr) { return Texture.GetColour(hr); }
-
-        public Vector GetReflection(HitResult hr)
+        public virtual Colour GetColour(HitResult hr)
         {
-
-            return new Vector() ;
+            return Texture.GetColour(hr);
         }
+
+        public Colour GetBrdfColour(HitResult hr, SVector source, Colour Li)
+        {
+            if (Brdf != null)
+            {
+                return Brdf.GetColour(hr, GetColour(hr), source, Li);
+            }
+
+            return Palette.Black;
+        }
+
+        public virtual Colour GetBaseColour()
+        {
+            //if (Brdf != null) return Brdf.GetBaseColour();
+
+            return Texture.GetBaseColour();
+        }
+
+        //public Vector GetReflection(HitResult hr)
+        //{
+
+        //    return new Vector() ;
+        //}
 
         public XMLMaterial ToXML()
         {
-            XMLMaterial xmlMaterial = new XMLMaterial();
+            XMLMaterial xmlMaterial = new();
 
             xmlMaterial.Type = Type;
             xmlMaterial.PhongDiffuse = PhongDiffuse;

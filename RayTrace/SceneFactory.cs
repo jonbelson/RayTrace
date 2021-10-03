@@ -143,7 +143,7 @@ namespace RayTrace
 
 //           scene.Skydome = new SkydomeGradient(Palette.Red, Palette.Green, Palette.Blue);
 
-            scene.Skydome = new SkydomeBitmap("C:\\Users\\Jon\\Documents\\Projects\\RayTrace\\RayTrace\\Data\\skydomes\\immenstadter_horn_2048.jpg");
+            scene.Skydome = new SkydomeBitmap("Data\\skydomes\\immenstadter_horn_2048.jpg");
 
 
             return scene;
@@ -376,7 +376,7 @@ namespace RayTrace
 
             Matrix objectToWorld = new Matrix();
 
-            ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\pbr-low-poly-fox-character");
+            ModelData modelData = importer.ImportObj(@"Data\pbr-low-poly-fox-character");
             scene.Camera.Pos = new Point(-3.5f, 4, -5);
             scene.Camera.Target = new Point(0, 3, 1);
 
@@ -402,21 +402,42 @@ namespace RayTrace
             //model = ModelFactory.Tetahedron();
             scene.AddShape(model);
 
+            Material mat = new Material() { Name = "CookTorrence" };
+            {
+                CookTorrence cookTorrence = new();
+                //cookTorrence.Colour = /*Palette.MetallicGold;*/ Palette.Copper;
+                cookTorrence.Shininess = 0.75f;
+                cookTorrence.Roughness = 0.1f;
+                cookTorrence.Absorption = 1.25f;
+                //cookTorrence.Specular = 0;
+
+//                mat.Texture = new TextureSolid(/*Palette.MetallicGold;*/ Palette.Copper);
+                mat.Texture = new TextureSolid(Palette.MetallicGold);
+                mat.Brdf = cookTorrence;
+                mat.Type = MaterialType.BRDF_CookTorrence;
+
+                scene.AddMaterial(mat);
+
+                model.Material = mat;
+            }
+
             Sphere sphere = new(new Point(-2, 0, 0), 1);
             sphere.Material.Type = MaterialType.Diffuse;
-            scene.AddShape(sphere);
+        //    scene.AddShape(sphere);
 
             float floorHeight = model.MinY;
-            Plane floor = new Plane(new Vector(0, 1, 0), new Point(0, floorHeight, 0), new Colour(Colors.LightGray));
-            //floor.Material.Texture = new TextureSquares(Palette.Black, Palette.White);
+            Disc floor = new Disc(new Point(0, floorHeight, 0), new Vector(0, 1, 0), 25);
+            floor.Material.Texture = new TextureSolid(Palette.Grey);
             //floor.Material.Reflectivity = 0.1f;
             scene.AddShape(floor);
 
             Light light = new PointLight(new Point(-50, 50, 10), 6000, Palette.White);
             scene.AddLight(light);
 
-            light = new PointLight(new Point(10, 50, 0), 3000, Palette.White);
+            light = new PointLight(new Point(10, 30, -30), 3000, Palette.White);
             scene.AddLight(light);
+
+            scene.Skydome = new SkydomeBitmap("Data\\skydomes\\immenstadter_horn_2048.jpg");
 
             return scene;
         }
@@ -525,36 +546,123 @@ namespace RayTrace
 
             const int radius = 2;
             const int DiscRadius = 10;
+            /*
+                        Material mat = new Material() { Name = "Lambertian (BRDF)" };
+                        Lambertian lambertian = new();
+                        lambertian.Colour = Palette.Copper;
+                        mat.Brdf = lambertian;
+                        mat.Type = MaterialType.BRDF_Lambertian;
+            */
 
-            Material mat = new Material() { Name = "Lambertian (BRDF)" };
-            Lambertian lambertian = new();
-            lambertian.Colour = Palette.Copper;
-            mat.Brdf = lambertian;
+            float[] Shininess = new float[] { 0.0f, 0.25f, 0.5f, 0.75f, 1.0f };
+            float[] Roughness = new float[] { 0.1f, 0.25f, 0.5f, 0.75f, 1.0f };
+            float[] Absorption = new float[] { 1.0f, 1.25f, 1.5f, 2.0f };
 
-            mat.Type = MaterialType.BRDF;
+            foreach (float shininess in Shininess)
+            {
+                foreach (float roughness in Roughness)
+                {
+                    foreach (float absorption in Absorption)
+                    {
+                        string name = String.Format("BRDF s{0:F2} r{1:F2} a{2:F2}", shininess, roughness, absorption);
+                        Material mat = new Material() { Name = name };
+                        {
+                            CookTorrence cookTorrence = new();
+                            //cookTorrence.Colour = /*Palette.MetallicGold;*/ Palette.Copper;
+                            cookTorrence.Shininess = shininess;
+                            cookTorrence.Roughness = roughness;
+                            cookTorrence.Absorption = absorption;
+                            //cookTorrence.Specular = 0;
+
+                            mat.Texture = new TextureSolid(/*Palette.MetallicGold;*/ Palette.Copper);
+                            mat.Brdf = cookTorrence;
+                            mat.Type = MaterialType.BRDF_CookTorrence;
+
+                            scene.AddMaterial(mat);
+
+                        }
+                    }
+                }
+            }
+/*
+            Material mat2 = new Material() { Name = "Cook-Torrence (BRDF) 2" };
+            {
+                CookTorrence cookTorrence = new();
+                cookTorrence.Colour = Palette.Copper;
+                cookTorrence.Diffuse = 0.25f;
+                cookTorrence.Roughness = 0.80f;
+                //cookTorrence.Specular = 0;
+                mat2.Brdf = cookTorrence;
+                mat2.Type = MaterialType.BRDF_CookTorrence;
+            }
+
+            Material mat3 = new Material() { Name = "Cook-Torrence (BRDF) 3" };
+            {
+                CookTorrence cookTorrence = new();
+                cookTorrence.Colour = Palette.Copper;
+                cookTorrence.Diffuse = 0.25f;
+                cookTorrence.Roughness = 0.20f;
+                //cookTorrence.Specular = 0;
+                mat3.Brdf = cookTorrence;
+                mat3.Type = MaterialType.BRDF_CookTorrence;
+            }
 
             scene.AddMaterial(mat);
-
+            scene.AddMaterial(mat2);
+            scene.AddMaterial(mat3);
+*/
             Sphere sphere = new Sphere(new Point(-2f, radius, 11), radius, new Colour(0.25f, 0.25f, 0.25f)  /* Palette.White*/);
-            sphere.Material = mat;
+            //sphere.Material = mat;
             scene.AddShape(sphere);
 
             sphere = new Sphere(new Point(2f, radius, 11), radius, new Colour(0.0f, 0.0f, 0.5f) /*new Colour(0.25f, 0.25f, 0.25f)*/);
             scene.AddShape(sphere);
+            scene.AddMaterial(sphere.Material);
 
             Disc disc = new Disc(new Point(0, 0, 11), new Vector(0, 1, 0), DiscRadius);
             disc.Material.Texture = new TextureSolid(Palette.Red);
             scene.AddShape(disc);
+            scene.AddMaterial(disc.Material);
 
             disc = new Disc(new Point(-4.5f, 0, 11), new Vector(1, 0, 0), DiscRadius);
             disc.Material.Texture = new TextureSolid(Palette.Green);
             scene.AddShape(disc);
+            scene.AddMaterial(disc.Material);
 
             Light light = new PointLight(new Point(0, 9, 0), 2000.0f, new Colour(1.0f, 1.0f, 1.0f));
             scene.AddLight(light);
 
             scene.Camera.Pos = new Point(0, 4, -2);
             scene.Camera.Target = new Point(0, 4, 1);
+
+            return scene;
+        }
+
+        public static Scene SensorScene()
+        {
+            Scene scene = new Scene();
+
+            Sphere sphere = new Sphere(new Point(0,0,0), 10);
+            sphere.Material.Texture = new TextureSolid(Palette.Green);
+            scene.AddShape(sphere);
+
+            Disc leftDisc = new Disc(new Point(0,0,0), new Vector(0.707107f, 0, 0.707107f), 11);
+            scene.AddShape(leftDisc);
+
+            Disc rightDisc = new Disc(new Point(0, 0, 0), new Vector(-0.707107f, 0, 0.707107f), 11);
+            scene.AddShape(rightDisc);
+
+            Disc topDisc = new Disc(new Point(0, 0, 0), new Vector(0, 0.707107f, 0.707107f), 11);
+            scene.AddShape(topDisc);
+
+            Disc bottomDisc = new Disc(new Point(0, 0, 0), new Vector(0, -0.707107f, 0.707107f), 11);
+            scene.AddShape(bottomDisc);
+
+            scene.Camera.Pos = new Point(0, 0, -20);
+            scene.Camera.Target = new Point(0, 0, 0);
+
+
+            scene.Ambient = new Colour(0.3f, 0.3f, 0.3f);
 
             return scene;
         }

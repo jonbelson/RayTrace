@@ -22,6 +22,12 @@ namespace RayTrace
         public SVector Scale(float scale) => new(I * scale, J * scale, K * scale);
         public SVector Negate() => new(-I, -J, -K);
 
+        // Dot product clamped to range 0 - 1.
+        public float DotProductSaturated(in SVector v)
+        {
+            return Math.Clamp(DotProduct(v), 0, 1);
+        }
+
         // Return angle between Vectors in radians.
         public float Angle(in SVector v)
         {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media;
 using System.Windows.Media.Media3D;
 
 namespace RayTrace
@@ -80,25 +81,44 @@ namespace RayTrace
         // Update geometry for a single Shape
         public void Update(Shape shape)
         {
+            GeometryModel3D geometryModel = null;
+
             if (shape.Enabled)
             {
                 if (shape is Sphere sphere)
                 {
-                    GeometryModel3D model2 = GeometryModel3DFactory.MakeSphere(sphere);
+                    geometryModel = GeometryModel3DFactory.MakeSphere(sphere);
 
-                    group.Children.Add(model2);
+                    group.Children.Add(geometryModel);
                 }
                 else if (shape is Plane plane)
                 {
-                    GeometryModel3D model2 = GeometryModel3DFactory.MakePlane(plane);
+                    geometryModel = GeometryModel3DFactory.MakePlane(plane);
 
-                    group.Children.Add(model2);
+                    group.Children.Add(geometryModel);
+                }
+                else if (shape is Disc disc)
+                {
+                    geometryModel = GeometryModel3DFactory.MakeDisc(disc);
+
+                    group.Children.Add(geometryModel);
                 }
                 else if (shape is Model model)
                 {
-                    GeometryModel3D geometryModel = GeometryModel3DFactory.MakeModel(model);
+                    geometryModel = GeometryModel3DFactory.MakeModel(model);
 
                     group.Children.Add(geometryModel);
+                }
+            }
+
+            if (geometryModel != null)
+            {
+                Colour c = shape.Material.GetBaseColour();
+                geometryModel.Material = new DiffuseMaterial(new SolidColorBrush(Color.FromScRgb(1, c.Red, c.Green, c.Blue)));
+
+                if (shape is Disc || shape is Plane)
+                {
+                    geometryModel.BackMaterial = geometryModel.Material;
                 }
             }
         }

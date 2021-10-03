@@ -467,6 +467,10 @@
                     <RibbonSeparator MinWidth="2" MinHeight="55" IsEnabled="True" />
                     <RibbonCheckBox x:Name="checkBoxReflections" Label="Reflections" Click="checkBoxReflections_Click"></RibbonCheckBox>
                     <RibbonTextBox x:Name="textBoxDepth" Label="Depth" IsEnabled="{Binding IsEnabled, ElementName=checkBoxReflections}"></RibbonTextBox>
+
+                    <RibbonSeparator MinWidth="2" MinHeight="55" IsEnabled="True" />
+                    <RibbonCheckBox x:Name="checkBoxBRDF" Label="BRDF" ToolTip="Enable BRDF"></RibbonCheckBox>
+                    <RibbonTextBox x:Name="textBoxBRDFSamples" Label="Samples" IsEnabled="{Binding IsEnabled, ElementName=checkBoxBRDF}"></RibbonTextBox>
                 </RibbonGroup>
 
                 <RibbonGroup x:Name="groupGlobalIllumination" Header="Global Illumination">
@@ -628,7 +632,7 @@
             </ListBox.ItemTemplate>
         </ListBox>
 
-        <GridSplitter Grid.Column="1" Grid.Row="1" Grid.RowSpan="2" HorizontalAlignment="Left" VerticalAlignment="Stretch" Width="5" />
+        <GridSplitter Grid.Column="1" Grid.Row="1" Grid.RowSpan="3" HorizontalAlignment="Left" VerticalAlignment="Stretch" Width="5" />
 
         <GridSplitter Grid.Column="1" Grid.Row="1" Grid.RowSpan="1" VerticalAlignment="Bottom" Height="5" HorizontalAlignment="Stretch" />
 

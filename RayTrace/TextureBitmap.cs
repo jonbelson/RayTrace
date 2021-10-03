@@ -84,8 +84,11 @@ namespace RayTrace
         {
             if (texture != null)
             {
-                int x = (int)(u * width);
-                int y = (int)(v * height);
+                u = Math.Clamp(u, 0, 1);
+                v = Math.Clamp(v, 0, 1);
+
+                int x = (int)(u * (width - 1));
+                int y = (int)(v * (height - 1));
 
                 Debug.Assert(y * width + x < texture.Length);
 
@@ -102,8 +105,11 @@ namespace RayTrace
                 float u = hr.u;
                 float v = hr.v;
 
-                int x = (int)(u * width);
-                int y = (int)(v * height);
+                u = Math.Clamp(u, 0, 1);
+                v = Math.Clamp(v, 0, 1);
+
+                int x = (int)(u * (width - 1));
+                int y = (int)(v * (height - 1));
 
                 return texture[y * width + x];
             }

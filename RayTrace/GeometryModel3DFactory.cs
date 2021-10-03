@@ -62,6 +62,93 @@ namespace RayTrace
             return mesh;
         }
 
+        public static MeshGeometry3D MakeDisc(Vector normal, int slices = 40)
+        {
+            // Make two orthogonal Vectors on the plane.
+            Vector v = new Vector(normal.I, normal.K, normal.J);
+            if ((v - normal).Magnitude() < 0.01)
+            {
+                v = new Vector(normal.K, normal.J, normal.I);
+            }
+            Vector vec1 = normal.VectorProduct(v);
+            Vector vec2 = normal.VectorProduct(vec1);
+
+            vec1 = vec1.Normalise();
+            vec2 = vec2.Normalise();
+
+            MeshGeometry3D mesh = new();
+
+            // Centre point
+            mesh.Positions.Add(new Point3D(0.0, 0.0, 0.0));
+
+            double step = 1.0 / slices;
+            int numSteps = slices + 1;
+
+            double angle = 0.0;
+            for (int i = 0; i<numSteps; i++)
+            {
+                angle = i*step*2.0*Math.PI;
+
+                float x = (float) Math.Cos(angle);
+                float y = (float) Math.Sin(angle);
+
+                Vector x2 = new(x * vec1.I, x * vec1.J, x * vec1.K);
+                Vector y2 = new(y * vec2.I, y * vec2.J, y * vec2.K);
+                Vector sum = x2 + y2;
+                mesh.Positions.Add(new Point3D(sum.I, sum.J, sum.K));
+            }
+
+            int numPoints = mesh.Positions.Count;
+            for (int i=1; i<=numPoints; i++)
+            {
+                mesh.TriangleIndices.Add(0);
+                mesh.TriangleIndices.Add(i - 1);
+                mesh.TriangleIndices.Add(i%numPoints);
+            }
+
+            return mesh;
+        }
+
+        public static GeometryModel3D MakeDisc(Disc disc)
+        {
+            GeometryModel3D model = new();
+
+            MeshGeometry3D mesh = MakeDisc(disc.Normal);
+
+            model.Geometry = mesh;
+
+            model.Material = new DiffuseMaterial(new SolidColorBrush(DefaultColour));
+
+            Vector up = new Vector(0, 0, -1);
+            Vector axis = up.VectorProduct(disc.Normal);
+
+            double cosangle = up.DotProduct(disc.Normal);
+            double angle = Math.Acos(cosangle);
+
+            var axisRotation = new AxisAngleRotation3D(new Vector3D(axis.I, axis.J, axis.K), angle / (2 * Math.PI) * 360);
+            var rotate = new RotateTransform3D(axisRotation);
+
+
+            //            var scale = new ScaleTransform3D(1000, 1, 1000);
+            var scale = new ScaleTransform3D(disc.Radius, disc.Radius, disc.Radius);
+            var translate = new TranslateTransform3D(disc.Pos.X, disc.Pos.Y, disc.Pos.Z);
+
+            Transform3DGroup transformGroup = new();
+
+            // var transform = new MatrixTransform3D(lookAt);
+
+            transformGroup.Children.Add(scale);
+            //transformGroup.Children.Add(rotate);
+            transformGroup.Children.Add(translate);
+
+            model.Transform = transformGroup;
+
+            //model.Material = new DiffuseMaterial(new SolidColorBrush(Colors.Red));
+            //model.BackMaterial = new DiffuseMaterial(new SolidColorBrush(Colors.Green));
+
+            return model;
+        }
+
         public static MeshGeometry3D MakePlane(Vector normal, int slices = 40)
         {
             // Make two orthogonal Vectors on the plane.
@@ -124,20 +211,6 @@ namespace RayTrace
                 pointIndex += numSteps;
 
             }
-
-
-
-            //mesh.Positions.Add(new Point3D(-0.5, 0.0, -0.5));
-            //mesh.Positions.Add(new Point3D(0.5, 0.0, -0.5));
-            //mesh.Positions.Add(new Point3D(0.5, 0.0, 0.5));
-            //mesh.Positions.Add(new Point3D(-0.5, 0.0, 0.5));
-
-            //mesh.TriangleIndices.Add(0);
-            //mesh.TriangleIndices.Add(2);
-            //mesh.TriangleIndices.Add(3);
-            //mesh.TriangleIndices.Add(0);
-            //mesh.TriangleIndices.Add(1);
-            //mesh.TriangleIndices.Add(2);
 
             return mesh;
         }

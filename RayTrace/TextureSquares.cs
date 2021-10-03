@@ -35,13 +35,15 @@ namespace RayTrace
 
             if (x % 2 == 1)
             {
-                if (y % 2 == 1) return Colour1; else return Colour2;
+                return y % 2 == 1 ? Colour1 : Colour2;
             }
             else
             {
-                if (y % 2 == 0) return Colour1; else return Colour2;
+                return y % 2 == 0 ? Colour1 : Colour2;
             }
         }
+
+        public override Colour GetBaseColour() { return Colour.LinearBlend(Colour1, Colour2, 0.5f); }
 
         public override XMLTexture ToXML()
         {

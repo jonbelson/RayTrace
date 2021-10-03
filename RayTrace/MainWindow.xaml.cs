@@ -40,9 +40,6 @@ namespace RayTrace
     {
         private Scene scene = new();
         private Renderer renderer = new();
-   
-        //private Canvas canvas = null;
-        //WriteableBitmap bitmap = null;
 
         private OutputWindow outputWindow = new OutputWindow();
 
@@ -142,6 +139,7 @@ namespace RayTrace
             checkBoxReflections.IsChecked = renderer.UseReflections;
             checkBoxGIEnable.IsChecked = renderer.UseGlobalIllumination;
             checkBoxDepthOfField.IsChecked = renderer.UseDepthOfField;
+            checkBoxBRDF.IsChecked = renderer.UseBRDF;
 
             textBoxDepth.Text = renderer.RecursionDepth.ToString();
             textBoxAdaptiveSubSamplingDepth.Text = renderer.AdaptiveSuperSamplingDepth.ToString();
@@ -149,6 +147,8 @@ namespace RayTrace
 
             textBoxGINumRays.Text = renderer.NumGIRays.ToString();
             textBoxGIDepth.Text = renderer.GIDepth.ToString();
+
+            textBoxBRDFSamples.Text = renderer.NumBRDFSamples.ToString();
 
             //scene = SceneFactory.PhongDemoScene();
             //scene = SceneFactory.RefractionDemoScene();
@@ -160,26 +160,19 @@ namespace RayTrace
             //scene = SceneFactory.GIDemoScene();
             //scene = SceneFactory.GIDemoScene2();
 //            scene = SceneFactory.TexturedSpheresDemoScene();
-            //scene = SceneFactory.ObjScene();
-            scene = SceneFactory.BRDFScene();
+            scene = SceneFactory.ObjScene();
+            //scene = SceneFactory.BRDFScene();
+            //scene = SceneFactory.SensorScene();
 
             //scene = SceneFactory.EmptyScene();
 
             /*
                         Matrix m = new Matrix(new double[] { 2, 5, 1, 4,  4, 1, 6, 3,  5, 3, 7, 2,  1, 0, 2, 4 });
-
                         double det = m.GetDeterminant();
-
-
                         Debug.WriteLine(m.ToString());
-
-
                         Matrix inverse = m.GetInverse();
-
                         Debug.WriteLine(inverse.ToString());
-
                         Matrix product = m * inverse;
-
                         Debug.WriteLine(product.ToString());
             */
 
@@ -266,15 +259,29 @@ namespace RayTrace
             renderer.UseReflections = (bool)checkBoxReflections.IsChecked;
             renderer.UseGlobalIllumination = (bool)checkBoxGIEnable.IsChecked;
             renderer.UseDepthOfField = (bool)checkBoxDepthOfField.IsChecked;
+            renderer.UseBRDF = (bool)checkBoxBRDF.IsChecked;
 
-            int depth;
-            if (!Int32.TryParse(textBoxDepth.Text, out depth))
+            if (!Int32.TryParse(textBoxDepth.Text, out int depth))
             {
                 MessageBox.Show("Recursion depth must be an integer.");
                 return false;
             }
 
             renderer.RecursionDepth = depth;
+
+            if (!Int32.TryParse(textBoxBRDFSamples.Text, out int BRDFSamples))
+            {
+                MessageBox.Show("Number of BRDF samples must be an integer.");
+                return false;
+            }
+
+            if (BRDFSamples < 1)
+            {
+                MessageBox.Show("Number of BRDF samples depth must be at least 1.");
+                return false;
+            }
+
+            renderer.NumBRDFSamples = BRDFSamples;
 
             if (!Int32.TryParse(textBoxGIDepth.Text, out int giDepth))
             {
@@ -449,8 +456,8 @@ namespace RayTrace
 
             if (propName == "Pos" || propName=="Target")
             {
-                viewport3D.Visibility = Visibility.Visible;
-                return;
+                //viewport3D.Visibility = Visibility.Visible;
+                //return;
             }
 
             viewport3D.Visibility = Visibility.Hidden;
@@ -654,6 +661,7 @@ namespace RayTrace
                 if (shape != null)
                 {
                     shape.Material = (Material) selectedValue;
+                    UpdateViewport3D();
                 }
 
             }
@@ -713,15 +721,10 @@ namespace RayTrace
                 {
                     // Move camera Target
 
-                    //Vector left = scene.Camera.GetViewVector().VectorProduct(new Vector(0, 1, 0));
-
-                    // Rotate around camera target? Maybe with modifier key.
-                    //double radius = scene.Camera.GetViewVector().Magnitude();
-
-                    Vector offset = new Vector(-xDiff, 0, 0 /*yDiff*/);
+                    Vector offset = new Vector(-xDiff/10, 0, 0 /*yDiff*/);
                     scene.Camera.Target += offset;
 
-                    Vector offset2 = new Vector(/*-xDiff*/ 0, yDiff, 0);
+                    Vector offset2 = new Vector(/*-xDiff*/ 0, yDiff/10, 0);
                     scene.Camera.Target += offset2;
                 }
                 else if (ctrlPressed && !shiftPressed)
@@ -766,11 +769,11 @@ namespace RayTrace
 
                     Point target = scene.Camera.Target;
 
-                    //Matrix toOrigin = Matrix.GetTranslation(-target.X, -target.Y, -target.Z);
+                    Matrix toOrigin = Matrix.GetTranslation(-target.X, -target.Y, -target.Z);
                     Matrix rotation = Matrix.GetRotationY((float)(xDiff / 10.0));
-                    //Matrix fromOrigin = Matrix.GetTranslation(target.X, target.Y, target.Z);
+                    Matrix fromOrigin = Matrix.GetTranslation(target.X, target.Y, target.Z);
 
-                    //targetToCamera = toOrigin * targetToCamera;
+                   // targetToCamera = toOrigin * targetToCamera;
                     targetToCamera = rotation * targetToCamera;
                     //targetToCamera = fromOrigin * targetToCamera;
 

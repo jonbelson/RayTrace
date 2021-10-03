@@ -13,7 +13,7 @@ namespace RayTrace
         public List<Shape> Shapes = new List<Shape>();
         public List<Light> Lights = new List<Light>();
 
-        private Material defaultMaterial = new Material(Palette.Grey) { Name = "Default" };
+        private readonly Material defaultMaterial = new Material(Palette.Grey) { Name = "Default" };
 
         private List<Material> materials = new List<Material>();
 
@@ -22,7 +22,9 @@ namespace RayTrace
             get { return materials; }
         }
 
-        [NotifyParentProperty(true)]
+        public string BaseDirectory { get; set; }
+
+        //[NotifyParentProperty(true)]
         public Camera Camera { get; } = new Camera(new Point(0, 0, 0), new Point(0, 0, 1));
 
         public Colour Ambient { get; set; } = new Colour(0.2f, 0.2f, 0.2f);
@@ -95,6 +97,7 @@ namespace RayTrace
                 }
             }
 
+            hitResult.Ray = ray.Direction;
             return hitResult;
         }
 

@@ -89,18 +89,21 @@ namespace RayTrace
 
 		// Hit test between line a sphere.
 		// segmentOnly If true, only the line segment defined by p1 and p2 is considered.
-		private HitResult HitTestImpl(Camera camera, SPoint p1, SPoint p2, bool segmentOnly)
-        {
+		//private HitResult HitTestImpl(Camera camera, SPoint p1, SPoint p2, bool segmentOnly)
+		private HitResult HitTestImpl(Camera camera, Ray ray)
+		{
 			HitResult hr = new HitResult(this);
 
 			SPoint sc = camera.WorldToView * pos;
 
 			float r = Radius;
 
-			const float EPS = 0.00001f;
+			SPoint p1 = ray.Origin;
+			SPoint p2 = p1 + ray.Direction;
 
 			// Vector from p1 to p2.
-			SVector dp = p2 - p1;
+			//SVector dp = p2 - p1;
+			SVector dp = ray.Direction;
 
 			float a = dp.MagnitudeSquared();
 			float b = 2 * (dp.I * (p1.X - sc.X) + dp.J * (p1.Y - sc.Y) + dp.K * (p1.Z - sc.Z));
@@ -108,6 +111,8 @@ namespace RayTrace
 			c += p1.X * p1.X + p1.Y * p1.Y + p1.Z * p1.Z;
 			c -= 2 * (sc.X * p1.X + sc.Y * p1.Y + sc.Z * p1.Z);
 			c -= r * r;
+
+			const float EPS = 0.00001f;
 
 			float bb4ac = b * b - 4 * a * c;
 			if (Math.Abs(a) < EPS || bb4ac < 0)
@@ -141,18 +146,15 @@ namespace RayTrace
 			bool mu1Valid = true;
 			bool mu2Valid = true;
 
-			float THRESH = 0.001f;
-
+			//float THRESH = 0.001f;
+				
 			// Generally we're not interested in hits that are very close to start position.
-			if (mu1 < THRESH)	{ mu1Valid = false;	}
-			if (mu2 < THRESH)	{ mu2Valid = false;	}
+			if (mu1 < ray.TMin)	{ mu1Valid = false;	}
+			if (mu2 < ray.TMin)	{ mu2Valid = false;	}
 
-			if (segmentOnly)
-			{
-				// Check if segment actually intersects us.
-				if (mu1 > 1.0 - THRESH) mu1Valid = false;
-				if (mu2 > 1.0 - THRESH) mu2Valid = false;
-			}
+			// Check if segment actually intersects us.
+			if (mu1 > ray.TMax) mu1Valid = false;
+			if (mu2 > ray.TMax) mu2Valid = false;
 
 			float mu;
 			if (mu1Valid && mu2Valid)
@@ -202,13 +204,13 @@ namespace RayTrace
 //		public override HitResult HitTest(Camera camera, Point pos, Vector ray)
 		public override HitResult HitTest(Camera camera, Ray ray)
 		{
-			bool segmentOnly = (ray.TMax == 1.0);
+			//bool segmentOnly = (ray.TMax == 1.0);
 
 			//Debug.Assert(!segmentOnly);
 
-			SPoint p2 = ray.Origin.Offset(ray.Direction);
+			//SPoint p2 = ray.Origin.Offset(ray.Direction);
 
-			HitResult hr = HitTestImpl(camera, ray.Origin, p2, segmentOnly);
+			HitResult hr = HitTestImpl(camera, ray);
 			hr.Ray = ray.Direction;
 			return hr;
 

@@ -24,6 +24,7 @@ namespace RayTrace
         public bool UseSoftShadows { get; set; } = false;//true;
         public bool UseDepthOfField { get; set; } = false;//true;
         public bool UseGlobalIllumination { get; set; } = false;
+        public bool UseBRDF { get; set; } = true;
 
         public enum AntiAliasType { None, NoiseGrid, SuperSampling, AdaptiveSupersampling }
         public AntiAliasType AntiAlias { get; set; } = AntiAliasType.None;
@@ -44,7 +45,7 @@ namespace RayTrace
         public int NumGIRays { set { if (value >= 0) _numGIRays = value; } get { return _numGIRays; } }
 
         // Number of integrated samples when evaluating a BRDF at a point.
-        private int _numBRDFSamples = 500;
+        private int _numBRDFSamples = 400;
         public int NumBRDFSamples {
             get { return _numBRDFSamples; }
             set { if (value >= 0) _numBRDFSamples = Math.Max(1, value); }
@@ -493,9 +494,17 @@ namespace RayTrace
             Colour diffuse = Palette.Black;
             Colour specular = Palette.Black;
 
-            switch (shape.Material.Type)
+            MaterialType materialType = shape.Material.Type;
+
+            if (!UseBRDF && (materialType == MaterialType.BRDF_Lambertian || materialType == MaterialType.BRDF_CookTorrence))
             {
-                case MaterialType.BRDF:
+                materialType = MaterialType.Diffuse;
+            }
+
+            switch (materialType)
+            {
+                case MaterialType.BRDF_Lambertian:
+                case MaterialType.BRDF_CookTorrence:
                     {
                         Colour L = new();
 
@@ -517,12 +526,29 @@ namespace RayTrace
                             Debug.Assert(scattered.DotProduct(hr.EntryNormal) >= 0);
                             Debug.Assert(dpSN >= 0.0);
 
-                            HitResult hr2 = scene.HitTest(camera, new Ray(hr.Entry + hr.EntryNormal.Scale(0.01f), scattered));
+                            Ray ray2 = new Ray(hr.Entry + hr.EntryNormal.Scale(0.01f), scattered);
+                            HitResult hr2 = scene.HitTest(camera, ray2);
                             if (hr2.HasEntry())
                             {
                                 // Calculate light arriving from the random direction.
                                 Colour incoming = CalculateColour(camera, scene, scattered, rand, hr2, depth);
-                                L += hr.shape.Material.Brdf.GetColour(hr, scattered, incoming);
+                                //L += hr.shape.Material.Brdf.GetColour(hr, scattered, incoming);
+                                //Colour colour = shape.GetColour(hr);
+                                L += hr.shape.Material.GetBrdfColour(hr, scattered, incoming);
+
+
+
+                                //float dpIN = scattered.DotProductSaturated(hr.EntryNormal);
+                                //L += hr.shape.Material.Brdf.GetColour(hr, scattered, incoming) * incoming * dpIN;
+                            }
+                            else
+                            {
+                                Colour incoming = scene.Skydome.GetColour(camera, ray2.Direction);
+                                //HitResult hr3 = new HitResult();
+                                //hr3.EntryNormal = hr.EntryNormal;   // Original point we are sampling at.
+                                //hr3.Ray = scattered;
+
+                                L += hr.shape.Material.GetBrdfColour(hr, scattered, incoming);
                             }
                         }
 
@@ -533,7 +559,7 @@ namespace RayTrace
                             if (!light.Enabled) continue;
 
                             PointLight pointLight = light as PointLight;
-                            if (pointLight != null)
+                            if (pointLight != null && pointLight.Radius > 0)
                             {
                                 bool gotHit = scene.HitTestFast(camera, hr.Entry, pointLight._pos);
                                 if (!gotHit)
@@ -541,11 +567,17 @@ namespace RayTrace
                                     SVector toLight = pointLight._pos - hr.Entry;
                                     toLight = toLight.Normalise();
                                     //SVector vecToLight = vecToLight.Normalise();
-                                    double dpLN = 1.0;// toLight.DotProduct(hr.EntryNormal);
+//                                    double dpLN = 1.0;// toLight.DotProduct(hr.EntryNormal);
+                                    double dpLN = toLight.DotProductSaturated(hr.EntryNormal);
 
-                                    Colour incoming = pointLight.GetIntensityAtPoint(camera, hr.Entry) * dpLN;
-                                    L += hr.shape.Material.Brdf.GetColour(hr, toLight, incoming);
-                                    //L += c;
+                                    ///Debug.Assert();
+                                    if (dpLN > 0)
+                                    {
+                                        Colour incoming = pointLight.GetIntensityAtPoint(camera, hr.Entry) * dpLN;
+                                        L += hr.shape.Material.GetBrdfColour(hr, toLight, incoming);
+                                        //L += hr.shape.Material.Brdf.GetColour(hr, toLight, incoming) / (4 * Math.PI * pointLight.Radius * pointLight.Radius);
+                                        //L += c;
+                                    }
                                 }
 
                             }
@@ -732,7 +764,8 @@ namespace RayTrace
                     break;
             }
 
-            if (UseAmbient && hr.shape.Material.Type != MaterialType.BRDF)
+            //if (UseAmbient && hr.shape.Material.Type != MaterialType.BRDF)
+            if (UseAmbient)
             {
                 ambient = shape.GetColour(hr).Multiply(scene.Ambient);
             }

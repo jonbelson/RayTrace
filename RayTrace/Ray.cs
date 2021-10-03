@@ -13,19 +13,19 @@ namespace RayTrace
         public SPoint Origin { get; set; } = new SPoint(0, 0, 0);
         public SVector Direction { get; set; } = new SVector(0, 0, 1);
 
-        public float TMin { get; set; } = 0.0f;
+        public float TMin { get; set; } = 0.001f;
         public float TMax { get; set; } = float.MaxValue;
 
+        // Intersection can be at any point along the line.
         public Ray(SPoint p, SVector d)
         {
             (Origin, Direction) = (p, d);
-            //TMin = 0.0f;
-            //TMax = float.MaxValue;
         }
 
+        // Intersection must be beteen the two points.
         public Ray(SPoint p, SPoint d) : this(p, d - p)
         {
-            TMin = 0.0f;
+            //TMin = 0.0f;
             TMax = 1.0f;
         }
     }

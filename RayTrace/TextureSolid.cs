@@ -30,6 +30,8 @@ namespace RayTrace
 
         public override Colour GetColour(HitResult hr) { return Colour; }
 
+        public override Colour GetBaseColour() { return Colour; }
+
         public override XMLTexture ToXML()
         {
             XMLTextureSolid xml = new XMLTextureSolid();

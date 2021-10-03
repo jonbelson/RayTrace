@@ -24,7 +24,7 @@ namespace RayTrace
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
-        private readonly List<MaterialType> materialTypes = new() { MaterialType.Diffuse, MaterialType.Reflective, MaterialType.RefractiveAndReflective, MaterialType.Phong };
+        private readonly List<MaterialType> materialTypes = new() { MaterialType.Diffuse, MaterialType.Reflective, MaterialType.RefractiveAndReflective, MaterialType.Phong, MaterialType.BRDF_Lambertian, MaterialType.BRDF_CookTorrence };
 
         private readonly MaterialTileMaker materialTileMaker = new();
 
@@ -92,11 +92,25 @@ namespace RayTrace
         {
             MaterialType type = (MaterialType)comboBoxMaterialType.SelectedItem;
 
-            material.Type = type;
+            if (material.Type != type)
+            {
+                material.Type = type;
 
-            Materials.Clear();
-            Materials.Add(material);
+                // XXX
+                if (type == MaterialType.BRDF_CookTorrence)
+                {
+                    material.Brdf = new CookTorrence();
+                }
+                else if (type == MaterialType.BRDF_Lambertian)
+                {
+                    material.Brdf = new Lambertian();
+                }
 
+
+                Materials.Clear();
+                Materials.Add(material);
+            }
+            
             UpdatePreview();
 
             //var currentSelector = contentControl.ContentTemplateSelector;
