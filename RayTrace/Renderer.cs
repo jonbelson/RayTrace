@@ -429,7 +429,7 @@ namespace RayTrace
             SVector v = R.Scale(1000.0f);
             SPoint far = hr.Entry.Offset(v);
 
-            HitResult hrReflect = scene.HitTest(camera, new(hr.Entry), new(far));
+            HitResult hrReflect = scene.HitTest(camera, hr.Entry, far);
             if (hrReflect.HasEntry())
             {
                 c = CalculateColour(camera, scene, R, rand, hrReflect, depth);
@@ -477,7 +477,7 @@ namespace RayTrace
         // scene    Scene we are rendering.
         // ray      Incoming ray that produced HitResult.
         // hr       HitResult that detected intersection.
-        private Colour CalculateColour(Camera camera, Scene scene, SVector ray, Random rand, HitResult hr, int depth = 0)
+        private Colour CalculateColour(Camera camera, Scene scene, SVector ray, Random rand, HitResult hr, int depth = 0, bool BrdfRay = false)
         {
             ////////Debug.Assert(hr.HasEntry());
 
@@ -508,51 +508,81 @@ namespace RayTrace
                     {
                         Colour L = new();
 
-                        for (int i = 0; i < NumBRDFSamples; i++)
+                        if (BrdfRay)
                         {
-                            SPoint p = hr.Entry + hr.EntryNormal + GetSVectorInSphere(rand);
-                            SVector scattered = p - hr.Entry;
-                            scattered = scattered.Normalise();
+                            // Don't bother doing a full calculation if this is already a scattered ray from a BRDF surface.
+                            //L += hr.shape.GetColour(hr);
+                            SVector vecToViewer = ray.Scale(-1.0f);
 
-                            // Check scattered Vector is in the corect hemishere
-                            double dpSN = scattered.DotProduct(hr.EntryNormal);
-                            if (dpSN < 0.0)
-                            {
-                                // Reverse the direction on the Vector.
-                                scattered = -scattered;
-                                dpSN = scattered.DotProduct(hr.EntryNormal);
-                            }
+                            float dpVE = vecToViewer.DotProduct(hr.EntryNormal);
 
-                            Debug.Assert(scattered.DotProduct(hr.EntryNormal) >= 0);
-                            Debug.Assert(dpSN >= 0.0);
+                            SVector vecReflected = hr.EntryNormal.Scale(2.0f * dpVE) - vecToViewer;
+                            vecReflected = vecReflected.Normalise();
+                            //vecReflected = vecReflected.Negate();
 
-                            Ray ray2 = new Ray(hr.Entry + hr.EntryNormal.Scale(0.01f), scattered);
+                            Ray ray2 = new Ray(hr.Entry + hr.EntryNormal.Scale(0.01f), -vecReflected);
                             HitResult hr2 = scene.HitTest(camera, ray2);
                             if (hr2.HasEntry())
                             {
                                 // Calculate light arriving from the random direction.
-                                Colour incoming = CalculateColour(camera, scene, scattered, rand, hr2, depth);
-                                //L += hr.shape.Material.Brdf.GetColour(hr, scattered, incoming);
-                                //Colour colour = shape.GetColour(hr);
-                                L += hr.shape.Material.GetBrdfColour(hr, scattered, incoming);
-
-
-
-                                //float dpIN = scattered.DotProductSaturated(hr.EntryNormal);
-                                //L += hr.shape.Material.Brdf.GetColour(hr, scattered, incoming) * incoming * dpIN;
+                                Colour incoming = CalculateColour(camera, scene, vecReflected, rand, hr2, depth, true);
+                                L += hr.shape.Material.GetBrdfColour(hr, vecReflected, incoming);
                             }
                             else
                             {
                                 Colour incoming = scene.Skydome.GetColour(camera, ray2.Direction);
-                                //HitResult hr3 = new HitResult();
-                                //hr3.EntryNormal = hr.EntryNormal;   // Original point we are sampling at.
-                                //hr3.Ray = scattered;
 
-                                L += hr.shape.Material.GetBrdfColour(hr, scattered, incoming);
+                                L += hr.shape.Material.GetBrdfColour(hr, vecReflected, incoming);
                             }
-                        }
 
-                        L /= NumBRDFSamples;
+
+                        }
+                        else
+                        {
+                            for (int i = 0; i < NumBRDFSamples; i++)
+                            {
+                                SPoint p = hr.Entry + hr.EntryNormal + GetSVectorInSphere(rand);
+                                SVector scattered = p - hr.Entry;
+                                scattered = scattered.Normalise();
+
+                                // Check scattered Vector is in the corect hemishere
+                                double dpSN = scattered.DotProduct(hr.EntryNormal);
+                                if (dpSN < 0.0)
+                                {
+                                    // Reverse the direction on the Vector.
+                                    scattered = -scattered;
+                                    dpSN = scattered.DotProduct(hr.EntryNormal);
+                                }
+
+                                Debug.Assert(scattered.DotProduct(hr.EntryNormal) >= 0);
+                                Debug.Assert(dpSN >= 0.0);
+
+                                Ray ray2 = new Ray(hr.Entry + hr.EntryNormal.Scale(0.01f), scattered);
+                                HitResult hr2 = scene.HitTest(camera, ray2);
+                                if (hr2.HasEntry())
+                                {
+                                    // Calculate light arriving from the random direction.
+                                    Colour incoming = CalculateColour(camera, scene, scattered, rand, hr2, depth, true);
+                                    //L += hr.shape.Material.Brdf.GetColour(hr, scattered, incoming);
+                                    //Colour colour = shape.GetColour(hr);
+                                    L += hr.shape.Material.GetBrdfColour(hr, scattered, incoming);
+
+                                    //float dpIN = scattered.DotProductSaturated(hr.EntryNormal);
+                                    //L += hr.shape.Material.Brdf.GetColour(hr, scattered, incoming) * incoming * dpIN;
+                                }
+                                else
+                                {
+                                    Colour incoming = scene.Skydome.GetColour(camera, ray2.Direction);
+                                    //HitResult hr3 = new HitResult();
+                                    //hr3.EntryNormal = hr.EntryNormal;   // Original point we are sampling at.
+                                    //hr3.Ray = scattered;
+
+                                    L += hr.shape.Material.GetBrdfColour(hr, scattered, incoming);
+                                }
+                            }
+
+                            L /= NumBRDFSamples;
+                        }
 
                         foreach (Light light in scene.Lights)
                         {

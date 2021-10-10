@@ -118,7 +118,7 @@ namespace RayTrace
         }
 
         // XXX Rewrite using Span<> for performance.
-        public ModelData ImportObj(string path)
+        public (ModelData, Texture) ImportObj(string path)
         {
             ModelData modelData = null;
 
@@ -337,7 +337,7 @@ namespace RayTrace
                 }
             }
 
-            return modelData;
+            return (modelData, modelData.texture);
         }
 
     }

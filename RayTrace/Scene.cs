@@ -10,8 +10,8 @@ namespace RayTrace
         // Size 
         //public int Size { get; }
 
-        public List<Shape> Shapes = new List<Shape>();
-        public List<Light> Lights = new List<Light>();
+        public List<Shape> Shapes { get; set; } = new List<Shape>();
+        public List<Light> Lights { get; set; } = new List<Light>();
 
         private readonly Material defaultMaterial = new Material(Palette.Grey) { Name = "Default" };
 
@@ -24,7 +24,6 @@ namespace RayTrace
 
         public string BaseDirectory { get; set; }
 
-        //[NotifyParentProperty(true)]
         public Camera Camera { get; } = new Camera(new Point(0, 0, 0), new Point(0, 0, 1));
 
         public Colour Ambient { get; set; } = new Colour(0.2f, 0.2f, 0.2f);
@@ -35,10 +34,6 @@ namespace RayTrace
 
         public Scene()
         {
-            //Ambient = new Colour(0.2f, 0.2f, 0.2f);
-
-            //Size = 100.0;
-
             materials.Add(defaultMaterial);
         }
 
@@ -102,9 +97,9 @@ namespace RayTrace
         }
 
         // Return closest hit object.
-        public HitResult HitTest(Camera camera, Point p1, Point p2)
+        public HitResult HitTest(Camera camera, SPoint p1, SPoint p2)
         {
-            Ray ray = new Ray(new SPoint(p1), new SPoint(p2));
+            Ray ray = new Ray(p1, p2);
             return HitTest(camera, ray);
         }
 
@@ -134,7 +129,7 @@ namespace RayTrace
 
         public List<Light> IsIlluminated(Camera camera, HitResult hr)
         {
-            Point pos = new(hr.Entry);
+            SPoint pos = hr.Entry;
 
             List<Light> lights = new List<Light>();
 
@@ -142,14 +137,13 @@ namespace RayTrace
             {
                 if (!light.Enabled) continue;
 
-                PointLight pointLight = light as PointLight;
-                if (pointLight == null)
+                if (light is not PointLight pointLight)
                 {
                     continue;
                 }
 
                 //Point pos2 = pointLight.Pos;
-                Point pos2 = camera.WorldToView * pointLight.Pos;
+                SPoint pos2 = camera.WorldToView * pointLight._pos;
                 //Vector v = pointLight.Pos.Difference(pos);
                 //Vector v = pos2.Difference(pos);
 

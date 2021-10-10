@@ -15,7 +15,7 @@ namespace RayTrace
         }
 
         public Colour Colour {
-            get { return colour; }
+            get => colour;
             set { colour = value; colour.PropertyChanged += Colour_PropertyChanged; Notify("Colour"); }
         }
 
@@ -23,7 +23,7 @@ namespace RayTrace
 
         // Effective radius of point source, as used in soft shadow calculations.
         public int Radius {
-            get { return radius; }
+            get => radius;
             set { if (value != radius) { radius = value; Notify("Radius"); } }
         }
 

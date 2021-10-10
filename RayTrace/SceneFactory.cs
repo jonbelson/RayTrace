@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 //using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -376,7 +377,11 @@ namespace RayTrace
 
             Matrix objectToWorld = new Matrix();
 
-            ModelData modelData = importer.ImportObj(@"Data\pbr-low-poly-fox-character");
+            var objData = importer.ImportObj(@"Data\pbr-low-poly-fox-character");
+
+            ModelData modelData = objData.Item1;
+            Texture objTexture = objData.Item2;
+
             scene.Camera.Pos = new Point(-3.5f, 4, -5);
             scene.Camera.Target = new Point(0, 3, 1);
 
@@ -395,8 +400,17 @@ namespace RayTrace
 
             Model model = new Model(new Point(0, 0, 10), modelData);
             model.ObjectToWorld = objectToWorld;
-            model.Material.Type = MaterialType.Diffuse;
-            model.Material.Texture = new TextureSolid(Palette.White);
+
+            Material objMaterial = new();
+            objMaterial.Type = MaterialType.Diffuse;
+            objMaterial.Texture = new TextureSolid(Palette.White);
+            objMaterial.Texture = objTexture;
+
+            string? fileName = Path.GetFileNameWithoutExtension(modelData.fileName);
+            objMaterial.Name = fileName ?? "OBJ Material";
+
+            scene.AddMaterial(objMaterial);
+
             //model = ModelFactory.Octahedron();
             // model = ModelFactory.Cube();
             //model = ModelFactory.Tetahedron();
@@ -428,6 +442,7 @@ namespace RayTrace
             float floorHeight = model.MinY;
             Disc floor = new Disc(new Point(0, floorHeight, 0), new Vector(0, 1, 0), 25);
             floor.Material.Texture = new TextureSolid(Palette.Grey);
+            scene.AddMaterial(floor.Material);
             //floor.Material.Reflectivity = 0.1f;
             scene.AddShape(floor);
 

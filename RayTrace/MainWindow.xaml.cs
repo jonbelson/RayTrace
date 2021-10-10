@@ -466,6 +466,7 @@ namespace RayTrace
             // Add Entities to preview.
             Preview3D preview3D = new(scene);
 
+            preview3D.UseAmbient = (bool)checkBoxAmbient.IsChecked;
             preview3D.Update();
 
             viewport3D.Children.Add(preview3D);

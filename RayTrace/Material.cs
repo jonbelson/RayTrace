@@ -133,8 +133,11 @@ namespace RayTrace
 
         public override string ToString()
         {
-            //            return "Texture[" + Texture.ToString() + "]";
-            //            return "[" + GetType().Name + "]";
+            //return Name;
+            if (Name.Length > 12)
+            {
+                return Name.Substring(0, 10) + "...";
+            }
             return Name;
         }
     }

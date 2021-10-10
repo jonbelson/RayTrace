@@ -689,8 +689,8 @@ namespace RayTrace
 
         public override Colour GetColour(HitResult hr)
         {
-            TextureBitmap textureBitmap = _modelData.texture as TextureBitmap;
-            if (textureBitmap != null)
+//            TextureBitmap textureBitmap = _modelData.texture as TextureBitmap;
+            if (Material.Texture is TextureBitmap textureBitmap)
             {
                 ModelData.Texel t0 = _modelData.GetTriangleColour0(hr.Index);
                 ModelData.Texel t1 = _modelData.GetTriangleColour1(hr.Index);
@@ -705,7 +705,8 @@ namespace RayTrace
             }
             else
             {
-                return _modelData.texture.GetColour(hr);
+//                return _modelData.texture.GetColour(hr);
+                return Material.Texture.GetColour(hr);
             }
 
             //return Palette.Grey;

@@ -36,6 +36,7 @@ namespace RayTrace
         public override void CreateCache(Camera camera)
         {
             _pos = new SPoint(Pos);
+            //_pos = camera.WorldToView * Pos;
         }
 
         public override SVector GetDirection(Camera camera, SPoint p)

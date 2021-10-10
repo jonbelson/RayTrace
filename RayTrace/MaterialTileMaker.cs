@@ -125,7 +125,7 @@ namespace RayTrace
 
             MaterialTile materialTile = new();
 
-            materialTile.Name = material.Name;
+            materialTile.Name = material.ToString();// material.Name;
             materialTile.Guid = material.Guid;
             materialTile.Bitmap = canvas.GetAsBitmap();
             materialTile.Material = material;

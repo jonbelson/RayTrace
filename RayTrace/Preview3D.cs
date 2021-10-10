@@ -19,9 +19,11 @@ namespace RayTrace
         private Model3DGroup group = new();
 
         // Utility delagates for converting between formats.
-        private Func<Point, Point3D> PointToPoint3D = (p) => new Point3D(p.X, p.Y, p.Z);
-        private Func<Vector, Vector3D> VectorToVector3D = (v) => new Vector3D(v.I, v.J, v.K);
-        private Func<Colour, System.Windows.Media.Color> ColourToColor = (c) => new System.Windows.Media.Color() { ScR = c.Red, ScG = c.Green, ScB = c.Blue };
+        private readonly Func<Point, Point3D> PointToPoint3D = (p) => new Point3D(p.X, p.Y, p.Z);
+        private readonly Func<Vector, Vector3D> VectorToVector3D = (v) => new Vector3D(v.I, v.J, v.K);
+        private readonly Func<Colour, System.Windows.Media.Color> ColourToColor = (c) => new System.Windows.Media.Color() { ScR = c.Red, ScG = c.Green, ScB = c.Blue };
+
+        public bool UseAmbient { get; set; } = true;
 
         public Preview3D(Scene scene)
         {
@@ -45,8 +47,11 @@ namespace RayTrace
                 Update(light);
             }
 
-            AmbientLight al = new(ColourToColor(scene.Ambient));
-            group.Children.Add(al);
+            if (UseAmbient)
+            {
+                AmbientLight al = new(ColourToColor(scene.Ambient));
+                group.Children.Add(al);
+            }
         }
 
         public void Update(Light light)
