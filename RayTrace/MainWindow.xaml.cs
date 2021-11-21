@@ -722,10 +722,10 @@ namespace RayTrace
                 {
                     // Move camera Target
 
-                    Vector offset = new Vector(-xDiff/10, 0, 0 /*yDiff*/);
+                    Vector offset = new Vector(-xDiff/20, 0, 0 /*yDiff*/);
                     scene.Camera.Target += offset;
 
-                    Vector offset2 = new Vector(/*-xDiff*/ 0, yDiff/10, 0);
+                    Vector offset2 = new Vector(/*-xDiff*/ 0, yDiff/20, 0);
                     scene.Camera.Target += offset2;
                 }
                 else if (ctrlPressed && !shiftPressed)

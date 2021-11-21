@@ -89,7 +89,7 @@ namespace RayTrace
             Disc disc = new Disc(new Point(0, 0, 20), new Vector(0, 0, -1), 16);
 
             Material matSquares = new Material();
-            matSquares.Type = MaterialType.Diffuse;
+            matSquares.SetType(MaterialType.Diffuse);
             matSquares.PhongShininess = 1.0;
             matSquares.Texture = new TextureSquares(new Colour(System.Windows.Media.Colors.DarkGray), new Colour(System.Windows.Media.Colors.Gray)) { Scale = 500 };
             disc.Material = matSquares;

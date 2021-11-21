@@ -94,18 +94,17 @@ namespace RayTrace
 
             if (material.Type != type)
             {
-                material.Type = type;
+                material.SetType(type);
 
                 // XXX
-                if (type == MaterialType.BRDF_CookTorrence)
-                {
-                    material.Brdf = new CookTorrence();
-                }
-                else if (type == MaterialType.BRDF_Lambertian)
-                {
-                    material.Brdf = new Lambertian();
-                }
-
+                //if (type == MaterialType.BRDF_CookTorrence)
+                //{
+                //    material.Brdf = new CookTorrence();
+                //}
+                //else if (type == MaterialType.BRDF_Lambertian)
+                //{
+                //    material.Brdf = new Lambertian();
+                //}
 
                 Materials.Clear();
                 Materials.Add(material);

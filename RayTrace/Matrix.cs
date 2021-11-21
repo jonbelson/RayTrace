@@ -181,6 +181,13 @@ namespace RayTrace
             m2.M.CopyTo(M, 0);
         }
 
+        public Matrix GetTranspose()
+        {
+            Matrix m2 = new(this);
+            m2.Transpose();
+            return m2;
+        }
+
         public static Matrix GetIdentity()
         {
             Matrix m = new Matrix();

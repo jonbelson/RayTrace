@@ -45,7 +45,7 @@ namespace RayTrace
                 for (int i = 0; i <= 5; i++)
                 {
                     Sphere sphere = new Sphere(new Point(-50 + i * 20, -40 + j * 20, 80), 8, Palette.Green);
-                    sphere.Material.Type = MaterialType.Phong;
+                    sphere.Material.SetType(MaterialType.Phong);
                     sphere.Material.PhongDiffuse = 0.95;
                     sphere.Material.PhongSpecular = 2 * ks[i];  // i / 5.0;
                     sphere.Material.PhongShininess = n[j];  // (j + 1) * (j + 1);
@@ -64,21 +64,20 @@ namespace RayTrace
             Scene scene = new Scene();
 
             Material matTransparent = new() { Name = "Glass" };
-            matTransparent.Type = MaterialType.RefractiveAndReflective;
+            matTransparent.SetType(MaterialType.RefractiveAndReflective);
             matTransparent.Texture = new TextureSolid(Palette.Black);
             matTransparent.Transparency = 1.0f;
 
             scene.AddMaterial(matTransparent);
 
             Material matSquares = new() { Name = "Squares" };
-            matSquares.Type = MaterialType.Diffuse;
+            matSquares.SetType(MaterialType.Diffuse);
             matSquares.Texture = new TextureSquares();
 
             scene.AddMaterial(matSquares);
 
-            Material matSolid = new() { Name = "Solid" };
+            Material matSolid = new(MaterialType.Diffuse) { Name = "Solid" };
             matSolid.Texture = new TextureSolid(Palette.Red);
-            matSolid.Type = MaterialType.Diffuse;
 
             scene.AddMaterial(matSolid);
 
@@ -86,14 +85,12 @@ namespace RayTrace
             matPlane.Texture = new TextureSquares(Palette.Black, Palette.White) { Scale = /*32*/ 8 };
             scene.AddMaterial(matPlane);
 
-            Material matGradient = new() { Name = "Gradient" };
+            Material matGradient = new(MaterialType.Diffuse) { Name = "Gradient" };
             matGradient.Texture = new TextureGradient(Palette.Red, Palette.Blue) { Blend = TextureGradient.BlendType.Smooth };
-            matGradient.Type = MaterialType.Diffuse;
             scene.AddMaterial(matGradient);
 
-            Material matGradient2 = new() { Name = "Gradient2" };
+            Material matGradient2 = new(MaterialType.Diffuse) { Name = "Gradient2" };
             matGradient2.Texture = new TextureGradient(Palette.Red, Palette.Blue) { Blend = TextureGradient.BlendType.Linear };
-            matGradient2.Type = MaterialType.Diffuse;
             scene.AddMaterial(matGradient2);
 
 
@@ -156,14 +153,14 @@ namespace RayTrace
 
             Sphere sphere = new Sphere(new Point(-20, 0, 50), 20, Palette.Black /* Palette.White*/);
             //sphere.Material.Texture = new TextureSquares();
-            sphere.Material.Type = MaterialType.Reflective;
+            sphere.Material.SetType(MaterialType.Reflective);
             sphere.Material.Transparency = 1.0f;
             sphere.Material.Reflectivity = 0.0f;
             //sphere.Material.
             scene.AddShape(sphere);
 
             sphere = new Sphere(new Point(20, 0, 50), 20, Palette.Black);
-            sphere.Material.Type = MaterialType.RefractiveAndReflective;
+            sphere.Material.SetType(MaterialType.RefractiveAndReflective);
             //sphere.Material.Texture = new TextureSquares() { Scale = 10 };
             //sphere.Material.Texture = new TextureNoise(Palette.White, Palette.Black);
             //sphere.Material.Texture = new TextureNoise(Palette.Red, Palette.Green) { Function = TextureNoise.ColourFunction.Blend, Scale = 5 };
@@ -401,8 +398,7 @@ namespace RayTrace
             Model model = new Model(new Point(0, 0, 10), modelData);
             model.ObjectToWorld = objectToWorld;
 
-            Material objMaterial = new();
-            objMaterial.Type = MaterialType.Diffuse;
+            Material objMaterial = new(MaterialType.Diffuse);
             objMaterial.Texture = new TextureSolid(Palette.White);
             objMaterial.Texture = objTexture;
 
@@ -428,7 +424,7 @@ namespace RayTrace
 //                mat.Texture = new TextureSolid(/*Palette.MetallicGold;*/ Palette.Copper);
                 mat.Texture = new TextureSolid(Palette.MetallicGold);
                 mat.Brdf = cookTorrence;
-                mat.Type = MaterialType.BRDF_CookTorrence;
+                mat.SetType(MaterialType.BRDF_CookTorrence);
 
                 scene.AddMaterial(mat);
 
@@ -436,7 +432,7 @@ namespace RayTrace
             }
 
             Sphere sphere = new(new Point(-2, 0, 0), 1);
-            sphere.Material.Type = MaterialType.Diffuse;
+            sphere.Material.SetType(MaterialType.Diffuse);
         //    scene.AddShape(sphere);
 
             float floorHeight = model.MinY;
@@ -452,7 +448,8 @@ namespace RayTrace
             light = new PointLight(new Point(10, 30, -30), 3000, Palette.White);
             scene.AddLight(light);
 
-            scene.Skydome = new SkydomeBitmap("Data\\skydomes\\immenstadter_horn_2048.jpg");
+            //scene.Skydome = new SkydomeBitmap("Data\\skydomes\\immenstadter_horn_2048.jpg");
+            scene.Skydome = new Skybox("Data\\skyboxes\\Yokohama2");
 
             return scene;
         }
@@ -591,7 +588,7 @@ namespace RayTrace
 
                             mat.Texture = new TextureSolid(/*Palette.MetallicGold;*/ Palette.Copper);
                             mat.Brdf = cookTorrence;
-                            mat.Type = MaterialType.BRDF_CookTorrence;
+                            mat.SetType(MaterialType.BRDF_CookTorrence);
 
                             scene.AddMaterial(mat);
 

@@ -1,5 +1,7 @@
 ﻿
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Drawing;
 
@@ -10,13 +12,43 @@ namespace RayTrace
         Diffuse, Reflective, RefractiveAndReflective, Phong, BRDF_Lambertian, BRDF_CookTorrence
     }
 
+    public class MaterialManager
+    {
+        private List<Material> _materials;
+
+        public ReadOnlyCollection<Material> Materials { get { return _materials.AsReadOnly(); } }
+
+        private readonly Material _defaultMaterial = new Material(Palette.Grey) { Name = "Default" };
+
+
+        public MaterialManager()
+        {
+            _materials.Add(_defaultMaterial);
+
+        }
+
+        public Material GetDefaultMaterial()
+        {
+            return _defaultMaterial;
+        }
+
+        public Material CreateMaterial()
+        {
+            Material material = new Material();
+            _materials.Add(material);
+            return material;
+        }
+
+    }
+
     // Characteristics of a Shape's physical form.
     public class Material
     {
         public string Name { get; set; } = "Material";
         public Guid Guid { get; set; } = Guid.NewGuid();
 
-        public MaterialType Type { get; set; } = MaterialType.Diffuse;
+        private MaterialType _type = MaterialType.Diffuse;
+        public MaterialType Type { get { return _type; } }
 
         // Ratio of reflected light to incident light (Pd), i.e. how much light is reflected.
         //public Colour Albedo { get; set; } = new Colour(0.18f, 0.18f, 0.18f);
@@ -61,6 +93,11 @@ namespace RayTrace
 
         public Material(Colour c) : this(new TextureSolid(c)) { }
 
+        public Material(MaterialType type)
+        {
+            SetType(type);
+        }
+
         public Material(Texture texture)
         {
             Texture = texture;
@@ -72,7 +109,7 @@ namespace RayTrace
 
         public Material(XMLMaterial xmlMaterial)
         {
-            Type = xmlMaterial.Type;
+            _type = xmlMaterial.Type;
             PhongDiffuse = xmlMaterial.PhongDiffuse;
             PhongShininess = xmlMaterial.PhongShininess;
             PhongSpecular = xmlMaterial.PhongSpecular;
@@ -82,6 +119,32 @@ namespace RayTrace
             RefractiveIndex = xmlMaterial.RefractiveIndex;
 
             Texture = xmlMaterial.Texture.Create();
+        }
+
+        public void SetType(MaterialType type)
+        {
+            if (type != _type)
+            {
+                switch (type)
+                {
+                    case MaterialType.Diffuse:
+                    case MaterialType.Reflective:
+                    case MaterialType.RefractiveAndReflective:
+                    case MaterialType.Phong:
+                        Brdf = null;
+                        break;
+                    case MaterialType.BRDF_Lambertian:
+                        Brdf = new Lambertian();
+                        break;
+                    case MaterialType.BRDF_CookTorrence:
+                        Brdf = new CookTorrence();
+                        break;
+                    default:
+                        throw new NotImplementedException();
+                }
+
+                _type = type;
+            }
         }
 
         public virtual Colour GetColour(HitResult hr)
