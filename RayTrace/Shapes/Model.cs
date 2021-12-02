@@ -540,6 +540,8 @@ namespace RayTrace
                 hr.u = (float) uv.Item1;
                 hr.v = (float) uv.Item2;
 
+                hr.t = mu;
+
                 //Vector n0 = _modelData.GetTriangleNormal0(index);
                 //Vector n1 = _modelData.GetTriangleNormal1(index);
                 //Vector n2 = _modelData.GetTriangleNormal2(index);

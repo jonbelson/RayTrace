@@ -20,6 +20,8 @@ namespace RayTrace
         // Ray that resulted in this HitResult.
         public SVector Ray { get; set; }
 
+        public float t;
+
         // Texture cordinates.
         public float u;
         public float v;
@@ -29,6 +31,7 @@ namespace RayTrace
 
         public void Reset()
         {
+            t = 0;
             u = v = 0.0f;
             _entry = new SPoint();
             _hasEntry = false;
@@ -40,6 +43,7 @@ namespace RayTrace
         public HitResult(Shape shape)
         {
             this.shape = shape;
+            t = 0;
             u = v = 0.0f;
             _entry = new SPoint();
             _hasEntry = false;

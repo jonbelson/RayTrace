@@ -511,31 +511,20 @@ namespace RayTrace
                         if (BrdfRay)
                         {
                             // Don't bother doing a full calculation if this is already a scattered ray from a BRDF surface.
-                            //L += hr.shape.GetColour(hr);
-                            SVector vecToViewer = ray.Scale(-1.0f);
-
-                            float dpVE = vecToViewer.DotProduct(hr.EntryNormal);
-
-                            SVector vecReflected = hr.EntryNormal.Scale(2.0f * dpVE) - vecToViewer;
-                            vecReflected = vecReflected.Normalise();
-                            //vecReflected = vecReflected.Negate();
-
-                            Ray ray2 = new Ray(hr.Entry + hr.EntryNormal.Scale(0.01f), -vecReflected);
+                            Ray ray2 = new Ray(hr.Entry + hr.EntryNormal.Scale(0.01f), hr.EntryNormal);
                             HitResult hr2 = scene.HitTest(camera, ray2);
                             if (hr2.HasEntry())
                             {
                                 // Calculate light arriving from the random direction.
-                                Colour incoming = CalculateColour(camera, scene, vecReflected, rand, hr2, depth, true);
-                                L += hr.shape.Material.GetBrdfColour(hr, vecReflected, incoming);
+                                Colour incoming = CalculateColour(camera, scene, hr.EntryNormal, rand, hr2, depth, true);
+                                L += hr.shape.Material.GetBrdfColour(hr, hr.EntryNormal, incoming);
                             }
                             else
                             {
                                 Colour incoming = scene.Skydome.GetColour(camera, ray2.Direction);
 
-                                L += hr.shape.Material.GetBrdfColour(hr, vecReflected, incoming);
+                                L += hr.shape.Material.GetBrdfColour(hr, hr.EntryNormal, incoming);
                             }
-
-
                         }
                         else
                         {
@@ -562,7 +551,7 @@ namespace RayTrace
                                 if (hr2.HasEntry())
                                 {
                                     // Calculate light arriving from the random direction.
-                                    Colour incoming = CalculateColour(camera, scene, scattered, rand, hr2, depth, true);
+                                    Colour incoming = CalculateColour(camera, scene, scattered, rand, hr2, depth, /*false*/ true);
                                     //L += hr.shape.Material.Brdf.GetColour(hr, scattered, incoming);
                                     //Colour colour = shape.GetColour(hr);
                                     L += hr.shape.Material.GetBrdfColour(hr, scattered, incoming);
@@ -1010,7 +999,7 @@ namespace RayTrace
             {
                 SPoint origin = new SPoint(0.0f, 0.0f, 0f);
                 SVector dir = new SVector(x, y, 1);
-                Ray ray = new Ray(origin, dir);
+                Ray ray = new Ray(origin, dir.Normalise());
 
                 HitResult hr = scene.HitTest(camera, ray);
                 if (hr.HasEntry())

@@ -86,8 +86,8 @@ namespace RayTrace
             set { _shininess = Math.Clamp(value, 0, 1); }
         }
 
-        // 'ks' proportion of light that gets specularly reflected.
-        //public float Specular { get; set; } = 0.5f;
+        public enum MaterialType { Dielectric, Conductor };
+        public MaterialType Type { get; set; } = MaterialType.Conductor;
 
         public float Ior { get; set; } = 1.2f;
 
@@ -232,7 +232,7 @@ namespace RayTrace
         //}
 
         // Calculate Colour at point given in hr based on radiance (Li) coming from direction source.
-        // colour   Colour of surface at bit point.
+        // colour   Colour of surface at hit point.
         // source   Vector pointing outwards from hit point.
         // Li       Colour received from hit point.
         public override Colour GetColour(HitResult hr, Colour colour, SVector source, Colour Li)
@@ -244,8 +244,19 @@ namespace RayTrace
             SVector viewDirection = hr.Ray.Normalise().Negate();
             SVector halfVector = (viewDirection + source).Normalise();
 
-//            float fresnel = CalculateFDielectric(halfVector.DotProductSaturated(viewDirection), 1.0f);
-            float fresnel = CalculateFConductor(halfVector.DotProductSaturated(viewDirection), 1.0f, Ior);
+            //float fresnel = 1.0f;
+            Colour Fc;
+            if (Type == MaterialType.Conductor)
+            {
+                float fresnel = CalculateFConductor(halfVector.DotProductSaturated(viewDirection), 1.0f, Ior);
+                Debug.Assert(!float.IsInfinity(fresnel) && !float.IsNaN(fresnel));
+                Fc = colour * fresnel;
+            }
+            else
+            {
+                float fresnel = CalculateFDielectric(halfVector.DotProductSaturated(viewDirection), 1.0f);
+                Fc = new Colour(fresnel, fresnel, fresnel);
+            }
 
             //float geometry = CalculateG(viewDirection, normal, halfVector)* CalculateG(source, normal, halfVector);
             float geometryView = CalculateG_GGX(viewDirection, normal);
@@ -266,10 +277,12 @@ namespace RayTrace
 //            Colour diffuse = Li * Colour * (1 - Shininess) * dp / Math.PI;
             Colour diffuse = colour * (1 - Shininess) / Math.PI;
 
-            float DFG = distribution * fresnel * geometry;
-//            Colour specular = colour * Li * Shininess * DFG / denominator * dp;
-            float specularf = Shininess * DFG / denominator;
-            Colour specular = new(specularf, specularf, specularf);
+            //float DFG = distribution * fresnel * geometry;
+            Colour DFG = Fc * distribution * geometry;
+            //Colour specular = colour * Li * Shininess * DFG / denominator * dp;
+            //float specularf = Shininess * DFG / denominator;
+            Colour specular = DFG * Shininess / denominator;
+           //Colour specular = new(specularf, specularf, specularf);
 
             return (diffuse + specular) * Li * dp; ;
         }
