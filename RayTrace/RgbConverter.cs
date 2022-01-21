@@ -12,7 +12,7 @@ using System.Windows.Media;
 namespace RayTrace
 {
     // Converter class to convert floating point RGB values to a Color.
-    class RgbConverter : IMultiValueConverter
+    public class RgbConverter : IMultiValueConverter
     {
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {

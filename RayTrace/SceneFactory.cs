@@ -372,7 +372,7 @@ namespace RayTrace
 
             ModelImporter importer = new ModelImporter();
 
-            Matrix objectToWorld = new Matrix();
+            //Matrix objectToWorld = new Matrix();
 
             var objData = importer.ImportObj(@"Data\pbr-low-poly-fox-character");
 
@@ -396,7 +396,7 @@ namespace RayTrace
 
 
             Model model = new Model(new Point(0, 0, 10), modelData);
-            model.ObjectToWorld = objectToWorld;
+            //model.ObjectToWorld = objectToWorld;
 
             Material objMaterial = new(MaterialType.Diffuse);
             objMaterial.Texture = new TextureSolid(Palette.White);
@@ -465,6 +465,7 @@ namespace RayTrace
             sphere.Material.Reflectivity = 0.0f;
             //sphere.Material.
             scene.AddShape(sphere);
+            scene.AddMaterial(sphere.Material);
 
             //            sphere = new Sphere(new Point(20, 0, 50), 20, new Colour(0.7f, 0, 0));
             sphere = new Sphere(new Point(0, 0, 23), 5, new Colour(0.5f, 0.5f, 0.5f));
@@ -479,6 +480,7 @@ namespace RayTrace
 
             sphere = new Sphere(new Point(10, 0, 20), 5, new Colour(0.0f, 0.0f, 0.5f) /* Palette.White*/);
             scene.AddShape(sphere);
+            scene.AddMaterial(sphere.Material);
 
 
             //Box box = new Box(new Point(20, 0, 0), 30, 30, 30);
@@ -497,6 +499,7 @@ namespace RayTrace
             //plane.Material.Texture = new TextureSolid(Palette.Blue);
             //plane.Material.Texture = new TextureSquares() { Scale = 20 };
             scene.AddShape(disc);
+            scene.AddMaterial(disc.Material);
 
             Plane left = new Plane(new Vector(1, 0, 0), new Point(-18, 0, 0), new Colour(0.5f, 0.5f, 0.5f));
            // scene.AddShape(left);
@@ -527,7 +530,7 @@ namespace RayTrace
 
             Model cornellBox = ModelFactory.CornellBox(14, 12, 16);
             cornellBox.Material.Texture = new TextureSolid(Palette.Grey);
-            cornellBox.ObjectToWorld = Matrix.GetTranslation(0, 0, 2);
+            //cornellBox.ObjectToWorld = Matrix.GetTranslation(0, 0, 2);
 
             scene.AddShape(cornellBox);
 

@@ -33,7 +33,7 @@ namespace RayTrace
         public int AdaptiveSuperSamplingDepth { set { if (value >= 0) _adaptiveSuperSamplingDepth = value; } get { return _adaptiveSuperSamplingDepth; } }
 
         // Maximum recursive reflection depth when tracing reflections.
-        private int _recursionDepth = 5;
+        private int _recursionDepth = 3;
         public int RecursionDepth { set { if (value >= 0) _recursionDepth = value; } get { return _recursionDepth; } }
 
         // Maximum recursive global illumination depth when tracing scattered rays.
@@ -45,7 +45,7 @@ namespace RayTrace
         public int NumGIRays { set { if (value >= 0) _numGIRays = value; } get { return _numGIRays; } }
 
         // Number of integrated samples when evaluating a BRDF at a point.
-        private int _numBRDFSamples = 400;
+        private int _numBRDFSamples = 200;
         public int NumBRDFSamples {
             get { return _numBRDFSamples; }
             set { if (value >= 0) _numBRDFSamples = Math.Max(1, value); }

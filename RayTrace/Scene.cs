@@ -42,12 +42,22 @@ namespace RayTrace
             Camera = new Camera(xmlScene.Camera);
             Ambient = new Colour(xmlScene.Ambient);
             Background = new Colour(xmlScene.Background);
-            
+
+            Skydome = xmlScene.Skydome.Create();
+
             // or use 'Camera XMLCamera.FromXML()'
+
+            foreach (XMLMaterial xmlMaterial in xmlScene.Materials)
+            {
+                Material material = xmlMaterial.Create();
+                Materials.Add(material);
+            }
 
             foreach (XMLShape xmlShape in xmlScene.Shapes)
             {
-                Shapes.Add(xmlShape.Create());
+                Shape shape = xmlShape.Create();
+                shape.Material = GetMaterial(xmlShape.MaterialGuid);
+                Shapes.Add(shape);
             }
             foreach (XMLLight xmlLight in xmlScene.Lights)
             {
@@ -193,12 +203,7 @@ namespace RayTrace
         {
             Material material = Materials.Find(x => x.Guid == guid);
 
-            if (material != null)
-            {
-                return material;
-            }
-
-            return defaultMaterial;
+            return material != null ? material : defaultMaterial;
         }
 
         public virtual XMLScene ToXML()
@@ -208,6 +213,14 @@ namespace RayTrace
             xml.Ambient = Ambient.ToXML();
             xml.Camera = Camera.ToXML();
             xml.Background = Background.ToXML();
+
+            xml.Skydome = Skydome.ToXML();
+
+            foreach (Material material in Materials)
+            {
+                XMLMaterial xmlMaterial = material.ToXML();
+                xml.Materials.Add(xmlMaterial);
+            }
 
             foreach (Shape shape in Shapes)
             {

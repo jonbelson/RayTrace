@@ -18,6 +18,7 @@ namespace RayTrace
         public DataTemplate DistantLightTemplate { get; set; }
         public DataTemplate PointLightTemplate { get; set; }
         public DataTemplate SpotLightTemplate { get; set; }
+        public DataTemplate SkyboxTemplate { get; set; }
 
         public override DataTemplate SelectTemplate(object item, DependencyObject container)
         {
@@ -31,7 +32,7 @@ namespace RayTrace
             if (entity is DistantLight) return DistantLightTemplate;
             if (entity is SpotLight) return SpotLightTemplate;
             if (entity is PointLight) return PointLightTemplate;
-            //if (entity is Light) return LightTemplate;
+            if (entity is Skybox) return SkyboxTemplate;
 
             //Type type = entity.GetType();
             //switch (type)

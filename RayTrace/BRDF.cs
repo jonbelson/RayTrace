@@ -13,7 +13,8 @@ namespace RayTrace
         public string Name { get; set; }
 
         public abstract Colour GetColour(HitResult hr, Colour colour, SVector source, Colour Li);
-        //public abstract Colour GetBaseColour();
+
+        public abstract XMLBrdf ToXML();
     }
 
     public class Lambertian : BRDF
@@ -24,6 +25,11 @@ namespace RayTrace
         public Lambertian()
         {
             Name = "Lambertian (BRDF)";
+        }
+
+        public Lambertian(XMLBrdf xml)
+        {
+            Name = xml.Name;
         }
 
         //public Lambertian(Colour colour) : base()
@@ -62,7 +68,14 @@ namespace RayTrace
         //    return Texture.GetColour(new HitResult(null) { u = 0.5f, v = 0.5f });
         //}
 
+        public override XMLBrdf ToXML()
+        {
+            XMLLambertian xml = new();
 
+            xml.Name = Name;
+
+            return xml;
+        }
     }
 
     // Implementaiton of Cook-Torrence reflection model.
@@ -86,8 +99,8 @@ namespace RayTrace
             set { _shininess = Math.Clamp(value, 0, 1); }
         }
 
-        public enum MaterialType { Dielectric, Conductor };
-        public MaterialType Type { get; set; } = MaterialType.Conductor;
+        public enum SurfaceType { Dielectric, Conductor };
+        public SurfaceType Type { get; set; } = SurfaceType.Conductor;
 
         public float Ior { get; set; } = 1.2f;
 
@@ -221,6 +234,16 @@ namespace RayTrace
             Name = "Cook-Torrence (BRDF)";
         }
 
+        public CookTorrence(XMLCookTorrence xml)
+        {
+            Name = xml.Name;
+            Roughness = xml.Roughness;
+            Absorption = xml.Absorption;
+            Shininess = xml.Shininess;
+            Type = xml.Type;
+            Ior = xml.Ior;
+        }
+
         //public CookTorrence(Colour colour) : base()
         //{
         //    Colour = colour;
@@ -246,7 +269,7 @@ namespace RayTrace
 
             //float fresnel = 1.0f;
             Colour Fc;
-            if (Type == MaterialType.Conductor)
+            if (Type == SurfaceType.Conductor)
             {
                 float fresnel = CalculateFConductor(halfVector.DotProductSaturated(viewDirection), 1.0f, Ior);
                 Debug.Assert(!float.IsInfinity(fresnel) && !float.IsNaN(fresnel));
@@ -292,5 +315,19 @@ namespace RayTrace
         //    // XXX Texture
         //    return Texture.GetColour(new HitResult(null) { u = 0.5f, v = 0.5f });
         //}
+
+        public override XMLBrdf ToXML()
+        {
+            XMLCookTorrence xml = new();
+
+            xml.Name = Name;
+            xml.Ior = Ior;
+            xml.Roughness = Roughness;
+            xml.Absorption = Absorption;
+            xml.Shininess = Shininess;
+            xml.Type = Type;
+
+            return xml;
+        }
     }
 }

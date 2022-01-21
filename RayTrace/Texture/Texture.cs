@@ -12,7 +12,7 @@ namespace RayTrace
     }
 
     // Base class of all Textures.
-    abstract public class Texture
+    public abstract class Texture
     {
         //public abstract Colour GetColour(float u, float v);
 

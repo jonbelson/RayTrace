@@ -7,15 +7,17 @@ namespace RayTrace
 {
     public class Sphere : Shape
     {
-		private int radius;
 
-        public int Radius {
-			get { return radius; }
-			set { radius = value; Notify("Radius"); }
-        }
+   //     public int Radius {
+			//get { return radius; }
+			//set { radius = value; Notify("Radius"); }
+   //     }
 
 		// Precalculated values to speed up calculations.
+		private float radius;
 		private SPoint pos;
+		private SVector sp;
+		private SVector se;
 
 		public void CalculateUV(Camera camera, ref HitResult hr)
         {
@@ -25,6 +27,7 @@ namespace RayTrace
 
 			SVector Sn = hr.EntryNormal;
 			SVector Sp = new SVector(0.0f, 1.0f, 0.0f);
+			Sp = sp;
 			Sp = camera.NormalMatrix*Sp;
 			double dp = Sn.DotProduct(Sp);
 			double phi = Math.Acos(-dp);
@@ -34,6 +37,7 @@ namespace RayTrace
 			double v = phi / Math.PI;
 
 			SVector Se = new SVector(0.0f, 0.0f, 1.0f);
+			Se = se;
 			Se = camera.NormalMatrix * Se;
 			dp = Se.DotProduct(Sn);
 
@@ -66,7 +70,7 @@ namespace RayTrace
 
 		public Sphere(Point p, int radius, Colour col) : base(p, col)
         {
-            Radius = radius;
+            Scale = radius;
 
             Pos.PropertyChanged += Pos_PropertyChanged;
         }
@@ -78,13 +82,24 @@ namespace RayTrace
 
         public Sphere(XMLSphere xmlSphere) : base(xmlSphere)
 		{
-			Radius = xmlSphere.Radius;
+			//Radius = xmlSphere.Radius;
+
 		}
 
 		// Allow Shape to pre-transform data using the Camera's WorldToView Matrix.
 		public override void CreateCache(Camera camera)
 		{
 			pos = new(Pos.X, Pos.Y, Pos.Z);
+			radius = Scale;
+
+			Vector up = new(0, 1, 0);
+			sp = new(ObjectToWorldNormal*up);
+			Vector away = new(0, 0, 1);
+			se = new(ObjectToWorldNormal*away);
+
+			sp = sp.Normalise();
+			se = se.Normalise();
+
 		}
 
 		// Hit test between line a sphere.
@@ -96,7 +111,7 @@ namespace RayTrace
 
 			SPoint sc = camera.WorldToView * pos;
 
-			float r = Radius;
+			float r = radius;
 
 			SPoint p1 = ray.Origin;
 			SPoint p2 = p1 + ray.Direction;
@@ -269,7 +284,7 @@ namespace RayTrace
 
 			if (xml is XMLSphere xmlSphere)
 			{
-				xmlSphere.Radius = Radius;
+				//xmlSphere.Radius = Radius;
 			}
 		}
 

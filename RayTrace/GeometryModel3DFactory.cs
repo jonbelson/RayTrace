@@ -285,7 +285,7 @@ namespace RayTrace
 
             model.Material = new DiffuseMaterial(new SolidColorBrush(DefaultColour));
 
-            var scale = new ScaleTransform3D(sphere.Radius, sphere.Radius, sphere.Radius);
+            var scale = new ScaleTransform3D(sphere.Scale, sphere.Scale, sphere.Scale);
             var translate = new TranslateTransform3D(sphere.Pos.X, sphere.Pos.Y, sphere.Pos.Z);
 
             Transform3DGroup transformGroup = new();
@@ -410,88 +410,90 @@ namespace RayTrace
             Func<SPoint, Point3D> PointToPoint3D = (p) => new Point3D(p.X, p.Y, p.Z);
             Func<SVector, Vector3D> VectorToVector3D = (v) => new Vector3D(v.I, v.J, v.K);
 
-            ModelData modelData =  model.GetModelData();
+            ModelData modelData = model.GetModelData();
 
             //int numTriangles = modelData.triangles.Length;
 
-            int numPoints = modelData.points.Length;
-
-            // Add all the vertices.
-            Point3DCollection pointCollection = new(numPoints);
-            foreach (SPoint p in modelData.points)
+            if (modelData.points != null)
             {
-                pointCollection.Add(PointToPoint3D(p));
-            }
-            mesh.Positions = pointCollection;
+                int numPoints = modelData.points.Length;
 
-            /*
-                        // Add all the vertex normal vectors.
-                        Vector3DCollection vectorCollection = new(modelData.normals.Length);
-                        foreach (Vector v in modelData.normals)
-                        {
-                            vectorCollection.Add(VectorToVector3D(v));
-                        }
-                        mesh.Normals = vectorCollection;
-            */
-            /*
-                        // Add triangle indices.
-                        foreach (ModelData.Triangle triangle in modelData.triangles)
-                        {
-                            mesh.TriangleIndices.Add(triangle.v0);
-                            mesh.TriangleIndices.Add(triangle.v1);
-                            mesh.TriangleIndices.Add(triangle.v2);
-                        }
-            */
-
-            SVector[] pointNormals = new SVector[numPoints];
-
-            // Add vector normals.
-            int numTriangles = modelData.triangles.Length;
-            for (int i=0; i<numTriangles; i++)
-            {
-                ModelData.Triangle triangle = modelData.triangles[i];
-
-                int v0 = triangle.v0;
-                int v1 = triangle.v1;
-                int v2 = triangle.v2;
-
-                mesh.TriangleIndices.Add(v2);
-                mesh.TriangleIndices.Add(v1);
-                mesh.TriangleIndices.Add(v0);
-
-                pointNormals[v0] = (modelData.GetTriangleNormal0(i));
-                pointNormals[v1] = (modelData.GetTriangleNormal1(i));
-                pointNormals[v2] = (modelData.GetTriangleNormal2(i));
-
-/*
-                mesh.TriangleIndices.Add(v0);
-                mesh.TriangleIndices.Add(v1);
-                mesh.TriangleIndices.Add(v2);
-
-                pointNormals[v0] = (modelData.GetTriangleNormal0(i));
-                pointNormals[v1] = (modelData.GetTriangleNormal1(i));
-                pointNormals[v2] = (modelData.GetTriangleNormal2(i));
-*/
-            }
-
-            foreach (SVector v in pointNormals)
-            {
-                SVector v2 = v;//.Negate();
-
-                //v2.I = -v2.I;
-                //v2.J = -v2.J;
-
-                //if (v2 != null)
+                // Add all the vertices.
+                Point3DCollection pointCollection = new(numPoints);
+                foreach (SPoint p in modelData.points)
                 {
-                    Vector3D v3d = VectorToVector3D(v2);
-                    //v3d.Z = -v3d.Z;
+                    pointCollection.Add(PointToPoint3D(p));
+                }
+                mesh.Positions = pointCollection;
 
-                    //v3d = -v3d;
+                /*
+                            // Add all the vertex normal vectors.
+                            Vector3DCollection vectorCollection = new(modelData.normals.Length);
+                            foreach (Vector v in modelData.normals)
+                            {
+                                vectorCollection.Add(VectorToVector3D(v));
+                            }
+                            mesh.Normals = vectorCollection;
+                */
+                /*
+                            // Add triangle indices.
+                            foreach (ModelData.Triangle triangle in modelData.triangles)
+                            {
+                                mesh.TriangleIndices.Add(triangle.v0);
+                                mesh.TriangleIndices.Add(triangle.v1);
+                                mesh.TriangleIndices.Add(triangle.v2);
+                            }
+                */
 
-                    mesh.Normals.Add(v3d);
+                SVector[] pointNormals = new SVector[numPoints];
+
+                // Add vector normals.
+                int numTriangles = modelData.triangles.Length;
+                for (int i = 0; i < numTriangles; i++)
+                {
+                    ModelData.Triangle triangle = modelData.triangles[i];
+
+                    int v0 = triangle.v0;
+                    int v1 = triangle.v1;
+                    int v2 = triangle.v2;
+
+                    mesh.TriangleIndices.Add(v2);
+                    mesh.TriangleIndices.Add(v1);
+                    mesh.TriangleIndices.Add(v0);
+
+                    pointNormals[v0] = (modelData.GetTriangleNormal0(i));
+                    pointNormals[v1] = (modelData.GetTriangleNormal1(i));
+                    pointNormals[v2] = (modelData.GetTriangleNormal2(i));
+
+                    /*
+                                    mesh.TriangleIndices.Add(v0);
+                                    mesh.TriangleIndices.Add(v1);
+                                    mesh.TriangleIndices.Add(v2);
+
+                                    pointNormals[v0] = (modelData.GetTriangleNormal0(i));
+                                    pointNormals[v1] = (modelData.GetTriangleNormal1(i));
+                                    pointNormals[v2] = (modelData.GetTriangleNormal2(i));
+                    */
+                }
+
+                foreach (SVector v in pointNormals)
+                {
+                    SVector v2 = v;//.Negate();
+
+                    //v2.I = -v2.I;
+                    //v2.J = -v2.J;
+
+                    //if (v2 != null)
+                    {
+                        Vector3D v3d = VectorToVector3D(v2);
+                        //v3d.Z = -v3d.Z;
+
+                        //v3d = -v3d;
+
+                        mesh.Normals.Add(v3d);
+                    }
                 }
             }
-
             geometryModel.Geometry = mesh;
 
             geometryModel.Material = new DiffuseMaterial(new SolidColorBrush(DefaultColour));

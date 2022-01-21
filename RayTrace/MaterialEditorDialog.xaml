@@ -46,6 +46,11 @@
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
 
+        <ObjectDataProvider x:Key="dataFromCookTorrenceSurfaceTypeEnum" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="local:CookTorrence+SurfaceType"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
 
 
 
@@ -577,6 +582,7 @@
                         <RowDefinition />
                         <RowDefinition />
                         <RowDefinition />
+                        <RowDefinition />
                     </Grid.RowDefinitions>
 
                     <TextBlock Grid.Row="0" Text="Texture:" HorizontalAlignment="Right"></TextBlock>
@@ -610,13 +616,15 @@
 
                     </ContentControl>
 
-                    <TextBlock Text="Roughness:" Grid.Row="2"></TextBlock>
-                    <TextBlock Text="Absorption:" Grid.Row="3"></TextBlock>
-                    <TextBlock Text="Shininess:" Grid.Row="4"></TextBlock>
+                    <TextBlock Text="Type:" Grid.Row="2"></TextBlock>
+                    <TextBlock Text="Roughness:" Grid.Row="3"></TextBlock>
+                    <TextBlock Text="Absorption:" Grid.Row="4"></TextBlock>
+                    <TextBlock Text="Shininess:" Grid.Row="5"></TextBlock>
 
-                    <TextBox Text="{Binding ElementName=dialog, Path=material.Brdf.Roughness, Mode=TwoWay, NotifyOnSourceUpdated=True}" Grid.Column="2" Grid.Row="2" MinWidth="50" SourceUpdated="Control_SourceUpdated"></TextBox>
-                    <TextBox Text="{Binding ElementName=dialog, Path=material.Brdf.Absorption, Mode=TwoWay, NotifyOnSourceUpdated=True}" Grid.Column="2" Grid.Row="3" MinWidth="50" SourceUpdated="Control_SourceUpdated"></TextBox>
-                    <TextBox Text="{Binding ElementName=dialog, Path=material.Brdf.Shininess, Mode=TwoWay, NotifyOnSourceUpdated=True}" Grid.Column="2" Grid.Row="4" MinWidth="50" SourceUpdated="Control_SourceUpdated"></TextBox>
+                    <ComboBox Name="comboBoxType" ItemsSource="{Binding Source={StaticResource dataFromCookTorrenceSurfaceTypeEnum}, NotifyOnSourceUpdated=True}" SelectedItem="{Binding ElementName=dialog, Path=material.Brdf.Type, Mode=TwoWay, NotifyOnSourceUpdated=True}" Grid.Column="2" Grid.Row="2"  HorizontalAlignment="Left" MinWidth="200" SelectionChanged="comboBoxType_SelectionChanged" SourceUpdated="Control_SourceUpdated"></ComboBox>
+                    <TextBox Text="{Binding ElementName=dialog, Path=material.Brdf.Roughness, Mode=TwoWay, NotifyOnSourceUpdated=True}" Grid.Column="2" Grid.Row="3" MinWidth="50" SourceUpdated="Control_SourceUpdated"></TextBox>
+                    <TextBox Text="{Binding ElementName=dialog, Path=material.Brdf.Absorption, Mode=TwoWay, NotifyOnSourceUpdated=True}" Grid.Column="2" Grid.Row="4" MinWidth="50" SourceUpdated="Control_SourceUpdated"></TextBox>
+                    <TextBox Text="{Binding ElementName=dialog, Path=material.Brdf.Shininess, Mode=TwoWay, NotifyOnSourceUpdated=True}" Grid.Column="2" Grid.Row="5" MinWidth="50" SourceUpdated="Control_SourceUpdated"></TextBox>
 
 
                 </Grid>

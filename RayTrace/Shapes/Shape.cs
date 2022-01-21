@@ -60,7 +60,67 @@ namespace RayTrace
 
         private Point pos;
 
+        private bool updateMatrix = false;
+
+        private float scale = 1.0f;
+
+        private float rotateX = 0.0f;
+        private float rotateY = 0.0f;
+        private float rotateZ = 0.0f;
+
+        private static float DegreesToRadians(float degrees) => (float)(degrees / 360.0 * 2.0 * Math.PI);
+
         public Point Pos { get { return pos; } set { pos = value; Notify("Pos"); } }
+
+        public float Scale
+        {
+            get { return scale; }
+            set { if (scale != value) { scale = value; Notify("Scale"); updateMatrix = true; } }
+        }
+
+        // Clockwise rotation around X axis in degrees.
+        public float RotateX {
+            get { return rotateX; }
+            set {
+                if (rotateX != value) {
+                    rotateX = value;
+                    //rotateXRadians = DegreesToRadians(rotateXDegrees);
+                    updateMatrix = true;
+                    Notify("RotateX");
+                }
+            }
+        }
+
+        public float RotateY
+        {
+            get { return rotateY; }
+            set
+            {
+                if (rotateY != value)
+                {
+                    rotateY = value;
+                    //rotateYRadians = DegreesToRadians(rotateYDegrees);
+                    updateMatrix = true;
+                    Notify("RotateY");
+                }
+            }
+        }
+
+        public float RotateZ
+        {
+            get { return rotateZ; }
+            set
+            {
+                if (rotateZ != value)
+                {
+                    rotateZ = value;
+                    //rotateZRadians = DegreesToRadians(rotateZ);
+                    updateMatrix = true;
+                    Notify("RotateZ");
+                }
+            }
+        }
+
         public Material Material { get; set; }
 
         //public Guid MaterialGuid { get; set; }
@@ -68,8 +128,15 @@ namespace RayTrace
         private Matrix _objectToWorld = new Matrix();
         private Matrix _objectToWorldNormal = new Matrix();
         public Matrix ObjectToWorld {
-            get { return _objectToWorld; }
-            set {
+            get {
+                if (updateMatrix)
+                {
+                    UpdateMatrix();
+                    updateMatrix = false;
+                }
+                return _objectToWorld;
+            }
+/*            set {
                 _objectToWorld = value;
                 _objectToWorldNormal = new Matrix(_objectToWorld)
                 {
@@ -78,14 +145,39 @@ namespace RayTrace
                     M24 = 0.0f,
                     M34 = 0.0f,
                 };
-            }
+            }*/
         }
 
-        public Matrix ObjectToWorldNormal { get { return _objectToWorldNormal; } }
+        public Matrix ObjectToWorldNormal {
+            get {
+                if (updateMatrix)
+                {
+                    UpdateMatrix();
+                    updateMatrix = false;
+                }
+                return _objectToWorldNormal;
+            }
+        }
 
         public bool HasRoughness() => Material.HasRoughness();
         public bool HasTransparency() => Material.HasTransparency();
         public bool HasReflectivity() => Material.HasReflectivity();
+
+        private void UpdateMatrix()
+        {
+            float rotateXRadians = DegreesToRadians(rotateX);
+            float rotateYRadians = DegreesToRadians(rotateY);
+            float rotateZRadians = DegreesToRadians(rotateZ);
+
+            _objectToWorld = Matrix.GetScale(scale) * Matrix.GetRotationZ(rotateZRadians) * Matrix.GetRotationY(rotateYRadians) * Matrix.GetRotationX(rotateXRadians);
+            _objectToWorldNormal = new Matrix(_objectToWorld)
+            {
+                // Remove translation component.
+                M14 = 0.0f,
+                M24 = 0.0f,
+                M34 = 0.0f,
+            };
+        }
 
         // Constructor.
         public Shape(Point p) : this(p, Palette.Red) { }
@@ -108,7 +200,12 @@ namespace RayTrace
         public Shape(XMLShape xmlShape)
         {
             Pos = new Point(xmlShape.Pos);
-            Material = new Material(xmlShape.Material);
+            Scale = xmlShape.Scale;
+            RotateX = xmlShape.RotateX;
+            RotateY = xmlShape.RotateY;
+            RotateZ = xmlShape.RotateZ;
+
+            //Material = new Material(xmlShape.Material);
         }
 
         // Get colour at hit point.
@@ -136,13 +233,17 @@ namespace RayTrace
             if (xml is XMLShape xmlShape)
             {
                 xmlShape.Pos = Pos.ToXML();
-                xmlShape.Material = Material.ToXML();
+                xmlShape.Scale = Scale;
+                xmlShape.RotateX = RotateX;
+                xmlShape.RotateY = RotateY;
+                xmlShape.RotateZ = RotateZ;
+                xmlShape.MaterialGuid = Material.Guid;// ToXML();
             }
         }
 
         public override XMLEntity ToXML()
         {
-            XMLShape xml = new XMLShape();
+            XMLShape xml = new();
             AsXMLImpl(xml);
             return xml;
         }

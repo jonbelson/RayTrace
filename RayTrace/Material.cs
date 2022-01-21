@@ -110,6 +110,9 @@ namespace RayTrace
         public Material(XMLMaterial xmlMaterial)
         {
             _type = xmlMaterial.Type;
+
+            Guid = xmlMaterial.Guid;
+            Name = xmlMaterial.Name;
             PhongDiffuse = xmlMaterial.PhongDiffuse;
             PhongShininess = xmlMaterial.PhongShininess;
             PhongSpecular = xmlMaterial.PhongSpecular;
@@ -117,6 +120,11 @@ namespace RayTrace
             transparency = xmlMaterial.transparency;
             reflectivity = xmlMaterial.reflectivity;
             RefractiveIndex = xmlMaterial.RefractiveIndex;
+
+            if (xmlMaterial.Brdf != null)
+            {
+                Brdf = xmlMaterial.Brdf.Create();
+            }
 
             Texture = xmlMaterial.Texture.Create();
         }
@@ -179,6 +187,8 @@ namespace RayTrace
         {
             XMLMaterial xmlMaterial = new();
 
+            xmlMaterial.Name = Name;
+            xmlMaterial.Guid = Guid;
             xmlMaterial.Type = Type;
             xmlMaterial.PhongDiffuse = PhongDiffuse;
             xmlMaterial.PhongShininess = PhongShininess;
@@ -189,6 +199,10 @@ namespace RayTrace
             xmlMaterial.reflectivity = reflectivity;
             xmlMaterial.RefractiveIndex = RefractiveIndex;
 
+            if (Brdf != null)
+            {
+                xmlMaterial.Brdf = Brdf.ToXML();
+            }
             xmlMaterial.Texture = Texture.ToXML();
 
             return xmlMaterial;

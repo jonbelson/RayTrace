@@ -62,6 +62,8 @@ namespace RayTrace
             NormalMatrix.M14 = 0.0f;
             NormalMatrix.M24 = 0.0f;
             NormalMatrix.M34 = 0.0f;
+
+            // XXX For transforming surface normals, we need to use the transverse of the inverse of the WorldToView matrix.
         }
 
         // Constructor.
@@ -114,7 +116,7 @@ namespace RayTrace
             return 2.0f * (float)Math.Tan(_fovHRadians / 2.0f);
         }
 
-        // Return normalised Vector from camera position to viewed point.
+        // Return Vector from camera position to viewed point.
         public Vector GetViewVector()
         {
             Vector v = Target - Pos;

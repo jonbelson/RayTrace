@@ -219,5 +219,17 @@ namespace RayTrace
                 //contentControl.ContentTemplateSelector = currentSelector;
             }
         }
+
+        private void comboBoxType_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+/*
+            ComboBox comboBox = (ComboBox)sender;
+            if (comboBox.SelectedItem != null)
+            {
+                CookTorrence.MaterialType materialType = (CookTorrence.MaterialType)comboBox.SelectedItem;
+            }
+*/
+            UpdatePreview();
+        }
     }
 }

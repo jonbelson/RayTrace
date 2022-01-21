@@ -199,9 +199,9 @@ namespace RayTrace
             _modelData = modelData;
 
 //            Matrix rotate = Matrix.GetRotationY((float) Math.PI/2);
-            Matrix rotate = Matrix.GetRotationX((float)Math.PI / 2);
-            Matrix scale = Matrix.GetScale(2.0f, 2.0f, 2.0f);
-            Matrix translate = Matrix.GetTranslation(0.0f, 0.0f, 10.0f);
+            //Matrix rotate = Matrix.GetRotationX((float)Math.PI / 2);
+            //Matrix scale = Matrix.GetScale(2.0f, 2.0f, 2.0f);
+            //Matrix translate = Matrix.GetTranslation(0.0f, 0.0f, 10.0f);
 
             //rotate = Matrix.GetRotationY((float)Math.PI / 2) * rotate;
 
@@ -216,16 +216,15 @@ namespace RayTrace
         public Model(XMLModel xmlModel) : base(xmlModel)
         {
             _modelData = new ModelData();
-/*
-            if (String.IsNullOrEmpty(xmlModel.FileName))
-            {
 
+            if (string.IsNullOrEmpty(xmlModel.FileName))
+            {
                 _modelData.fileName = xmlModel.FileName;
 
-                List<Point> points = new List<Point>();
+                List<SPoint> points = new List<SPoint>();
                 foreach (XMLPoint p in xmlModel.Points)
                 {
-                    points.Add(new Point(p));
+                    points.Add(new SPoint(p.X, p.Y, p.Z));
                 }
                 _modelData.points = points.ToArray();
 
@@ -236,10 +235,10 @@ namespace RayTrace
                 }
                 _modelData.texels = texels.ToArray();
 
-                List<Vector> Normals = new List<Vector>();
+                List<SVector> Normals = new List<SVector>();
                 foreach (XMLVector n in xmlModel.Normals)
                 {
-                    Normals.Add(new Vector() { I = n.I, J = n.J, K = n.K });
+                    Normals.Add(new SVector(n.I, n.J, n.K));
                 }
                 _modelData.normals = Normals.ToArray();
 
@@ -250,22 +249,25 @@ namespace RayTrace
                 }
                 _modelData.triangles = Triangles.ToArray();
 
-                _modelData.texture = xmlModel.Texure.Create();
+                //_modelData.texture = xmlModel.Texure.Create();
             }
             else
             {
-                ModelImporter importer = new ModelImporter();
-                _modelData = importer.ImportObj(xmlModel.FileName);
+                ModelImporter importer = new();
+                (ModelData, Texture) objData = importer.ImportObj(xmlModel.FileName);
+
+                _modelData = objData.Item1;
+                //Material.Texture = objData.Item2;
             }
-*/
         }
 
         // Transform all vertices to View space based on current Camera position and orientation.
         public override void CreateCache(Camera camera)
         {
-            if (_modelData != null)
+            if (_modelData != null && _modelData.points != null && _modelData.normals != null)
             {
                 // Convert vertices from Model space to View space.
+
                 Matrix ObjectToView = camera.WorldToView * ObjectToWorld;
 
                 _viewPoints = new SPoint[_modelData.points.Length];
@@ -717,7 +719,7 @@ namespace RayTrace
         protected override void AsXMLImpl(XMLEntity xml)
         {
             base.AsXMLImpl(xml);
-/*
+
             if (xml is XMLModel xmlModel)
             {
                 xmlModel.FileName = _modelData.fileName;
@@ -728,7 +730,7 @@ namespace RayTrace
                     xmlModel.Points = new List<XMLPoint>();
                     if (_modelData.points != null)
                     {
-                        foreach (Point p in _modelData.points)
+                        foreach (SPoint p in _modelData.points)
                         {
                             xmlModel.Points.Add(new XMLPoint() { X = p.X, Y = p.Y, Z = p.Z });
                         }
@@ -744,7 +746,7 @@ namespace RayTrace
                     xmlModel.Normals = new List<XMLVector>();
                     if (_modelData.normals != null)
                     {
-                        foreach (Vector v in _modelData.normals)
+                        foreach (SVector v in _modelData.normals)
                         {
                             xmlModel.Normals.Add(new XMLVector() { I = v.I, J = v.J, K = v.K });
                         }
@@ -761,10 +763,10 @@ namespace RayTrace
 
                 if (_modelData.texture != null)
                 {
-                    xmlModel.Texure = _modelData.texture.ToXML();
+                    //    xmlModel.Texure = _modelData.texture.ToXML();
+                    xmlModel.MaterialGuid = Material.Guid;// _modelData.texture.;
                 }
             }
-*/
         }
 
         public override XMLEntity ToXML()

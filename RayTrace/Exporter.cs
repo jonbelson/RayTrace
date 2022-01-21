@@ -30,9 +30,77 @@ namespace RayTrace
     }
 
     [Serializable]
+    [XmlInclude(typeof(XMLLambertian))]
+    [XmlInclude(typeof(XMLCookTorrence))]
+    public class XMLBrdf
+    {
+        public string Name;
+
+        public virtual BRDF Create() { return null; }
+    }
+
+    [Serializable]
+    public class XMLLambertian : XMLBrdf
+    {
+        public override BRDF Create() => new Lambertian(this);
+
+    }
+
+    [Serializable]
+    public class XMLCookTorrence : XMLBrdf
+    {
+        public float Roughness;
+        public float Absorption;
+        public float Shininess;
+        public CookTorrence.SurfaceType Type;
+        public float Ior;
+
+        public override BRDF Create() => new CookTorrence(this);
+    }
+
+    [Serializable]
+    [XmlInclude(typeof(XMLSkybox))]
+    [XmlInclude(typeof(XMLSkydomeBitmap))]
+    [XmlInclude(typeof(XMLSkydomeGradient))]
+    public class XMLSkydome
+    {
+        public virtual Skydome Create() { return null; }
+    }
+
+    [Serializable]
+    public class XMLSkybox : XMLSkydome
+    {
+        public string Directory { get; set; }
+
+        public override Skydome Create() { return new Skybox(this); }
+    }
+
+    [Serializable]
+    public class XMLSkydomeBitmap : XMLSkydome
+    {
+        public string FileName { get; set; }
+
+        public override Skydome Create() { return new SkydomeBitmap(this); }
+    }
+
+    [Serializable]
+    public class XMLSkydomeGradient : XMLSkydome
+    {
+        public XMLColour Top { get; set; }
+        public XMLColour Middle { get; set; }
+        public XMLColour Bottom { get; set; }
+
+        public override Skydome Create() { return new SkydomeGradient(this); }
+    }
+
+    [Serializable]
     public class XMLMaterial
     {
+        public string Name;
+        public Guid Guid;
+
         public MaterialType Type;
+
         public double PhongDiffuse;
         public double PhongSpecular;
         public double PhongShininess;
@@ -43,7 +111,10 @@ namespace RayTrace
 
         public float RefractiveIndex;
 
+        public XMLBrdf Brdf;
         public XMLTexture Texture;
+
+        public virtual Material Create() => new Material(this);
     }
 
     [Serializable]
@@ -115,8 +186,15 @@ namespace RayTrace
     [Serializable]
     public class XMLShape : XMLEntity
     {
-        public XMLPoint Pos;
-        public XMLMaterial Material;
+        public XMLPoint Pos { get; set; }
+
+        public float Scale { get; set; }
+        public float RotateX { get; set; }
+        public float RotateY { get; set; }
+        public float RotateZ { get; set; }
+
+        //public XMLMaterial Material;
+        public Guid MaterialGuid { get; set; }
 
         public virtual Shape Create() { return null; }
     }
@@ -176,7 +254,8 @@ namespace RayTrace
         public List<XMLVector> Normals;
         public List<XMLTriangle> Triangles;
 
-        public XMLTexture Texure;
+//        public XMLTexture Texure;
+        //public Guid MaterialGuid;
 
         public override Shape Create() { return new Model(this); }
     }
@@ -225,11 +304,14 @@ namespace RayTrace
         public int Version = 1;
         public DateTime Date = DateTime.Now;
 
-        public List<XMLShape> Shapes = new List<XMLShape>();
-        public List<XMLLight> Lights = new List<XMLLight>();
+        public List<XMLMaterial> Materials = new();
+        public List<XMLShape> Shapes = new();
+        public List<XMLLight> Lights = new();
+
         public XMLCamera Camera;
         public XMLColour Ambient;
         public XMLColour Background;
+        public XMLSkydome Skydome { get; set; }
     }
 
     [Serializable]

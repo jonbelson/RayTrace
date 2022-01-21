@@ -16,7 +16,15 @@ namespace RayTrace
         //private int height;
         private string directory;
 
-//        private Colour[] faces = new Colour[6];
+        public string Directory
+        {
+            get
+            {
+                return new DirectoryInfo(directory).Name;
+            }
+        }
+
+        //        private Colour[] faces = new Colour[6];
         private BitmapUtils.ColourTexture[] faces = new BitmapUtils.ColourTexture[6];
 
         private const int Right = 0;
@@ -59,8 +67,7 @@ namespace RayTrace
                 {
                     string fileName = directory + "\\" + fileset1.faces[i];
 
-                    BitmapUtils.ColourTexture colourTexture;
-                    if (BitmapUtils.LoadTexture(fileName, out colourTexture))
+                    if (BitmapUtils.LoadTexture(fileName, out BitmapUtils.ColourTexture colourTexture))
                     {
                         faces[i] = colourTexture;
                     }
@@ -74,7 +81,8 @@ namespace RayTrace
         {
             this.directory = directory;
 
-            LoadTextures(directory);
+            _ = LoadTextures(directory);
+
  /*
             BitmapUtils.ColourTexture colourTexture;
 
@@ -91,6 +99,13 @@ namespace RayTrace
             BitmapUtils.CreateTexture(Palette.Grey, 256, 256, out colourTexture);
             faces[Back] = colourTexture;
  */
+        }
+
+        public Skybox(XMLSkybox xmlSkybox)
+        {
+            this.directory = xmlSkybox.Directory;
+
+            _ = LoadTextures(directory);
         }
 
         //private (float u, float v) CalculateUV(Camera camera, SVector ray)
@@ -232,9 +247,16 @@ namespace RayTrace
                 }
             }
 
-
             return Palette.Grey;
         }
 
+        public override XMLSkydome ToXML()
+        {
+            XMLSkybox xml = new();
+
+            xml.Directory = directory;
+
+            return xml;
+        }
     }
 }

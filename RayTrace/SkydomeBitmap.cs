@@ -160,7 +160,11 @@ namespace RayTrace
         {
             this.fileName = fileName;
 
-            LoadTexture(fileName);
+            _ = LoadTexture(fileName);
+        }
+
+        public SkydomeBitmap(XMLSkydomeBitmap xmlSkydomeBitmap) : this(xmlSkydomeBitmap.FileName)
+        {
         }
 
         public override Colour GetColour(Camera camera, SVector ray)
@@ -197,5 +201,13 @@ namespace RayTrace
             return Palette.Black;
         }
 
+        public override XMLSkydome ToXML()
+        {
+            XMLSkydomeBitmap xml = new();
+
+            xml.FileName = fileName;
+
+            return xml;
+        }
     }
 }

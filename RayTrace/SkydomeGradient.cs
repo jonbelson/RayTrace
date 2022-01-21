@@ -25,6 +25,13 @@ namespace RayTrace
 
         public SkydomeGradient() : this(Palette.Black, Palette.Black) { }
 
+        public SkydomeGradient(XMLSkydomeGradient xmlSkydomeGradient) : base()
+        {
+            Top = new(xmlSkydomeGradient.Top);
+            Middle = new(xmlSkydomeGradient.Middle);
+            Bottom = new(xmlSkydomeGradient.Bottom);
+        }
+
         public override Colour GetColour(Camera camera, SVector ray)
         {
             double dp = ray.DotProduct(new(Up));
@@ -38,6 +45,17 @@ namespace RayTrace
             {
                 return Colour.LinearBlend(Middle, Top, (float) dp);
             }
+        }
+
+        public override XMLSkydome ToXML()
+        {
+            XMLSkydomeGradient xml = new();
+
+            xml.Top = Top.ToXML();
+            xml.Middle = Middle.ToXML();
+            xml.Bottom = Bottom.ToXML();
+
+            return xml;
         }
     }
 }

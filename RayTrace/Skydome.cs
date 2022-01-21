@@ -6,10 +6,12 @@ using System.Threading.Tasks;
 
 namespace RayTrace
 {
-    abstract public class Skydome
+    public abstract class Skydome : Entity
     {
         public Skydome() { }
 
         public abstract Colour GetColour(Camera camera, SVector ray);
+
+        public new abstract XMLSkydome ToXML();
     }
 }

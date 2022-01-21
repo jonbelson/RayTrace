@@ -43,7 +43,7 @@ namespace RayTrace
 
         private OutputWindow outputWindow = new OutputWindow();
 
-        public int NumRenderBlocks { get; set; } = 8;
+        public int NumRenderBlocks { get; set; } = 16;
 
         public enum RenderDirection
         {
@@ -51,7 +51,6 @@ namespace RayTrace
         }
 
         private RenderDirection[] renderDirection = { RenderDirection.TopToBottom, RenderDirection.Diagonal, RenderDirection.CentreOut };
-        //public List<RenderDirection> renderDirecton = new List<RenderDirection>() { RenderDirection.TopToBottom, RenderDirection.Diagonal, RenderDirection.CentreOut };
         public RenderDirection[] RenderDirections { get { return renderDirection; } }
 
         private readonly List<Renderer.AntiAliasType> antiAlias = new List<Renderer.AntiAliasType>() { Renderer.AntiAliasType.None, Renderer.AntiAliasType.NoiseGrid, Renderer.AntiAliasType.SuperSampling, Renderer.AntiAliasType.AdaptiveSupersampling };
@@ -60,6 +59,8 @@ namespace RayTrace
 //        public List<Entity> Entities { get; set; }
         public ObservableCollection<Entity> Entities { get; set; } = new ObservableCollection<Entity>();
         public ObservableCollection<Entity> SelectedEntity { get; set; } = new ObservableCollection<Entity>();
+
+        public Entity SelectedEntity2 { get; set; }
 
         public ObservableCollection<MaterialTile> MaterialTiles { get; set; } = new ObservableCollection<MaterialTile>();
         public List<Material> Materials { get; set; } = new();
@@ -83,6 +84,7 @@ namespace RayTrace
             IEnumerable<TreeViewEntityModel> lights = Entities.OfType<Light>().GroupBy(x => typeof(Light).ToString()).Select(y => new TreeViewEntityModel() { Category = "Lights" /*y.Key*/, Children = y.Select(k => new TreeViewEntityModel() { Category = k.Name, Instance = k }).ToArray() });
             IEnumerable<TreeViewEntityModel> categories = shapes.Concat(lights);
 
+            categories = categories.Prepend(new TreeViewEntityModel() { Category = "Skydome", Instance = scene.Skydome });
             categories = categories.Prepend(new TreeViewEntityModel() { Category = "Camera", Instance = scene.Camera });
 
             //entityTreeView.Items = null;
@@ -126,9 +128,60 @@ namespace RayTrace
             return wb;
         }
 
+        private void UpdateForScene()
+        {
+            Entities.Clear();
+
+            Entities.Add(scene.Camera);
+
+            Entities.Add(scene.Skydome);
+
+            foreach (Light light in scene.Lights)
+            {
+                Entities.Add(light);
+            }
+            foreach (Shape shape in scene.Shapes)
+            {
+                Entities.Add(shape);
+            }
+
+            foreach (Entity entity in Entities)
+            {
+                entity.PropertyChanged += Entity_PropertyChanged;
+            }
+
+            //listView.ItemsSource = Entities;
+
+            Materials = scene.Materials;
+
+            ///*
+            MaterialTiles.Clear();
+            MaterialTileMaker materialTileMaker = new() { Size = 150 };
+            foreach (Material mat in scene.Materials)
+            {
+                MaterialTile materialTile = materialTileMaker.MakeTile(mat);
+
+                materialTile.WriteableBitmap = BitmapToWriteableBitmap(materialTile.Bitmap);
+
+                MaterialTiles.Add(materialTile);
+            }
+
+            UpdateEntityTreeView();
+        }
+
         public MainWindow()
         {
             InitializeComponent();
+
+            Quaternion q = new Quaternion(new SVector(0, 1, 0), (float) Math.PI/2);
+            SVector v = new(0, 0, 1);
+            SVector vr = q.Rotate(v);
+
+
+            q = new Quaternion(new SVector(1, 0, 0), (float)Math.PI / 2);
+            v = new(0, 1, 0);
+            vr = q.Rotate(v);
+
 
             checkBoxAmbient.IsChecked = renderer.UseAmbient;
             checkBoxLighting.IsChecked = renderer.UseDiffuse;
@@ -157,10 +210,10 @@ namespace RayTrace
             //scene = SceneFactory.SoftLightDemoScene();
             //scene = SceneFactory.FovDemoScene();
             //scene = SceneFactory.ModelScene();
-            //scene = SceneFactory.GIDemoScene();
+            scene = SceneFactory.GIDemoScene();
             //scene = SceneFactory.GIDemoScene2();
 //            scene = SceneFactory.TexturedSpheresDemoScene();
-            scene = SceneFactory.ObjScene();
+            //scene = SceneFactory.ObjScene();
             //scene = SceneFactory.BRDFScene();
             //scene = SceneFactory.SensorScene();
 
@@ -175,6 +228,8 @@ namespace RayTrace
                         Matrix product = m * inverse;
                         Debug.WriteLine(product.ToString());
             */
+
+
 
             UpdateViewport3D();
 /*
@@ -200,42 +255,8 @@ namespace RayTrace
             //Entities = new ObservableCollection<Entity>();
             //listView.ItemsSource = null;
 
-            Entities.Add(scene.Camera);
-            foreach (var light in scene.Lights)
-            {
-                Entities.Add(light);
-            }
-            foreach (var shape in scene.Shapes)
-            {
-                Entities.Add(shape);
-            }
 
-            foreach (Entity entity in Entities)
-            {
-                entity.PropertyChanged += Entity_PropertyChanged;
-            }
-
-
-
-            //listView.ItemsSource = Entities;
-
-            Materials = scene.Materials;
-
-            ///*
-            MaterialTiles.Clear();
-            MaterialTileMaker materialTileMaker = new() { Size = 150 };
-            foreach (Material mat in scene.Materials)
-            {
-                MaterialTile materialTile = materialTileMaker.MakeTile(mat);
-
-                materialTile.WriteableBitmap = BitmapToWriteableBitmap(materialTile.Bitmap);
-
-                MaterialTiles.Add(materialTile);
-            }
-
-
-            UpdateEntityTreeView();
-
+            UpdateForScene();
 
             //materialListBox.ItemsSource = Entities;// MaterialTiles;
 
@@ -599,6 +620,9 @@ namespace RayTrace
                 if (xmlScene != null)
                 {
                     scene = new Scene(xmlScene);
+
+                    UpdateForScene();
+
                     MessageBox.Show("Scene loaded successfully.");
                 }
             }
@@ -718,15 +742,51 @@ namespace RayTrace
                 float xDiff = (float)(p.X - clickPoint.X);
                 float yDiff = (float)(p.Y - clickPoint.Y);
 
+                Action<string, SVector> WriteSVector = delegate (string name, SVector v) { Debug.WriteLine(name + ":" + v.I + ", " + v.J + ", " + v.K); };
+
                 if (!ctrlPressed && !shiftPressed)
                 {
                     // Move camera Target
 
-                    Vector offset = new Vector(-xDiff/20, 0, 0 /*yDiff*/);
-                    scene.Camera.Target += offset;
+                    SVector viewVector = new(scene.Camera.GetViewVector());
+                    float magnitude = viewVector.Magnitude();
+                    SVector view = viewVector.Normalise();
+                    SVector left = view.VectorProduct(new SVector(0, 1, 0));
+                    //SVector right = view.VectorProduct(new SVector(0, 1, 0));
+                    SVector up = view.VectorProduct(left);
 
-                    Vector offset2 = new Vector(/*-xDiff*/ 0, yDiff/20, 0);
-                    scene.Camera.Target += offset2;
+                    WriteSVector("viewVector", viewVector);
+                    WriteSVector("left", left);
+
+                    // Yaw.
+                    Quaternion q = new(new SVector(0, 1, 0), xDiff/200);
+                    SVector rotY = q.Rotate(view);
+
+                    WriteSVector("rotY", rotY);
+
+                    // Pitch.
+                    Quaternion qPitch = new(-left, yDiff / 200);
+                    SVector rotLeft = qPitch.Rotate(view);
+
+                    WriteSVector("rotLeft", rotLeft);
+
+                    SVector total = ((rotY + rotLeft).Normalise())*magnitude;
+                    if (Double.IsNaN(total.I) || Double.IsInfinity(total.I))
+                    {
+                        int i = 0;
+                    }
+
+                    WriteSVector("total", total);
+
+                    Debug.WriteLine("");
+
+                    scene.Camera.Target = scene.Camera.Pos + new Vector(total); // new Vector(rotY) + new Vector(rotLeft);
+
+                    //Vector offset = new Vector(-xDiff/20, 0, 0 /*yDiff*/);
+                    //scene.Camera.Target += offset;
+
+                    //Vector offset2 = new Vector(/*-xDiff*/ 0, yDiff/20, 0);
+                    //scene.Camera.Target += offset2;
                 }
                 else if (ctrlPressed && !shiftPressed)
                 {
@@ -808,6 +868,8 @@ namespace RayTrace
                 {
                     if (model.Instance != null)
                     {
+                        SelectedEntity2 = model.Instance;
+
                         SelectedEntity.Clear();
                         SelectedEntity.Add(model.Instance);
                     }
@@ -815,6 +877,8 @@ namespace RayTrace
                 else
                 {
                     SelectedEntity.Clear();
+
+                    SelectedEntity2 = null;
                 }
 
                 //var v = entityTreeView.SelectedItem;

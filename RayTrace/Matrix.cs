@@ -307,6 +307,7 @@ namespace RayTrace
         //}
 
         public static Matrix GetScale(float sx, float sy, float sz) => NewMatrix.SetScale(sx, sy, sz);
+        public static Matrix GetScale(float s) => NewMatrix.SetScale(s, s, s);
 
         public static Matrix GetRotationX(float radians) => NewMatrix.SetRotationX(radians);
         public static Matrix GetRotationY(float radians) => NewMatrix.SetRotationY(radians);

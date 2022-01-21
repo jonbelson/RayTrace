@@ -9,7 +9,7 @@ namespace RayTrace
 
         private double _radiusSquared;
         private double _radius;
-        public double Radius { get { return _radius; } set { _radius = value; _radiusSquared = value * value; } }
+        public double Radius { get => _radius; set { _radius = value; _radiusSquared = value * value; } }
 
         // Precalculated values to speed up calculations.
         private SPoint pos;
