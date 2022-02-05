@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:primitives="clr-namespace:System.Windows.Controls.Ribbon.Primitives;assembly=System.Windows.Controls.Ribbon" 
         xmlns:local="clr-namespace:RayTrace"
         mc:Ignorable="d"
         Title="RayTrace" Height="1024" Width="1280" IsVisibleChanged="window_IsVisibleChanged">
@@ -13,50 +14,32 @@
     
     <RibbonWindow.Resources>
 
-<!--
-       <HierarchicalDataTemplate DataType="{x:Type local:Shape}" ItemsSource="{Binding Entities, ElementName=window, Mode=TwoWay}">
-            <TextBlock Text="{Binding Path=Name}"></TextBlock>
-        </HierarchicalDataTemplate>
--->
-        
-        <!--
-        <HierarchicalDataTemplate DataType="{x:Type local:Light}" ItemsSource="{Binding Entities, ElementName=window, Mode=TwoWay}">
-            <TextBlock Text="{Binding Path=Name}"></TextBlock>
-        </HierarchicalDataTemplate>
-        -->
-
-        <!--
-       
-        <MeshGeometry3D x:Key="CubeMesh"
-                        TriangleIndices="0,1,2 3,4,5 6,7,8 9,10,11 12,13,14 15,16,17 18,19,20 21,22,23 24,25,26 27,28,29 30,31,32 33,34,35 "
-                        Normals="0,0,-1 0,0,-1 0,0,-1 0,0,-1 0,0,-1 0,0,-1 0,0,1 0,0,1 0,0,1 0,0,1 0,0,1 0,0,1 0,-1,0 0,-1,0 0,-1,0 0,-1,0 0,-1,0 0,-1,0 1,0,0 1,0,0 1,0,0 1,0,0 1,0,0 1,0,0 0,1,0 0,1,0 0,1,0 0,1,0 0,1,0 0,1,0 -1,0,0 -1,0,0 -1,0,0 -1,0,0 -1,0,0 -1,0,0 "
-                        TextureCoordinates="1,0 1,1 0,1 0,1 0,0 1,0 0,0 1,0 1,1 1,1 0,1 0,0 0,0 1,0 1,1 1,1 0,1 0,0 1,0 1,1 0,1 0,1 0,0 1,0 1,1 0,1 0,0 0,0 1,0 1,1 0,1 0,0 1,0 1,0 1,1 0,1 "
-                        Positions="-0.5,-0.5,-0.5 -0.5,0.5,-0.5 0.5,0.5,-0.5 0.5,0.5,-0.5 0.5,-0.5,-0.5 -0.5,-0.5,-0.5 -0.5,-0.5,0.5 0.5,-0.5,0.5 0.5,0.5,0.5 0.5,0.5,0.5 -0.5,0.5,0.5 -0.5,-0.5,0.5 -0.5,-0.5,-0.5 0.5,-0.5,-0.5 0.5,-0.5,0.5 0.5,-0.5,0.5 -0.5,-0.5,0.5 -0.5,-0.5,-0.5 0.5,-0.5,-0.5 0.5,0.5,-0.5 0.5,0.5,0.5 0.5,0.5,0.5 0.5,-0.5,0.5 0.5,-0.5,-0.5 0.5,0.5,-0.5 -0.5,0.5,-0.5 -0.5,0.5,0.5 -0.5,0.5,0.5 0.5,0.5,0.5 0.5,0.5,-0.5 -0.5,0.5,-0.5 -0.5,-0.5,-0.5 -0.5,-0.5,0.5 -0.5,-0.5,0.5 -0.5,0.5,0.5 -0.5,0.5,-0.5 " />
--->
-
         <Style x:Key="TreeViewItemStyle_ExpandAll" TargetType="{x:Type TreeViewItem}">
             <Setter Property="IsExpanded" Value="True"/>
+            <Setter Property="IsSelected" Value="{Binding IsSelected}" />
         </Style>
 
         <local:RgbConverter x:Key="RgbConverter"></local:RgbConverter>
         <local:DebugExtension x:Key="DebugExtension"></local:DebugExtension>
 
         <Border x:Shared="False" x:Key="EntityContent" Width="{Binding ElementName=listBox, Path=Width}">
-                <Grid Margin="5,5,5,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="60"/>
-                        <ColumnDefinition Width="8" />
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition />
-                        <RowDefinition />
-                    </Grid.RowDefinitions>
-                <TextBlock FontWeight="Bold" Background="LightGray" Text="{Binding Path=Name}" Grid.Row="0" Grid.ColumnSpan="3"></TextBlock>
-                    <TextBlock Text="Enabled" Grid.Row="1"></TextBlock>
-                    <CheckBox IsChecked="{Binding Path=Enabled, Mode=TwoWay, Converter={StaticResource DebugExtension}}" Grid.Column="2" Grid.Row="1"></CheckBox>
-                </Grid>
+            <Grid Margin="5,5,5,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="60"/>
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition />
+                    <!--<RowDefinition />-->
+                </Grid.RowDefinitions>
+                <!--<TextBlock FontWeight="Bold" Background="LightGray" Text="{Binding Path=Name}" Grid.Row="0" Grid.ColumnSpan="3"></TextBlock>-->
+                <TextBlock Text="Name" Grid.Row="0"></TextBlock>
+                <TextBox Text="{Binding Path=Name}" Grid.Column="2" Grid.Row="0"></TextBox>
+                <!--<TextBlock Text="Enabled" Grid.Row="1"></TextBlock>
+                <CheckBox IsChecked="{Binding Path=Enabled, Mode=TwoWay, Converter={StaticResource DebugExtension}}" Grid.Column="2" Grid.Row="1"></CheckBox>-->
+            </Grid>
         </Border>
 
         <Border x:Shared="False" x:Key="PositionContent">
@@ -338,6 +321,7 @@
 
                 <ContentPresenter Content="{StaticResource ShapeContent}"></ContentPresenter>
                 <ContentPresenter Content="{StaticResource NormalContent}"></ContentPresenter>
+                <!--
                 <Grid Margin="5">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="60"/>
@@ -351,6 +335,7 @@
                     <TextBlock Text="Radius" Grid.Row="0"></TextBlock>
                     <TextBox Text="{Binding Path=Radius, Mode=TwoWay}" Grid.Column="2" Grid.Row="0"></TextBox>
                 </Grid>
+                -->
             </StackPanel>
         </DataTemplate>
         
@@ -495,6 +480,8 @@
             <Ribbon.ApplicationMenu>
                 <RibbonApplicationMenu KeyTip="F">
                     <RibbonApplicationMenuItem Header="About..." />
+                    <RibbonApplicationMenuItem Header="New Empty Scene..." Click="RibbonApplicationMenuItem_Click" />
+                    <RibbonApplicationMenuItem Header="New Minimal Scene..." Click="RibbonApplicationMenuItem_Click_1" />
                     <RibbonApplicationMenuItem Header="Load Scene..." Click="LoadScene_Click" />
                     <RibbonApplicationMenuItem Header="Save Scene" Click="SaveScene_Click" />
                     <RibbonApplicationMenuItem Header="Exit" />
@@ -506,6 +493,56 @@
                 <RibbonGroup x:Name="groupPreviewOptions" Header="Options">
                     <RibbonCheckBox x:Name="checkBoxGroundPlane" Label="Ground Plane" IsChecked="{Binding ElementName=window, Path=PreviewGroundPlane, Mode=TwoWay}" ToolTip="Enable ground plane" Click="checkBoxGroundPlane_Click"></RibbonCheckBox>
                     <RibbonCheckBox x:Name="checkBoxAxis" Label="Axis"  IsChecked="{Binding  ElementName=window, Path=PreviewAxis, Mode=TwoWay}" ToolTip="Enable axis" Click="checkBoxAxis_Click"></RibbonCheckBox>
+                </RibbonGroup>
+            </RibbonTab>
+
+            <RibbonTab x:Name="tabEntities" Header="Entities">
+                <RibbonGroup x:Name="groupGeometric" Header="Geommetric">
+
+<!--                    <RibbonComboBox Label="1" SmallImageSource="Images/RightArrowShort_Green16.png"-->
+ <!--                   <RibbonComboBox Label="1"
+                                SelectionBoxWidth="62"
+                                VerticalAlignment="Center" 
+                                IsEditable="True" > -->
+                    <primitives:RibbonMenuItemsPanel Orientation="Horizontal" Width="150"   >
+                        <RibbonGallery x:Name="galleryGeometric" SelectedValue="Green"
+                                SelectedValuePath="Content"
+                                MaxColumnCount="5" SelectionChanged="galleryGeometric_SelectionChanged">
+                            <RibbonGalleryCategory >
+                                <RibbonGalleryItem Content="Disc"/>
+                                <RibbonGalleryItem Content="Plane"/>
+                                <RibbonGalleryItem Content="Sphere"/>
+                            </RibbonGalleryCategory>
+                        </RibbonGallery>
+                        </primitives:RibbonMenuItemsPanel>
+                    <!--                   </RibbonComboBox> -->
+
+                </RibbonGroup>
+                
+                <RibbonGroup x:Name="groupModels" Header="Models">
+                    <primitives:RibbonMenuItemsPanel Orientation="Horizontal" Width="150"   >
+                        <RibbonGallery x:Name="galleryModel" SelectedValue="Green"
+                                SelectedValuePath="Content"
+                                MaxColumnCount="5" SelectionChanged="galleryModel_SelectionChanged">
+                            <RibbonGalleryCategory >
+                                <RibbonGalleryItem Content="Model"/>
+                            </RibbonGalleryCategory>
+                        </RibbonGallery>
+                    </primitives:RibbonMenuItemsPanel>
+                </RibbonGroup>
+
+                <RibbonGroup x:Name="groupLights" Header="Lights">
+                    <primitives:RibbonMenuItemsPanel Orientation="Horizontal" Width="150"   >
+                        <RibbonGallery x:Name="galleryLight" SelectedValue="Green"
+                                SelectedValuePath="Content"
+                                MaxColumnCount="5" SelectionChanged="galleryLight_SelectionChanged">
+                            <RibbonGalleryCategory >
+                                <RibbonGalleryItem Content="Distant"/>
+                                <RibbonGalleryItem Content="Point"/>
+                                <RibbonGalleryItem Content="Spot"/>
+                            </RibbonGalleryCategory>
+                        </RibbonGallery>
+                    </primitives:RibbonMenuItemsPanel>
                 </RibbonGroup>
             </RibbonTab>
             
@@ -645,9 +682,28 @@
         <TreeView x:Name="entityTreeView" Grid.Column="1" Grid.Row="1" SelectedItemChanged="entityTreeView_SelectedItemChanged" ItemContainerStyle="{StaticResource TreeViewItemStyle_ExpandAll}">
             <TreeView.ItemTemplate>
                 <HierarchicalDataTemplate ItemsSource="{Binding Children}">
-                    <TextBlock Text="{Binding Category}"></TextBlock>
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox IsEnabled="{Binding IsVisible, Mode=OneTime}" IsChecked="{Binding IsChecked, Mode=TwoWay, NotifyOnTargetUpdated=True, NotifyOnSourceUpdated=True}"></CheckBox>
+                        <TextBlock Text="{Binding Category}"></TextBlock>
+                    </StackPanel>
+<!--                    <HierarchicalDataTemplate.ItemTemplate>
+                        <DataTemplate x:DataType="local:Model">
+                            <TreeViewItem Content="{x:Bind Name}"
+                           ItemsSource="{x:Bind Children}"
+                           IsSelected="{x:Bind IsSelected,Mode=OneWay}"
+                           />
+                        </DataTemplate>
+                    </HierarchicalDataTemplate.ItemTemplate> -->
                 </HierarchicalDataTemplate>
-            </TreeView.ItemTemplate>
+                </TreeView.ItemTemplate>
+
+<!--
+            <TreeView.Resources>
+                <Style TargetType="{x:Type TreeViewItem}">
+                    <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"></Setter>
+                </Style>
+            </TreeView.Resources>
+            -->
             <!--<TreeViewItem ItemsSource="{Binding Entities, ElementName=window, Mode=TwoWay}" Header="Entities"></TreeViewItem>-->
         </TreeView>
 

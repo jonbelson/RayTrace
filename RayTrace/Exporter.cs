@@ -179,6 +179,7 @@ namespace RayTrace
     [XmlInclude(typeof(XMLModel))]
     public class XMLEntity
     {
+        public Guid UID { get; set; }
         public bool Enabled;
         public string Name;
     }
@@ -196,7 +197,7 @@ namespace RayTrace
         //public XMLMaterial Material;
         public Guid MaterialGuid { get; set; }
 
-        public virtual Shape Create() { return null; }
+        public virtual Shape Create(Scene scene) { return null; }
     }
 
     [Serializable]
@@ -204,16 +205,16 @@ namespace RayTrace
     {
         public int Radius;
 
-        public override Shape Create() { return new Sphere(this); }
+        public override Shape Create(Scene scene) { return new Sphere(scene, this); }
     }
 
     [Serializable]
     public class XMLDisc : XMLShape
     {
         public XMLVector Normal;
-        public double Radius;
+        //public float Radius;
 
-        public override Shape Create() { return new Disc(this); }
+        public override Shape Create(Scene scene) { return new Disc(scene, this); }
     }
 
     [Serializable]
@@ -221,7 +222,7 @@ namespace RayTrace
     {
         public XMLVector Normal;
 
-        public override Shape Create() { return new Plane(this); }
+        public override Shape Create(Scene scene) { return new Plane(scene, this); }
     }
 
     [Serializable]
@@ -257,7 +258,7 @@ namespace RayTrace
 //        public XMLTexture Texure;
         //public Guid MaterialGuid;
 
-        public override Shape Create() { return new Model(this); }
+        public override Shape Create(Scene scene) { return new Model(scene, this); }
     }
 
     [Serializable]
@@ -279,7 +280,7 @@ namespace RayTrace
         public XMLColour Colour;
         public int Radius;
 
-        public virtual Light Create() { return null; }
+        public virtual Light Create(Scene scene) { return null; }
     }
 
     [Serializable]
@@ -287,7 +288,7 @@ namespace RayTrace
     {
         public XMLPoint Pos;
 
-        public override Light Create() { return new PointLight(this); }
+        public override Light Create(Scene scene) { return new PointLight(scene, this); }
     }
 
     [Serializable]
@@ -295,7 +296,7 @@ namespace RayTrace
     {
         public XMLVector Direction;
 
-        public override Light Create() { return new DistantLight(this); }
+        public override Light Create(Scene scene) { return new DistantLight(scene, this); }
     }
 
     [Serializable]

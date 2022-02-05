@@ -21,7 +21,7 @@ namespace RayTrace
 
             scene.AddMaterial(mat);
 
-            Sphere sphere = new Sphere(new Point(0, 0, 00), 2, Palette.Red);
+            Sphere sphere = new Sphere(scene, new Point(0, 0, 0), 2, Palette.Red);
             sphere.Material = mat;
             scene.AddShape(sphere);
 
@@ -44,7 +44,7 @@ namespace RayTrace
             {
                 for (int i = 0; i <= 5; i++)
                 {
-                    Sphere sphere = new Sphere(new Point(-50 + i * 20, -40 + j * 20, 80), 8, Palette.Green);
+                    Sphere sphere = new Sphere(scene, new Point(-50 + i * 20, -40 + j * 20, 80), 8, Palette.Green);
                     sphere.Material.SetType(MaterialType.Phong);
                     sphere.Material.PhongDiffuse = 0.95;
                     sphere.Material.PhongSpecular = 2 * ks[i];  // i / 5.0;
@@ -53,8 +53,8 @@ namespace RayTrace
                 }
             }
             //Light light = new PointLight(new Point(-50, 0, 0), /*0.5f*/ 50000.0f, new Colour(1.0f, 1.0f, 1.0f));
-            Light light = new DistantLight(new Vector(1, 0, 1), 2, Palette.White);
-            scene.AddLight(light);
+            Light light = new DistantLight(scene, new Vector(1, 0, 1), 2, Palette.White);
+           //scene.AddLight(light);
 
             return scene;
         }
@@ -94,27 +94,27 @@ namespace RayTrace
             scene.AddMaterial(matGradient2);
 
 
-            Sphere sphere = new Sphere(new Point(-20, 0, 20), 10, Palette.White);
+            Sphere sphere = new Sphere(scene, new Point(-20, 0, 20), 10, Palette.White);
             sphere.Material = matTransparent;
             sphere.Material = matGradient;
             scene.AddShape(sphere);
 
-            sphere = new Sphere(new Point(20, 0, 20), 10, Palette.White);
+            sphere = new Sphere(scene, new Point(20, 0, 20), 10, Palette.White);
             sphere.Material= matSquares;
             sphere.Material = matGradient2;
             scene.AddShape(sphere);
 
-            sphere = new Sphere(new Point(0, 0, 40), 10, Palette.Red);
+            sphere = new Sphere(scene, new Point(0, 0, 40), 10, Palette.Red);
             sphere.Material = matSolid;
             scene.AddShape(sphere);
 
-            Plane plane = new Plane(new Vector(0, 1, 0), new Point(0, -10, 0));
+            Plane plane = new Plane(scene, new Point(0, -10, 0), new Vector(0, 1, 0));
 //            Plane plane = new Plane(new Vector(0.707, 0.707, 0.0), new Point(0.0, -10.0, 0.0));
             plane.Material = matPlane;
             //scene.AddShape(plane);
 
 
-            Disc disc = new Disc(new Point(0, -10, 0), new Vector(0, 1, 0), 200);
+            Disc disc = new Disc(scene, new Point(0, -10, 0), new Vector(0, 1, 0), 200);
             disc.Material = matPlane;
             scene.AddShape(disc);
 
@@ -124,11 +124,11 @@ namespace RayTrace
             //light = new PointLight(new Point(50, 50, 0), /*.85f*/ 5000.0f, new Colour(1.0f, 1.0f, 1.0f));
             //            scene.AddLight(light);
 
-            Light light = new PointLight(new Point(0, 50, 0), /*.85f*/ 5000.0f, new Colour(1.0f, 1.0f, 1.0f));
-            scene.AddLight(light);
+            Light light = new PointLight(scene, new Point(0, 50, 0), /*.85f*/ 5000.0f, new Colour(1.0f, 1.0f, 1.0f));
+            //scene.AddLight(light);
 
-            light = new DistantLight(new Vector(-50, 50, 50).Negate(), 5, Palette.White);
-            scene.AddLight(light);
+            light = new DistantLight(scene, new Vector(-50, 50, 50).Negate(), 5, Palette.White);
+            //scene.AddLight(light);
 
 
             //            light = new SpotLight(new Point(0, 100, 0), new Vector(0, -1, 0), 45, 5000, Palette.White);
@@ -151,7 +151,7 @@ namespace RayTrace
         {
             Scene scene = new Scene();
 
-            Sphere sphere = new Sphere(new Point(-20, 0, 50), 20, Palette.Black /* Palette.White*/);
+            Sphere sphere = new Sphere(scene, new Point(-20, 0, 50), 20, Palette.Black /* Palette.White*/);
             //sphere.Material.Texture = new TextureSquares();
             sphere.Material.SetType(MaterialType.Reflective);
             sphere.Material.Transparency = 1.0f;
@@ -159,7 +159,7 @@ namespace RayTrace
             //sphere.Material.
             scene.AddShape(sphere);
 
-            sphere = new Sphere(new Point(20, 0, 50), 20, Palette.Black);
+            sphere = new Sphere(scene, new Point(20, 0, 50), 20, Palette.Black);
             sphere.Material.SetType(MaterialType.RefractiveAndReflective);
             //sphere.Material.Texture = new TextureSquares() { Scale = 10 };
             //sphere.Material.Texture = new TextureNoise(Palette.White, Palette.Black);
@@ -177,17 +177,17 @@ namespace RayTrace
             //scene.AddShape(box);
 
 
-            Plane plane = new Plane(new Vector(0, 0, -1), new Point(0, 0, 150));
+            Plane plane = new Plane(scene, new Point(0, 0, 150), new Vector(0, 0, -1));
             //Plane plane = new Plane(new Vector(0.0, 1.0, 0.0), new Point(0.0, -30.0, 0.0), Palette.Grey);
             plane.Material.Reflectivity = 0.0f;
             //plane.Material.Texture = new TextureSolid(Palette.Blue);
             plane.Material.Texture = new TextureSquares() { Scale = 20 };
             scene.AddShape(plane);
 
-            Light light = new PointLight(new Point(-50, 0, 0), 3000.0f, new Colour(1.0f, 0.0f, 0.0f));
-            scene.AddLight(light);
-            light = new PointLight(new Point(50, 50, 0), 3000.0f, Palette.White);
-            scene.AddLight(light);
+            Light light = new PointLight(scene, new Point(-50, 0, 0), 3000.0f, new Colour(1.0f, 0.0f, 0.0f));
+            //scene.AddLight(light);
+            light = new PointLight(scene, new Point(50, 50, 0), 3000.0f, Palette.White);
+            //scene.AddLight(light);
 
             return scene;
         }
@@ -196,23 +196,22 @@ namespace RayTrace
         {
             Scene scene = new Scene();
 
-            Box box = new Box(new Point(-40, 0, 0), 10, 10, 10);
+            Box box = new Box(scene, new Point(-40, 0, 0), 10, 10, 10);
             //scene.AddShape(box);
 
-            box = new Box(new Point(0, 0, 240), 40);
+            box = new Box(scene, new Point(0, 0, 240), 40);
             box.Material.Texture = new TextureSquares() { Scale = 40 };
             scene.AddShape(box);
 
-            Plane plane = new Plane(new Vector(0, 1, 0), new Point(0, -30, 0), Palette.Grey);
+            Plane plane = new Plane(scene, new Point(0, -30, 0), new Vector(0, 1, 0), Palette.Grey);
             plane.Material.Reflectivity = 1.0f;
             //plane.Material.Texture = new TextureSolid(Palette.Blue);
             //plane.Material.Texture = new TextureSquares() { Scale = 20 };
             scene.AddShape(plane);
 
 
-            Light light = new PointLight(new Point(50, 50, 0), 3000.0f, Palette.White);
-            scene.AddLight(light);
-
+            Light light = new PointLight(scene, new Point(50, 50, 0), 3000.0f, Palette.White);
+            //scene.AddLight(light);
 
             return scene;
         }
@@ -226,7 +225,7 @@ namespace RayTrace
             float bigRadius = 40;
             //double sceneWidth = 200;
 
-            Plane floor = new Plane(new Vector(0, 1, 0), new Point(0, floorHeight, 0), new Colour(Colors.LightGray));
+            Plane floor = new Plane(scene, new Point(0, floorHeight, 0), new Vector(0, 1, 0), new Colour(Colors.LightGray));
             scene.AddShape(floor);
             //            Plane sky = new Plane(new Vector(0, 0, -1), new Point(0, 0, 1000), new Colour(Colors.SkyBlue));
             //            scene.AddShape(sky);
@@ -247,7 +246,7 @@ namespace RayTrace
                     x += (float)random.NextDouble() * (spacing / 2 - radius);
                     z += (float)random.NextDouble() * (spacing / 2 - radius);
 
-                    Sphere sphere = new Sphere(new Point(x, floorHeight + radius, z), (int)radius, Palette.Red);
+                    Sphere sphere = new Sphere(scene, new Point(x, floorHeight + radius, z), (int)radius, Palette.Red);
 
                     int index = random.Next(3);
                     sphere.Material = new Material(cols[index]);
@@ -256,20 +255,23 @@ namespace RayTrace
                 }
             }
 
-            Sphere sphere2 = new Sphere(new Point(40, floorHeight + bigRadius, 400), (int)(bigRadius), Palette.Black);
+            Sphere sphere2 = new Sphere(scene, new Point(40, floorHeight + bigRadius, 400), (int)(bigRadius), Palette.Black);
             sphere2.Material.Transparency = 0.0f;
             sphere2.Material.Reflectivity = 1.0f;
             scene.AddShape(sphere2);
 
-            Sphere sphere3 = new Sphere(new Point(20, floorHeight + bigRadius, 600), (int)(bigRadius), Palette.Black);
+            Sphere sphere3 = new Sphere(scene, new Point(20, floorHeight + bigRadius, 600), (int)(bigRadius), Palette.Black);
             sphere3.Material.Transparency = 1.0f;
             sphere3.Material.Reflectivity = 0.0f;
             scene.AddShape(sphere3);
 
 
-            scene.AddLight(new PointLight(new Point(-25, 25, 0), 6000, Palette.White));
+            //scene.AddLight(new PointLight(new Point(-25, 25, 0), 6000, Palette.White));
             //scene.AddLight(new DistantLight(new Vector(25, 25, 0), 6000, Palette.White));
-            scene.AddLight(new PointLight(new Point(25, 25, 0), 6000, Palette.White));
+            //scene.AddLight(new PointLight(new Point(25, 25, 0), 6000, Palette.White));
+
+            PointLight pl = new PointLight(scene, new Point(-25, 25, 0), 6000, Palette.White);
+            pl = new PointLight(scene, new Point(25, 25, 0), 6000, Palette.White);
 
             scene.Background = new Colour(Colors.LightSkyBlue);
             scene.Background = new Colour(Colors.PowderBlue);
@@ -283,7 +285,7 @@ namespace RayTrace
             Scene scene = new Scene();
 
             float floorHeight = -10;
-            Plane floor = new Plane(new Vector(0, 1, 0), new Point(0, floorHeight, 0), new Colour(Colors.LightGray));
+            Plane floor = new Plane(scene, new Point(0, floorHeight, 0), new Vector(0, 1, 0), new Colour(Colors.LightGray));
             scene.AddShape(floor);
 
             //Box box = new Box(new Point(0, 0, 40), 20.0f);
@@ -292,16 +294,16 @@ namespace RayTrace
             ///*Box*/ box = new Box(new Point(-30, -5, 40), 10.0f);
             //scene.AddShape(box);
 
-            Sphere sphere = new Sphere(new Point(0, 0, 40), 10, Palette.Red);
-            scene.AddShape(sphere);
+            Sphere sphere = new Sphere(scene, new Point(0, 0, 40), 10, Palette.Red);
+            //scene.AddShape(sphere);
 
             /*Sphere*/
-            sphere = new Sphere(new Point(0, floorHeight, 0), 2, Palette.Red);
-            scene.AddShape(sphere);
+            sphere = new Sphere(scene, new Point(0, floorHeight, 0), 2, Palette.Red);
+            //scene.AddShape(sphere);
 
             //Light light = new SpotLight(new Point(-30, 30, 40), new Vector(1, -1, 0, true), 25, 6000, Palette.White);
-            Light light = new PointLight(new Point(-25, 25, 40), 10000, Palette.White);
-            scene.AddLight(light);
+            Light light = new PointLight(scene, new Point(-25, 25, 40), 10000, Palette.White);
+            //scene.AddLight(light);
 
             return scene;
         }
@@ -312,34 +314,34 @@ namespace RayTrace
 
             float floorHeight = -10;
 
-            Sphere sphere = new Sphere(new Point(-20, 0, 20), 10, new Colour(Colors.Orange));
+            Sphere sphere = new Sphere(scene, new Point(-20, 0, 20), 10, new Colour(Colors.Orange));
             //scene.AddShape(sphere);
 
-            sphere = new Sphere(new Point(-10, 0, 30), 10, Palette.Red);
-            scene.AddShape(sphere);
+            sphere = new Sphere(scene, new Point(-10, 0, 30), 10, Palette.Red);
+            //scene.AddShape(sphere);
 
-            sphere = new Sphere(new Point(10, 0, 70), 10, Palette.Green);
-            scene.AddShape(sphere);
+            sphere = new Sphere(scene, new Point(10, 0, 70), 10, Palette.Green);
+            //scene.AddShape(sphere);
 
-            sphere = new Sphere(new Point(40, 0, 110), 10, Palette.Blue);
-            scene.AddShape(sphere);
+            sphere = new Sphere(scene, new Point(40, 0, 110), 10, Palette.Blue);
+            //scene.AddShape(sphere);
 
-            sphere = new Sphere(new Point(80, 0, 150), 10, new Colour(Colors.Yellow));
-            scene.AddShape(sphere);
+            sphere = new Sphere(scene, new Point(80, 0, 150), 10, new Colour(Colors.Yellow));
+            //scene.AddShape(sphere);
 
-            sphere = new Sphere(new Point(0, floorHeight, 1), 5, Palette.Grey);
-            scene.AddShape(sphere);
+            sphere = new Sphere(scene, new Point(0, floorHeight, 1), 5, Palette.Grey);
+            //scene.AddShape(sphere);
 
-            Plane floor = new Plane(new Vector(0, 1, 0), new Point(0, floorHeight, 0), new Colour(Colors.LightGray));
+            Plane floor = new Plane(scene, new Point(0, floorHeight, 0), new Vector(0, 1, 0), new Colour(Colors.LightGray));
             //floor.Material.Texture = new TextureSquares(Palette.Black, Palette.White);
             //floor.Material.Reflectivity = 0.1f;
-            scene.AddShape(floor);
+            //scene.AddShape(floor);
 
-            Light light = new PointLight(new Point(-50, 50, 40), 6000, Palette.White);
-            scene.AddLight(light);
+            Light light = new PointLight(scene, new Point(-50, 50, 40), 6000, Palette.White);
+            //scene.AddLight(light);
 
-            light = new PointLight(new Point(0, 50, 0), 3000, Palette.White);
-            scene.AddLight(light);
+            light = new PointLight(scene, new Point(0, 50, 0), 3000, Palette.White);
+            //scene.AddLight(light);
 
             return scene;
         }
@@ -349,19 +351,19 @@ namespace RayTrace
             Scene scene = new Scene();
 
             //Model model = new Model(new Point(0.0, 0.0, 0.0), modelData);
-            Model model = ModelFactory.Cube();
+            Model model = ModelFactory.Cube(scene);
             //Model model = ModelFactory.Octahedron();
-            model = ModelFactory.Tetahedron();
-            scene.AddShape(model);
+            model = ModelFactory.Tetahedron(scene);
+            //scene.AddShape(model);
 
             float floorHeight = -10;
-            Plane floor = new Plane(new Vector(0, 1, 0), new Point(0, floorHeight, 0), new Colour(Colors.LightGray));
+            Plane floor = new Plane(scene, new Point(0, floorHeight, 0), new Vector(0, 1, 0), new Colour(Colors.LightGray));
             //floor.Material.Texture = new TextureSquares(Palette.Black, Palette.White);
             //floor.Material.Reflectivity = 0.1f;
-            scene.AddShape(floor);
+            //scene.AddShape(floor);
 
-            Light light = new PointLight(new Point(-50, 50, 40), 6000, Palette.White);
-            scene.AddLight(light);
+            Light light = new PointLight(scene, new Point(-50, 50, 40), 6000, Palette.White);
+            //scene.AddLight(light);
 
             return scene;
         }
@@ -374,10 +376,9 @@ namespace RayTrace
 
             //Matrix objectToWorld = new Matrix();
 
-            var objData = importer.ImportObj(@"Data\pbr-low-poly-fox-character");
+            ModelData modelData = importer.ImportObj(@"Data\pbr-low-poly-fox-character\source\LP_Firefox.obj");
 
-            ModelData modelData = objData.Item1;
-            Texture objTexture = objData.Item2;
+            TextureBitmap objTexture = new(@"Data\pbr-low-poly-fox-character\textures\LP_Firefox_1001_BaseColor.png");
 
             scene.Camera.Pos = new Point(-3.5f, 4, -5);
             scene.Camera.Target = new Point(0, 3, 1);
@@ -395,11 +396,11 @@ namespace RayTrace
             //ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\day-18-office-rat");
 
 
-            Model model = new Model(new Point(0, 0, 10), modelData);
+            Model model = new Model(scene, new Point(0, 0, 10), modelData);
             //model.ObjectToWorld = objectToWorld;
 
             Material objMaterial = new(MaterialType.Diffuse);
-            objMaterial.Texture = new TextureSolid(Palette.White);
+            //objMaterial.Texture = new TextureSolid(Palette.White);
             objMaterial.Texture = objTexture;
 
             string? fileName = Path.GetFileNameWithoutExtension(modelData.fileName);
@@ -431,22 +432,22 @@ namespace RayTrace
                 model.Material = mat;
             }
 
-            Sphere sphere = new(new Point(-2, 0, 0), 1);
+            Sphere sphere = new(scene, new Point(-2, 0, 0), 1);
             sphere.Material.SetType(MaterialType.Diffuse);
         //    scene.AddShape(sphere);
 
             float floorHeight = model.MinY;
-            Disc floor = new Disc(new Point(0, floorHeight, 0), new Vector(0, 1, 0), 25);
+            Disc floor = new Disc(scene, new Point(0, floorHeight, 0), new Vector(0, 1, 0), 25);
             floor.Material.Texture = new TextureSolid(Palette.Grey);
             scene.AddMaterial(floor.Material);
             //floor.Material.Reflectivity = 0.1f;
-            scene.AddShape(floor);
+            //scene.AddShape(floor);
 
-            Light light = new PointLight(new Point(-50, 50, 10), 6000, Palette.White);
-            scene.AddLight(light);
+            Light light = new PointLight(scene, new Point(-50, 50, 10), 6000, Palette.White);
+            //scene.AddLight(light);
 
-            light = new PointLight(new Point(10, 30, -30), 3000, Palette.White);
-            scene.AddLight(light);
+            light = new PointLight(scene, new Point(10, 30, -30), 3000, Palette.White);
+            //scene.AddLight(light);
 
             //scene.Skydome = new SkydomeBitmap("Data\\skydomes\\immenstadter_horn_2048.jpg");
             scene.Skydome = new Skybox("Data\\skyboxes\\Yokohama2");
@@ -456,31 +457,44 @@ namespace RayTrace
 
         public static Scene GIDemoScene()
         {
-            Scene scene = new Scene();
+            Scene scene = new();
+
+            scene.Camera.Pos = new Point(0, 3, -26);
+            scene.Camera.Target = new Point(0, 0, 0);
+
+            const int radius = 4;
 
             //            Sphere sphere = new Sphere(new Point(-20, 0, 50), 20, new Colour(0.7f, 0.7f, 0.7f) /* Palette.White*/);
-            Sphere sphere = new Sphere(new Point(-10, 0, 20), 5, new Colour(0.5f, 0, 0) /* Palette.White*/);
+            Sphere sphere = new(scene, new Point(-10, radius, 0), radius /*, new Colour(0.5f, 0, 0)*/ /* Palette.White*/);
             //sphere.Material.Texture = new TextureSquares();
-            sphere.Material.Transparency = 0.0f;
-            sphere.Material.Reflectivity = 0.0f;
+
+            Material material = new() { Name = "Red", Transparency = 0, Reflectivity = 0, Texture = new TextureSolid(new Colour(0.5f, 0, 0)) };
+            //sphere.Material.Transparency = 0.0f;
+            //sphere.Material.Reflectivity = 0.0f;
             //sphere.Material.
-            scene.AddShape(sphere);
-            scene.AddMaterial(sphere.Material);
+            //scene.AddShape(sphere);
+            //scene.AddMaterial(sphere.Material);
+            sphere.Material = material;
 
             //            sphere = new Sphere(new Point(20, 0, 50), 20, new Colour(0.7f, 0, 0));
-            sphere = new Sphere(new Point(0, 0, 23), 5, new Colour(0.5f, 0.5f, 0.5f));
+            sphere = new(scene, new Point(0, radius, 5), 5 /*, new Colour(0.5f, 0.5f, 0.5f)*/);
             //sphere.Material.Texture = new TextureSquares() { Scale = 10 };
             //sphere.Material.Texture = new TextureNoise(Palette.White, Palette.Black);
             //sphere.Material.Texture = new TextureNoise(Palette.Red, Palette.Green) { Function = TextureNoise.ColourFunction.Blend, Scale = 5 };
-            sphere.Material.Transparency = 0.0f;
-            sphere.Material.Reflectivity = 0.0f;
+            //sphere.Material.Transparency = 0.0f;
+            //sphere.Material.Reflectivity = 0.0f;
             //sphere.Material.Transparency = 0.0f;
             //sphere.Material.Reflectivity = 1.0f;
-            scene.AddShape(sphere);
+            //scene.AddShape(sphere);
+            material = new() { Name = "White", Transparency = 0, Reflectivity = 0, Texture = new TextureSolid(new Colour(0.5f, 0.5f, 0.5f)) };
+            sphere.Material = material;
 
-            sphere = new Sphere(new Point(10, 0, 20), 5, new Colour(0.0f, 0.0f, 0.5f) /* Palette.White*/);
-            scene.AddShape(sphere);
-            scene.AddMaterial(sphere.Material);
+            sphere = new(scene, new Point(10, radius, 0), radius /*, new Colour(0.0f, 0.0f, 0.5f)*/ /* Palette.White*/);
+            //scene.AddShape(sphere);
+            //scene.AddMaterial(sphere.Material);
+            //sphere.Material = material;
+            material = new() { Name = "Blue", Transparency = 0, Reflectivity = 0, Texture = new TextureSolid(new Colour(0, 0, 0.5f)) };
+            sphere.Material = material;
 
 
             //Box box = new Box(new Point(20, 0, 0), 30, 30, 30);
@@ -493,26 +507,29 @@ namespace RayTrace
             //Plane plane = new Plane(new Vector(0.0, 1.0, 0.0), new Point(0.0, -5.0, 0.0), Palette.Grey);
             //plane.Material.Reflectivity = 0.0f;
 
-            RayTrace.Disc disc = new Disc(new Point(0, -5, 23), new Vector(0, 1, 0), 25);
-            disc.Material.Texture = new TextureSolid(Palette.Grey);
+            Disc disc = new Disc(scene, new Point(0, 0, 0), new Vector(0, 1, 0), 25);
+            material = new() { Name = "Grey", Transparency = 0, Reflectivity = 0, Texture = new TextureSolid(Palette.Grey) };
+            //disc.Material.Texture = new TextureSolid(Palette.Grey);
 
             //plane.Material.Texture = new TextureSolid(Palette.Blue);
             //plane.Material.Texture = new TextureSquares() { Scale = 20 };
-            scene.AddShape(disc);
-            scene.AddMaterial(disc.Material);
-
-            Plane left = new Plane(new Vector(1, 0, 0), new Point(-18, 0, 0), new Colour(0.5f, 0.5f, 0.5f));
+            //scene.AddShape(disc);
+            //scene.AddMaterial(disc.Material);
+            disc.Material = material;
+/*
+            Plane left = new Plane(scene, new Point(-18, 0, 0), new Vector(1, 0, 0), new Colour(0.5f, 0.5f, 0.5f));
            // scene.AddShape(left);
 
-            Plane back = new Plane(new Vector(0, 0, -1), new Point(0, 0, 50), new Colour(0.5f, 0.5f, 0.5f));
+            Plane back = new Plane(scene, new Point(0, 0, 50), new Vector(0, 0, -1), new Colour(0.5f, 0.5f, 0.5f));
             //scene.AddShape(back);
+*/
 
-            Light light = new PointLight(new Point(-50, 0, 0), 3000.0f, new Colour(1.0f, 0.0f, 0.0f));
+            //Light light = new PointLight(new Point(-50, 0, 0), 3000.0f, new Colour(1.0f, 0.0f, 0.0f));
             // scene.AddLight(light);
-            light = new PointLight(new Point(30, 30, 0), 3000.0f, Palette.White);
-            DistantLight distantLight = new DistantLight(new Vector(-8, 0, 20), 2, Palette.White);
+            //light = new PointLight(new Point(30, 30, 0), 3000.0f, Palette.White);
+            DistantLight distantLight = new(scene, new Vector(-8, 0, 20), 2, Palette.White);
             //scene.AddLight(light);
-            scene.AddLight(distantLight);
+            //scene.AddLight(distantLight);
 
             return scene;
         }
@@ -523,12 +540,12 @@ namespace RayTrace
 
             const int size = 2;
 
-            Sphere sphere = new Sphere(new Point(-4, size, 11), 2, new Colour(0.25f, 0.25f, 0.25f)  /* Palette.White*/);
+            Sphere sphere = new Sphere(scene, new Point(-4, size, 11), 2, new Colour(0.25f, 0.25f, 0.25f)  /* Palette.White*/);
             scene.AddShape(sphere);
-            sphere = new Sphere(new Point(4, size, 11), size, /*new Colour(0.0f, 0.0f, 0.5f)*/ new Colour(0.25f, 0.25f, 0.25f));
+            sphere = new Sphere(scene, new Point(4, size, 11), size, /*new Colour(0.0f, 0.0f, 0.5f)*/ new Colour(0.25f, 0.25f, 0.25f));
             scene.AddShape(sphere);
 
-            Model cornellBox = ModelFactory.CornellBox(14, 12, 16);
+            Model cornellBox = ModelFactory.CornellBox(scene, 14, 12, 16);
             cornellBox.Material.Texture = new TextureSolid(Palette.Grey);
             //cornellBox.ObjectToWorld = Matrix.GetTranslation(0, 0, 2);
 
@@ -546,8 +563,8 @@ namespace RayTrace
             Plane back = new Plane(new Vector(0.0, 0.0, -1.0), new Point(0.0, 0.0, 20), new Colour(0.5f, 0.5f, 0.5f));
             scene.AddShape(back);
 */
-            Light light = new PointLight(new Point(0, 9, 0), 2000.0f, new Colour(1.0f, 1.0f, 1.0f));
-            scene.AddLight(light);
+            Light light = new PointLight(scene, new Point(0, 9, 0), 2000.0f, new Colour(1.0f, 1.0f, 1.0f));
+            //scene.AddLight(light);
 
             scene.Camera.Pos = new Point(0, 4, 0);
             scene.Camera.Target = new Point(0, 4, 1);
@@ -626,26 +643,26 @@ namespace RayTrace
             scene.AddMaterial(mat2);
             scene.AddMaterial(mat3);
 */
-            Sphere sphere = new Sphere(new Point(-2f, radius, 11), radius, new Colour(0.25f, 0.25f, 0.25f)  /* Palette.White*/);
+            Sphere sphere = new Sphere(scene, new Point(-2f, radius, 11), radius, new Colour(0.25f, 0.25f, 0.25f)  /* Palette.White*/);
             //sphere.Material = mat;
-            scene.AddShape(sphere);
+            //scene.AddShape(sphere);
 
-            sphere = new Sphere(new Point(2f, radius, 11), radius, new Colour(0.0f, 0.0f, 0.5f) /*new Colour(0.25f, 0.25f, 0.25f)*/);
-            scene.AddShape(sphere);
+            sphere = new Sphere(scene, new Point(2f, radius, 11), radius, new Colour(0.0f, 0.0f, 0.5f) /*new Colour(0.25f, 0.25f, 0.25f)*/);
+            //scene.AddShape(sphere);
             scene.AddMaterial(sphere.Material);
 
-            Disc disc = new Disc(new Point(0, 0, 11), new Vector(0, 1, 0), DiscRadius);
+            Disc disc = new Disc(scene, new Point(0, 0, 11), new Vector(0, 1, 0), DiscRadius);
             disc.Material.Texture = new TextureSolid(Palette.Red);
-            scene.AddShape(disc);
+            //scene.AddShape(disc);
             scene.AddMaterial(disc.Material);
 
-            disc = new Disc(new Point(-4.5f, 0, 11), new Vector(1, 0, 0), DiscRadius);
+            disc = new Disc(scene, new Point(-4.5f, 0, 11), new Vector(1, 0, 0), DiscRadius);
             disc.Material.Texture = new TextureSolid(Palette.Green);
-            scene.AddShape(disc);
+            //scene.AddShape(disc);
             scene.AddMaterial(disc.Material);
 
-            Light light = new PointLight(new Point(0, 9, 0), 2000.0f, new Colour(1.0f, 1.0f, 1.0f));
-            scene.AddLight(light);
+            Light light = new PointLight(scene, new Point(0, 9, 0), 2000.0f, new Colour(1.0f, 1.0f, 1.0f));
+            //scene.AddLight(light);
 
             scene.Camera.Pos = new Point(0, 4, -2);
             scene.Camera.Target = new Point(0, 4, 1);
@@ -657,20 +674,20 @@ namespace RayTrace
         {
             Scene scene = new Scene();
 
-            Sphere sphere = new Sphere(new Point(0,0,0), 10);
+            Sphere sphere = new Sphere(scene, new Point(0,0,0), 10);
             sphere.Material.Texture = new TextureSolid(Palette.Green);
             scene.AddShape(sphere);
 
-            Disc leftDisc = new Disc(new Point(0,0,0), new Vector(0.707107f, 0, 0.707107f), 11);
+            Disc leftDisc = new Disc(scene, new Point(0,0,0), new Vector(0.707107f, 0, 0.707107f), 11);
             scene.AddShape(leftDisc);
 
-            Disc rightDisc = new Disc(new Point(0, 0, 0), new Vector(-0.707107f, 0, 0.707107f), 11);
+            Disc rightDisc = new Disc(scene, new Point(0, 0, 0), new Vector(-0.707107f, 0, 0.707107f), 11);
             scene.AddShape(rightDisc);
 
-            Disc topDisc = new Disc(new Point(0, 0, 0), new Vector(0, 0.707107f, 0.707107f), 11);
+            Disc topDisc = new Disc(scene, new Point(0, 0, 0), new Vector(0, 0.707107f, 0.707107f), 11);
             scene.AddShape(topDisc);
 
-            Disc bottomDisc = new Disc(new Point(0, 0, 0), new Vector(0, -0.707107f, 0.707107f), 11);
+            Disc bottomDisc = new Disc(scene, new Point(0, 0, 0), new Vector(0, -0.707107f, 0.707107f), 11);
             scene.AddShape(bottomDisc);
 
             scene.Camera.Pos = new Point(0, 0, -20);

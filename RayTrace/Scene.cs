@@ -55,13 +55,14 @@ namespace RayTrace
 
             foreach (XMLShape xmlShape in xmlScene.Shapes)
             {
-                Shape shape = xmlShape.Create();
+                Shape shape = xmlShape.Create(this);
                 shape.Material = GetMaterial(xmlShape.MaterialGuid);
-                Shapes.Add(shape);
+                //Shapes.Add(shape);
             }
             foreach (XMLLight xmlLight in xmlScene.Lights)
             {
-                Lights.Add(xmlLight.Create());
+                //Lights.Add(xmlLight.Create(this));
+                Light light = xmlLight.Create(this);
             }
         }
 
@@ -183,12 +184,18 @@ namespace RayTrace
 
         public void AddShape(Shape shape)
         {
-            Shapes.Add(shape);
+            if (!Shapes.Contains(shape))
+            {
+                Shapes.Add(shape);
+            }
         }
 
         public void AddLight(Light light)
         {
-            Lights.Add(light);
+            if (!Lights.Contains(light))
+            {
+                Lights.Add(light);
+            }
         }
 
         public void AddMaterial(Material material)
@@ -199,11 +206,79 @@ namespace RayTrace
             }
         }
 
+        public Material GetDefaultMaterial()
+        {
+            return defaultMaterial;
+        }
+
         public Material GetMaterial(Guid guid)
         {
             Material material = Materials.Find(x => x.Guid == guid);
 
-            return material != null ? material : defaultMaterial;
+            return material ?? defaultMaterial;
+        }
+
+        private string GetUniqueName<T>(List<T> list, Type type) where T : Entity
+        {
+            string baseName = type.Name;
+
+            for (int suffix = 1; ; suffix++)
+            {
+                bool found = false;
+                string newName = baseName + (suffix == 1 ? "" : suffix);
+
+                foreach (T item in list)
+                {
+                    if (item.GetType() == type && item.Name == newName)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    return newName;
+                }
+            }
+        }
+
+        //
+        // Return a unique name for a Shape based on its type name.
+        //
+        public string GetUniqueShapeName(Type type)
+        {
+            return GetUniqueName<Shape>(Shapes, type);
+/*
+            string baseName = type.Name;
+
+            for (int suffix=1; ; suffix++)
+            {
+                bool found = false;
+                string newName = baseName + (suffix == 1 ? "" : suffix);
+
+                foreach (Shape shape in Shapes)
+                {
+                    if (shape.GetType() == type && shape.Name == newName)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    return newName;
+                }
+            }
+  */      }
+
+        //
+        // Return a unique name for a Light based on its type name.
+        //
+        public string GetUniqueLightName(Type type)
+        {
+            return GetUniqueName(Lights, type);
         }
 
         public virtual XMLScene ToXML()

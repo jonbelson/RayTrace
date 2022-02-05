@@ -67,14 +67,14 @@ namespace RayTrace
                 for (int i = 0; i <= 5; i++)
                 {
 
-                    Sphere sphere = new Sphere(new Point(-50 + i * 20, -40+j*20, 80), 8, Palette.Green);
+                    Sphere sphere = new Sphere(scene, new Point(-50 + i * 20, -40+j*20, 80), 8, Palette.Green);
                     sphere.Material.PhongSpecular = i / 5.0;
                     sphere.Material.PhongShininess = (j + 1) * (j + 1);
                     scene.AddShape(sphere);
                 }
             }
-                    Light light = new PointLight(new Point(-50, 0, 0), 0.5f, new Colour(1.0f, 1.0f, 1.0f));
-                    scene.AddLight(light);
+                    Light light = new PointLight(scene, new Point(-50, 0, 0), 0.5f, new Colour(1.0f, 1.0f, 1.0f));
+                    //scene.AddLight(light);
 
             //*/
 
@@ -82,7 +82,7 @@ namespace RayTrace
             //renderer.UseLighting = false;
             //renderer.UsePhong = false;
             renderer.UseReflections = false;
-            renderer.Render(scene, canvas);
+//            renderer.Render(scene, canvas);
 
             canvas.Save("Canvas.tiff");
 

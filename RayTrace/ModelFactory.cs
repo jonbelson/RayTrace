@@ -24,7 +24,7 @@ namespace RayTrace
             return triangle;
         }
 
-        static public Model CornellBox(float width =20, float height =20, float depth =20)
+        static public Model CornellBox(Scene scene, float width =20, float height =20, float depth =20)
         {
             ModelData modelData = new ModelData();
 
@@ -92,11 +92,11 @@ namespace RayTrace
 
 /////////            modelData.texture = texture;
 
-            return new Model(new Point(0, 0, 0), modelData);
+            return new Model(scene, new Point(0, 0, 0), modelData);
         }
 
 
-        static public Model Cube()
+        static public Model Cube(Scene scene)
         {
             ModelData modelData = new ModelData();
 
@@ -146,11 +146,11 @@ namespace RayTrace
             modelData.normals = normals.ToArray();
             modelData.triangles = triangles.ToArray();
 
-            return new Model(new Point(0, 0, 0), modelData);
+            return new Model(scene, new Point(0, 0, 0), modelData);
         }
 
 
-        static public Model Octahedron()
+        static public Model Octahedron(Scene scene)
         {
             ModelData modelData = new ModelData();
 
@@ -189,11 +189,11 @@ namespace RayTrace
             modelData.normals = normals.ToArray();
             modelData.triangles = triangles.ToArray();
 
-            return new Model(new Point(0, 0, 0), modelData);
+            return new Model(scene, new Point(0, 0, 0), modelData);
         }
 
 
-        static public Model Tetahedron()
+        static public Model Tetahedron(Scene scene)
         {
             ModelData modelData = new ModelData();
 
@@ -231,7 +231,7 @@ namespace RayTrace
             modelData.normals = normals.ToArray();
             modelData.triangles = triangles.ToArray();
 
-            return new Model(new Point(0, 0, 0), modelData);
+            return new Model(scene, new Point(0, 0, 0), modelData);
         }
 
         /*

@@ -10,7 +10,7 @@ namespace RayTrace
         private int radius = 0;
 
         public float Intensity {
-            get { return intensity; }
+            get => intensity;
             set { if (intensity != value) { intensity = value; Notify("Intensity"); } }
         }
 
@@ -19,7 +19,7 @@ namespace RayTrace
             set { colour = value; colour.PropertyChanged += Colour_PropertyChanged; Notify("Colour"); }
         }
 
-        public Colour Output { get { return Colour * Intensity; }  }    // Combined colour and intensity.
+        public Colour Output { get => Colour * Intensity; }    // Combined colour and intensity.
 
         // Effective radius of point source, as used in soft shadow calculations.
         public int Radius {
@@ -27,28 +27,46 @@ namespace RayTrace
             set { if (value != radius) { radius = value; Notify("Radius"); } }
         }
 
-        public Light(float intensity, Colour c)
-        {
-            Intensity = intensity;
-            Colour = c;
-
-            Colour.PropertyChanged += Colour_PropertyChanged;
-        }
-
         private void Colour_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             Notify("Colour");
         }
 
-        public Light(float intensity = 1.0f) : this(intensity, Palette.White) { }
-
-        public Light(XMLLight xmlLight)
+        //
+        // Constructor
+        //
+        public Light(Scene scene, float intensity, Colour c)
         {
+            Scene = scene;
+            Name = scene.GetUniqueLightName(GetType());
+
+            Intensity = intensity;
+            Colour = c;
+
+            Colour.PropertyChanged += Colour_PropertyChanged;
+
+            scene.AddLight(this);
+        }
+
+        //
+        // Constructor
+        //
+        public Light(Scene scene, float intensity = 1.0f) : this(scene, intensity, Palette.White) { }
+
+        //
+        // Constructor
+        //
+        public Light(Scene scene, XMLLight xmlLight) : base(xmlLight)
+        {
+            Scene = scene;
+
             Intensity = xmlLight.Intensity;
             Colour = new Colour(xmlLight.Colour);
             Radius = xmlLight.Radius;
 
             Colour.PropertyChanged += Colour_PropertyChanged;
+
+            scene.AddLight(this);
         }
 
         public override string ToString()

@@ -28,6 +28,25 @@ namespace RayTrace
     // Model for Entities displayed in the TreeView.
     public class TreeViewEntityModel
     {
+        public bool? IsChecked
+        {
+            get => Instance != null && CanBeDisabled ? Instance.Enabled : true;
+            set
+            {
+                if (Instance != null)
+                {
+                    Instance.Enabled = (bool)value;
+                }
+            }
+        }
+
+        public bool IsSelected { get; set; } = false;
+
+//        public Visibility IsVisible => Instance == null ? Visibility.Hidden : Visibility.Visible;
+        public bool IsVisible => Instance != null;
+
+        public bool CanBeDisabled { get; set; } = true; // Kludge to prevent Camera from being unchecked.
+
         public string Category { get; set; }
         public Entity Instance { get; set; }
         public IEnumerable<TreeViewEntityModel> Children { get; set; }
@@ -41,7 +60,7 @@ namespace RayTrace
         private Scene scene = new();
         private Renderer renderer = new();
 
-        private OutputWindow outputWindow = new OutputWindow();
+        private OutputWindow outputWindow = new();
 
         public int NumRenderBlocks { get; set; } = 16;
 
@@ -56,11 +75,10 @@ namespace RayTrace
         private readonly List<Renderer.AntiAliasType> antiAlias = new List<Renderer.AntiAliasType>() { Renderer.AntiAliasType.None, Renderer.AntiAliasType.NoiseGrid, Renderer.AntiAliasType.SuperSampling, Renderer.AntiAliasType.AdaptiveSupersampling };
         public List<Renderer.AntiAliasType> AntiAliasType { get { return antiAlias; } }
 
-//        public List<Entity> Entities { get; set; }
         public ObservableCollection<Entity> Entities { get; set; } = new ObservableCollection<Entity>();
         public ObservableCollection<Entity> SelectedEntity { get; set; } = new ObservableCollection<Entity>();
 
-        public Entity SelectedEntity2 { get; set; }
+        //public Entity SelectedEntity2 { get; set; }
 
         public ObservableCollection<MaterialTile> MaterialTiles { get; set; } = new ObservableCollection<MaterialTile>();
         public List<Material> Materials { get; set; } = new();
@@ -77,17 +95,20 @@ namespace RayTrace
         // Update the Entity TreeView from teh current Entity list.
         private void UpdateEntityTreeView()
         {
-//            var category = Entities.OfType<Shape>().Select(x => new TreeViewEntityModel() { Category = "Shape", Children = x.Select(y => new TreeViewEntityModel() { }).ToArray() });
-//            var category = Entities.OfType<Shape>().GroupBy(x => x.GetType().Name).Select(y => new TreeViewEntityModel() { Category = y.Key, Children = y.Select(k => new TreeViewEntityModel() { Category=k.Name }).ToArray() });
+            //            var category = Entities.OfType<Shape>().Select(x => new TreeViewEntityModel() { Category = "Shape", Children = x.Select(y => new TreeViewEntityModel() { }).ToArray() });
+            //            var category = Entities.OfType<Shape>().GroupBy(x => x.GetType().Name).Select(y => new TreeViewEntityModel() { Category = y.Key, Children = y.Select(k => new TreeViewEntityModel() { Category=k.Name }).ToArray() });
 
-            IEnumerable<TreeViewEntityModel> shapes = Entities.OfType<Shape>().GroupBy(x => typeof(Shape).ToString()).Select(y => new TreeViewEntityModel() { Category = "Shapes" /*y.Key*/, Children = y.Select(k => new TreeViewEntityModel() { Category = k.Name, Instance = k }).ToArray() });
-            IEnumerable<TreeViewEntityModel> lights = Entities.OfType<Light>().GroupBy(x => typeof(Light).ToString()).Select(y => new TreeViewEntityModel() { Category = "Lights" /*y.Key*/, Children = y.Select(k => new TreeViewEntityModel() { Category = k.Name, Instance = k }).ToArray() });
+            //object selectedItem = entityTreeView.SelectedItem;
+
+            Entity selectedEntity = SelectedEntity.FirstOrDefault();
+
+            IEnumerable<TreeViewEntityModel> shapes = Entities.OfType<Shape>().GroupBy(x => typeof(Shape).ToString()).Select(y => new TreeViewEntityModel() { Category = "Shapes", Children = y.Select(k => new TreeViewEntityModel() { Category = k.Name, Instance = k, IsSelected = k != null && k == selectedEntity }).ToArray() });
+            IEnumerable<TreeViewEntityModel> lights = Entities.OfType<Light>().GroupBy(x => typeof(Light).ToString()).Select(y => new TreeViewEntityModel() { Category = "Lights", Children = y.Select(k => new TreeViewEntityModel() { Category = k.Name, Instance = k, IsSelected = k != null && k == selectedEntity }).ToArray() });
             IEnumerable<TreeViewEntityModel> categories = shapes.Concat(lights);
 
             categories = categories.Prepend(new TreeViewEntityModel() { Category = "Skydome", Instance = scene.Skydome });
-            categories = categories.Prepend(new TreeViewEntityModel() { Category = "Camera", Instance = scene.Camera });
+            categories = categories.Prepend(new TreeViewEntityModel() { Category = "Camera", CanBeDisabled = false, Instance = scene.Camera });
 
-            //entityTreeView.Items = null;
             entityTreeView.ItemsSource = categories;
         }
 
@@ -128,7 +149,10 @@ namespace RayTrace
             return wb;
         }
 
-        private void UpdateForScene()
+        //
+        // Udpate the tree view of Entities.
+        //
+        private void UpdateEntities()
         {
             Entities.Clear();
 
@@ -152,9 +176,16 @@ namespace RayTrace
 
             //listView.ItemsSource = Entities;
 
+            UpdateEntityTreeView();
+        }
+
+        //
+        // Update the display of Material tiles in the MainWindow.
+        //
+        private void UpdateMaterials()
+        {
             Materials = scene.Materials;
 
-            ///*
             MaterialTiles.Clear();
             MaterialTileMaker materialTileMaker = new() { Size = 150 };
             foreach (Material mat in scene.Materials)
@@ -165,15 +196,20 @@ namespace RayTrace
 
                 MaterialTiles.Add(materialTile);
             }
+        }
 
-            UpdateEntityTreeView();
+        private void UpdateForScene()
+        {
+            UpdateEntities();
+
+            UpdateMaterials();
         }
 
         public MainWindow()
         {
             InitializeComponent();
 
-            Quaternion q = new Quaternion(new SVector(0, 1, 0), (float) Math.PI/2);
+            Quaternion q = new Quaternion(new SVector(0, 1, 0), (float)Math.PI / 2);
             SVector v = new(0, 0, 1);
             SVector vr = q.Rotate(v);
 
@@ -206,16 +242,17 @@ namespace RayTrace
             //scene = SceneFactory.PhongDemoScene();
             //scene = SceneFactory.RefractionDemoScene();
             //scene = SceneFactory.BoxDemoScene();
-            //scene = SceneFactory.SphereDemoScene();
             //scene = SceneFactory.SoftLightDemoScene();
             //scene = SceneFactory.FovDemoScene();
             //scene = SceneFactory.ModelScene();
-            scene = SceneFactory.GIDemoScene();
             //scene = SceneFactory.GIDemoScene2();
-//            scene = SceneFactory.TexturedSpheresDemoScene();
-            //scene = SceneFactory.ObjScene();
+            //            scene = SceneFactory.TexturedSpheresDemoScene();
             //scene = SceneFactory.BRDFScene();
             //scene = SceneFactory.SensorScene();
+
+            scene = SceneFactory.GIDemoScene();
+            //scene = SceneFactory.SphereDemoScene();
+            //scene = SceneFactory.ObjScene();
 
             //scene = SceneFactory.EmptyScene();
 
@@ -232,18 +269,18 @@ namespace RayTrace
 
 
             UpdateViewport3D();
-/*
-            // Subscribe to PropertyChanged events for each Entity.
-            foreach (Entity entity in scene.Shapes)
-            {
-                entity.PropertyChanged += Entity_PropertyChanged;
-            }
-            foreach (Entity entity in scene.Lights)
-            {
-                entity.PropertyChanged += Entity_PropertyChanged;
-            }
-            scene.Camera.PropertyChanged += Entity_PropertyChanged;
-*/
+            /*
+                        // Subscribe to PropertyChanged events for each Entity.
+                        foreach (Entity entity in scene.Shapes)
+                        {
+                            entity.PropertyChanged += Entity_PropertyChanged;
+                        }
+                        foreach (Entity entity in scene.Lights)
+                        {
+                            entity.PropertyChanged += Entity_PropertyChanged;
+                        }
+                        scene.Camera.PropertyChanged += Entity_PropertyChanged;
+            */
 
             comboBoxFormat.SelectedItem = ImageFormat.Tiff;
 
@@ -332,7 +369,7 @@ namespace RayTrace
 
             if (adaptiveSuperSamplingDepth > 10)
             {
-                MessageBox.Show("Adaptive Super-Sampling depth must be 10 or less.");
+                _ = MessageBox.Show("Adaptive Super-Sampling depth must be 10 or less.");
                 return false;
             }
 
@@ -368,102 +405,79 @@ namespace RayTrace
 
             buttonRender.IsEnabled = false;
 
-            /*
-            float floatStep = ((float)height) / NumRenderBlocks;
-            int intStep = (int)floatStep;
-
-            // Make list of blocks to render.
-            List<RenderBlock> renderBlocks = new List<RenderBlock>();
-
-            int intY = 0;
-            float floatY = 0.0f;
-            for (int y = 0; y < NumRenderBlocks; y++)
+            try
             {
-                int intX = 0;
-                float floatX = 0.0f;
 
-                int blockHeight = intStep;
-                if (floatY > intY) blockHeight++;
+                scene.Camera.UpdateMatrix();    // XXX Needed?
+                scene.CreateCaches();
 
-                for (int x = 0; x < NumRenderBlocks; x++)
+                ThreadPool.GetMaxThreads(out int workerThreads, out int completonPortThreads);
+
+                _ = ThreadPool.SetMaxThreads(16, completonPortThreads);
+
+                outputWindow.Scene = scene;
+                outputWindow.Renderer = renderer;
+
+                //outputWindow.BlocksToDo = renderBlocks.Count;
+                //outputWindow.BlocksDone = 0;
+
+                outputWindow.Visibility = Visibility.Visible;
+                outputWindow.Show();
+
+
+                Stopwatch stopWatch = new Stopwatch();
+                stopWatch.Start();
+
+                List<Task> tasks = new();
+
+                CancellationTokenSource tokenSource = new();
+                //CancellationToken token = tokenSource.Token;
+
+                outputWindow.TokenSource = tokenSource;
+
+                OutputWindow.RenderStatus status = await outputWindow.DoRender(numRenderBlocks, direction);
+
+                stopWatch.Stop();
+
+                if (status == OutputWindow.RenderStatus.Complete)
                 {
-                    int blockWidth = intStep;
-                    if (floatX > intX) blockWidth++;
+                    // Get the elapsed time as a TimeSpan value.
+                    TimeSpan ts = stopWatch.Elapsed;
 
-                    RenderBlock renderBlock = new RenderBlock() { StartX = intX, StartY = intY, Width = blockWidth, Height = blockHeight };
-                    renderBlocks.Add(renderBlock);
+                    // Format and display the TimeSpan value.
+                    string elapsedTime = String.Format("Time taken: {0:00}:{1:00}:{2:00}.{3:00}", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
+                    string numRays = "Number rays: " + renderer.NumRays;
+                    string raysPerSec = "Rays per second: " + 1000.0 * renderer.NumRays / stopWatch.ElapsedMilliseconds;
 
-                    intX += blockWidth;
-                    floatX += floatStep;
-                }
+                    MessageBox.Show(outputWindow, String.Join("\n", elapsedTime, numRays, raysPerSec));
 
-                intY += blockHeight;
-                floatY += floatStep;
-            }
-
-            switch (direction)
-            {
-                case RenderDirection.CentreOut: renderBlocks.Sort(new TopToBottomComparer(width / 2, height / 2));  break;
-                case RenderDirection.Diagonal:  renderBlocks.Sort(new DiagonalComparer());  break;
-                case RenderDirection.TopToBottom:  / The default / break;
-            }
-        */
-
-
-            scene.Camera.UpdateMatrix();    // XXX Needed?
-            scene.CreateCaches();
-
-            ThreadPool.GetMaxThreads(out int workerThreads, out int completonPortThreads);
-
-            ThreadPool.SetMaxThreads(16, completonPortThreads);
-
-            outputWindow.Scene = scene;
-            outputWindow.Renderer = renderer;
-
-            //outputWindow.BlocksToDo = renderBlocks.Count;
-            //outputWindow.BlocksDone = 0;
-
-            outputWindow.Visibility = Visibility.Visible;
-            outputWindow.Show();
-
-
-            Stopwatch stopWatch = new Stopwatch();
-            stopWatch.Start();
-
-            List<Task> tasks = new();
-
-            CancellationTokenSource tokenSource = new();
-            CancellationToken token = tokenSource.Token;
-
-            outputWindow.TokenSource = tokenSource;
-
-            await outputWindow.DoRender(numRenderBlocks, direction);
-
-            stopWatch.Stop();
-            // Get the elapsed time as a TimeSpan value.
-            TimeSpan ts = stopWatch.Elapsed;
-
-            // Format and display the TimeSpan value.
-            string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
-            Console.WriteLine("Render time: " + elapsedTime);
-
-            buttonRender.IsEnabled = true;
-
-            bool success = true;
-            if (success)
-            {
-                outputWindow.Update();
-
-                if ((bool)checkBoxSaveImage.IsChecked)
-                {
-                    ImageFormat format = (ImageFormat)comboBoxFormat.SelectedItem;
-                    string fileName = textFileName.Text;
-                    if (!String.IsNullOrEmpty(fileName))
+                    bool success = true;
+                    if (success)
                     {
-                        outputWindow.canvas.Save(fileName, format);
+                        outputWindow.Update();
+
+                        if ((bool)checkBoxSaveImage.IsChecked)
+                        {
+                            ImageFormat format = (ImageFormat)comboBoxFormat.SelectedItem;
+                            string fileName = textFileName.Text;
+                            if (!String.IsNullOrEmpty(fileName))
+                            {
+                                _ = outputWindow.OutputCanvas.Save(fileName, format);
+                            }
+                        }
                     }
                 }
+                else if (status == OutputWindow.RenderStatus.Cancelled)
+                {
+                    MessageBox.Show("Operation was cancelled");
+                }
             }
+            catch (Exception e)
+            {
+                MessageBox.Show("An error occurred: " + e.Message);
+            }
+
+            buttonRender.IsEnabled = true;
 
             return true;
         }
@@ -475,7 +489,7 @@ namespace RayTrace
             Vector cameraView = scene.Camera.GetViewVector().Normalise();
             viewport3D.Camera = new PerspectiveCamera(new Point3D(cameraPos.X, cameraPos.Y, -cameraPos.Z), new Vector3D(cameraView.I, cameraView.J, -cameraView.K), new Vector3D(0.0, 1.0, 0.0), scene.Camera.FovH /* /2 */);
 
-            if (propName == "Pos" || propName=="Target")
+            if (propName == "Pos" || propName == "Target")
             {
                 //viewport3D.Visibility = Visibility.Visible;
                 //return;
@@ -570,7 +584,7 @@ namespace RayTrace
 
             //Task renderTask = Task.Factory.StartNew(() =>
             //{
-             //   Render();
+            //   Render();
             //});
 
             //await renderTask;
@@ -582,7 +596,7 @@ namespace RayTrace
 
         private void checkBoxLighting_Click(object sender, RoutedEventArgs e)
         {
-            checkBoxSpecular.IsEnabled = (bool) checkBoxLighting.IsChecked;
+            checkBoxSpecular.IsEnabled = (bool)checkBoxLighting.IsChecked;
         }
 
         private void checkBoxReflections_Click(object sender, RoutedEventArgs e)
@@ -679,13 +693,13 @@ namespace RayTrace
                 var selectedValue = comboBox.SelectedValue;
                 var selectedItem = comboBox.SelectedItem;
 
-//                MaterialTile materialTile = (MaterialTile) comboBox.SelectedItem;
-//                Material material = (Material)comboBox.SelectedItem;
+                //                MaterialTile materialTile = (MaterialTile) comboBox.SelectedItem;
+                //                Material material = (Material)comboBox.SelectedItem;
 
                 Shape shape = listBox.SelectedItem as Shape;
                 if (shape != null)
                 {
-                    shape.Material = (Material) selectedValue;
+                    shape.Material = (Material)selectedValue;
                     UpdateViewport3D();
                 }
 
@@ -759,7 +773,7 @@ namespace RayTrace
                     WriteSVector("left", left);
 
                     // Yaw.
-                    Quaternion q = new(new SVector(0, 1, 0), xDiff/200);
+                    Quaternion q = new(new SVector(0, 1, 0), xDiff / 200);
                     SVector rotY = q.Rotate(view);
 
                     WriteSVector("rotY", rotY);
@@ -770,7 +784,7 @@ namespace RayTrace
 
                     WriteSVector("rotLeft", rotLeft);
 
-                    SVector total = ((rotY + rotLeft).Normalise())*magnitude;
+                    SVector total = ((rotY + rotLeft).Normalise()) * magnitude;
                     if (Double.IsNaN(total.I) || Double.IsInfinity(total.I))
                     {
                         int i = 0;
@@ -834,7 +848,7 @@ namespace RayTrace
                     Matrix rotation = Matrix.GetRotationY((float)(xDiff / 10.0));
                     Matrix fromOrigin = Matrix.GetTranslation(target.X, target.Y, target.Z);
 
-                   // targetToCamera = toOrigin * targetToCamera;
+                    // targetToCamera = toOrigin * targetToCamera;
                     targetToCamera = rotation * targetToCamera;
                     //targetToCamera = fromOrigin * targetToCamera;
 
@@ -868,7 +882,7 @@ namespace RayTrace
                 {
                     if (model.Instance != null)
                     {
-                        SelectedEntity2 = model.Instance;
+                        //SelectedEntity2 = model.Instance;
 
                         SelectedEntity.Clear();
                         SelectedEntity.Add(model.Instance);
@@ -878,11 +892,164 @@ namespace RayTrace
                 {
                     SelectedEntity.Clear();
 
-                    SelectedEntity2 = null;
+                    //SelectedEntity2 = null;
                 }
 
                 //var v = entityTreeView.SelectedItem;
             }
+        }
+
+        private void galleryModel_SelectionChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            RibbonGallery gallery = (RibbonGallery)sender;
+            if (gallery != null)
+            {
+                Shape shape = null;
+
+                RibbonGalleryItem item = (RibbonGalleryItem)e.NewValue;
+                switch (item.Content)
+                {
+                    case "Model":
+                        {
+                            // Configure open file dialog box
+                            OpenFileDialog dialog = new Microsoft.Win32.OpenFileDialog();
+                            dialog.FileName = ""; // Default file name
+                            dialog.DefaultExt = ".obj"; // Default file extension
+                            dialog.Filter = "OBJ documents (.obj)|*.obj"; // Filter files by extension
+
+                            // Show open file dialog box
+                            bool? result = dialog.ShowDialog();
+
+                            // Process open file dialog box results
+                            if (result == true)
+                            {
+                                // Open document
+                                string filename = dialog.FileName;
+
+                                ModelImporter importer = new();
+
+                                ModelData modelData = importer.ImportObj(filename /*@"Data\pbr-low-poly-fox-character"*/);
+
+                                Model model = new Model(scene, new Point(0, 0, 10), modelData);
+
+                                //Material objMaterial = new(MaterialType.Diffuse);
+                                //objMaterial.Texture = new TextureSolid(Palette.White);
+                                //objMaterial.Texture = objTexture;
+
+                                shape = model;
+                            }
+                        }
+                        break;
+                }
+
+                UpdateEntities();
+
+                if (shape != null)
+                {
+                    SelectedEntity.Clear();
+                    SelectedEntity.Add(shape);
+                }
+
+                UpdateEntityTreeView();
+
+                UpdateViewport3D();
+
+                gallery.SelectedItem = null;
+            }
+        }
+
+        private void galleryGeometric_SelectionChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            RibbonGallery gallery = (RibbonGallery)sender;
+            if (gallery != null)
+            {
+                Shape shape = null;
+                RibbonGalleryItem item = (RibbonGalleryItem)e.NewValue;
+                switch (item.Content)
+                {
+                    case "Disc":
+                        shape = new Disc(scene, new Point(0, 0, 0), new Vector(0, 1, 0), 1);
+                        break;
+                    case "Plane":
+                        shape = new Plane(scene, new Point(0, 0, 0), new Vector(0, 1, 0));
+                        break;
+                    case "Sphere":
+                        shape = new Sphere(scene, new Point(0, 0, 0), 1);
+                        break;
+                }
+
+                UpdateEntities();
+
+                if (shape != null)
+                {
+                    SelectedEntity.Clear();
+                    SelectedEntity.Add(shape);
+                }
+
+                UpdateEntityTreeView();
+
+                UpdateViewport3D();
+
+                gallery.SelectedItem = null;
+            }
+        }
+
+        private void galleryLight_SelectionChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            RibbonGallery gallery = (RibbonGallery)sender;
+            if (gallery != null)
+            {
+                Light light = null;
+                RibbonGalleryItem item = (RibbonGalleryItem)e.NewValue;
+                switch (item.Content)
+                {
+                    case "Distant":
+                        light = new DistantLight(scene, new Vector(1, 0, 0), 100, new Colour(1, 1, 1));
+                        scene.AddLight(light);
+                        break;
+                    case "Point":
+                        light = new PointLight(scene, new Point(0, 0, 0), 100, new Colour(1, 1, 1));
+                        scene.AddLight(light);
+                        break;
+                    case "Spot":
+                        light = new SpotLight(scene, new Point(0, 0, 0), new Vector(1, 0, 0), 45, 100, new Colour(1, 1, 1));
+                        scene.AddLight(light);
+                        break;
+                }
+
+                UpdateEntities();
+
+                if (light != null)
+                {
+                    SelectedEntity.Clear();
+                    SelectedEntity.Add(light);
+                }
+
+                UpdateEntityTreeView();
+
+                UpdateViewport3D();
+
+                gallery.SelectedItem = null;
+
+            }
+        }
+
+        private void RibbonApplicationMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            scene = new();
+            UpdateForScene();
+        }
+
+        private void RibbonApplicationMenuItem_Click_1(object sender, RoutedEventArgs e)
+        {
+            scene = new();
+
+            Disc disc = new(scene, new Point(0, 0, 0), new Vector(0, 1, 0), 25);
+
+            PointLight pointLight = new(scene, new Point(0, 10, 0), 100, Palette.White);
+            scene.AddLight(pointLight);
+
+            UpdateForScene();
         }
     }
 }

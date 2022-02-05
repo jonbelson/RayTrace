@@ -117,13 +117,12 @@ namespace RayTrace
             return face;
         }
 
+        //
+        // Attempt to load a .OBJ file.
         // XXX Rewrite using Span<> for performance.
-        public (ModelData, Texture) ImportObj(string path)
+        public ModelData ImportObj(string path)
         {
             ModelData modelData = null;
-
-            string sourcePath = path + @"\source";
-            string texturesPath = path + @"\textures";
 
             List<SPoint> points = new List<SPoint>();
             List<SVector> normals = new List<SVector>();
@@ -133,73 +132,68 @@ namespace RayTrace
             // Indexes start at '1' so add a dummy entry to each list.
             points.Add(new SPoint(0.0f, 0.0f, 0.0f));
             normals.Add(new SVector(0.0f, 0.0f, 0.0f));
-            texels.Add(new ModelData.Texel());
 
             try
             {
-                string[] dirs = Directory.GetFiles(sourcePath, "*.obj");
-                if (dirs.Length > 0)
+                StreamReader file = new StreamReader(path);
+
+                modelData = new ModelData();
+                modelData.fileName = path;
+
+                char[] delim = new char[] { ' ' };
+                //double d1, d2, d3;
+                float f1, f2, f3;
+                string line;
+                while ((line = file.ReadLine()) != null)
                 {
-                    StreamReader file = new StreamReader(dirs[0]);
+                    if (line.Length == 0) continue;
+                    if (line[0] == '#') continue;
 
-                    modelData = new ModelData();
-                    modelData.fileName = path;
-
-                    char[] delim = new char[] { ' ' };
-                    //double d1, d2, d3;
-                    float f1, f2, f3;
-                    string line;
-                    while ((line = file.ReadLine()) != null)
+                    string[] tokens = line.Split(delim, StringSplitOptions.RemoveEmptyEntries);
+                    if (tokens.Length == 0)
                     {
-                        if (line.Length == 0) continue;
-                        if (line[0] == '#') continue;
-
-                        string[] tokens = line.Split(delim, StringSplitOptions.RemoveEmptyEntries);
-                        if (tokens.Length == 0)
-                        {
-                            continue;
-                        }
-
-                        if (tokens[0] == "v")
-                        {
-                            if (tokens.Length >= 4 && Parse(tokens, out f1, out f2, out f3) == 3)
-                            {
-                                SPoint p = new SPoint(f1, f2, -f3);
-                                points.Add(p);
-                            }
-                        }
-                        else if (tokens[0] == "vn")
-                        {
-                            if (tokens.Length == 4 && Parse(tokens, out f1, out f2, out f3) == 3)
-                            {
-                                SVector v = new SVector(f1, f2, -f3);
-                                normals.Add(v);
-                            }
-                        }
-                        else if (tokens[0] == "vt")
-                        {
-                            if (tokens.Length == 3 && Parse(tokens, out f1, out f2) == 2)
-                            {
-                                ModelData.Texel t = new ModelData.Texel();
-                                t.u = f1;
-                                t.v = f2;
-                                texels.Add(t);
-                            }
-                        }
-                        else if (tokens[0] == "f")
-                        {
-                            Face face = ParseFace(tokens);
-                            if (face != null)
-                            {
-                                faces.Add(face);
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine("Ignored line: " + line);
-                        }
-
+                        continue;
                     }
+
+                    if (tokens[0] == "v")
+                    {
+                        if (tokens.Length >= 4 && Parse(tokens, out f1, out f2, out f3) == 3)
+                        {
+                            SPoint p = new SPoint(f1, f2, -f3);
+                            points.Add(p);
+                        }
+                    }
+                    else if (tokens[0] == "vn")
+                    {
+                        if (tokens.Length == 4 && Parse(tokens, out f1, out f2, out f3) == 3)
+                        {
+                            SVector v = new SVector(f1, f2, -f3);
+                            normals.Add(v);
+                        }
+                    }
+                    else if (tokens[0] == "vt")
+                    {
+                        if (tokens.Length == 3 && Parse(tokens, out f1, out f2) == 2)
+                        {
+                            ModelData.Texel t = new ModelData.Texel();
+                            t.u = f1;
+                            t.v = f2;
+                            texels.Add(t);
+                        }
+                    }
+                    else if (tokens[0] == "f")
+                    {
+                        Face face = ParseFace(tokens);
+                        if (face != null)
+                        {
+                            faces.Add(face);
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Ignored line: " + line);
+                    }
+
                 }
             }
             catch (Exception e)
@@ -207,137 +201,130 @@ namespace RayTrace
                 MessageBox.Show(e.Message);
             }
 
-            if (points.Count > 0)
+            if (modelData != null)
             {
-                //modelData.points = new Point[points.Count];
-                modelData.points = points.ToArray();
-                //modelData.normals = normals.ToArray();
-                modelData.texels = texels.ToArray();
-
-                modelData.minX = modelData.minY = modelData.minZ = float.MaxValue;
-                modelData.maxX = modelData.maxY = modelData.maxZ = float.MinValue;
-
-                foreach (SPoint p in modelData.points)
+                if (points.Count > 0)
                 {
-                    modelData.minX = Math.Min(p.X, modelData.minX);
-                    modelData.minY = Math.Min(p.Y, modelData.minY);
-                    modelData.minZ = Math.Min(p.Z, modelData.minZ);
-                    modelData.maxX = Math.Max(p.X, modelData.maxX);
-                    modelData.maxY = Math.Max(p.Y, modelData.maxY);
-                    modelData.maxZ = Math.Max(p.Z, modelData.maxZ);
-                }
+                    modelData.points = points.ToArray();
+                    //modelData.normals = normals.ToArray();
+                    //modelData.texels = texels.ToArray();
 
-                Console.WriteLine($"X : [ {modelData.minX} {modelData.maxX} ]");
-                Console.WriteLine($"Y : [ {modelData.minY} {modelData.maxY} ]");
-                Console.WriteLine($"Z : [ {modelData.minZ} {modelData.maxZ} ]");
+                    modelData.minX = modelData.minY = modelData.minZ = float.MaxValue;
+                    modelData.maxX = modelData.maxY = modelData.maxZ = float.MinValue;
 
-                Console.WriteLine($"Number points : {points.Count}");
-                Console.WriteLine($"Number faces : {faces.Count}");
-
-                List<ModelData.Triangle> triangles = new List<ModelData.Triangle>();
-                foreach (Face face in faces)
-                {
-                    if (face.vertices.Count == 3)
+                    //foreach (SPoint p in modelData.points)
+                    for (int i=1; i<modelData.points.Length; i++)
                     {
-                        // Triangle, so just copy across
-                        ModelData.Triangle triangle = new ModelData.Triangle();
-                        triangle.v0 = face.vertices[0].vertex;
-                        triangle.v1 = face.vertices[1].vertex;
-                        triangle.v2 = face.vertices[2].vertex;
-
-                        triangle.n0 = face.vertices[0].normal;
-                        triangle.n1 = face.vertices[1].normal;
-                        triangle.n2 = face.vertices[2].normal;
-
-                        //Debug.Assert(triangle.n != 1);
-
-                        SVector n = GetNormal(points, triangle);
-                        normals.Add(n);
-                        triangle.n = normals.Count() - 1;
-
-                        triangle.t0 = face.vertices[0].texture;
-                        triangle.t1 = face.vertices[1].texture;
-                        triangle.t2 = face.vertices[2].texture;
-
-                        triangles.Add(triangle);
+                        SPoint p = modelData.points[i];
+                        modelData.minX = Math.Min(p.X, modelData.minX);
+                        modelData.minY = Math.Min(p.Y, modelData.minY);
+                        modelData.minZ = Math.Min(p.Z, modelData.minZ);
+                        modelData.maxX = Math.Max(p.X, modelData.maxX);
+                        modelData.maxY = Math.Max(p.Y, modelData.maxY);
+                        modelData.maxZ = Math.Max(p.Z, modelData.maxZ);
                     }
-                    else if (face.vertices.Count == 4)
+
+                    Console.WriteLine($"X : [ {modelData.minX} {modelData.maxX} ]");
+                    Console.WriteLine($"Y : [ {modelData.minY} {modelData.maxY} ]");
+                    Console.WriteLine($"Z : [ {modelData.minZ} {modelData.maxZ} ]");
+
+                    Console.WriteLine($"Number points : {points.Count}");
+                    Console.WriteLine($"Number faces : {faces.Count}");
+
+                    modelData.HasVertexNormals = normals.Count > 1;
+
+                    List<ModelData.Triangle> triangles = new List<ModelData.Triangle>();
+                    foreach (Face face in faces)
                     {
-                        // Turn quad into two triangles, 013 and 123
-                        ModelData.Triangle triangle = new ModelData.Triangle();
-                        triangle.v0 = face.vertices[0].vertex;
-                        triangle.v1 = face.vertices[1].vertex;
-                        triangle.v2 = face.vertices[2].vertex;
-
-                        triangle.n0 = face.vertices[0].normal;
-                        triangle.n1 = face.vertices[1].normal;
-                        triangle.n2 = face.vertices[2].normal;
-
-                        Debug.Assert(triangle.n != 1);
-
-                        SVector n = GetNormal(points, triangle);
-                        normals.Add(n);
-                        triangle.n = normals.Count() - 1;
-
-                        triangle.t0 = face.vertices[0].texture;
-                        triangle.t1 = face.vertices[1].texture;
-                        triangle.t2 = face.vertices[2].texture;
-
-                        triangles.Add(triangle);
-
-                        triangle = new ModelData.Triangle();
-                        triangle.v0 = face.vertices[0].vertex;
-                        triangle.v1 = face.vertices[2].vertex;
-                        triangle.v2 = face.vertices[3].vertex;
-
-                        triangle.n0 = face.vertices[0].normal;
-                        triangle.n1 = face.vertices[2].normal;
-                        triangle.n2 = face.vertices[3].normal;
-
-                        Debug.Assert(triangle.n != 1);
-
-                        n = GetNormal(points, triangle);
-                        normals.Add(n);
-                        triangle.n = normals.Count() - 1;
-
-                        triangle.t0 = face.vertices[0].texture;
-                        triangle.t1 = face.vertices[2].texture;
-                        triangle.t2 = face.vertices[3].texture;
-
-                        triangles.Add(triangle);
-                    }
-                }
-                modelData.triangles = triangles.ToArray();
-
-                Console.WriteLine($"Number triangles : {triangles.Count}");
-
-                modelData.normals = normals.ToArray();
-
-                // Load texture
-                try
-                {
-//                    string[] dirs = Directory.GetFiles(texturesPath, "*.png");
-                    string[] dirs = Directory.GetFiles(texturesPath);
-
-                    foreach (string file in dirs)
-                    {
-                        // XXX For now just load the first texture.
-                        TextureBitmap texture = new TextureBitmap(file);
-                        if (texture.IsValid())
+                        if (face.vertices.Count == 3)
                         {
-                            modelData.texture = texture;
-                            break;
+                            // Triangle, so just copy across
+                            ModelData.Triangle triangle = new ModelData.Triangle();
+                            triangle.v0 = face.vertices[0].vertex;
+                            triangle.v1 = face.vertices[1].vertex;
+                            triangle.v2 = face.vertices[2].vertex;
+
+                            triangle.n0 = face.vertices[0].normal;
+                            triangle.n1 = face.vertices[1].normal;
+                            triangle.n2 = face.vertices[2].normal;
+
+                            //Debug.Assert(triangle.n != 1);
+
+                            SVector n = GetNormal(points, triangle);
+                            normals.Add(n);
+                            triangle.n = normals.Count() - 1;
+
+                            triangle.t0 = face.vertices[0].texture;
+                            triangle.t1 = face.vertices[1].texture;
+                            triangle.t2 = face.vertices[2].texture;
+
+                            triangles.Add(triangle);
                         }
-                        modelData.texture = new TextureBitmap(file);
+                        else if (face.vertices.Count == 4)
+                        {
+                            // Turn quad into two triangles, 013 and 123
+                            ModelData.Triangle triangle = new ModelData.Triangle();
+                            triangle.v0 = face.vertices[0].vertex;
+                            triangle.v1 = face.vertices[1].vertex;
+                            triangle.v2 = face.vertices[2].vertex;
+
+                            triangle.n0 = face.vertices[0].normal;
+                            triangle.n1 = face.vertices[1].normal;
+                            triangle.n2 = face.vertices[2].normal;
+
+                            Debug.Assert(triangle.n != 1);
+
+                            SVector n = GetNormal(points, triangle);
+                            normals.Add(n);
+                            triangle.n = normals.Count() - 1;
+
+                            triangle.t0 = face.vertices[0].texture;
+                            triangle.t1 = face.vertices[1].texture;
+                            triangle.t2 = face.vertices[2].texture;
+
+                            triangles.Add(triangle);
+
+                            triangle = new ModelData.Triangle();
+                            triangle.v0 = face.vertices[0].vertex;
+                            triangle.v1 = face.vertices[2].vertex;
+                            triangle.v2 = face.vertices[3].vertex;
+
+                            triangle.n0 = face.vertices[0].normal;
+                            triangle.n1 = face.vertices[2].normal;
+                            triangle.n2 = face.vertices[3].normal;
+
+                            Debug.Assert(triangle.n != 1);
+
+                            n = GetNormal(points, triangle);
+                            normals.Add(n);
+                            triangle.n = normals.Count() - 1;
+
+                            triangle.t0 = face.vertices[0].texture;
+                            triangle.t1 = face.vertices[2].texture;
+                            triangle.t2 = face.vertices[3].texture;
+
+                            triangles.Add(triangle);
+                        }
                     }
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine($"Failed to load textures for {path}: " + e.Message);
+                    modelData.triangles = triangles.ToArray();
+
+                    Console.WriteLine($"Number triangles : {triangles.Count}");
+
+                    //modelData.HasVertexNormals = normals.Count > 1;
+
+                    // Indexes start at '1' so add a dummy entry to the list.
+                    modelData.normals = normals.ToArray();
+
+                    // Indexes start at '1' so add a dummy entry to the list.
+                    texels.Add(new ModelData.Texel());
+                    modelData.texels = texels.ToArray();
+
                 }
             }
 
-            return (modelData, modelData.texture);
+                //return (modelData, modelData.texture);
+
+            return modelData;
         }
 
     }

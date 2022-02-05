@@ -7,17 +7,20 @@ namespace RayTrace
     {
         public Vector Normal { get; set; }
 
-        private double _radiusSquared;
-        private double _radius;
-        public double Radius { get => _radius; set { _radius = value; _radiusSquared = value * value; } }
+        //public double Radius { get => _radius; set { _radius = value; _radiusSquared = value * value; } }
 
         // Precalculated values to speed up calculations.
+        private double radiusSquared;
+        private double radius;
         private SPoint pos;
         private SVector normal;
 
         // Allow Shape to pre-transform data using the Camera's WorldToView Matrix.
         public override void CreateCache(Camera camera)
         {
+            radius = Scale;
+            radiusSquared = radius * radius;
+
             pos = new(Pos.X, Pos.Y, Pos.Z);
             normal = new(Normal.I, Normal.J, Normal.K);
         }
@@ -73,7 +76,7 @@ namespace RayTrace
             SPoint Intersection = p1 + vecP2P1.Scale(mu);
 
             // Check we are within the radius of the disc.
-            if ((Intersection - vPos).MagnitudeSquared() > _radiusSquared)
+            if ((Intersection - vPos).MagnitudeSquared() > radiusSquared)
             {
                 return hr;
             }
@@ -108,6 +111,9 @@ namespace RayTrace
                 e1 = e1.Normalise();
             }
 
+            e1 = ObjectToWorldNormal * e1;
+            e1 = e1.Normalise();
+
             e1 = camera.NormalMatrix * e1;
             SVector e2 = vNormal.VectorProduct(e1);
             e2 = e2.Normalise();
@@ -119,7 +125,7 @@ namespace RayTrace
             double u = e1.DotProduct(vecIntersection);
             double v = e2.DotProduct(vecIntersection);
 
-            int scale = 400;
+            int scale = 80;
 
             u *= mag;
             v *= mag;
@@ -139,16 +145,16 @@ namespace RayTrace
             return hr;
         }
 
-        public Disc(Point p, Vector normal, double radius) : base(p)
+        public Disc(Scene scene, Point p, Vector normal, float radius) : base(scene, p)
         {
             Normal = normal;
-            Radius = radius;
+            Scale = radius;
         }
 
-        public Disc(XMLDisc xmlDisc) : base(xmlDisc)
+        public Disc(Scene scene, XMLDisc xmlDisc) : base(scene, xmlDisc)
         {
             Normal = new Vector(xmlDisc.Normal);
-            Radius = xmlDisc.Radius;
+            Scale = xmlDisc.Scale;
         }
 
         public override HitResult HitTest(Camera camera, Ray ray)
@@ -169,7 +175,7 @@ namespace RayTrace
 
             if (xml is XMLDisc xmlDisc)
             {
-                xmlDisc.Radius = Radius;
+                //xmlDisc.Radius = Radius;
                 xmlDisc.Normal = Normal.ToXML();
             }
         }

@@ -8,16 +8,23 @@ namespace RayTrace
 {
     public class DistantLight : Light
     {
-        public Vector Direction { get; set; }
+//        public Vector Direction { get; set; }
+        public Vector Normal { get; set; }
 
-        public DistantLight(Vector direction, float intensity, Colour c) : base(intensity, c)
+        //
+        // Constructor
+        //
+        public DistantLight(Scene scene, Vector direction, float intensity, Colour c) : base(scene, intensity, c)
         {
-            Direction = direction.Normalise();
+            Normal = direction.Normalise();
         }
 
-        public DistantLight(XMLDistantLight xmlDistantLight)
+        //
+        // Constructor
+        //
+        public DistantLight(Scene scene, XMLDistantLight xmlDistantLight) : base(scene, xmlDistantLight)
         {
-            Direction = new Vector(xmlDistantLight.Direction);
+            Normal = new Vector(xmlDistantLight.Direction);
         }
 
         private SVector _direction = new SVector();
@@ -25,7 +32,7 @@ namespace RayTrace
         // Allow Shape to pre-transform data using the Camera's WorldToView Matrix.
         public override void CreateCache(Camera camera)
         {
-            _direction = new SVector(Direction);
+            _direction = new SVector(Normal);
         }
 
         public override SVector GetDirection(Camera camera, SPoint p)
@@ -49,7 +56,7 @@ namespace RayTrace
 
             if (xml is XMLDistantLight xmlDistantLight)
             {
-                xmlDistantLight.Direction = Direction.ToXML();
+                xmlDistantLight.Direction = Normal.ToXML();
             }
         }
 

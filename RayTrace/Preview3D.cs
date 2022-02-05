@@ -76,7 +76,7 @@ namespace RayTrace
                 }
                 else if (light is DistantLight distantLight)
                 {
-                    System.Windows.Media.Media3D.DirectionalLight dl = new(ColourToColor(distantLight.Output), VectorToVector3D(distantLight.Direction));
+                    System.Windows.Media.Media3D.DirectionalLight dl = new(ColourToColor(distantLight.Output), VectorToVector3D(distantLight.Normal));
 
                     group.Children.Add(dl);
                 }

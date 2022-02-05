@@ -14,7 +14,7 @@ namespace RayTrace
 
         public bool HasEntry () => _hasEntry;
 
-        public SPoint Entry { get { return _entry; } set { _entry = value; _hasEntry = true; } }
+        public SPoint Entry { get => _entry; set { _entry = value; _hasEntry = true; } }
         public SVector EntryNormal;  // Normal vector at intersetion point.
 
         // Ray that resulted in this HitResult.
@@ -54,7 +54,7 @@ namespace RayTrace
     }
 
     // Base class for objects.
-    abstract public class Shape : Entity
+    public abstract class Shape : Entity
     {
         protected double noiseRange = Perlin.GetRange();
 
@@ -64,23 +64,23 @@ namespace RayTrace
 
         private float scale = 1.0f;
 
-        private float rotateX = 0.0f;
-        private float rotateY = 0.0f;
-        private float rotateZ = 0.0f;
+        private float rotateX;
+        private float rotateY;
+        private float rotateZ;
 
         private static float DegreesToRadians(float degrees) => (float)(degrees / 360.0 * 2.0 * Math.PI);
 
-        public Point Pos { get { return pos; } set { pos = value; Notify("Pos"); } }
+        public Point Pos { get => pos; set { pos = value; Notify("Pos"); } }
 
         public float Scale
         {
-            get { return scale; }
+            get => scale;
             set { if (scale != value) { scale = value; Notify("Scale"); updateMatrix = true; } }
         }
 
         // Clockwise rotation around X axis in degrees.
         public float RotateX {
-            get { return rotateX; }
+            get => rotateX;
             set {
                 if (rotateX != value) {
                     rotateX = value;
@@ -93,13 +93,12 @@ namespace RayTrace
 
         public float RotateY
         {
-            get { return rotateY; }
+            get => rotateY;
             set
             {
                 if (rotateY != value)
                 {
                     rotateY = value;
-                    //rotateYRadians = DegreesToRadians(rotateYDegrees);
                     updateMatrix = true;
                     Notify("RotateY");
                 }
@@ -108,20 +107,28 @@ namespace RayTrace
 
         public float RotateZ
         {
-            get { return rotateZ; }
+            get => rotateZ;
             set
             {
                 if (rotateZ != value)
                 {
                     rotateZ = value;
-                    //rotateZRadians = DegreesToRadians(rotateZ);
                     updateMatrix = true;
                     Notify("RotateZ");
                 }
             }
         }
 
-        public Material Material { get; set; }
+        //public Scene Scene { get; set; }
+
+        private Material material;
+        public Material Material { get => material;
+            set
+            {
+                material = value;
+                Scene.AddMaterial(material);
+            }
+        }
 
         //public Guid MaterialGuid { get; set; }
 
@@ -179,26 +186,55 @@ namespace RayTrace
             };
         }
 
+        //
         // Constructor.
-        public Shape(Point p) : this(p, Palette.Red) { }
-
-        // Constructor.
-        public Shape(Point p, Colour c)
+        //
+        public Shape(Scene scene, Point p)
         {
+            Scene = scene;
             Pos = p;
+
+            Name = scene.GetUniqueShapeName(GetType());
+
+            Material = scene.GetDefaultMaterial();
+
+            scene.AddShape(this);
+        }
+
+        //
+        // Constructor.
+        //
+        public Shape(Scene scene, Point p, Colour c)
+        {
+            Scene = scene;
+            Pos = p;
+
+            Name = scene.GetUniqueShapeName(GetType());
+
             Material = new Material(c);
+            scene.AddMaterial(Material);
+
+            scene.AddShape(this);
         }
 
         // Constructor.
-        public Shape(Point p, Material material)
+/*        public Shape(Scene scene, Point p, Material material)
         {
+            Scene = scene;
             Pos = p;
             Material = material;
         }
+*/
 
+        //
         // Constructor.
-        public Shape(XMLShape xmlShape)
+        //
+        public Shape(Scene scene, XMLShape xmlShape)
         {
+            Scene = scene;
+
+            Name = xmlShape.Name;
+
             Pos = new Point(xmlShape.Pos);
             Scale = xmlShape.Scale;
             RotateX = xmlShape.RotateX;
@@ -206,6 +242,8 @@ namespace RayTrace
             RotateZ = xmlShape.RotateZ;
 
             //Material = new Material(xmlShape.Material);
+
+            scene.AddShape(this);
         }
 
         // Get colour at hit point.

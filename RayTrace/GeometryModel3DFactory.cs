@@ -130,7 +130,7 @@ namespace RayTrace
 
 
             //            var scale = new ScaleTransform3D(1000, 1, 1000);
-            var scale = new ScaleTransform3D(disc.Radius, disc.Radius, disc.Radius);
+            var scale = new ScaleTransform3D(disc.Scale, disc.Scale, disc.Scale);
             var translate = new TranslateTransform3D(disc.Pos.X, disc.Pos.Y, disc.Pos.Z);
 
             Transform3DGroup transformGroup = new();
@@ -461,19 +461,18 @@ namespace RayTrace
                     mesh.TriangleIndices.Add(v1);
                     mesh.TriangleIndices.Add(v0);
 
-                    pointNormals[v0] = (modelData.GetTriangleNormal0(i));
-                    pointNormals[v1] = (modelData.GetTriangleNormal1(i));
-                    pointNormals[v2] = (modelData.GetTriangleNormal2(i));
-
-                    /*
-                                    mesh.TriangleIndices.Add(v0);
-                                    mesh.TriangleIndices.Add(v1);
-                                    mesh.TriangleIndices.Add(v2);
-
-                                    pointNormals[v0] = (modelData.GetTriangleNormal0(i));
-                                    pointNormals[v1] = (modelData.GetTriangleNormal1(i));
-                                    pointNormals[v2] = (modelData.GetTriangleNormal2(i));
-                    */
+                    if (modelData.HasVertexNormals)
+                    {
+                        pointNormals[v0] = (modelData.GetTriangleNormal0(i));
+                        pointNormals[v1] = (modelData.GetTriangleNormal1(i));
+                        pointNormals[v2] = (modelData.GetTriangleNormal2(i));
+                    }
+                    else
+                    {
+                        pointNormals[v0] = modelData.GetTriangleNormal(i);
+                        pointNormals[v1] = modelData.GetTriangleNormal(i);
+                        pointNormals[v2] = modelData.GetTriangleNormal(i);
+                    }
                 }
 
                 foreach (SVector v in pointNormals)
@@ -502,14 +501,19 @@ namespace RayTrace
             //var scale = new ScaleTransform3D(1, 1, 1);
             //var translate = new TranslateTransform3D(plane.Pos.X, plane.Pos.Y, plane.Pos.Z);
 
-            var rotate = new AxisAngleRotation3D(new Vector3D(1.0, 0.0, 0.0), /*(float)Math.PI / 2*/ 90);
-            var scale = new ScaleTransform3D(2.0, 2.0, 2.0);
-            var translate = new TranslateTransform3D(0.0, 0.0, 10.0);
+            var axisRotationX = new AxisAngleRotation3D(new Vector3D(1, 0, 0), model.RotateX);
+            var axisRotationY = new AxisAngleRotation3D(new Vector3D(0, 1, 0), model.RotateY);
+            var axisRotationZ = new AxisAngleRotation3D(new Vector3D(0, 0, 1), model.RotateZ);
+            var scale = new ScaleTransform3D(model.Scale, model.Scale, model.Scale);
+            var translate = new TranslateTransform3D(model.Pos.X, model.Pos.Y, model.Pos.Z);
 
             Transform3DGroup transformGroup = new();
 
-            //transformGroup.Children.Add(scale);
-            //transformGroup.Children.Add(translate);
+            transformGroup.Children.Add(scale);
+            transformGroup.Children.Add(new RotateTransform3D(axisRotationX));
+            transformGroup.Children.Add(new RotateTransform3D(axisRotationY));
+            transformGroup.Children.Add(new RotateTransform3D(axisRotationZ));
+            transformGroup.Children.Add(translate);
 
             geometryModel.Transform = transformGroup;
 

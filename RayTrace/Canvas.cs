@@ -17,12 +17,18 @@ namespace RayTrace
 
         private bool InRange(int x, int y)
         {
-            return (x >= 0 && x < Width && y >= 0 && y < Height);
+            return x >= 0 && x < Width && y >= 0 && y < Height;
         }
 
+        //
+        // Constructor
+        //
         public Canvas(int width, int height, Colour Background) : this(width, height, Background.ToRGB()) { }
 
-        public Canvas(int width, int height, uint background=0)
+        //
+        // Constructor
+        //
+        public Canvas(int width, int height, uint background = 0)
         {
             Width = width;
             Height = height;
@@ -34,14 +40,28 @@ namespace RayTrace
             Clear();
         }
 
-        public void Clear()
+        public void Fill(int x, int y, int width, int height, Colour colour)
         {
-            for (int i=0; i<Width*Height; i++)
+            uint rgb = colour.ToRGB();
+
+            for (int row = x; row < x + width; row++)
             {
-                buffer[i] = Background;
+                for (int col = y; col < y + height; col++)
+                {
+                    if (InRange(row, col))
+                    {
+                        buffer[row * Width + col] = rgb;
+                    }
+                }
             }
         }
 
+        public void Clear()
+        {
+             Array.Fill<uint>(buffer, Background);
+        }
+
+        object locker = new();
         public void Set(int x, int y, uint val)
         {
             if (InRange(x, y))

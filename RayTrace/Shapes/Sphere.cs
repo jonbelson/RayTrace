@@ -64,27 +64,40 @@ namespace RayTrace
 			hr.v = (float) v;
         }
 
-		public Sphere(Point p, int radius) : this(p, radius, Palette.Grey)
+		//
+		// Constructor.
+		//
+		public Sphere(Scene scene, Point p, int radius) : base(scene, p)
         {
-        }
+			Scale = radius;
 
-		public Sphere(Point p, int radius, Colour col) : base(p, col)
+			Pos.PropertyChanged += Pos_PropertyChanged;
+		}
+
+		//
+		// Constructor.
+		//
+		public Sphere(Scene scene, Point p, int radius, Colour col) : base(scene, p, col)
         {
             Scale = radius;
 
             Pos.PropertyChanged += Pos_PropertyChanged;
         }
 
-        private void Pos_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
-        {
-			Notify("Pos");
-        }
-
-        public Sphere(XMLSphere xmlSphere) : base(xmlSphere)
+		//
+		// Constructor.
+		//
+		public Sphere(Scene scene, XMLSphere xmlSphere) : base(scene, xmlSphere)
 		{
 			//Radius = xmlSphere.Radius;
 
+			Pos.PropertyChanged += Pos_PropertyChanged;
 		}
+
+		private void Pos_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+			Notify("Pos");
+        }
 
 		// Allow Shape to pre-transform data using the Camera's WorldToView Matrix.
 		public override void CreateCache(Camera camera)

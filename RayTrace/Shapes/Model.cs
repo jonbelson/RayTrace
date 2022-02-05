@@ -46,7 +46,11 @@ namespace RayTrace
         public float maxY = 0.0f;
         public float maxZ = 0.0f;
 
+        public bool HasVertexNormals { get; set; } = false;
+
+        //
         // Constructor.
+        //
         public ModelData()
         {
         }
@@ -193,8 +197,10 @@ namespace RayTrace
             return new ModelData.Texel() { u = texelU, v = texelV };
         }
 
+        //
         // Constructor.
-        public Model(Point p, ModelData modelData) : base(p)
+        //
+        public Model(Scene scene, Point p, ModelData modelData) : base(scene, p)
         {
             _modelData = modelData;
 
@@ -213,7 +219,10 @@ namespace RayTrace
             //ObjectToWorld = rotate;
         }
 
-        public Model(XMLModel xmlModel) : base(xmlModel)
+        //
+        // Constructor.
+        //
+        public Model(Scene scene, XMLModel xmlModel) : base(scene, xmlModel)
         {
             _modelData = new ModelData();
 
@@ -254,9 +263,9 @@ namespace RayTrace
             else
             {
                 ModelImporter importer = new();
-                (ModelData, Texture) objData = importer.ImportObj(xmlModel.FileName);
+                ModelData modelData = importer.ImportObj(xmlModel.FileName);
 
-                _modelData = objData.Item1;
+                _modelData = modelData;
                 //Material.Texture = objData.Item2;
             }
         }
@@ -264,6 +273,7 @@ namespace RayTrace
         // Transform all vertices to View space based on current Camera position and orientation.
         public override void CreateCache(Camera camera)
         {
+
             if (_modelData != null && _modelData.points != null && _modelData.normals != null)
             {
                 // Convert vertices from Model space to View space.
@@ -302,9 +312,18 @@ namespace RayTrace
                     fatTriangle.v1 = GetTrianglePointV1(i);
                     fatTriangle.v2 = GetTrianglePointV2(i);
 
-                    fatTriangle.n0 = GetTriangleNormal0(i);
-                    fatTriangle.n1 = GetTriangleNormal1(i);
-                    fatTriangle.n2 = GetTriangleNormal2(i);
+                    if (_modelData.HasVertexNormals)
+                    {
+                        fatTriangle.n0 = GetTriangleNormal0(i);
+                        fatTriangle.n1 = GetTriangleNormal1(i);
+                        fatTriangle.n2 = GetTriangleNormal2(i);
+                    }
+                    else
+                    {
+                        fatTriangle.n0 = GetTriangleNormal(i);
+                        fatTriangle.n1 = GetTriangleNormal(i);
+                        fatTriangle.n2 = GetTriangleNormal(i);
+                    }
 
                     fatTriangle.n = GetTriangleNormal(i).Negate();
 

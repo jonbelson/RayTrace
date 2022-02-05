@@ -11,6 +11,11 @@ namespace RayTrace
     {
         private bool enabled = true;
 
+        public bool Enabled {
+            get => enabled;
+            set { if (enabled != value) { enabled = value; Notify("Enabled"); } }
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected void Notify(string propName)
@@ -18,16 +23,27 @@ namespace RayTrace
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName)); 
         }
 
-        public bool Enabled {
-            get { return enabled; }
-            set { if (enabled != value) { enabled = value; Notify("Enabled"); } }
-        }
+        public Guid UID { get; /*set;*/ } = Guid.NewGuid();
+
+        public Scene Scene { get; set; }
 
         public string Name { get; set; }
         
+        //
+        // Constructor
+        //
         public Entity()
         {
             Name = GetType().Name;
+        }
+
+        //
+        // Constructor
+        //
+        public Entity(XMLEntity xmlEntity)
+        {
+            UID = xmlEntity.UID;
+            Name = xmlEntity.Name;
         }
 
         // Allow Shape to pre-transform data using the Camera's WorldToView Matrix.
@@ -35,6 +51,7 @@ namespace RayTrace
 
         protected virtual void AsXMLImpl(XMLEntity xml)
         {
+            xml.UID = xml.UID;
             xml.Enabled = Enabled;
             xml.Name = Name;
         }

@@ -11,15 +11,18 @@ namespace RayTrace
         public Vector Direction { get; set; }
 
         // Width in degrees.
-        double widthRad;
-        int widthDeg;
+        private double widthRad;
+        private int widthDeg;
         public int Width
         {
             get => widthDeg;
             set { widthDeg = value; widthRad = value / 360.0 * 2.0 * Math.PI; }
         }
 
-        public SpotLight(Point p, Vector direction, int widthDeg, float intensity, Colour c) : base (p, intensity, c)
+        //
+        // Constructor.
+        //
+        public SpotLight(Scene scene, Point p, Vector direction, int widthDeg, float intensity, Colour c) : base(scene, p, intensity, c)
         {
             Direction = direction;
             Width = widthDeg;

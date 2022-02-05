@@ -47,21 +47,24 @@ namespace RayTrace
 
         private Task<bool> DoRender(Renderer renderer, Canvas canvas)
         {
+            CancellationTokenSource cancellation = new();
+            CancellationToken token = cancellation.Token;
+
             Task task1 = Task.Factory.StartNew(() =>
             {
-                renderer.Render(scene, canvas, 0, 0, Size/2, Size/2);
+                renderer.Render(scene, canvas, 0, 0, Size/2, Size/2, token);
             });
             Task task2 = Task.Factory.StartNew(() =>
             {
-                renderer.Render(scene, canvas, Size/2, 0, Size / 2, Size / 2);
+                renderer.Render(scene, canvas, Size/2, 0, Size / 2, Size / 2, token);
             });
             Task task3 = Task.Factory.StartNew(() =>
             {
-                renderer.Render(scene, canvas, 0, Size/2, Size / 2, Size / 2);
+                renderer.Render(scene, canvas, 0, Size/2, Size / 2, Size / 2, token);
             });
             Task task4 = Task.Factory.StartNew(() =>
             {
-                renderer.Render(scene, canvas, Size/2, Size/2, Size / 2, Size / 2);
+                renderer.Render(scene, canvas, Size/2, Size/2, Size / 2, Size / 2, token);
             });
 
             Task[] tasks = new Task[4] { task1, task2, task3, task4 };
@@ -79,22 +82,23 @@ namespace RayTrace
             scene.Camera.Pos = new Point(0, 0, 0);
             scene.Camera.Target = new Point(0, 0, 1);
 
-            sphere = new Sphere(new Point(0, 0, 5), 2, Palette.White);
-            scene.AddShape(sphere);
+            sphere = new Sphere(scene, new Point(0, 0, 5), 2, Palette.White);
+            //scene.AddShape(sphere);
 
-            scene.AddLight(new PointLight(new Point(-6, 4, 0), 500, Palette.White));
+            PointLight pl = new PointLight(scene, new Point(-6, 4, 0), 500, Palette.White);
+            //scene.AddLight(scene, new PointLight(new Point(-6, 4, 0), 500, Palette.White));
 
             //Plane plane = new Plane(new Vector(0, 0, -1), new Point(0, 0, 20));
             //plane.Material.Texture = new TextureSquares(new Colour(System.Windows.Media.Colors.DarkGray), new Colour(System.Windows.Media.Colors.Gray)) { Scale = 50 };
-            Disc disc = new Disc(new Point(0, 0, 20), new Vector(0, 0, -1), 16);
+            Disc disc = new Disc(scene, new Point(0, 0, 20), new Vector(0, 0, -1), 16);
 
-            Material matSquares = new Material();
+            Material matSquares = new() { Name="Squares", /*Type=MaterialType.Diffuse,*/ PhongShininess = 1.0f };
             matSquares.SetType(MaterialType.Diffuse);
-            matSquares.PhongShininess = 1.0;
+            //matSquares.PhongShininess = 1.0;
             matSquares.Texture = new TextureSquares(new Colour(System.Windows.Media.Colors.DarkGray), new Colour(System.Windows.Media.Colors.Gray)) { Scale = 500 };
             disc.Material = matSquares;
 
-            scene.AddShape(disc);
+            //scene.AddShape(disc);
 
             scene.AddMaterial(matSquares);
 

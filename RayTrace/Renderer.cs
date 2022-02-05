@@ -15,7 +15,7 @@ namespace RayTrace
     // Negative Z axis towards observer.
     public class Renderer
     {
-        public bool UseAmbient { set; get; } = true;
+        public bool UseAmbient { set; get; } = false;
         public bool UseDiffuse { set; get; } = true;
         public bool UseShadows { set; get; } = true;
         public bool UseSpecular { set; get; } = true;
@@ -253,7 +253,10 @@ namespace RayTrace
         private SVector GetJitteredRay(Matrix matrix, int index, SVector vecToLight, float distToLight, float lightRadius, Random rand)
         {
             // Calculate effective size of light from view point.
-            float theta = (float)Math.Asin(lightRadius / distToLight);
+            float radiusOverDist = lightRadius / distToLight;
+            if (radiusOverDist > 1.0f) radiusOverDist = 1.0f;
+
+            float theta = (float)Math.Asin(radiusOverDist);
             float circleRadius = (float)(lightRadius * Math.Cos(theta));
             float circleDistance = (float)(distToLight - lightRadius * Math.Sin(theta));
 
@@ -795,12 +798,12 @@ namespace RayTrace
         }
 
         // Render entire Scene to the Canvas.
-        public void Render(Scene scene, Canvas canvas)
+        public void Render(Scene scene, Canvas canvas, CancellationToken cancellationToken)
         {
-            Render(scene, canvas, 0, 0, canvas.Width, canvas.Height);
+            Render(scene, canvas, 0, 0, canvas.Width, canvas.Height, cancellationToken);
         }
 
-        struct SubSample
+        private struct SubSample
         {
             public float TLx;
             public float TLy;
@@ -924,7 +927,6 @@ namespace RayTrace
         //private int[] seeds = new int[16] { r.Next(), r.Next(), r.Next(), r.Next(), r.Next(), r.Next(), r.Next(), r.Next(), r.Next(), r.Next(), r.Next(), r.Next(), r.Next(), r.Next(), r.Next(), r.Next() };
         //private int seedIndex = 0;
 
-
         // Get the colour of specified pixel by casting a ray into the Scene.
         private Colour GetPixelColour(Camera camera, Scene scene, /*Random rand,*/ float x, float y)
         {
@@ -1018,7 +1020,7 @@ namespace RayTrace
         }
 
         // Render specified block of Scene to the Canvas.
-        public void Render(Scene scene, Canvas canvas, int startX, int startY, int numColumns, int numRows)
+        public void Render(Scene scene, Canvas canvas, int startX, int startY, int numColumns, int numRows, CancellationToken cancellationToken)
         {
             Camera camera = scene.Camera;
 
@@ -1058,20 +1060,24 @@ namespace RayTrace
             float sceneY = sceneStartY;
             sceneY -= startY * sceneStepY;
 
+            //Debug.WriteLine("startX {0} startY {1} numRows {2} numCols {3}", startX, startY, numColumns, numRows);
+
             for (int h = startY; h < startY + numRows; h++)
             {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    break;
+                }
+
                 float sceneX = sceneStartX;
 
                 sceneX += startX * sceneStepX; 
                 for (int w=startX; w<startX + numColumns; w++)
                 {
-                    //Debug.Assert(h != height/2 || w != width/2);
-
                     if (AntiAlias == AntiAliasType.None)
                     {
                         Colour colour = GetPixelColour(camera, scene, sceneX + sceneStepX / 2, sceneY - sceneStepY / 2);
-                        //colour = colour.Exposure(1.2f);
-                        //colour.Clamp();
                         canvas.Set(w, h, colour.ToRGB());
                     }
                     else if (AntiAlias == AntiAliasType.NoiseGrid)
@@ -1085,24 +1091,18 @@ namespace RayTrace
 
                         }
                         colour = colour.Scale(1.0f/grid.GetLength(0));
-                        //colour = colour.Exposure(1.2f);
-                        //colour.Clamp();
                         canvas.Set(w, h, colour.ToRGB());
                     }
                     else if (AntiAlias == AntiAliasType.SuperSampling)
                     {
                         //SubSample subSample = new SubSample(x, y, x + sceneStepX, y - sceneStepY);
                         Colour colour = GetSubPixelColour(camera, scene, colourBuffer, w - startX, h - startY, sceneX, sceneY, /*sceneX +*/ sceneStepX, /*sceneY -*/ sceneStepY);
-                        //colour = colour.Exposure(1.2f);
-                        //colour.Clamp();
                         canvas.Set(w, h, colour.ToRGB());
                     }
                     else
                     {
                         SubSample subSample = new SubSample(sceneX, sceneY, sceneX + sceneStepX, sceneY - sceneStepY);
                         Colour colour = GetSubPixelColour(camera, scene, subSample, 1);
-                        //colour = colour.Exposure(1.2f);
-                        //colour.Clamp();
                         canvas.Set(w, h, colour.ToRGB());
                     }
 
@@ -1111,7 +1111,6 @@ namespace RayTrace
 
                 sceneY -= sceneStepY;
             }
-
         }
     }
 }

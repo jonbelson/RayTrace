@@ -142,22 +142,21 @@ namespace RayTrace
             Notify("Vector");
         }
 
-        public Plane(Vector normal, Point p) : base(p)
+        public Plane(Scene scene, Point p, Vector normal) : base(scene, p)
         {
             Normal = normal;
 
             Normal.PropertyChanged += Normal_PropertyChanged;
         }
 
-        public Plane(Vector normal, Point p, Colour c) : base(p, c)
+        public Plane(Scene scene, Point p, Vector normal, Colour c) : base(scene, p, c)
         {
             Normal = normal;
 
             Normal.PropertyChanged += Normal_PropertyChanged;
         }
 
-
-        public Plane(XMLPlane xmlPlane) : base(xmlPlane)
+        public Plane(Scene scene, XMLPlane xmlPlane) : base(scene, xmlPlane)
         {
             Normal = new Vector(xmlPlane.Normal);
 

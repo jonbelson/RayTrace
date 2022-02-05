@@ -8,9 +8,17 @@ namespace RayTrace
 {
     public class PointLight : Light
     {
+        private void Pos_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            Notify("Pos");
+        }
+
         public Point Pos { get; set; }
 
-        public PointLight(Point p, float intensity, Colour c) : base(intensity, c)
+        //
+        // Constructor
+        //
+        public PointLight(Scene scene, Point p, float intensity, Colour c) : base(scene, intensity, c)
         {
             Pos = p;
             Radius = 8;// 1;
@@ -18,12 +26,10 @@ namespace RayTrace
             Pos.PropertyChanged += Pos_PropertyChanged;
         }
 
-        private void Pos_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
-        {
-            Notify("Pos");
-        }
-
-        public PointLight(XMLPointLight xmlPointLight) : base(xmlPointLight)
+        //
+        // Constructor
+        //
+        public PointLight(Scene scene, XMLPointLight xmlPointLight) : base(scene, xmlPointLight)
         {
             Pos = new Point(xmlPointLight.Pos);
 

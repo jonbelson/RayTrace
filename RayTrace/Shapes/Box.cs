@@ -18,15 +18,15 @@ namespace RayTrace
         // Precalculated values to speed up calculations.
         private SPoint pos;
 
-        public Box(Point p, float width, float height, float depth) : base(p)
+        public Box(Scene scene, Point p, float width, float height, float depth) : base(scene, p)
         {
             Width = width;
             Height = height;
             Depth = depth;
         }
 
-        public Box(Point p) : this(p, 50, 50, 50) { }
-        public Box(Point p, float size) : this(p, size, size, size) { }
+        public Box(Scene scene, Point p) : this(scene, p, 50, 50, 50) { }
+        public Box(Scene scene, Point p, float size) : this(scene, p, size, size, size) { }
 
         // Allow Shape to pre-transform data using the Camera's WorldToView Matrix.
         public override void CreateCache(Camera camera)

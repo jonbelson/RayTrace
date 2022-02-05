@@ -92,7 +92,7 @@ namespace RayTrace
         }
 
         // Define rectangle (quad) using two Vectors and a position.
-        public Quad(Point p, Vector up, Vector right, double width, double height) : base(p)
+        public Quad(Scene scene, Point p, Vector up, Vector right, double width, double height) : base(scene, p)
         {
             Up = up;
             Right = right;

@@ -63,12 +63,12 @@ namespace RayTrace
     /// </summary>
     public partial class OutputWindow : Window, INotifyPropertyChanged
     {
-        public Canvas canvas { get; set; }
+        public Canvas OutputCanvas { get; set; }
 
         public Scene Scene { get; set; }
         public Renderer Renderer { get; set; }
 
-        public WriteableBitmap bitmap { get; set; }
+        public WriteableBitmap Bitmap { get; set; }
 
         public CancellationTokenSource tokenSource = new();
 
@@ -99,13 +99,21 @@ namespace RayTrace
 
         //private List<RenderBlock> renderBlocks = null;
 
+        public enum RenderStatus
+        {
+            NotStarted,
+            Complete,
+            Cancelled,
+            Error
+        }
+
         public OutputWindow(/*Scene scene, Renderer renderer, int width, int height, List<RenderBlock> renderBlocks*/)
         {
             InitializeComponent();
 
 //            BlocksDone = 10;
 
-            this.DataContext = this;
+            DataContext = this;
 
 /*            _scene = scene;
             _renderer = renderer;
@@ -135,11 +143,11 @@ namespace RayTrace
 
         public void SetOutputSize(int width, int height)
         {
-            canvas = new(width, height);
+            OutputCanvas = new(width, height);
 
             GetDpi(out double dpiX, out double dpiY);
 
-            bitmap = new WriteableBitmap(canvas.Width, canvas.Height, dpiX, dpiY, PixelFormats.Bgr32, null);
+            Bitmap = new WriteableBitmap(OutputCanvas.Width, OutputCanvas.Height, dpiX, dpiY, PixelFormats.Bgr32, null);
 
             image.MinWidth = width;
             image.MinHeight = height;
@@ -147,18 +155,18 @@ namespace RayTrace
 
         public void Update()
         {
-            Update(0, 0, canvas.Width, canvas.Height);
+            Update(0, 0, OutputCanvas.Width, OutputCanvas.Height);
         }
 
         public void Update(int startX, int startY, int numColumns, int numRows)
         {
             try
             {
-                bitmap.Lock();
+                Bitmap.Lock();
 
                 for (int y = startY; y < startY + numRows; y++)
                 {
-                    IntPtr buffer = bitmap.BackBuffer + y * bitmap.BackBufferStride;
+                    IntPtr buffer = Bitmap.BackBuffer + y * Bitmap.BackBufferStride;
                     //                  for (int x = 0; x < canvas.Width; x++)
                     buffer += 4 * startX;
                     for (int x = startX; x < startX + numColumns; x++)
@@ -167,7 +175,7 @@ namespace RayTrace
                         //val %= palettes[currentPalette].colours.Count;
                         //Color c = palettes[currentPalette].colours[val];
 
-                        UInt32 c = canvas.Get(x, y);
+                        UInt32 c = OutputCanvas.Get(x, y);
 
                         //System.Runtime.InteropServices.Marshal.WriteInt32(buffer, GetColour(0, 0, (byte)val));
                         System.Runtime.InteropServices.Marshal.WriteInt32(buffer, (int)c);
@@ -176,31 +184,31 @@ namespace RayTrace
                     }
 
                 }
-                bitmap.AddDirtyRect(new Int32Rect(0, 0, canvas.Width, canvas.Height));
+                Bitmap.AddDirtyRect(new Int32Rect(0, 0, OutputCanvas.Width, OutputCanvas.Height));
 
                 //image.Source = bitmap;
-                image.Source = bitmap;
+                image.Source = Bitmap;
 
                 BlocksDone++;
             }
             finally
             {
-                bitmap.Unlock();
+                Bitmap.Unlock();
             }
         }
 
         // Render a single pixel from the current Canvas.
         private void RenderPoint(int x, int y)
         {
-            if (canvas != null)
+            if (OutputCanvas != null)
             {
-                x = Math.Min(x, canvas.Width - 1);
-                y = Math.Min(y, canvas.Height - 1);
+                x = Math.Min(x, OutputCanvas.Width - 1);
+                y = Math.Min(y, OutputCanvas.Height - 1);
 
                 x = Math.Max(x, 0);
                 y = Math.Max(y, 0);
 
-                Renderer.Render(Scene, canvas, x, y, 1, 1);
+                Renderer.Render(Scene, OutputCanvas, x, y, 1, 1, CancellationToken.None);
             }
         }
 
@@ -224,16 +232,16 @@ namespace RayTrace
         {
             var pos = e.GetPosition(image /*(IInputElement) sender*/);
 
-            var x = bitmap.PixelWidth * pos.X / image.ActualWidth;
-            var y = bitmap.PixelHeight * pos.Y / image.ActualHeight;
+            var x = Bitmap.PixelWidth * pos.X / image.ActualWidth;
+            var y = Bitmap.PixelHeight * pos.Y / image.ActualHeight;
 
             RenderPoint((int)x, (int)y);
         }
 
         private List<RenderBlock> CalcRenderBlocks(int NumRenderBlocks, MainWindow.RenderDirection direction)
         {
-            int width = canvas.Width;
-            int height = canvas.Height;
+            int width = OutputCanvas.Width;
+            int height = OutputCanvas.Height;
 
             float floatStep = ((float)height) / NumRenderBlocks;
             int intStep = (int)floatStep;
@@ -277,37 +285,39 @@ namespace RayTrace
             return renderBlocks;
         }
 
-        public async Task<bool> DoRender(int NumRenderBlocks, MainWindow.RenderDirection direction)
+        public async Task<RenderStatus> DoRender(int NumRenderBlocks, MainWindow.RenderDirection direction)
         {
-            var renderBlocks = CalcRenderBlocks(NumRenderBlocks, direction);
+            List<RenderBlock> renderBlocks = CalcRenderBlocks(NumRenderBlocks, direction);
 
             BlocksDone = 0;
             BlocksToDo = renderBlocks.Count;
 
             //canvas = new Canvas(canvas.Width, canvas.Height);
 
-            GetDpi(out double dpiX, out double dpiY);
-
+            //GetDpi(out double dpiX, out double dpiY);
             //_bitmap = new WriteableBitmap(_canvas.Width, _canvas.Height, dpiX, dpiY, PixelFormats.Bgr32, null);
 
-            canvas.Clear();
+            OutputCanvas.Clear();
 
             Scene.Camera.UpdateMatrix();    // XXX Needed?
             Scene.CreateCaches();
 
             ThreadPool.GetMaxThreads(out int workerThreads, out int completonPortThreads);
 
-            ThreadPool.SetMaxThreads(16, completonPortThreads);
+            _ = ThreadPool.SetMaxThreads(16, completonPortThreads);
 
             tokenSource = new();
             CancellationToken token = tokenSource.Token;
 
-            //Stopwatch stopWatch = new Stopwatch();
-            //stopWatch.Start();
-
             Renderer.NumRays = 0;
 
-            List<Task> tasks = new List<Task>();
+            //OutputCanvas.Background = 0xff00ff00;
+            OutputCanvas.Clear();
+
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            List<Task> tasks = new();
 
             int i = 0;
             foreach (RenderBlock rb in renderBlocks)
@@ -315,28 +325,37 @@ namespace RayTrace
                 int idx = i;
                 Task renderTask = Task.Factory.StartNew(() =>
                 {
-                    if (token.IsCancellationRequested) return;
+                    try
+                    {
+                        if (token.IsCancellationRequested) return;
 
-                    Thread.CurrentThread.Name = $"Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...";
-                    Console.WriteLine($"Starting Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...");
-                    Renderer.Render(Scene, canvas, rb.StartX, rb.StartY, rb.Width, rb.Height);
-                    Console.WriteLine($"Done Task {idx}...");
+                        Thread.CurrentThread.Name = $"Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...";
+                        Debug.WriteLine($"Starting Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...");
+                        Renderer.Render(Scene, OutputCanvas, rb.StartX, rb.StartY, rb.Width, rb.Height, token);
+                        Debug.WriteLine($"Done Task {idx}...");
 
-                    this.Dispatcher.Invoke(DispatcherPriority.Normal,
-                                        (ThreadStart)delegate ()
-                                        {
-                                            //Console.WriteLine($"Updating {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...");
+                        Dispatcher.Invoke(DispatcherPriority.Normal,
+                                            (ThreadStart)delegate ()
+                                            {
                                             Update(rb.StartX, rb.StartY, rb.Width, rb.Height);
-                                        }
-                    );
+                                            }
+                        );
+                    }
+                    catch (Exception e)
+                    {
+                        //int i = 0;
+                        throw;
+                    }
                 });
                 tasks.Add(renderTask);
                 i++;
             }
 
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Reset();
-            stopwatch.Start();
+            //Stopwatch stopwatch = new();
+            //stopwatch.Reset();
+            //stopwatch.Start();
+
+            RenderStatus status = RenderStatus.NotStarted;
 
             //List<Task> Tasks = new List<Task>() { renderTask1, renderTask2 };
             //await Task.WaitAll(Tasks.ToArray());
@@ -346,21 +365,32 @@ namespace RayTrace
                 {
                     await task;
                 }
+
+                status = RenderStatus.Complete;
+
+                //Update(0, 0, OutputCanvas.Width, OutputCanvas.Height);
+
             }
             catch (Exception e)
             {
-                var m = e.Message;
+                string m = e.Message;
 
-                if (e is TaskCanceledException)
+                if (e is OperationCanceledException)
                 {
                     outputWindow.BlocksDone = 0;
                     outputWindow.BlocksToDo = 0;
-                }
 
+                    status = RenderStatus.Cancelled;
+                }
+                else
+                {
+                    status = RenderStatus.Error;
+                }
             }
 
             stopwatch.Stop();
 
+/*
             TimeSpan ts = stopwatch.Elapsed;
 
             // Format and display the TimeSpan value.
@@ -369,9 +399,9 @@ namespace RayTrace
 
             Trace.WriteLine("Number rays: " + Renderer.NumRays);
             Trace.WriteLine("Rays per second: " + 1000.0*Renderer.NumRays/stopwatch.ElapsedMilliseconds);
+*/
 
-
-            return true;
+            return status;
         }
     }
 }
