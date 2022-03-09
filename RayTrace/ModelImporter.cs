@@ -83,18 +83,20 @@ namespace RayTrace
                         int i1, i2, i3;
                         if (Int32.TryParse(numbers[0], out i1))
                         {
-                            if (Int32.TryParse(numbers[1], out i2))
+                            i2 = 0;
+                            if (!String.IsNullOrEmpty(numbers[1]) && Int32.TryParse(numbers[1], out i2))
                             {
-                                if (Int32.TryParse(numbers[2], out i3))
-                                {
-                                    FaceVertex faceVertex = new FaceVertex();
-                                    faceVertex.vertex = i1;
-                                    faceVertex.texture = i2;
-                                    faceVertex.normal = i3;
-                                    face.vertices.Add(faceVertex);
+                            }
 
-                                    Debug.Assert(i1 >= 0 && i2 >= 0 && i3 >= 0);
-                                }
+                            if (Int32.TryParse(numbers[2], out i3))
+                            {
+                                FaceVertex faceVertex = new FaceVertex();
+                                faceVertex.vertex = i1;
+                                faceVertex.texture = i2;
+                                faceVertex.normal = i3;
+                                face.vertices.Add(faceVertex);
+
+                                Debug.Assert(i1 >= 0 && i2 >= 0 && i3 >= 0);
                             }
                         }
                     }
@@ -168,6 +170,7 @@ namespace RayTrace
                         if (tokens.Length == 4 && Parse(tokens, out f1, out f2, out f3) == 3)
                         {
                             SVector v = new SVector(f1, f2, -f3);
+                            v = v.Normalise();
                             normals.Add(v);
                         }
                     }
@@ -178,6 +181,14 @@ namespace RayTrace
                             ModelData.Texel t = new ModelData.Texel();
                             t.u = f1;
                             t.v = f2;
+                            texels.Add(t);
+                        }
+                        else if (tokens.Length == 4 && Parse(tokens, out f1, out f2, out f3) == 3)
+                        {
+                            ModelData.Texel t = new ModelData.Texel();
+                            t.u = f1;
+                            t.v = f2;
+                            t.w = f3;
                             texels.Add(t);
                         }
                     }
@@ -232,6 +243,9 @@ namespace RayTrace
                     Console.WriteLine($"Number faces : {faces.Count}");
 
                     modelData.HasVertexNormals = normals.Count > 1;
+
+                    // Try to figure out if the normals need inverting.
+                    //if ()
 
                     List<ModelData.Triangle> triangles = new List<ModelData.Triangle>();
                     foreach (Face face in faces)

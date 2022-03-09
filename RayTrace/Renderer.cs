@@ -65,11 +65,15 @@ namespace RayTrace
         private Random[] randomisers = new Random[NumRandomisers];
 
         private const int NumRandSeeds = 1000; 
-        private int[] seeds = new int[NumRandSeeds];
+        private readonly int[] seeds = new int[NumRandSeeds];
         private static int randIndex = 0;
         private static object RandLock = new object();
 
-        public UInt64 NumRays { get; set; } = 0;
+        private ulong _numRays = 0;
+        public ulong NumRays { get => _numRays; set => _numRays = value; }
+
+        [ThreadStatic]
+        private static ulong NumThreadRays;
 
         //[ThreadStatic] private static Random threadRand;
         private ThreadLocal<Random> threadRand;
@@ -487,7 +491,7 @@ namespace RayTrace
             if (depth > RecursionDepth) return Palette.Black;
             depth++;
 
-            NumRays++;
+            NumThreadRays++;
 
             Shape shape = hr.shape;
 
@@ -1012,7 +1016,7 @@ namespace RayTrace
                 {
                     colour = scene.Skydome.GetColour(camera, dir);
 
-                    NumRays++;  // Still counts as a ray even though it didn't hit anything.
+                    NumThreadRays++;  // Still counts as a ray even though it didn't hit anything.
                 }
             }
 
@@ -1034,6 +1038,8 @@ namespace RayTrace
 
             //threadRand = new Random(seeds[index]);
             threadRand = new ThreadLocal<Random>(() => { return new Random(seeds[index]); });
+
+            NumThreadRays = 0;
 
             // Calculate Scene size based on camera FOV.
             float sceneWidth = camera.GetSceneWidth();
@@ -1111,6 +1117,8 @@ namespace RayTrace
 
                 sceneY -= sceneStepY;
             }
+
+            _ = Interlocked.Add(ref _numRays, NumThreadRays);
         }
     }
 }

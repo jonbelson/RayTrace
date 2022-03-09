@@ -23,7 +23,7 @@ namespace RayTrace
 
         public struct Texel
         {
-            public float u, v;
+            public float u, v, w;
         }
 
         public class Triangle

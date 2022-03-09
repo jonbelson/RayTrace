@@ -226,50 +226,87 @@ namespace RayTrace
 
             int pointIndex = 1;
 
+            // For each slice, from top to bottom.
             for (int slice = 1; slice < slices; slice++)
             {
+                // Angle to current slice elevation.
                 double ya = ((double)slice / slices) * Math.PI;
-                double y = Math.Cos(ya);
 
                 // How much to scale each slice to make it spherical.
                 double sliceScale = Math.Sin(ya);
+                double y = Math.Cos(ya);
 
-                int sliceIndex = pointIndex;
+                // Index of first point in this slice.
+                int sliceStartIndex = pointIndex;
+
 
                 for (int sample = 0; sample < samplesPerSlice; sample++)
                 {
-                    double xa = Math.PI * 2.0 * sample / samplesPerSlice;
+                    // Angles around this slice.
+                    double sliceAngle = Math.PI * 2.0 * sample / samplesPerSlice;
 
-                    double s = Math.Sin(xa);
-                    double c = Math.Cos(xa);
+                    double s = Math.Sin(sliceAngle);
+                    double c = Math.Cos(sliceAngle);
 
                     mesh.Positions.Add(new Point3D(s * sliceScale, y, c * sliceScale));
 
-                    if (sliceIndex > pointIndex && slice > 1)
+                    // Start making triangles after the first slice
+                    if (sample > 0)
                     {
-                        // Triangle 1.
-                        mesh.TriangleIndices.Add(sliceIndex);
-                        mesh.TriangleIndices.Add(sliceIndex - 1 - samplesPerSlice);
-                        mesh.TriangleIndices.Add(sliceIndex - 1);
-                        // Triangle 2.
-                        mesh.TriangleIndices.Add(sliceIndex);
-                        mesh.TriangleIndices.Add(sliceIndex - samplesPerSlice);
-                        mesh.TriangleIndices.Add(sliceIndex - samplesPerSlice - 1);
+                        if (slice > 1)
+                        {
+                            // Triangle 1.
+                            mesh.TriangleIndices.Add(sliceStartIndex);
+                            mesh.TriangleIndices.Add(sliceStartIndex - 1 - samplesPerSlice);
+                            mesh.TriangleIndices.Add(sliceStartIndex - 1);
+                            // Triangle 2.
+                            mesh.TriangleIndices.Add(sliceStartIndex);
+                            mesh.TriangleIndices.Add(sliceStartIndex - samplesPerSlice);
+                            mesh.TriangleIndices.Add(sliceStartIndex - samplesPerSlice - 1);
+                        }
+                        else if (slice == 1)
+                        {
+                            mesh.TriangleIndices.Add(sliceStartIndex);
+                            mesh.TriangleIndices.Add(0);
+                            mesh.TriangleIndices.Add(sliceStartIndex - 1);
+                        }
                     }
-                    sliceIndex++;
+                    sliceStartIndex++;
                 }
 
-                // Triangle 1.
-                mesh.TriangleIndices.Add(sliceIndex);
-                mesh.TriangleIndices.Add(sliceIndex - 1 - samplesPerSlice);
-                mesh.TriangleIndices.Add(sliceIndex - 1);
-                // Triangle 2.
-                mesh.TriangleIndices.Add(sliceIndex);
-                mesh.TriangleIndices.Add(sliceIndex - samplesPerSlice);
-                mesh.TriangleIndices.Add(sliceIndex - samplesPerSlice - 1);
+                // Stitch the start and end to complete the triangle strip.
+                if (slice == 1)
+                {
+                    mesh.TriangleIndices.Add(pointIndex);
+                    mesh.TriangleIndices.Add(0);
+                    mesh.TriangleIndices.Add(pointIndex + samplesPerSlice - 1);
+                }
+                else if (slice == slices)
+                {
+                    mesh.Positions.Add(new Point3D(0.0, -1.0, 0.0));
 
+                    int final = mesh.Positions.Count - 1;
 
-                pointIndex = sliceIndex;
+                    mesh.TriangleIndices.Add(final);
+                    mesh.TriangleIndices.Add(final - samplesPerSlice);
+                    mesh.TriangleIndices.Add(final - 1);
+                }
+                else
+                {
+                    int first = pointIndex;
+
+                    // Triangle 1.
+                    mesh.TriangleIndices.Add(first);
+                    mesh.TriangleIndices.Add(first - 1);
+                    mesh.TriangleIndices.Add(first + samplesPerSlice - 1);
+                    // Triangle 2.
+                    mesh.TriangleIndices.Add(first);
+                    mesh.TriangleIndices.Add(first - samplesPerSlice);
+                    mesh.TriangleIndices.Add(first - 1);
+                }
+
+                pointIndex = sliceStartIndex;
+
             }
 
 
@@ -482,15 +519,12 @@ namespace RayTrace
                     //v2.I = -v2.I;
                     //v2.J = -v2.J;
 
-                    //if (v2 != null)
-                    {
-                        Vector3D v3d = VectorToVector3D(v2);
-                        //v3d.Z = -v3d.Z;
+                    //v2 = new(v2.I, v2.J, -v2.K);
+                    //v2 = new(-v2.I, -v2.J, -v2.K);
 
-                        //v3d = -v3d;
+                    Vector3D v3d = VectorToVector3D(v2);
 
-                        mesh.Normals.Add(v3d);
-                    }
+                    mesh.Normals.Add(v3d);
                 }
             }
             geometryModel.Geometry = mesh;

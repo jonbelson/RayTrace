@@ -41,7 +41,9 @@ namespace RayTrace
 
     }
 
+    //
     // Characteristics of a Shape's physical form.
+    //
     public class Material
     {
         public string Name { get; set; } = "Material";
@@ -89,15 +91,27 @@ namespace RayTrace
         public BRDF Brdf { get; set; }
         public Texture Texture { get; set; }
 
+        //
+        // Constructor
+        //
         public Material() : this(Palette.White) { }
 
+        //
+        // Constructor
+        //
         public Material(Colour c) : this(new TextureSolid(c)) { }
 
+        //
+        // Constructor
+        //
         public Material(MaterialType type)
         {
             SetType(type);
         }
 
+        //
+        // Constructor
+        //
         public Material(Texture texture)
         {
             Texture = texture;
@@ -107,7 +121,15 @@ namespace RayTrace
             reflectivity = 0.0f;
         }
 
+        //
+        // Constructor
+        //
         public Material(XMLMaterial xmlMaterial)
+        {
+            Restore(xmlMaterial);
+        }
+
+        public void Restore(XMLMaterial xmlMaterial)
         {
             _type = xmlMaterial.Type;
 
@@ -203,7 +225,11 @@ namespace RayTrace
             {
                 xmlMaterial.Brdf = Brdf.ToXML();
             }
-            xmlMaterial.Texture = Texture.ToXML();
+
+            if (Texture != null)
+            {
+                xmlMaterial.Texture = Texture.ToXML();
+            }
 
             return xmlMaterial;
         }

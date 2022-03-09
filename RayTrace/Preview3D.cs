@@ -3,11 +3,108 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 
 namespace RayTrace
 {
+    public class BoundingBox3D : ModelVisual3D
+    {
+        private GeometryModel3D CreateBoundingBox(Viewport3D viewport3D)
+        {
+            double[,] box3D = new double[8, 3]
+            {
+                // Top
+                { -0.5, 0.5, 0.5 },
+                { 0.5, 0.5, 0.5 },
+                { 0.5, 0.5, -0.5 },
+                { -0.5, 0.5, -0.5 },
+
+                // Bottom
+                { -0.5, -0.5, 0.5 },
+                { 0.5, -0.5, 0.5 },
+                { 0.5, -0.5, -0.5 },
+                { -0.5, -0.5, -0.5 }
+            };
+
+            int[,] boxEdgesX = new int[4, 2]
+            {
+                { 0, 1 }, { 2, 3 }, { 4, 5 }, { 6, 7 },     // X axis aligned.
+            };
+
+            int[,] boxEdgesY = new int[4, 2]
+            {
+                { 0, 4 }, { 1, 5 }, { 2, 6 }, { 3, 7 },     // Y axis aligned.
+            };
+
+            int[,] boxEdgesZ = new int[4, 2]
+            {
+                { 0, 3 }, { 1, 2 }, { 4, 7 }, { 5, 6 }     // Z axis aligned.
+            };
+
+            Point3D MakePoint(int i) { return new Point3D(box3D[i, 0], box3D[i, 1], box3D[i, 2]); }
+
+            Func<Point3D, Point3D, Point3DCollection> CreateLine = delegate (Point3D p1, Point3D p2) { return new Point3DCollection(new List<Point3D>() { p1, p2 }); };
+
+            //Model3DGroup group = new();
+
+            //Content = group;
+
+            //GeometryModel3D boundingBox;
+
+            // Aligned with X axis.
+            for (int i = 0; i < 4; i++)
+            {
+                int p1 = boxEdgesX[i, 0];
+                int p2 = boxEdgesX[i, 1];
+
+                _3DTools.ScreenSpaceLines3D line = new();
+                line.Points = CreateLine(MakePoint(p1), MakePoint(p2));
+                line.Thickness = 2;
+                line.Color = Colors.Red;
+
+                viewport3D.Children.Add(line);
+            }
+
+            // Aligned with Y axis.
+            for (int i = 0; i < 4; i++)
+            {
+                int p1 = boxEdgesY[i, 0];
+                int p2 = boxEdgesY[i, 1];
+
+                _3DTools.ScreenSpaceLines3D line = new();
+                line.Points = CreateLine(MakePoint(p1), MakePoint(p2));
+                line.Thickness = 2;
+                line.Color = Colors.Green;
+
+                viewport3D.Children.Add(line);
+            }
+
+            // Aligned with Z axis.
+            for (int i = 0; i < 4; i++)
+            {
+                int p1 = boxEdgesZ[i, 0];
+                int p2 = boxEdgesZ[i, 1];
+
+                _3DTools.ScreenSpaceLines3D line = new();
+                line.Points = CreateLine(MakePoint(p1), MakePoint(p2));
+                line.Thickness = 2;
+                line.Color = Colors.Blue;
+
+                viewport3D.Children.Add(line);
+            }
+
+            return null;
+        }
+
+        public BoundingBox3D(Viewport3D viewport3D)
+        {
+            CreateBoundingBox(viewport3D);
+        }
+    }
+
+
     //
     // Create the Geometry required to depict a Scene.
     // Each Shape is a separate child geometry.
@@ -18,6 +115,10 @@ namespace RayTrace
 
         private Model3DGroup group = new();
 
+        private Dictionary<GeometryModel3D, Entity> models = new();
+
+        //private GeometryModel3D boundingBox;
+
         // Utility delagates for converting between formats.
         private readonly Func<Point, Point3D> PointToPoint3D = (p) => new Point3D(p.X, p.Y, p.Z);
         private readonly Func<Vector, Vector3D> VectorToVector3D = (v) => new Vector3D(v.I, v.J, v.K);
@@ -25,6 +126,9 @@ namespace RayTrace
 
         public bool UseAmbient { get; set; } = true;
 
+        //
+        // Constructor.
+        //
         public Preview3D(Scene scene)
         {
             this.scene = scene;
@@ -32,11 +136,24 @@ namespace RayTrace
             group.Transform = new ScaleTransform3D(1.0, 1.0, -1.0);
 
             this.Content = group;
+
+            //UpdateBoundingBox();
+        }
+
+        public Entity GetEntityFromGeometry(GeometryModel3D geometry)
+        {
+            if (models.ContainsKey(geometry))
+            {
+                return models[geometry];
+            }
+            return null;
         }
 
         // Update geometry for all Shapes
         public void Update()
         {
+            models.Clear();
+
             foreach (Shape shape in scene.Shapes)
             {
                 Update(shape);
@@ -121,11 +238,14 @@ namespace RayTrace
                 Colour c = shape.Material.GetBaseColour();
                 geometryModel.Material = new DiffuseMaterial(new SolidColorBrush(Color.FromScRgb(1, c.Red, c.Green, c.Blue)));
 
-                if (shape is Disc || shape is Plane)
+                if (shape is Disc or Plane or Model)
                 {
                     geometryModel.BackMaterial = geometryModel.Material;
                 }
+
+                models.Add(geometryModel, shape);
             }
         }
     }
 }
+

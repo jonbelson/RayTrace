@@ -119,10 +119,10 @@ namespace RayTrace
             }
         }
 
-        //public Scene Scene { get; set; }
-
+        //public Guid MaterialGuid { get; set; }
         private Material material;
-        public Material Material { get => material;
+        public Material Material {
+            get => material;
             set
             {
                 material = value;
@@ -130,12 +130,11 @@ namespace RayTrace
             }
         }
 
-        //public Guid MaterialGuid { get; set; }
-
-        private Matrix _objectToWorld = new Matrix();
-        private Matrix _objectToWorldNormal = new Matrix();
+        private Matrix _objectToWorld = new();
+        private Matrix _objectToWorldNormal = new();
         public Matrix ObjectToWorld {
-            get {
+            get
+            {
                 if (updateMatrix)
                 {
                     UpdateMatrix();
@@ -176,7 +175,7 @@ namespace RayTrace
             float rotateYRadians = DegreesToRadians(rotateY);
             float rotateZRadians = DegreesToRadians(rotateZ);
 
-            _objectToWorld = Matrix.GetScale(scale) * Matrix.GetRotationZ(rotateZRadians) * Matrix.GetRotationY(rotateYRadians) * Matrix.GetRotationX(rotateXRadians);
+            _objectToWorld = Matrix.GetScale(scale) * Matrix.GetRotationZ(rotateZRadians) * Matrix.GetRotationY(rotateYRadians) * Matrix.GetRotationX(rotateXRadians) * Matrix.GetTranslation(Pos.X, Pos.Y, Pos.Z);
             _objectToWorldNormal = new Matrix(_objectToWorld)
             {
                 // Remove translation component.
@@ -232,6 +231,8 @@ namespace RayTrace
         public Shape(Scene scene, XMLShape xmlShape)
         {
             Scene = scene;
+
+            base.AsXMLImpl(xmlShape);
 
             Name = xmlShape.Name;
 

@@ -8,7 +8,8 @@ namespace RayTrace
 {
     public class SpotLight : PointLight
     {
-        public Vector Direction { get; set; }
+        //public Vector Direction { get; set; }
+        public Vector Normal { get; set; }
 
         // Width in degrees.
         private double widthRad;
@@ -24,7 +25,7 @@ namespace RayTrace
         //
         public SpotLight(Scene scene, Point p, Vector direction, int widthDeg, float intensity, Colour c) : base(scene, p, intensity, c)
         {
-            Direction = direction;
+            Normal = direction;
             Width = widthDeg;
         }
 
@@ -34,7 +35,7 @@ namespace RayTrace
         public override void CreateCache(Camera camera)
         {
             base.CreateCache(camera);
-            _direction = new SVector(Direction);
+            _direction = new SVector(Normal);
         }
 
         public override SVector GetDirection(Camera camera, SPoint p)

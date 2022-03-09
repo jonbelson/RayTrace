@@ -8,13 +8,24 @@ namespace RayTrace
 {
     public class TextureBitmap : Texture
     {
-        public override TextureType Type { get; } = TextureType.Bitmap;
-
         private int width;
         private int height;
         private String fileName;
 
         private Colour[] texture = null;
+
+        public override TextureType Type { get; } = TextureType.Bitmap;
+
+        public string FileName {
+            get => fileName;
+            set {
+                if (fileName != value)
+                {
+                    fileName = value;
+                    LoadTexture(fileName);
+                }
+            }
+        }
 
         private bool LoadTexture(string fileName)
         {
@@ -62,6 +73,19 @@ namespace RayTrace
             return false;
         }
 
+        //
+        // Constructor.
+        //
+        public TextureBitmap()
+        {
+            Name = "Bitmap";
+
+            width = height = 0;
+        }
+
+        //
+        // Constructor.
+        //
         public TextureBitmap(string fileName)
         {
             Name = "Bitmap";
@@ -71,6 +95,9 @@ namespace RayTrace
             LoadTexture(fileName);
         }
 
+        //
+        // Constructor.
+        //
         public TextureBitmap(XMLTextureBitmap xml)
         {
             width = height = 0;

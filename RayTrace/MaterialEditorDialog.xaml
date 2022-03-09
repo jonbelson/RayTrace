@@ -209,8 +209,6 @@
 
 
 
-
-
         <!--
             Solid Texture template.
         -->
@@ -229,6 +227,34 @@
 
                     <ContentPresenter Grid.Row="0" Grid.ColumnSpan="3" Content="{StaticResource ColourContent}"></ContentPresenter>
 
+                </Grid>
+            </StackPanel>
+        </DataTemplate>
+
+
+
+        <!--
+            Bitmap Texture template.
+        -->
+        <DataTemplate x:Key="TextureBitmapTemplate">
+
+            <StackPanel>
+                <Grid Margin="5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="8" />
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="8" />
+                        <ColumnDefinition Width="16" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="Bitmap:" HorizontalAlignment="Right"></TextBlock>
+                    <TextBox Grid.Column="2" Grid.Row="0" Text="{Binding ElementName=dialog, Path=material.Texture.FileName, Mode=TwoWay, NotifyOnSourceUpdated=True}" MinWidth="50" SourceUpdated="TextBox_SourceUpdated"></TextBox>
+
+                    <Button Grid.Column="4" Grid.Row="0" Click="Button_Click" Content="..."></Button>
                 </Grid>
             </StackPanel>
         </DataTemplate>
@@ -377,6 +403,9 @@
                                     <DataTrigger Binding="{Binding Path=textureType, ElementName=dialog}" Value="{x:Static local:TextureType.Gradient}">
                                         <Setter Property="ContentTemplate" Value="{StaticResource TextureGradientTemplate}"></Setter>
                                     </DataTrigger>
+                                    <DataTrigger Binding="{Binding Path=textureType, ElementName=dialog}" Value="{x:Static local:TextureType.Bitmap}">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource TextureBitmapTemplate}"></Setter>
+                                    </DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </ContentControl.Style>
@@ -436,6 +465,9 @@
                                     <!--<DataTrigger Binding="{Binding Path=SelectedValue, ElementName=comboBoxTexture}" Value="{x:Static local:TextureType.Gradient}">-->
                                     <DataTrigger Binding="{Binding Path=textureType, ElementName=dialog}" Value="{x:Static local:TextureType.Gradient}">
                                         <Setter Property="ContentTemplate" Value="{StaticResource TextureGradientTemplate}"></Setter>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Path=textureType, ElementName=dialog}" Value="{x:Static local:TextureType.Bitmap}">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource TextureBitmapTemplate}"></Setter>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
@@ -545,6 +577,9 @@
                                     <DataTrigger Binding="{Binding Path=textureType, ElementName=dialog}" Value="{x:Static local:TextureType.Gradient}">
                                         <Setter Property="ContentTemplate" Value="{StaticResource TextureGradientTemplate}"></Setter>
                                     </DataTrigger>
+                                    <DataTrigger Binding="{Binding Path=textureType, ElementName=dialog}" Value="{x:Static local:TextureType.Bitmap}">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource TextureBitmapTemplate}"></Setter>
+                                    </DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </ContentControl.Style>
@@ -609,6 +644,9 @@
                                     <!--<DataTrigger Binding="{Binding Path=SelectedValue, ElementName=comboBoxTexture}" Value="{x:Static local:TextureType.Gradient}">-->
                                     <DataTrigger Binding="{Binding Path=textureType, ElementName=dialog}" Value="{x:Static local:TextureType.Gradient}">
                                         <Setter Property="ContentTemplate" Value="{StaticResource TextureGradientTemplate}"></Setter>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Path=textureType, ElementName=dialog}" Value="{x:Static local:TextureType.Bitmap}">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource TextureBitmapTemplate}"></Setter>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>

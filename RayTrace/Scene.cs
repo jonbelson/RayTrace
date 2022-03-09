@@ -43,7 +43,10 @@ namespace RayTrace
             Ambient = new Colour(xmlScene.Ambient);
             Background = new Colour(xmlScene.Background);
 
-            Skydome = xmlScene.Skydome.Create();
+            if (xmlScene.Skydome != null)
+            {
+                Skydome = xmlScene.Skydome.Create();
+            }
 
             // or use 'Camera XMLCamera.FromXML()'
 
@@ -190,6 +193,11 @@ namespace RayTrace
             }
         }
 
+        public bool RemoveShape(Shape shape)
+        {
+            return shape != null ? Shapes.Remove(shape) : false;
+        }
+
         public void AddLight(Light light)
         {
             if (!Lights.Contains(light))
@@ -198,12 +206,26 @@ namespace RayTrace
             }
         }
 
+        public bool RemoveLight(Light light)
+        {
+            return light != null ? Lights.Remove(light) : false;
+        }
+
         public void AddMaterial(Material material)
         {
             if (!Materials.Contains(material))
             {
                 Materials.Add(material);
             }
+        }
+
+        public bool RemoveMaterial(Material material)
+        {
+            if (material != null)
+            {
+                return Materials.Remove(material);
+            }
+            return false;
         }
 
         public Material GetDefaultMaterial()

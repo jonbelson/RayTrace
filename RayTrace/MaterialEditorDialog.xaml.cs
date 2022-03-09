@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -36,14 +37,18 @@ namespace RayTrace
         public Texture texture { get; set; } = null;
 
         private TextureType tt;
-        public TextureType textureType { get { return tt; } set { tt = value; Notify(); }  }
+        public TextureType textureType { get => tt; set { tt = value; Notify(); } }
 
         public ObservableCollection<Material> Materials { get; set; } = new();
 
         //public enum TextureType { Solid, Perlin, Squares, Gradient };
-        public ObservableCollection<TextureType> Textures { get; set; } = new() { TextureType.Solid, TextureType.Perlin, TextureType.Squares, TextureType.Gradient };
+        public ObservableCollection<TextureType> Textures { get; set; } = new() { TextureType.Solid, TextureType.Perlin, TextureType.Squares, TextureType.Gradient, TextureType.Bitmap };
 
-        private void Notify([CallerMemberName] String propName="")
+        // Orignal Material passed in for Cancelling purposes.
+        private XMLMaterial _xmlMaterialOrig;
+        private Texture _textureOrig;
+
+        private void Notify([CallerMemberName] String propName = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
         }
@@ -58,15 +63,24 @@ namespace RayTrace
             preview.Source = wb;
         }
 
+        //
+        // Constructor
+        //
         public MaterialEditorDialog(Material mat)
         {
             material = mat;
             texture = material.Texture;
             textureType = material.Texture.Type;
 
+            // Serialse the Material to XML in case the user cancels.
+            _textureOrig = mat.Texture;
+            //mat.Texture = null;
+            _xmlMaterialOrig = mat.ToXML();
+            //mat.Texture = _textureOrig;
+
             InitializeComponent();
 
-            this.DataContext = this;
+            DataContext = this;
 
             Materials.Add(material);
 
@@ -80,12 +94,15 @@ namespace RayTrace
 
         private void okButton_Click(object sender, RoutedEventArgs e)
         {
-            this.DialogResult = true;
+            DialogResult = true;
         }
 
         private void cancelButton_Click(object sender, RoutedEventArgs e)
         {
-            this.DialogResult = false;
+            material.Restore(_xmlMaterialOrig);
+            material.Texture = _textureOrig;
+
+            DialogResult = false;
         }
 
         private void comboBoxMaterialType_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -109,7 +126,7 @@ namespace RayTrace
                 Materials.Clear();
                 Materials.Add(material);
             }
-            
+
             UpdatePreview();
 
             //var currentSelector = contentControl.ContentTemplateSelector;
@@ -137,6 +154,7 @@ namespace RayTrace
                     case TextureType.Squares: material.Texture = new TextureSquares(); break;
                     case TextureType.Perlin: material.Texture = new TextureNoise(); break;
                     case TextureType.Gradient: material.Texture = new TextureGradient(); break;
+                    case TextureType.Bitmap: material.Texture = new TextureBitmap(); break;
                 }
 
                 texture = material.Texture;
@@ -222,14 +240,38 @@ namespace RayTrace
 
         private void comboBoxType_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-/*
-            ComboBox comboBox = (ComboBox)sender;
-            if (comboBox.SelectedItem != null)
-            {
-                CookTorrence.MaterialType materialType = (CookTorrence.MaterialType)comboBox.SelectedItem;
-            }
-*/
+            /*
+                        ComboBox comboBox = (ComboBox)sender;
+                        if (comboBox.SelectedItem != null)
+                        {
+                            CookTorrence.MaterialType materialType = (CookTorrence.MaterialType)comboBox.SelectedItem;
+                        }
+            */
             UpdatePreview();
+        }
+
+        private void TextBox_SourceUpdated(object sender, DataTransferEventArgs e)
+        {
+            UpdatePreview();
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog dialog = new OpenFileDialog() { Filter = "Image Files | *.bmp;*.jpg;*.jpeg;*.png;*.tiff", FileName = "" };
+            if (dialog.ShowDialog() == true)
+            {
+                string fileName = dialog.FileName;
+
+                if (material != null)
+                {
+                    if (material.Texture is TextureBitmap texture)
+                    {
+                        texture.FileName = fileName;
+
+                        UpdatePreview();
+                    }
+                }
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Dynamic;
 using System.Linq;
 using System.Security.RightsManagement;
@@ -21,9 +22,12 @@ namespace RayTrace
         public Node() { }
     }
 
+    //
+    // Create a binary space partition tree for a Model's data.
+    //
     public class TreeMaker
     {
-        public int MaxDepth { get; set; } = 10;
+        public int MaxDepth { get; set; } = 40;
         public int MinTrianglesPerNode { get; set; } = 10;
 
         private Matrix _objectToView = new Matrix();
@@ -170,9 +174,10 @@ namespace RayTrace
             }
 
             // If left and right have > 50% in common, don't split further.
-            var intersect = left.Intersect(right).ToList();
+            List<int> intersect = left.Intersect(right).ToList();
             if (intersect.Count > left.Count/2 && intersect.Count > right.Count/2)
             {
+                //Debug.WriteLine("Left and right share more than half the triangles.");
                 return node;
             }
 
@@ -180,8 +185,18 @@ namespace RayTrace
             if (depth < MaxDepth)
             {
                 // Create child Nodes if there are any triangles.
-                if (left.Count() > 0) node.Left = MakeNode(modelData, left, depth);
-                if (right.Count() > 0) node.Right = MakeNode(modelData, right, depth);
+                if (left.Count() > 0)
+                {
+                    node.Left = MakeNode(modelData, left, depth);
+                }
+                if (right.Count() > 0)
+                {
+                    node.Right = MakeNode(modelData, right, depth);
+                }
+            }
+            else
+            {
+                Debug.WriteLine("Max. depth reached. left: " + left.Count + " right: " + right.Count);
             }
 
             return node;
@@ -191,7 +206,7 @@ namespace RayTrace
         {
             _objectToView = objectToView;
 
-            List<int> triangles = new List<int>();
+            List<int> triangles = new();
 
             // Generate initial indices.
             for (int i = 0; i < modelData.triangles.Length; i++)

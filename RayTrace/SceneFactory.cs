@@ -380,7 +380,7 @@ namespace RayTrace
 
             TextureBitmap objTexture = new(@"Data\pbr-low-poly-fox-character\textures\LP_Firefox_1001_BaseColor.png");
 
-            scene.Camera.Pos = new Point(-3.5f, 4, -5);
+            scene.Camera.Pos = new Point(-5.994f, 4.712f, -9.275f);
             scene.Camera.Target = new Point(0, 3, 1);
 
             /*
@@ -389,14 +389,14 @@ namespace RayTrace
             scene.Camera.Target = new Point(0, 12, -4);
             */
 
-            //            ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\apollo-und-daphne");
-            //            Matrix objectToWorld = Matrix.GetRotationX((float)Math.PI / 2);
-            //            objectToWorld = Matrix.GetRotationY((float)Math.PI / 2) * objectToWorld;
+            //ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\apollo-und-daphne");
+            //Matrix objectToWorld = Matrix.GetRotationX((float)Math.PI / 2);
+            //objectToWorld = Matrix.GetRotationY((float)Math.PI / 2) * objectToWorld;
 
             //ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\day-18-office-rat");
 
 
-            Model model = new Model(scene, new Point(0, 0, 10), modelData);
+            Model model = new Model(scene, new Point(0, 0, 0), modelData);
             //model.ObjectToWorld = objectToWorld;
 
             Material objMaterial = new(MaterialType.Diffuse);

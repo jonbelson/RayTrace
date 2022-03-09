@@ -62,6 +62,8 @@ namespace RayTrace
 
         private OutputWindow outputWindow = new();
 
+        private Preview3D preview3D;
+
         public int NumRenderBlocks { get; set; } = 16;
 
         public enum RenderDirection
@@ -73,7 +75,7 @@ namespace RayTrace
         public RenderDirection[] RenderDirections { get { return renderDirection; } }
 
         private readonly List<Renderer.AntiAliasType> antiAlias = new List<Renderer.AntiAliasType>() { Renderer.AntiAliasType.None, Renderer.AntiAliasType.NoiseGrid, Renderer.AntiAliasType.SuperSampling, Renderer.AntiAliasType.AdaptiveSupersampling };
-        public List<Renderer.AntiAliasType> AntiAliasType { get { return antiAlias; } }
+        public List<Renderer.AntiAliasType> AntiAliasType => antiAlias;
 
         public ObservableCollection<Entity> Entities { get; set; } = new ObservableCollection<Entity>();
         public ObservableCollection<Entity> SelectedEntity { get; set; } = new ObservableCollection<Entity>();
@@ -92,11 +94,11 @@ namespace RayTrace
         public bool PreviewGroundPlane { get; set; } = true;
         public bool PreviewAxis { get; set; } = true;
 
-        // Update the Entity TreeView from teh current Entity list.
+        // Update the Entity TreeView from the current Entity list.
         private void UpdateEntityTreeView()
         {
-            //            var category = Entities.OfType<Shape>().Select(x => new TreeViewEntityModel() { Category = "Shape", Children = x.Select(y => new TreeViewEntityModel() { }).ToArray() });
-            //            var category = Entities.OfType<Shape>().GroupBy(x => x.GetType().Name).Select(y => new TreeViewEntityModel() { Category = y.Key, Children = y.Select(k => new TreeViewEntityModel() { Category=k.Name }).ToArray() });
+            //var category = Entities.OfType<Shape>().Select(x => new TreeViewEntityModel() { Category = "Shape", Children = x.Select(y => new TreeViewEntityModel() { }).ToArray() });
+            //var category = Entities.OfType<Shape>().GroupBy(x => x.GetType().Name).Select(y => new TreeViewEntityModel() { Category = y.Key, Children = y.Select(k => new TreeViewEntityModel() { Category=k.Name }).ToArray() });
 
             //object selectedItem = entityTreeView.SelectedItem;
 
@@ -203,6 +205,8 @@ namespace RayTrace
             UpdateEntities();
 
             UpdateMaterials();
+
+            //UpdateViewport3D();
         }
 
         public MainWindow()
@@ -250,9 +254,9 @@ namespace RayTrace
             //scene = SceneFactory.BRDFScene();
             //scene = SceneFactory.SensorScene();
 
-            scene = SceneFactory.GIDemoScene();
+            //scene = SceneFactory.GIDemoScene();
             //scene = SceneFactory.SphereDemoScene();
-            //scene = SceneFactory.ObjScene();
+            scene = SceneFactory.ObjScene();
 
             //scene = SceneFactory.EmptyScene();
 
@@ -408,8 +412,8 @@ namespace RayTrace
             try
             {
 
-                scene.Camera.UpdateMatrix();    // XXX Needed?
-                scene.CreateCaches();
+                //scene.Camera.UpdateMatrix();    // XXX Needed?
+                //scene.CreateCaches();
 
                 ThreadPool.GetMaxThreads(out int workerThreads, out int completonPortThreads);
 
@@ -447,7 +451,7 @@ namespace RayTrace
                     // Format and display the TimeSpan value.
                     string elapsedTime = String.Format("Time taken: {0:00}:{1:00}:{2:00}.{3:00}", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
                     string numRays = "Number rays: " + renderer.NumRays;
-                    string raysPerSec = "Rays per second: " + 1000.0 * renderer.NumRays / stopWatch.ElapsedMilliseconds;
+                    string raysPerSec = "Rays per second: " + (1000.0 * renderer.NumRays / stopWatch.ElapsedMilliseconds).ToString("0.00");
 
                     MessageBox.Show(outputWindow, String.Join("\n", elapsedTime, numRays, raysPerSec));
 
@@ -499,13 +503,15 @@ namespace RayTrace
             viewport3D.Children.Clear();
 
             // Add Entities to preview.
-            Preview3D preview3D = new(scene);
+            preview3D = new(scene);
 
             preview3D.UseAmbient = (bool)checkBoxAmbient.IsChecked;
             preview3D.Update();
 
             viewport3D.Children.Add(preview3D);
 
+            BoundingBox3D boundingBox = new(viewport3D);
+            viewport3D.Children.Add(boundingBox);
 
             Func<Point3D, Point3D, Point3DCollection> CreateLine = delegate (Point3D p1, Point3D p2) { return new Point3DCollection(new List<Point3D>() { p1, p2 }); };
 
@@ -546,7 +552,7 @@ namespace RayTrace
                     _3DTools.ScreenSpaceLines3D lines = new();
 
                     lines.Points = CreateLine(new Point3D(0, 0, 0), new Point3D(axisSize, 0, 0));
-                    lines.Thickness = 3;
+                    lines.Thickness = 5;
                     lines.Color = Colors.Red;
 
                     viewport3D.Children.Add(lines);
@@ -555,7 +561,7 @@ namespace RayTrace
                     _3DTools.ScreenSpaceLines3D lines = new();
 
                     lines.Points = CreateLine(new Point3D(0, 0, 0), new Point3D(0, axisSize, 0));
-                    lines.Thickness = 3;
+                    lines.Thickness = 5;
                     lines.Color = Colors.Green;
 
                     viewport3D.Children.Add(lines);
@@ -564,7 +570,7 @@ namespace RayTrace
                     _3DTools.ScreenSpaceLines3D lines = new();
 
                     lines.Points = CreateLine(new Point3D(0, 0, 0), new Point3D(0, 0, -axisSize));
-                    lines.Thickness = 3;
+                    lines.Thickness = 5;
                     lines.Color = Colors.Blue;
 
                     viewport3D.Children.Add(lines);
@@ -637,6 +643,8 @@ namespace RayTrace
 
                     UpdateForScene();
 
+                    UpdateViewport3D();
+
                     MessageBox.Show("Scene loaded successfully.");
                 }
             }
@@ -656,37 +664,69 @@ namespace RayTrace
             }
         }
 
+        private void AddMaterial()
+        {
+            // Create a new Material.
+            Material material = new();
+            MaterialEditorDialog dlg = new(material);
+            dlg.Owner = this;
+
+            bool? result = dlg.ShowDialog();
+            if (result == true)
+            {
+                MaterialTileMaker materialTileMaker = new() { Size = 150 };
+
+                MaterialTile newTile = materialTileMaker.MakeTile(material);
+                newTile.WriteableBitmap = BitmapToWriteableBitmap(newTile.Bitmap);
+
+                //materialTile.Name = newTile.Name;
+                //materialTile.Bitmap = newTile.Bitmap;
+                //materialTile.WriteableBitmap = newTile.Bitmap.ToWriteableBitmap();
+
+                scene.AddMaterial(material);
+                MaterialTiles.Add(newTile);
+                materialListBox.Items.Refresh();
+            }
+        }
+
+        private void EditMaterial(MaterialTile materialTile)
+        {
+            MaterialEditorDialog dlg = new(materialTile.Material);
+            dlg.Owner = this;
+            //dlg.Margin = this.documentTextBox.Margin;
+
+            bool? result = dlg.ShowDialog();
+            if (result == true)
+            {
+                MaterialTileMaker materialTileMaker = new() { Size = 150 };
+
+                MaterialTile newTile = materialTileMaker.MakeTile(materialTile.Material);
+
+                materialTile.Name = newTile.Name;
+                materialTile.Bitmap = newTile.Bitmap;
+                materialTile.WriteableBitmap = newTile.Bitmap.ToWriteableBitmap();
+                materialListBox.Items.Refresh();
+
+                UpdateViewport3D();
+            }
+        }
+
         private void materialListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            //MessageBox.Show("Edit material");
-
             MaterialTile materialTile = (MaterialTile)materialListBox.SelectedItem;
 
-            if (materialTile != null)
+            if (materialTile == null)
             {
-                MaterialEditorDialog dlg = new(materialTile.Material);
-                dlg.Owner = this;
-                //dlg.Margin = this.documentTextBox.Margin;
-
-                bool? result = dlg.ShowDialog();
-                if (result == true)
-                {
-                    MaterialTileMaker materialTileMaker = new() { Size = 150 };
-
-                    MaterialTile newTile = materialTileMaker.MakeTile(materialTile.Material);
-
-                    materialTile.Name = newTile.Name;
-                    materialTile.Bitmap = newTile.Bitmap;
-                    materialTile.WriteableBitmap = newTile.Bitmap.ToWriteableBitmap();
-                    materialListBox.Items.Refresh();
-                }
+                AddMaterial();
+            }
+            else
+            {
+                EditMaterial(materialTile);
             }
         }
 
         private void comboBoxMaterialType_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            //ListBox listBox;
-
             ComboBox comboBox = sender as ComboBox;
             if (comboBox != null)
             {
@@ -702,7 +742,6 @@ namespace RayTrace
                     shape.Material = (Material)selectedValue;
                     UpdateViewport3D();
                 }
-
             }
         }
 
@@ -928,13 +967,11 @@ namespace RayTrace
 
                                 ModelImporter importer = new();
 
-                                ModelData modelData = importer.ImportObj(filename /*@"Data\pbr-low-poly-fox-character"*/);
+                                ModelData modelData = importer.ImportObj(filename);
 
-                                Model model = new Model(scene, new Point(0, 0, 10), modelData);
+                                Model model = new Model(scene, new Point(0, 0, 0), modelData);
 
-                                //Material objMaterial = new(MaterialType.Diffuse);
-                                //objMaterial.Texture = new TextureSolid(Palette.White);
-                                //objMaterial.Texture = objTexture;
+                                model.Name = System.IO.Path.GetFileNameWithoutExtension(modelData.fileName);
 
                                 shape = model;
                             }
@@ -1038,6 +1075,7 @@ namespace RayTrace
         {
             scene = new();
             UpdateForScene();
+            UpdateViewport3D();
         }
 
         private void RibbonApplicationMenuItem_Click_1(object sender, RoutedEventArgs e)
@@ -1050,6 +1088,170 @@ namespace RayTrace
             scene.AddLight(pointLight);
 
             UpdateForScene();
+            UpdateViewport3D();
+        }
+
+        private void EntityTreeView_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem menuItem = sender as MenuItem;
+            if (menuItem != null)
+            {
+                TreeViewEntityModel model = entityTreeView.SelectedItem as TreeViewEntityModel;
+                if (model != null)
+                {
+                    Entity entity = model.Instance;
+                    if (entity != null)
+                    {
+                        //TreeViewEntityModel item = ((sender as MenuItem).DataContext) as TreeViewEntityModel;
+                        //item.FindDirectParent(CategoriesList).Add(new CustomTreeItem() { ItemName = "New Item" });
+                        switch (menuItem.Header)
+                        {
+                            case "Delete":
+                                if (entity is Light light)
+                                {
+                                    _ = scene.RemoveLight(light);
+                                }
+                                else if (entity is Shape shape)
+                                {
+                                    _ = scene.RemoveShape(shape);
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+
+                        UpdateEntities();
+                        UpdateEntityTreeView();
+                        UpdateViewport3D();
+                    }
+                }
+            }
+        }
+
+        private static DependencyObject
+            SearchTreeView<T>(DependencyObject source)
+        {
+            while (source != null && source.GetType() != typeof(T))
+            {
+                source = VisualTreeHelper.GetParent(source);
+            }
+            return source;
+        }
+
+        private void entityTreeView_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            TreeViewItem treeViewItem = (TreeViewItem)SearchTreeView<TreeViewItem>((DependencyObject)e.OriginalSource);
+            if (treeViewItem != null)
+            {
+                treeViewItem.IsSelected = true;
+                e.Handled = true;
+            }
+        }
+
+        private void materialContextMenuEdit_Click(object sender, RoutedEventArgs e)
+        {
+            MaterialTile materialTile = (MaterialTile)materialListBox.SelectedItem;
+            if (materialTile != null)
+            {
+                EditMaterial(materialTile);
+            }
+        }
+
+        private void materialContextMenuDelete_Click(object sender, RoutedEventArgs e)
+        {
+            MaterialTile tile = (MaterialTile) materialListBox.SelectedItem;
+            if (tile != null)
+            {
+                scene.RemoveMaterial(tile.Material);
+                _ = MaterialTiles.Remove(tile);
+            }
+        }
+
+        private void entityTreeView_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            TreeView treeView = (TreeView)sender;
+            if (treeView != null)
+            {
+                TreeViewEntityModel entityModel = (TreeViewEntityModel) treeView.SelectedItem;
+                if (entityModel != null)
+                {
+                    ContextMenu contextMenu = treeView.ContextMenu;
+                    if (contextMenu != null)
+                    {
+                        // Only show context menu for Shapes or Lights.
+                        if (entityModel.Instance is not (Shape or Light))
+                        {
+                            e.Handled = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        private void materialListBox_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            ListBox listBox = sender as ListBox;
+            if (listBox != null)
+            {
+                ContextMenu contextMenu = listBox.ContextMenu;
+                ItemCollection itemCollection = contextMenu.Items;
+
+                MaterialTile materialTile = listBox.SelectedItem as MaterialTile;
+                bool itemSelected = materialTile != null;
+
+                for (int i = 0; i < itemCollection.Count; i++)
+                {
+                    MenuItem menuItem = (MenuItem)itemCollection.GetItemAt(i);
+                    string header = menuItem.Header as string;
+                    if (header == "Edit" || header == "Delete")
+                    {
+                        menuItem.IsEnabled = itemSelected;
+                    }
+                }
+            }
+        }
+
+        private void materialContextMenuNew_Click(object sender, RoutedEventArgs e)
+        {
+            AddMaterial();
+        }
+
+        private HitTestResultBehavior ViewportHitResult(HitTestResult hitTestResult)
+        {
+            RayHitTestResult results = hitTestResult as RayHitTestResult;
+
+            if (results != null)
+            {
+                RayMeshGeometry3DHitTestResult meshResults = results as RayMeshGeometry3DHitTestResult;
+
+                if (meshResults != null)
+                {
+                    GeometryModel3D hitGeometry = meshResults.ModelHit as GeometryModel3D;
+
+                    Entity entity = preview3D.GetEntityFromGeometry(hitGeometry);
+                    if (entity != null)
+                    {
+                        SelectedEntity.Clear();
+                        SelectedEntity.Add(entity);
+
+                        UpdateEntityTreeView();
+
+                        return HitTestResultBehavior.Stop;
+                    }
+                }
+            }
+            return HitTestResultBehavior.Continue;
+        }
+
+        private void viewport3D_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            System.Windows.Point mousePos = e.GetPosition(viewport3D);
+            Point3D testPoint3D = new Point3D(mousePos.X, mousePos.Y, 0);
+            Vector3D testDirection3D = new Vector3D(mousePos.X, mousePos.Y, 10);
+            PointHitTestParameters hitTestParams = new(mousePos);
+            RayHitTestParameters rayParams = new RayHitTestParameters(testPoint3D, testDirection3D);
+
+            VisualTreeHelper.HitTest(viewport3D, null, ViewportHitResult, hitTestParams);
         }
     }
 }

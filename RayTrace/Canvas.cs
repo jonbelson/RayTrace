@@ -61,7 +61,6 @@ namespace RayTrace
              Array.Fill<uint>(buffer, Background);
         }
 
-        object locker = new();
         public void Set(int x, int y, uint val)
         {
             if (InRange(x, y))

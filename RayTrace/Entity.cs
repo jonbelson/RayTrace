@@ -51,7 +51,7 @@ namespace RayTrace
 
         protected virtual void AsXMLImpl(XMLEntity xml)
         {
-            xml.UID = xml.UID;
+            xml.UID = UID;
             xml.Enabled = Enabled;
             xml.Name = Name;
         }
