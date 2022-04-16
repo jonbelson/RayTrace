@@ -77,41 +77,57 @@ namespace RayTrace
                 for (int i = 1; i < tokens.Length; i++)
                 {
                     string[] numbers = tokens[i].Split('/');
-                    if (numbers.Length == 3)
+                    if (numbers.Length == 2)
                     {
-                        // v/vt/vn format.
-                        int i1, i2, i3;
-                        if (Int32.TryParse(numbers[0], out i1))
+                        if (Int32.TryParse(numbers[0], out int v))
                         {
-                            i2 = 0;
-                            if (!String.IsNullOrEmpty(numbers[1]) && Int32.TryParse(numbers[1], out i2))
+                            if (Int32.TryParse(numbers[1], out int vn))
+                            {
+                                FaceVertex faceVertex = new FaceVertex();
+                                faceVertex.vertex = v;
+                                faceVertex.texture = 0;
+                                faceVertex.normal = vn;
+                                face.vertices.Add(faceVertex);
+
+                                Debug.Assert(v >= 0 && vn >= 0);
+                            }
+                        }
+                    }
+                    else if (numbers.Length == 3)
+                    {
+                        // 'v/vt/vn' format.
+                        int vt;
+                        if (Int32.TryParse(numbers[0], out int v))
+                        {
+                            vt = 0;
+                            if (!String.IsNullOrEmpty(numbers[1]) && Int32.TryParse(numbers[1], out vt))
                             {
                             }
 
-                            if (Int32.TryParse(numbers[2], out i3))
+                            if (Int32.TryParse(numbers[2], out int vn))
                             {
                                 FaceVertex faceVertex = new FaceVertex();
-                                faceVertex.vertex = i1;
-                                faceVertex.texture = i2;
-                                faceVertex.normal = i3;
+                                faceVertex.vertex = v;
+                                faceVertex.texture = vt;
+                                faceVertex.normal = vn;
                                 face.vertices.Add(faceVertex);
 
-                                Debug.Assert(i1 >= 0 && i2 >= 0 && i3 >= 0);
+                                Debug.Assert(v >= 0 && vt >= 0 && vn >= 0);
                             }
                         }
                     }
                     else if (numbers.Length == 1)
                     {
-                        int i1;
-                        if (Int32.TryParse(numbers[0], out i1))
+                        // 'v' format
+                        if (Int32.TryParse(numbers[0], out int v))
                         {
                             FaceVertex faceVertex = new FaceVertex();
-                            faceVertex.vertex = i1;
+                            faceVertex.vertex = v;
                             faceVertex.texture = 0;
                             faceVertex.normal = -1;
                             face.vertices.Add(faceVertex);
 
-                            Debug.Assert(i1 >= 0);
+                            Debug.Assert(v >= 0);
                         }
                     }
                 }
@@ -164,6 +180,9 @@ namespace RayTrace
                             SPoint p = new SPoint(f1, f2, -f3);
                             points.Add(p);
                         }
+                        else
+                            Debug.WriteLine($"v parse failed with {tokens}");
+
                     }
                     else if (tokens[0] == "vn")
                     {
@@ -173,6 +192,8 @@ namespace RayTrace
                             v = v.Normalise();
                             normals.Add(v);
                         }
+                        else
+                            Debug.WriteLine($"vn parse failed with {tokens}");
                     }
                     else if (tokens[0] == "vt")
                     {
@@ -191,6 +212,8 @@ namespace RayTrace
                             t.w = f3;
                             texels.Add(t);
                         }
+                        else
+                            Debug.WriteLine($"vt parse failed with {tokens}");
                     }
                     else if (tokens[0] == "f")
                     {
@@ -199,10 +222,12 @@ namespace RayTrace
                         {
                             faces.Add(face);
                         }
+                        else
+                            Debug.WriteLine($"f parse failed with {tokens}");
                     }
                     else
                     {
-                        Console.WriteLine("Ignored line: " + line);
+                        Debug.WriteLine("Ignored line: " + line);
                     }
 
                 }
@@ -235,12 +260,12 @@ namespace RayTrace
                         modelData.maxZ = Math.Max(p.Z, modelData.maxZ);
                     }
 
-                    Console.WriteLine($"X : [ {modelData.minX} {modelData.maxX} ]");
-                    Console.WriteLine($"Y : [ {modelData.minY} {modelData.maxY} ]");
-                    Console.WriteLine($"Z : [ {modelData.minZ} {modelData.maxZ} ]");
+                    Debug.WriteLine($"X : [ {modelData.minX} {modelData.maxX} ]");
+                    Debug.WriteLine($"Y : [ {modelData.minY} {modelData.maxY} ]");
+                    Debug.WriteLine($"Z : [ {modelData.minZ} {modelData.maxZ} ]");
 
-                    Console.WriteLine($"Number points : {points.Count}");
-                    Console.WriteLine($"Number faces : {faces.Count}");
+                    Debug.WriteLine($"Number points : {points.Count}");
+                    Debug.WriteLine($"Number faces : {faces.Count}");
 
                     modelData.HasVertexNormals = normals.Count > 1;
 
@@ -274,8 +299,9 @@ namespace RayTrace
 
                             triangles.Add(triangle);
                         }
-                        else if (face.vertices.Count == 4)
+                        else if (face.vertices.Count > 3)
                         {
+#if false
                             // Turn quad into two triangles, 013 and 123
                             ModelData.Triangle triangle = new ModelData.Triangle();
                             triangle.v0 = face.vertices[0].vertex;
@@ -318,6 +344,43 @@ namespace RayTrace
                             triangle.t2 = face.vertices[3].texture;
 
                             triangles.Add(triangle);
+                        }
+                        else
+                        {
+#endif
+                            //Debug.WriteLine($"Skipping face with {face.vertices.Count} vertices");
+
+                            int numTris = face.vertices.Count - 2;
+                            //int v1 = 0; // Anchor point.
+                            int v2 = 1; // Second point.
+                            int v3 = 2;
+                            for (int v=0; v<numTris; v++)
+                            {
+                                ModelData.Triangle triangle = new ModelData.Triangle();
+                                triangle.v0 = face.vertices[0].vertex;
+                                triangle.v1 = face.vertices[v2].vertex;
+                                triangle.v2 = face.vertices[v3].vertex;
+
+                                triangle.n0 = face.vertices[0].normal;
+                                triangle.n1 = face.vertices[v2].normal;
+                                triangle.n2 = face.vertices[v3].normal;
+
+                                Debug.Assert(triangle.n != 1);
+
+                                SVector n = GetNormal(points, triangle);
+                                normals.Add(n);
+                                triangle.n = normals.Count() - 1;
+
+                                triangle.t0 = face.vertices[0].texture;
+                                triangle.t1 = face.vertices[v2].texture;
+                                triangle.t2 = face.vertices[v3].texture;
+
+                                triangles.Add(triangle);
+
+                                v2++;
+                                v3 = (v3 + 1) % face.vertices.Count;
+                            }
+
                         }
                     }
                     modelData.triangles = triangles.ToArray();

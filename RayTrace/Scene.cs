@@ -271,29 +271,30 @@ namespace RayTrace
         public string GetUniqueShapeName(Type type)
         {
             return GetUniqueName<Shape>(Shapes, type);
-/*
-            string baseName = type.Name;
+            /*
+                        string baseName = type.Name;
 
-            for (int suffix=1; ; suffix++)
-            {
-                bool found = false;
-                string newName = baseName + (suffix == 1 ? "" : suffix);
+                        for (int suffix=1; ; suffix++)
+                        {
+                            bool found = false;
+                            string newName = baseName + (suffix == 1 ? "" : suffix);
 
-                foreach (Shape shape in Shapes)
-                {
-                    if (shape.GetType() == type && shape.Name == newName)
-                    {
-                        found = true;
-                        break;
-                    }
-                }
+                            foreach (Shape shape in Shapes)
+                            {
+                                if (shape.GetType() == type && shape.Name == newName)
+                                {
+                                    found = true;
+                                    break;
+                                }
+                            }
 
-                if (!found)
-                {
-                    return newName;
-                }
-            }
-  */      }
+                            if (!found)
+                            {
+                                return newName;
+                            }
+                        }
+              */
+        }
 
         //
         // Return a unique name for a Light based on its type name.
@@ -301,6 +302,16 @@ namespace RayTrace
         public string GetUniqueLightName(Type type)
         {
             return GetUniqueName(Lights, type);
+        }
+
+        public Colour GetSkydomeColour(Camera camera, SVector ray)
+        {
+            if (Skydome != null && Skydome.Enabled)
+            {
+                return Skydome.GetColour(camera, ray);
+            }
+
+            return Palette.Black;
         }
 
         public virtual XMLScene ToXML()

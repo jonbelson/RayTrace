@@ -444,8 +444,8 @@ namespace RayTrace
             else
             {
                 // Reflection didn't hit anything, so just use the Scene backgorund colour.
-//                c = scene.Background;
-                c = scene.Skydome.GetColour(camera, R);
+                //                c = scene.Background;
+                c = scene.GetSkydomeColour(camera, R);
             }
 
             return c;
@@ -473,7 +473,7 @@ namespace RayTrace
             {
                 // Refraction didn't hit anything, so just use the Scene backgorund colour.
                 //c = scene.Background;
-                c = scene.Skydome.GetColour(camera, result.Item2);
+                c = scene.GetSkydomeColour(camera, result.Item2);
             }
 
             return c;
@@ -528,7 +528,7 @@ namespace RayTrace
                             }
                             else
                             {
-                                Colour incoming = scene.Skydome.GetColour(camera, ray2.Direction);
+                                Colour incoming = scene.GetSkydomeColour(camera, ray2.Direction);
 
                                 L += hr.shape.Material.GetBrdfColour(hr, hr.EntryNormal, incoming);
                             }
@@ -568,7 +568,7 @@ namespace RayTrace
                                 }
                                 else
                                 {
-                                    Colour incoming = scene.Skydome.GetColour(camera, ray2.Direction);
+                                    Colour incoming = scene.GetSkydomeColour(camera, ray2.Direction);
                                     //HitResult hr3 = new HitResult();
                                     //hr3.EntryNormal = hr.EntryNormal;   // Original point we are sampling at.
                                     //hr3.Ray = scattered;
@@ -1014,7 +1014,7 @@ namespace RayTrace
                 }
                 else
                 {
-                    colour = scene.Skydome.GetColour(camera, dir);
+                    colour = scene.GetSkydomeColour(camera, dir);
 
                     NumThreadRays++;  // Still counts as a ray even though it didn't hit anything.
                 }

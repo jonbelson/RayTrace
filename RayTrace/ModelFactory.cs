@@ -95,7 +95,6 @@ namespace RayTrace
             return new Model(scene, new Point(0, 0, 0), modelData);
         }
 
-
         static public Model Cube(Scene scene)
         {
             ModelData modelData = new ModelData();

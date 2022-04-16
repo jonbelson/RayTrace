@@ -215,11 +215,35 @@ namespace RayTrace
             return mesh;
         }
 
+        private struct Vertex2D
+        {
+            public float x;
+            public float y;
+        }
+
+        private static void MakeCircle(Vertex2D[] vertices, double radius)
+        {
+            int size = vertices.Length;
+            for (int sample = 0; sample < size; sample++)
+            {
+                // Angles around this slice.
+                double sliceAngle = Math.PI * 2.0 * sample / size;
+
+                double s = Math.Sin(sliceAngle);
+                double c = Math.Cos(sliceAngle);
+
+                vertices[sample].x = (float) (s * radius);
+                vertices[sample].y = (float)(c * radius);
+            }
+        }
+
         public static MeshGeometry3D MakeSphere(int slices = 16)
         {
             MeshGeometry3D mesh = new MeshGeometry3D();
 
             int samplesPerSlice = 2 * (slices - 1) + 2;
+
+            Vertex2D[] vertices = new Vertex2D[samplesPerSlice];
 
             // First point
             mesh.Positions.Add(new Point3D(0.0, 1.0, 0.0));
@@ -239,16 +263,19 @@ namespace RayTrace
                 // Index of first point in this slice.
                 int sliceStartIndex = pointIndex;
 
+                MakeCircle(vertices, sliceScale);
 
                 for (int sample = 0; sample < samplesPerSlice; sample++)
                 {
                     // Angles around this slice.
                     double sliceAngle = Math.PI * 2.0 * sample / samplesPerSlice;
 
-                    double s = Math.Sin(sliceAngle);
-                    double c = Math.Cos(sliceAngle);
+                    //double s = Math.Sin(sliceAngle);
+                    //double c = Math.Cos(sliceAngle);
 
-                    mesh.Positions.Add(new Point3D(s * sliceScale, y, c * sliceScale));
+                    //mesh.Positions.Add(new Point3D(s * sliceScale, y, c * sliceScale));
+
+                    mesh.Positions.Add(new Point3D(vertices[sample].x, y, vertices[sample].y));
 
                     // Start making triangles after the first slice
                     if (sample > 0)

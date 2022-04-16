@@ -302,6 +302,8 @@ namespace RayTrace
                 TreeMaker treeMaker = new TreeMaker();
                 _root = treeMaker.MakeTree(_modelData, ObjectToView);
 
+                string graphviz = CreateGraphviz();
+
                 // Populate the fat triangle list.
                 fatTriangles = new FatTriangle[_modelData.triangles.Length];
 
@@ -793,6 +795,56 @@ namespace RayTrace
             XMLModel xml = new XMLModel();
             AsXMLImpl(xml);
             return xml;
+        }
+
+        private int nodeNumber = 0;
+
+        private string CreateGraphviz()
+        {
+            nodeNumber = 0;
+
+            StringBuilder sb = new();
+            sb.Append($"digraph Model {{\n");
+
+            CreateGraphvizRecurse(sb, _root);
+
+            //graphviz += "}";
+            sb.Append("\n}");
+
+            return sb.ToString(); ;
+        }
+        
+        private string CreateGraphvizRecurse(StringBuilder sb, Node node)
+        {
+            int thisNode = nodeNumber;
+            string nameName = $"n{thisNode} [ label=\"{node.Triangles.Count}\" ]";
+
+            //            s += $" [{nodeNumber}]{node.Triangles.Count} -> {nodeNumber + 1}   [ Label = \"Left\" ];";
+            //            s += $" {nodeNumber} -> {nodeNumber + 1}   [ Label = \"Left ({node.Triangles.Count})\" ];";
+            //s += $" {nameName};\n";
+            sb.Append($" {nameName};\n");
+
+            if (node.Left != null)
+            {
+                nodeNumber++;
+                int leftNode = nodeNumber;
+//                s += $" {thisNode} -> {nodeNumber};\n";
+//                s += CreateGraphvizRecurse(s, node.Left);
+                CreateGraphvizRecurse(sb, node.Left);
+                sb.Append($" n{thisNode} -> n{leftNode};\n");
+            }
+
+            if (node.Right != null)
+            {
+                nodeNumber++;
+                int rightNode = nodeNumber;
+//                s += $" {thisNode} -> {nodeNumber};\n";
+//                s += CreateGraphvizRecurse(s, node.Right);
+                CreateGraphvizRecurse(sb, node.Right);
+                sb.Append($" n{thisNode} -> n{rightNode};\n");
+            }
+
+            return "";
         }
     }
 }

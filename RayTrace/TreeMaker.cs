@@ -122,14 +122,26 @@ namespace RayTrace
             else if (side == Side.Overlap) { left.Add(i); right.Add(i); }
         }
 
+        private static bool CheckEquality<T>(List<T> list1, List<T> list2)
+        {
+            if (list1.Count != list2.Count) return false;
+
+            return !list1.Except(list2).Any();
+        }
+
         // Recursively build tree by dividing the bounding box along the longest axis and splitting the triangles between the two halves.
-        private Node MakeNode(ModelData modelData, List<int> triangles, int depth)
+        private Node MakeNode(ModelData modelData, List<int> triangles, int depth, Node parentNode = null)
         {
             Node node = new Node();
 
             BoundingBox bb = GetBoundingBox(modelData, triangles);
             node.Box = bb;
             node.Triangles = triangles;
+
+            //if (triangles.Count == 178)
+            //{
+            //    int i = 0;
+            //}
 
             // Don't bother subdividing further if there are too few triangles.
             if (triangles.Count < MinTrianglesPerNode)
@@ -140,13 +152,96 @@ namespace RayTrace
             List<int> left = new List<int>();
             List<int> right = new List<int>();
 
-            // Use the centre point of the BB as a threshold for subdividing. Would be better to
-            //  use the centre of the triangle points, but this will do for now.
-            //Point centre = bb.GetCentre();
+            // Find the centroid to use as a subdivision point.
             Point centre = GetCentroid(modelData, triangles);
 
-            var longestAxis = bb.GetLongestAxis();
-            switch (longestAxis)
+            // Find which split axis (X, Y or Z) gives the best split of triangles.
+
+            int leftX = 0;
+            int rightX = 0;
+            int overlapX = 0;
+            int leftY = 0;
+            int rightY = 0;
+            int overlapY = 0;
+            int leftZ = 0;
+            int rightZ = 0;
+            int overlapZ = 0;
+
+            foreach (int i in triangles)
+            {
+                switch (CheckSideX(modelData, i, centre.X))
+                {
+                    case Side.LessThan: leftX++; break;
+                    case Side.GreaterThan: rightX++; break;
+                    case Side.Overlap: overlapX++; break;
+                    default: break;
+                }
+                switch (CheckSideY(modelData, i, centre.Y))
+                {
+                    case Side.LessThan: leftY++; break;
+                    case Side.GreaterThan: rightY++; break;
+                    case Side.Overlap: overlapY++; break;
+                    default: break;
+                }
+                switch (CheckSideZ(modelData, i, centre.Z))
+                {
+                    case Side.LessThan: leftZ++; break;
+                    case Side.GreaterThan: rightZ++; break;
+                    case Side.Overlap: overlapZ++; break;
+                    default: break;
+                }
+            }
+
+            float ratioX = (float)leftX / rightX;
+            float ratioY = (float)leftY / rightY;
+            float ratioZ = (float)leftZ / rightZ;
+
+            float ratioOverlapX = (float)overlapX / triangles.Count;
+            float ratioOverlapY = (float)overlapY / triangles.Count;
+            float ratioOverlapZ = (float)overlapZ / triangles.Count;
+
+            Func<float, float> DistFromOne = delegate (float f) { return Math.Abs(1f - f); };
+
+            float factorX = DistFromOne(ratioX) + 2*ratioOverlapX;
+            float factorY = DistFromOne(ratioY) + 2*ratioOverlapY;
+            float factorZ = DistFromOne(ratioZ) + 2*ratioOverlapZ;
+
+            BoundingBox.Axis BestAxis;
+
+            if (factorX < factorY)
+            {
+                if (factorX < factorZ)
+                    BestAxis = BoundingBox.Axis.X;
+                else
+                    BestAxis = BoundingBox.Axis.Z;
+            }
+            else
+            {
+                if (factorY < factorZ)
+                    BestAxis = BoundingBox.Axis.Y;
+                else
+                    BestAxis = BoundingBox.Axis.Z;
+            }
+
+
+            /*
+                        if (DistFromOne(ratioX) < DistFromOne(ratioY))
+                        {
+                            if (DistFromOne(ratioX) < DistFromOne(ratioZ))
+                                BestAxis = BoundingBox.Axis.X;
+                            else
+                                BestAxis = BoundingBox.Axis.Z;
+                        }
+                        else
+                        {
+                            if (DistFromOne(ratioY) < DistFromOne(ratioZ))
+                                BestAxis = BoundingBox.Axis.Y;
+                            else
+                                BestAxis = BoundingBox.Axis.Z;
+                        }
+            */
+            //var longestAxis = bb.GetLongestAxis();
+            switch (BestAxis /*longestAxis*/)
             {
                 case BoundingBox.Axis.X:
                     foreach (int i in triangles)
@@ -173,9 +268,21 @@ namespace RayTrace
                     break;
             }
 
+            if (parentNode != null)
+            {
+                if (CheckEquality(parentNode.Triangles, left))
+                {
+                    return node;
+                }
+                if (CheckEquality(parentNode.Triangles, right))
+                {
+                    return node;
+                }
+            }
+
             // If left and right have > 50% in common, don't split further.
             List<int> intersect = left.Intersect(right).ToList();
-            if (intersect.Count > left.Count/2 && intersect.Count > right.Count/2)
+            if (intersect.Count > (int)(0.75f*left.Count) && intersect.Count > (int)(0.75f*right.Count))
             {
                 //Debug.WriteLine("Left and right share more than half the triangles.");
                 return node;
@@ -187,11 +294,27 @@ namespace RayTrace
                 // Create child Nodes if there are any triangles.
                 if (left.Count() > 0)
                 {
-                    node.Left = MakeNode(modelData, left, depth);
+                    node.Left = MakeNode(modelData, left, depth, node);
                 }
                 if (right.Count() > 0)
                 {
-                    node.Right = MakeNode(modelData, right, depth);
+                    node.Right = MakeNode(modelData, right, depth, node);
+                }
+
+                // Check that the child Nodes children aren't just repeating our children.
+                if (node.Left != null)
+                {
+                    if (CheckEquality(node.Left.Triangles, node.Triangles))
+                    {
+                        node.Left = null;
+                    }
+                }
+                if (node.Right != null)
+                {
+                    if (CheckEquality(node.Right.Triangles, node.Triangles))
+                    {
+                        node.Right = null;
+                    }
                 }
             }
             else

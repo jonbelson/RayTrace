@@ -273,6 +273,7 @@ namespace RayTrace
 
 
             UpdateViewport3D();
+
             /*
                         // Subscribe to PropertyChanged events for each Entity.
                         foreach (Entity entity in scene.Shapes)
@@ -307,7 +308,7 @@ namespace RayTrace
 
         private void Entity_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            UpdateViewport3D(e.PropertyName);
+            UpdateViewport3D(sender, e.PropertyName);
         }
 
         private async Task<bool> Render()
@@ -486,17 +487,17 @@ namespace RayTrace
             return true;
         }
 
-        private void UpdateViewport3D(string propName = "")
+        private void UpdateViewport3D(object sender = null, string propName = "")
         {
             // Set up camera.
             Point cameraPos = scene.Camera.Pos;
             Vector cameraView = scene.Camera.GetViewVector().Normalise();
             viewport3D.Camera = new PerspectiveCamera(new Point3D(cameraPos.X, cameraPos.Y, -cameraPos.Z), new Vector3D(cameraView.I, cameraView.J, -cameraView.K), new Vector3D(0.0, 1.0, 0.0), scene.Camera.FovH /* /2 */);
 
-            if (propName == "Pos" || propName == "Target")
+            if (sender is Camera && (propName == "Pos" || propName == "Target"))
             {
                 //viewport3D.Visibility = Visibility.Visible;
-                //return;
+                return;
             }
 
             viewport3D.Visibility = Visibility.Hidden;
