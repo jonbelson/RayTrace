@@ -383,6 +383,7 @@ namespace RayTrace
             scene.Camera.Pos = new Point(-5.994f, 4.712f, -9.275f);
             scene.Camera.Target = new Point(0, 3, 1);
 
+
             /*
             ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\dinosaur");
             scene.Camera.Pos = new Point(-30, 14, -8);
@@ -396,8 +397,14 @@ namespace RayTrace
             //ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\day-18-office-rat");
 
 
-            Model model = new Model(scene, new Point(0, 0, 0), modelData);
+            Model model = new Model(scene, new Point(0, 0, 0), modelData, true);
             //model.ObjectToWorld = objectToWorld;
+
+            //BoundingBox bb = modelData.GetBoundingBox();
+
+            //model.Pos.X = -bb.GetCentreX();
+            //model.Pos.Y = -bb.MinY;
+            //model.Pos.Z = -bb.GetCentreZ();
 
             Material objMaterial = new(MaterialType.Diffuse);
             //objMaterial.Texture = new TextureSolid(Palette.White);

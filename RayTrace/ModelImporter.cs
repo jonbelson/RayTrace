@@ -11,7 +11,7 @@ namespace RayTrace
 {
     public class ModelImporter
     {
-        private SVector GetNormal(List<SPoint> points, ModelData.Triangle triangle)
+        private static SVector GetNormal(List<SPoint> points, ModelData.Triangle triangle)
         {
             SVector v1 = points[triangle.v1] - points[triangle.v0];
             SVector v2 = points[triangle.v2] - points[triangle.v0];
@@ -19,7 +19,7 @@ namespace RayTrace
             return normal.Normalise();
         }
 
-        private int Parse(string[] tokens, out float f1, out float f2)
+        private static int Parse(string[] tokens, out float f1, out float f2)
         {
             f1 = f2 = 0.0f;
 
@@ -35,7 +35,7 @@ namespace RayTrace
             return count;
         }
 
-        private int Parse(string[] tokens, out float f1, out float f2, out float f3)
+        private static int Parse(string[] tokens, out float f1, out float f2, out float f3)
         {
             f1 = f2 = f3 = 0.0f;
 
@@ -67,7 +67,75 @@ namespace RayTrace
             public List<FaceVertex> vertices = new List<FaceVertex>();
         }
 
-        private Face ParseFace(string[] tokens)
+        public class Group
+        {
+            public string name;
+            public List<Face> faces = new();
+        }
+
+        public class MaterialRgb
+        {
+            public float red;
+            public float green;
+            public float blue;
+        }
+
+        /*
+            -blendu on | off
+            -blendv on | off
+            -cc on | off
+            -clamp on | off
+            -imfchan r | g | b | m | l | z
+            -mm base gain
+            -o u v w
+            -s u v w
+            -t u v w
+            -texres value
+        */
+        public class TextureOptions
+        {
+
+        }
+
+        public class Material
+        {
+            public string Name;
+
+            public MaterialRgb Ambient; // Ka;    // Ambient reflectivity.
+            public MaterialRgb Diffuse; // Kd;    // Diffuse reflectivity.
+            public MaterialRgb Specular;    // Ks;    // Specular reflectivity.
+            public MaterialRgb Transmission;    // Tf;    // Transmission filter (i.e. which colours can pass through).
+
+            public int Illum;    // Illumination model to use.
+
+            public float dissolve = 1.0f;  // 'Dissolve'. 1.0 is opaque, 0.0 is transparent.
+
+            public float Shininess; // Ns;    // Specular exponent.
+            public float Sharpness; // Sharpness of reflections from reflection map.
+            public float Ior;   // Ni;    // Index of refraction. Optical density of surface.
+
+            public string AmbientFilename;
+            public string DiffuseFilename;
+
+            // Texture map statements.
+            public TextureOptions map_Ka;
+            public TextureOptions map_Kd;
+            public TextureOptions map_Ks;
+            public TextureOptions map_Ns;
+
+            // Reflection map statements.
+        }
+
+        public class MaterialLib
+        {
+            //public string Name;
+            //            public Mtl[] Materials;
+            public List<Material> Materials = new();
+        }
+
+        public MaterialLib MaterialLibrary { get; } = new();
+
+        private static Face ParseFace(string[] tokens)
         {
             Face face = null;
             if (tokens.Length > 0)
@@ -135,6 +203,158 @@ namespace RayTrace
             return face;
         }
 
+
+        private static void AddTriangles(ModelData.SubGroup group, List<Face> faces, List<ModelData.Triangle> triangles, List<SPoint> points)
+        {
+            foreach (Face face in faces)
+            {
+                if (face.vertices.Count == 3)
+                {
+                    // Triangle, so just copy across
+                    ModelData.Triangle triangle = new ModelData.Triangle();
+                    triangle.v0 = face.vertices[0].vertex;
+                    triangle.v1 = face.vertices[1].vertex;
+                    triangle.v2 = face.vertices[2].vertex;
+
+                    triangle.n0 = face.vertices[0].normal;
+                    triangle.n1 = face.vertices[1].normal;
+                    triangle.n2 = face.vertices[2].normal;
+
+                    //Debug.Assert(triangle.n != 1);
+
+                    //SVector n = GetNormal(points, triangle);
+                    //faceNormals.Add(n);
+                    //triangle.n = normals.Count() - 1;
+
+                    triangle.t0 = face.vertices[0].texture;
+                    triangle.t1 = face.vertices[1].texture;
+                    triangle.t2 = face.vertices[2].texture;
+
+                    triangles.Add(triangle);
+
+                    group.Triangles.Add(triangles.Count - 1);
+                }
+                else if (face.vertices.Count > 3)
+                {
+                    //Debug.WriteLine($"Skipping face with {face.vertices.Count} vertices");
+
+                    int numTris = face.vertices.Count - 2;
+                    //int v1 = 0; // Anchor point.
+                    int v2 = 1; // Second point.
+                    int v3 = 2;
+                    for (int v = 0; v < numTris; v++)
+                    {
+                        ModelData.Triangle triangle = new ModelData.Triangle();
+                        triangle.v0 = face.vertices[0].vertex;
+                        triangle.v1 = face.vertices[v2].vertex;
+                        triangle.v2 = face.vertices[v3].vertex;
+
+                        triangle.n0 = face.vertices[0].normal;
+                        triangle.n1 = face.vertices[v2].normal;
+                        triangle.n2 = face.vertices[v3].normal;
+
+                        Debug.Assert(triangle.n != 1);
+
+                        //SVector n = GetNormal(points, triangle);
+                        //normals.Add(n);
+                        //triangle.n = normals.Count() - 1;
+
+                        triangle.t0 = face.vertices[0].texture;
+                        triangle.t1 = face.vertices[v2].texture;
+                        triangle.t2 = face.vertices[v3].texture;
+
+                        triangles.Add(triangle);
+                        group.Triangles.Add(triangles.Count - 1);
+
+                        v2++;
+                        v3 = (v3 + 1) % face.vertices.Count;
+                    }
+                }
+            }
+        }
+
+        public bool ParseMtlLib(string fileName)
+        {
+            try
+            {
+                StreamReader fileStream = new(fileName);
+
+                Material material = null;// new();
+
+                //Mtl mtl = new();
+
+                char[] delim = new char[] { ' ' };
+                string line;
+                while ((line = fileStream.ReadLine()) != null)
+                {
+                    if (line.Length == 0) continue;
+                    if (line[0] == '#') continue;
+
+                    string[] tokens = line.Split(delim, StringSplitOptions.RemoveEmptyEntries);
+                    if (tokens.Length == 0) continue;
+
+                    if (tokens[0] == "newmtl")
+                    {
+                        if (material != null)
+                        {
+                            MaterialLibrary.Materials.Add(material);
+                        }
+
+                        if (tokens.Length > 1)
+                        {
+                            material = new();
+                            material.Name = tokens[1];
+                        }
+                    }
+                    else if (tokens[0] == "Ka")
+                    {
+                        if (tokens.Length == 4 && Parse(tokens, out float r, out float g, out float b) == 3)
+                        {
+                            material.Ambient = new() { red = r, green = g, blue = b };
+                        }
+                    }
+                    else if (tokens[0] == "Ks")
+                    {
+                        if (tokens.Length == 4 && Parse(tokens, out float r, out float g, out float b) == 3)
+                        {
+                            material.Specular = new() { red = r, green = g, blue = b };
+                        }
+                    }
+                    else if (tokens[0] == "map_Kd")
+                    {
+                        int idx = 1;
+                        while (idx < tokens.Length)
+                        {
+                            if (tokens[idx].Length > 0)
+                            {
+                                if (tokens[idx][0] == '-')
+                                {
+                                    // XXX Process options
+                                }
+                                else
+                                {
+                                    material.AmbientFilename = string.Join(" ", tokens, idx, tokens.Length - idx);
+                                    idx = tokens.Length;
+                                }
+                            }
+                            idx++;
+                        }
+                    }
+                }
+
+                if (material != null)
+                {
+                    MaterialLibrary.Materials.Add(material);
+                }
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         //
         // Attempt to load a .OBJ file.
         // XXX Rewrite using Span<> for performance.
@@ -142,21 +362,32 @@ namespace RayTrace
         {
             ModelData modelData = null;
 
+            string fileName = Path.GetFileName(path);
+            string directoryName = Path.GetDirectoryName(path);
+
             List<SPoint> points = new List<SPoint>();
             List<SVector> normals = new List<SVector>();
             List<ModelData.Texel> texels = new List<ModelData.Texel>();
             List<Face> faces = new List<Face>();
+            List<ModelData.Triangle> triangles = new List<ModelData.Triangle>();
+
+            List<ModelData.SubGroup> groups = new();
+
+            ModelData.SubGroup group = new() { Name = "default" };
+            //groups.Add(group);
 
             // Indexes start at '1' so add a dummy entry to each list.
             points.Add(new SPoint(0.0f, 0.0f, 0.0f));
             normals.Add(new SVector(0.0f, 0.0f, 0.0f));
+
+            texels.Add(new ModelData.Texel());
 
             try
             {
                 StreamReader file = new StreamReader(path);
 
                 modelData = new ModelData();
-                modelData.fileName = path;
+                modelData.fileName = fileName;
 
                 char[] delim = new char[] { ' ' };
                 //double d1, d2, d3;
@@ -225,16 +456,53 @@ namespace RayTrace
                         else
                             Debug.WriteLine($"f parse failed with {tokens}");
                     }
+                    else if (tokens[0] is "g" or "o")
+                    {
+                        // Add any faces in the current group.
+//                        if (group.name != "Lashes" && group.name != "Nose" && group.name != "Eyes" && group.name != "Brow" && faces.Any())
+                        if (faces.Any())
+                        {
+                            AddTriangles(group, faces, triangles, points);
+                            groups.Add(group);
+                        }
+                        faces.Clear();
+
+                        string name = "Default";
+
+                        if (tokens.Length > 0)
+                        {
+                            name = string.Join("_", tokens, 1, tokens.Length - 1);
+                        }
+
+                        group = new() { Name = name };
+                    }
+                    else if (tokens[0] == "mtllib")
+                    {
+                        for (int i=1; i<tokens.Length; i++)
+                        {
+                            string materialPath = Path.Join(directoryName, tokens[i]);
+                            if (ParseMtlLib(materialPath))
+                            {
+                                Debug.WriteLine("Failed to parse material file: " + tokens[i]);
+                            }
+                        }
+                    }
                     else
                     {
                         Debug.WriteLine("Ignored line: " + line);
                     }
 
                 }
+
+                if (faces.Any())
+                {
+                    AddTriangles(group, faces, triangles, points);
+                    groups.Add(group);
+                }
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.Message);
+                _ = MessageBox.Show(e.Message);
             }
 
             if (modelData != null)
@@ -269,131 +537,45 @@ namespace RayTrace
 
                     modelData.HasVertexNormals = normals.Count > 1;
 
-                    // Try to figure out if the normals need inverting.
-                    //if ()
+                    // XXX Try to figure out if the normals need inverting.
 
-                    List<ModelData.Triangle> triangles = new List<ModelData.Triangle>();
-                    foreach (Face face in faces)
-                    {
-                        if (face.vertices.Count == 3)
-                        {
-                            // Triangle, so just copy across
-                            ModelData.Triangle triangle = new ModelData.Triangle();
-                            triangle.v0 = face.vertices[0].vertex;
-                            triangle.v1 = face.vertices[1].vertex;
-                            triangle.v2 = face.vertices[2].vertex;
-
-                            triangle.n0 = face.vertices[0].normal;
-                            triangle.n1 = face.vertices[1].normal;
-                            triangle.n2 = face.vertices[2].normal;
-
-                            //Debug.Assert(triangle.n != 1);
-
-                            SVector n = GetNormal(points, triangle);
-                            normals.Add(n);
-                            triangle.n = normals.Count() - 1;
-
-                            triangle.t0 = face.vertices[0].texture;
-                            triangle.t1 = face.vertices[1].texture;
-                            triangle.t2 = face.vertices[2].texture;
-
-                            triangles.Add(triangle);
-                        }
-                        else if (face.vertices.Count > 3)
-                        {
-#if false
-                            // Turn quad into two triangles, 013 and 123
-                            ModelData.Triangle triangle = new ModelData.Triangle();
-                            triangle.v0 = face.vertices[0].vertex;
-                            triangle.v1 = face.vertices[1].vertex;
-                            triangle.v2 = face.vertices[2].vertex;
-
-                            triangle.n0 = face.vertices[0].normal;
-                            triangle.n1 = face.vertices[1].normal;
-                            triangle.n2 = face.vertices[2].normal;
-
-                            Debug.Assert(triangle.n != 1);
-
-                            SVector n = GetNormal(points, triangle);
-                            normals.Add(n);
-                            triangle.n = normals.Count() - 1;
-
-                            triangle.t0 = face.vertices[0].texture;
-                            triangle.t1 = face.vertices[1].texture;
-                            triangle.t2 = face.vertices[2].texture;
-
-                            triangles.Add(triangle);
-
-                            triangle = new ModelData.Triangle();
-                            triangle.v0 = face.vertices[0].vertex;
-                            triangle.v1 = face.vertices[2].vertex;
-                            triangle.v2 = face.vertices[3].vertex;
-
-                            triangle.n0 = face.vertices[0].normal;
-                            triangle.n1 = face.vertices[2].normal;
-                            triangle.n2 = face.vertices[3].normal;
-
-                            Debug.Assert(triangle.n != 1);
-
-                            n = GetNormal(points, triangle);
-                            normals.Add(n);
-                            triangle.n = normals.Count() - 1;
-
-                            triangle.t0 = face.vertices[0].texture;
-                            triangle.t1 = face.vertices[2].texture;
-                            triangle.t2 = face.vertices[3].texture;
-
-                            triangles.Add(triangle);
-                        }
-                        else
-                        {
-#endif
-                            //Debug.WriteLine($"Skipping face with {face.vertices.Count} vertices");
-
-                            int numTris = face.vertices.Count - 2;
-                            //int v1 = 0; // Anchor point.
-                            int v2 = 1; // Second point.
-                            int v3 = 2;
-                            for (int v=0; v<numTris; v++)
-                            {
-                                ModelData.Triangle triangle = new ModelData.Triangle();
-                                triangle.v0 = face.vertices[0].vertex;
-                                triangle.v1 = face.vertices[v2].vertex;
-                                triangle.v2 = face.vertices[v3].vertex;
-
-                                triangle.n0 = face.vertices[0].normal;
-                                triangle.n1 = face.vertices[v2].normal;
-                                triangle.n2 = face.vertices[v3].normal;
-
-                                Debug.Assert(triangle.n != 1);
-
-                                SVector n = GetNormal(points, triangle);
-                                normals.Add(n);
-                                triangle.n = normals.Count() - 1;
-
-                                triangle.t0 = face.vertices[0].texture;
-                                triangle.t1 = face.vertices[v2].texture;
-                                triangle.t2 = face.vertices[v3].texture;
-
-                                triangles.Add(triangle);
-
-                                v2++;
-                                v3 = (v3 + 1) % face.vertices.Count;
-                            }
-
-                        }
-                    }
+                    //modelData.triangles = triangles.ToArray();
+                    //group.triangles = triangles.ToArray();
                     modelData.triangles = triangles.ToArray();
+                    modelData.SubGroups = groups.ToArray();
 
-                    Console.WriteLine($"Number triangles : {triangles.Count}");
+                    Debug.WriteLine($"Number triangles : {triangles.Count}");
+
+                    string groupInfo = "Groups :";
+                    foreach (ModelData.SubGroup g in modelData.SubGroups)
+                    {
+                        groupInfo += " '" + g.Name + "'";
+                    }
+                    Debug.WriteLine(groupInfo);
+
+                    string materialsInfo = "Materials :";
+                    foreach (var material in MaterialLibrary.Materials)
+                    {
+                        materialsInfo += " '" + material.Name + "'";
+                    }
+                    Debug.WriteLine(materialsInfo);
+
 
                     //modelData.HasVertexNormals = normals.Count > 1;
+
+                    // Finally, calculate the face normals for each triangle. These are used when there are no vertex normals.
+                    foreach (ModelData.Triangle triangle in triangles)
+                    {
+                        SVector n = GetNormal(points, triangle);
+                        normals.Add(n);
+                        triangle.n = normals.Count() - 1;
+                    }
 
                     // Indexes start at '1' so add a dummy entry to the list.
                     modelData.normals = normals.ToArray();
 
                     // Indexes start at '1' so add a dummy entry to the list.
-                    texels.Add(new ModelData.Texel());
+                    //texels.Add(new ModelData.Texel());
                     modelData.texels = texels.ToArray();
 
                 }

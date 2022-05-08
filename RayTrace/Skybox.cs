@@ -258,5 +258,10 @@ namespace RayTrace
 
             return xml;
         }
+
+        public override HitResult HitTest(Camera camera, Ray ray)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

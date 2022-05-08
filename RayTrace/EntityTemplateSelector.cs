@@ -15,6 +15,7 @@ namespace RayTrace
         public DataTemplate PlaneTemplate { get; set; }
         public DataTemplate DiscTemplate { get; set; }
         public DataTemplate ModelTemplate { get; set; }
+        public DataTemplate ModelSubGroupTemplate { get; set; }
         public DataTemplate DistantLightTemplate { get; set; }
         public DataTemplate PointLightTemplate { get; set; }
         public DataTemplate SpotLightTemplate { get; set; }
@@ -29,6 +30,7 @@ namespace RayTrace
             if (entity is Plane) return PlaneTemplate;
             if (entity is Disc) return DiscTemplate;
             if (entity is Model) return ModelTemplate;
+            if (entity is ModelSubGroup) return ModelSubGroupTemplate;
             if (entity is DistantLight) return DistantLightTemplate;
             if (entity is SpotLight) return SpotLightTemplate;
             if (entity is PointLight) return PointLightTemplate;

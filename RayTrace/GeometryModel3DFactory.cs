@@ -542,6 +542,7 @@ namespace RayTrace
                 foreach (SVector v in pointNormals)
                 {
                     SVector v2 = v;//.Negate();
+                   // SVector v2 = v.Negate();
 
                     //v2.I = -v2.I;
                     //v2.J = -v2.J;

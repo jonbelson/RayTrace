@@ -39,6 +39,15 @@ namespace RayTrace
         public SVector[] normals;
         public Triangle[] triangles;
 
+        public class SubGroup
+        {
+            public bool Enabled { get; set; } = true;
+            public string Name { get; set; }
+            public List<int> Triangles { get; set; } = new();
+        }
+
+        public SubGroup[] SubGroups { get; set; }
+
         public float minX = 0.0f;
         public float minY = 0.0f;
         public float minZ = 0.0f;
@@ -80,6 +89,8 @@ namespace RayTrace
         private ModelData _modelData;
 
         public ModelData GetModelData() => _modelData;
+
+        public List<Model> ChildModels { get; set; }
 
         // Cached vertices and normal vectors converted to View space.
         private SPoint[] _viewPoints = null;
@@ -126,6 +137,18 @@ namespace RayTrace
         }
 
         private FatTriangle[] fatTriangles;
+
+        Dictionary<string, ModelSubGroup> _subGroups = new();
+
+        private void UpdateSubGroups()
+        {
+            _subGroups.Clear();
+
+            foreach (ModelData.SubGroup group in _modelData.SubGroups)
+            {
+                _subGroups.Add(group.Name, new ModelSubGroup(this, group));
+            }
+        }
 
         private SVector GetNormal(SPoint P0, SPoint P1, SPoint P2)
         {
@@ -200,11 +223,22 @@ namespace RayTrace
         //
         // Constructor.
         //
-        public Model(Scene scene, Point p, ModelData modelData) : base(scene, p)
+        public Model(Scene scene, Point p, ModelData modelData, bool centreModel=false) : base(scene, p)
         {
             _modelData = modelData;
 
-//            Matrix rotate = Matrix.GetRotationY((float) Math.PI/2);
+            if (centreModel)
+            {
+                BoundingBox bb = modelData.GetBoundingBox();
+
+                Pos.X = -bb.GetCentreX();
+                Pos.Y = -bb.MinY;
+                Pos.Z = -bb.GetCentreZ();
+            }
+
+            UpdateSubGroups();
+
+            //            Matrix rotate = Matrix.GetRotationY((float) Math.PI/2);
             //Matrix rotate = Matrix.GetRotationX((float)Math.PI / 2);
             //Matrix scale = Matrix.GetScale(2.0f, 2.0f, 2.0f);
             //Matrix translate = Matrix.GetTranslation(0.0f, 0.0f, 10.0f);
@@ -268,14 +302,17 @@ namespace RayTrace
                 _modelData = modelData;
                 //Material.Texture = objData.Item2;
             }
+
+            UpdateSubGroups();
         }
 
         // Transform all vertices to View space based on current Camera position and orientation.
         public override void CreateCache(Camera camera)
         {
-
             if (_modelData != null && _modelData.points != null && _modelData.normals != null)
             {
+                updateMatrix = true;
+
                 // Convert vertices from Model space to View space.
 
                 Matrix ObjectToView = camera.WorldToView * ObjectToWorld;
@@ -302,7 +339,7 @@ namespace RayTrace
                 TreeMaker treeMaker = new TreeMaker();
                 _root = treeMaker.MakeTree(_modelData, ObjectToView);
 
-                string graphviz = CreateGraphviz();
+                //string graphviz = CreateGraphviz();
 
                 // Populate the fat triangle list.
                 fatTriangles = new FatTriangle[_modelData.triangles.Length];
@@ -845,6 +882,19 @@ namespace RayTrace
             }
 
             return "";
+        }
+
+        public override TreeViewEntityModel ToTreeModel()
+        {
+            TreeViewEntityModel modelModel = new TreeViewEntityModel() { Name = Name, Instance = this };
+            //foreach (ModelData.Group group in _modelData.groups)
+            foreach (var subGroup in _subGroups.Values)
+            {
+//                modelModel.Children.Add(new TreeViewEntityModel() { Category = group.name, Instance = this } );
+                modelModel.Children.Add(new TreeViewEntityModel() { Name = subGroup.Name, Instance = subGroup });
+            }
+
+            return modelModel;
         }
     }
 }

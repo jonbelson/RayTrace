@@ -7,16 +7,25 @@ using System.Threading.Tasks;
 
 namespace RayTrace
 {
-    public class Entity : INotifyPropertyChanged
+    public abstract class Entity : INotifyPropertyChanged
     {
         private bool enabled = true;
 
         public bool Enabled {
             get => enabled;
-            set { if (enabled != value) { enabled = value; Notify("Enabled"); } }
+            set {
+                if (enabled != value)
+                {
+                    enabled = value;
+                    EnabledStateChanged();
+                    Notify("Enabled");
+                }
+            }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
+
+        protected virtual void EnabledStateChanged() { }
 
         protected void Notify(string propName)
         {
@@ -49,6 +58,8 @@ namespace RayTrace
         // Allow Shape to pre-transform data using the Camera's WorldToView Matrix.
         public virtual void CreateCache(Camera camera) { }
 
+        public abstract HitResult HitTest(Camera camera, Ray ray);
+
         protected virtual void AsXMLImpl(XMLEntity xml)
         {
             xml.UID = UID;
@@ -58,9 +69,14 @@ namespace RayTrace
 
         public virtual XMLEntity ToXML()
         {
-            XMLEntity xml = new XMLEntity();
+            XMLEntity xml = new();
             AsXMLImpl(xml);
             return xml;
+        }
+
+        public virtual TreeViewEntityModel ToTreeModel()
+        {
+            return new TreeViewEntityModel() { Name = Name, Instance = this };
         }
     }
 }

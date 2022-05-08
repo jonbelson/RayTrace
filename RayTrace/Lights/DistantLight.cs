@@ -66,5 +66,10 @@ namespace RayTrace
             AsXMLImpl(xml);
             return xml;
         }
+
+        public override HitResult HitTest(Camera camera, Ray ray)
+        {
+            return new HitResult(null);
+        }
     }
 }

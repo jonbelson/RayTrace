@@ -47,9 +47,12 @@ namespace RayTrace
 
         public bool CanBeDisabled { get; set; } = true; // Kludge to prevent Camera from being unchecked.
 
-        public string Category { get; set; }
+        public bool IsCategory { get; set; } = false;
+
+        public string Name { get; set; }
         public Entity Instance { get; set; }
-        public IEnumerable<TreeViewEntityModel> Children { get; set; }
+        //public IEnumerable<TreeViewEntityModel> Children { get; set; }
+        public List<TreeViewEntityModel> Children { get; set; } = new();
     }
 
     /// <summary>
@@ -72,7 +75,7 @@ namespace RayTrace
         }
 
         private RenderDirection[] renderDirection = { RenderDirection.TopToBottom, RenderDirection.Diagonal, RenderDirection.CentreOut };
-        public RenderDirection[] RenderDirections { get { return renderDirection; } }
+        public RenderDirection[] RenderDirections => renderDirection;
 
         private readonly List<Renderer.AntiAliasType> antiAlias = new List<Renderer.AntiAliasType>() { Renderer.AntiAliasType.None, Renderer.AntiAliasType.NoiseGrid, Renderer.AntiAliasType.SuperSampling, Renderer.AntiAliasType.AdaptiveSupersampling };
         public List<Renderer.AntiAliasType> AntiAliasType => antiAlias;
@@ -104,14 +107,35 @@ namespace RayTrace
 
             Entity selectedEntity = SelectedEntity.FirstOrDefault();
 
-            IEnumerable<TreeViewEntityModel> shapes = Entities.OfType<Shape>().GroupBy(x => typeof(Shape).ToString()).Select(y => new TreeViewEntityModel() { Category = "Shapes", Children = y.Select(k => new TreeViewEntityModel() { Category = k.Name, Instance = k, IsSelected = k != null && k == selectedEntity }).ToArray() });
-            IEnumerable<TreeViewEntityModel> lights = Entities.OfType<Light>().GroupBy(x => typeof(Light).ToString()).Select(y => new TreeViewEntityModel() { Category = "Lights", Children = y.Select(k => new TreeViewEntityModel() { Category = k.Name, Instance = k, IsSelected = k != null && k == selectedEntity }).ToArray() });
-            IEnumerable<TreeViewEntityModel> categories = shapes.Concat(lights);
+            List<TreeViewEntityModel> itemsSource = new();
 
-            categories = categories.Prepend(new TreeViewEntityModel() { Category = "Skydome", Instance = scene.Skydome });
-            categories = categories.Prepend(new TreeViewEntityModel() { Category = "Camera", CanBeDisabled = false, Instance = scene.Camera });
+            itemsSource.Add(new TreeViewEntityModel() { Name = "Skydome", Instance = scene.Skydome });
+            itemsSource.Add(new TreeViewEntityModel() { Name = "Camera", CanBeDisabled = false, Instance = scene.Camera });
 
-            entityTreeView.ItemsSource = categories;
+            TreeViewEntityModel shapeCategory = new() { Name = "Shapes", IsCategory = true };
+            itemsSource.Add(shapeCategory);
+            foreach (Shape shape in Entities.OfType<Shape>())
+            {
+                shapeCategory.Children.Add(shape.ToTreeModel());
+            }
+
+            TreeViewEntityModel lightCategory = new() { Name = "Lights", IsCategory = true };
+            itemsSource.Add(lightCategory);
+            foreach (Light light in Entities.OfType<Light>())
+            {
+                lightCategory.Children.Add(light.ToTreeModel());
+            }
+
+
+
+            //IEnumerable<TreeViewEntityModel> shapes = Entities.OfType<Shape>().GroupBy(x => typeof(Shape).ToString()).Select(y => new TreeViewEntityModel() { Category = "Shapes", Children = y.Select(k => new TreeViewEntityModel() { Category = k.Name, Instance = k, IsSelected = k != null && k == selectedEntity })/*.ToArray()*/ });
+            //List<TreeViewEntityModel> lights = Entities.OfType<Light>().GroupBy(x => typeof(Light).ToString()).Select(y => new TreeViewEntityModel() { Category = "Lights", Children = y.Select(k => new TreeViewEntityModel() { Category = k.Name, Instance = k, IsSelected = k != null && k == selectedEntity }).ToList() });
+            //IEnumerable<TreeViewEntityModel> categories = shapes.Concat(lights);
+
+            //categories = categories.Prepend(new TreeViewEntityModel() { Category = "Skydome", Instance = scene.Skydome });
+            //categories = categories.Prepend(new TreeViewEntityModel() { Category = "Camera", CanBeDisabled = false, Instance = scene.Camera });
+
+            entityTreeView.ItemsSource = itemsSource;
         }
 
         private void GetDpi(out double dpiX, out double dpiY)
@@ -809,20 +833,20 @@ namespace RayTrace
                     //SVector right = view.VectorProduct(new SVector(0, 1, 0));
                     SVector up = view.VectorProduct(left);
 
-                    WriteSVector("viewVector", viewVector);
-                    WriteSVector("left", left);
+                    //WriteSVector("viewVector", viewVector);
+                    //WriteSVector("left", left);
 
                     // Yaw.
                     Quaternion q = new(new SVector(0, 1, 0), xDiff / 200);
                     SVector rotY = q.Rotate(view);
 
-                    WriteSVector("rotY", rotY);
+                    //WriteSVector("rotY", rotY);
 
                     // Pitch.
                     Quaternion qPitch = new(-left, yDiff / 200);
                     SVector rotLeft = qPitch.Rotate(view);
 
-                    WriteSVector("rotLeft", rotLeft);
+                    //WriteSVector("rotLeft", rotLeft);
 
                     SVector total = ((rotY + rotLeft).Normalise()) * magnitude;
                     if (Double.IsNaN(total.I) || Double.IsInfinity(total.I))
@@ -830,7 +854,7 @@ namespace RayTrace
                         int i = 0;
                     }
 
-                    WriteSVector("total", total);
+                    //WriteSVector("total", total);
 
                     Debug.WriteLine("");
 
@@ -914,11 +938,10 @@ namespace RayTrace
 
         private void entityTreeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
-            TreeViewEntityModel model = e.NewValue as TreeViewEntityModel;
-            if (model != null)
+            if (e.NewValue is TreeViewEntityModel model)
             {
                 // Only interested in leaf nodes.
-                if (model.Children == null || !model.Children.Any())
+                if (!model.IsCategory /*|| model.Children == null || !model.Children.Any()*/)
                 {
                     if (model.Instance != null)
                     {
@@ -970,7 +993,7 @@ namespace RayTrace
 
                                 ModelData modelData = importer.ImportObj(filename);
 
-                                Model model = new Model(scene, new Point(0, 0, 0), modelData);
+                                Model model = new Model(scene, new Point(0, 0, 0), modelData, true);
 
                                 model.Name = System.IO.Path.GetFileNameWithoutExtension(modelData.fileName);
 

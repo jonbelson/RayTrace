@@ -367,6 +367,16 @@
         </DataTemplate>
 
         <!--
+            ModelSubGroup DataTemplate
+        -->
+        <DataTemplate x:Key="ModelSubGroupTemplate">
+            <StackPanel>
+                <ContentPresenter Content="{StaticResource EntityContent}"></ContentPresenter>
+                <ContentPresenter Content="{StaticResource MaterialContent}"></ContentPresenter>
+            </StackPanel>
+        </DataTemplate>
+
+        <!--
             DistantLight DataTemplate
         -->
         <DataTemplate x:Key="DistantLightTemplate">
@@ -496,7 +506,7 @@
             </RibbonTab>
 
             <RibbonTab x:Name="tabEntities" Header="Entities">
-                <RibbonGroup x:Name="groupGeometric" Header="Geommetric">
+                <RibbonGroup x:Name="groupGeometric" Header="Geometric">
 
 <!--                    <RibbonComboBox Label="1" SmallImageSource="Images/RightArrowShort_Green16.png"-->
  <!--                   <RibbonComboBox Label="1"
@@ -649,7 +659,7 @@
                 <HierarchicalDataTemplate ItemsSource="{Binding Children}">
                     <StackPanel Orientation="Horizontal">
                         <CheckBox IsEnabled="{Binding IsVisible, Mode=OneTime}" IsChecked="{Binding IsChecked, Mode=TwoWay, NotifyOnTargetUpdated=True, NotifyOnSourceUpdated=True}"></CheckBox>
-                        <TextBlock Text="{Binding Category}"></TextBlock>
+                        <TextBlock Text="{Binding Name}"></TextBlock>
                     </StackPanel>
 <!--                    <HierarchicalDataTemplate.ItemTemplate>
                         <DataTemplate x:DataType="local:Model">
@@ -677,9 +687,9 @@
             <ListBox.ItemTemplateSelector>
                 <local:EntityTemplateSelector CameraTemplate="{StaticResource CameraTemplate}" SphereTemplate="{StaticResource SphereTemplate}"
                                               PlaneTemplate="{StaticResource PlaneTemplate}" DiscTemplate="{StaticResource DiscTemplate}" 
-                                              ModelTemplate="{StaticResource ModelTemplate}" DistantLightTemplate="{StaticResource DistantLightTemplate}"
-                                              PointLightTemplate="{StaticResource PointLightTemplate}" SkyboxTemplate="{StaticResource SkyboxTemplate}"
-                                              SpotLightTemplate="{StaticResource SpotLightTemplate}">
+                                              ModelTemplate="{StaticResource ModelTemplate}" ModelSubGroupTemplate="{StaticResource ModelSubGroupTemplate}"
+                                              DistantLightTemplate="{StaticResource DistantLightTemplate}" PointLightTemplate="{StaticResource PointLightTemplate}"
+                                              SkyboxTemplate="{StaticResource SkyboxTemplate}" SpotLightTemplate="{StaticResource SpotLightTemplate}">
                 </local:EntityTemplateSelector>
             </ListBox.ItemTemplateSelector>
             <ListBox.ItemContainerStyle>

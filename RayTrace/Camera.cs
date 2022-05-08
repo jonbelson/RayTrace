@@ -128,5 +128,9 @@ namespace RayTrace
             return new XMLCamera() { Pos = Pos.ToXML(), Target = Target.ToXML(), Aperture = Aperture, FovH = FovH };
         }
 
+        public override HitResult HitTest(Camera camera, Ray ray)
+        {
+            return new HitResult(null);
+        }
     }
 }

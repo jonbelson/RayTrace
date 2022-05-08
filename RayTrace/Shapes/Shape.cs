@@ -60,7 +60,7 @@ namespace RayTrace
 
         private Point pos;
 
-        private bool updateMatrix = false;
+        protected bool updateMatrix = false;
 
         private float scale = 1.0f;
 
@@ -70,7 +70,7 @@ namespace RayTrace
 
         private static float DegreesToRadians(float degrees) => (float)(degrees / 360.0 * 2.0 * Math.PI);
 
-        public Point Pos { get => pos; set { pos = value; Notify("Pos"); } }
+        public Point Pos { get => pos; set { pos = value; Notify("Pos"); updateMatrix = true; } }
 
         public float Scale
         {
@@ -175,7 +175,8 @@ namespace RayTrace
             float rotateYRadians = DegreesToRadians(rotateY);
             float rotateZRadians = DegreesToRadians(rotateZ);
 
-            _objectToWorld = Matrix.GetScale(scale) * Matrix.GetRotationZ(rotateZRadians) * Matrix.GetRotationY(rotateYRadians) * Matrix.GetRotationX(rotateXRadians) * Matrix.GetTranslation(Pos.X, Pos.Y, Pos.Z);
+//            _objectToWorld = Matrix.GetScale(scale) * Matrix.GetRotationZ(rotateZRadians) * Matrix.GetRotationY(rotateYRadians) * Matrix.GetRotationX(rotateXRadians) * Matrix.GetTranslation(Pos.X, Pos.Y, Pos.Z);
+            _objectToWorld = Matrix.GetTranslation(Pos.X, Pos.Y, Pos.Z) * Matrix.GetRotationZ(rotateZRadians) * Matrix.GetRotationY(rotateYRadians) * Matrix.GetRotationX(rotateXRadians) * Matrix.GetScale(scale);
             _objectToWorldNormal = new Matrix(_objectToWorld)
             {
                 // Remove translation component.
@@ -253,8 +254,6 @@ namespace RayTrace
         {
             return Material.GetColour(hr);
         }
-
-        public abstract HitResult HitTest(Camera camera, Ray ray);
 
         // Optimisable version of HitTest() which just returns true or false.
         public virtual bool HitTestQuick(Camera camera, Ray ray)

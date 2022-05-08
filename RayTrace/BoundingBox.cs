@@ -35,6 +35,10 @@ namespace RayTrace
             );
         }
 
+        public float GetCentreX() => (MinX + MaxX) / 2.0f;
+        public float GetCentreY() => (MinY + MaxY) / 2.0f;
+        public float GetCentreZ() => (MinZ + MaxZ) / 2.0f;
+
         public Axis GetLongestAxis()
         {
             float width = Math.Abs(MaxX - MinX);

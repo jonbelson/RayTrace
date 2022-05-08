@@ -332,9 +332,22 @@ namespace RayTrace
             List<int> triangles = new();
 
             // Generate initial indices.
-            for (int i = 0; i < modelData.triangles.Length; i++)
+            if (modelData.SubGroups.Length > 0)
             {
-                triangles.Add(i);
+                foreach (var group in modelData.SubGroups)
+                {
+                    if (group.Enabled)
+                    {
+                        triangles.AddRange(group.Triangles);
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < modelData.triangles.Length; i++)
+                {
+                    triangles.Add(i);
+                }
             }
 
             Node root = MakeNode(modelData, triangles, 0);
