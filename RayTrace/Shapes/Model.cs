@@ -593,7 +593,7 @@ namespace RayTrace
                 hr.Entry = Intersection;
                 hr.EntryNormal = vNormal;
 
-                var uv = GetBarymetricCoords(V0, V1, V2, Intersection);
+                (float, float) uv = GetBarymetricCoords(V0, V1, V2, Intersection);
                 Debug.Assert(uv.Item1 <= 1.0);
                 Debug.Assert(uv.Item2 <= 1.0);
 
@@ -606,7 +606,17 @@ namespace RayTrace
                 //Vector n1 = _modelData.GetTriangleNormal1(index);
                 //Vector n2 = _modelData.GetTriangleNormal2(index);
 
-                if (HasVectorNormal(index))
+                if (Material != null && Material.NormalMap != null)
+                {
+                    ModelData.Texel t0 = _modelData.GetTriangleColour0(hr.Index);
+                    ModelData.Texel t1 = _modelData.GetTriangleColour1(hr.Index);
+                    ModelData.Texel t2 = _modelData.GetTriangleColour2(hr.Index);
+
+                    ModelData.Texel texel = GetColour(t0, t1, t2, hr.u, hr.v);
+
+                    hr.EntryNormal = Material.NormalMap.GetNormal(texel.u, texel.v);
+                }
+                else if (HasVectorNormal(index))
                 {
                     //SVector n0 = GetTriangleNormal0(index);
                     //SVector n1 = GetTriangleNormal1(index);

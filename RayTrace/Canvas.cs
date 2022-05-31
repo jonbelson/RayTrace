@@ -94,7 +94,7 @@ namespace RayTrace
                 //g.DrawLine(new Pen(Color.White), 0, 0, Width, Height);
 
                 // Transfer data to Bitmap.
-                BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, Width, Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb);
+                BitmapData bitmapData = bitmap.LockBits(new System.Drawing.Rectangle(0, 0, Width, Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb);
                 //IntPtr dest = bitmapData.Scan0;
 
                 int[] row = new int[Width];

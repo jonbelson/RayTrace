@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Diagnostics;
 
 namespace RayTrace
 {
@@ -8,6 +9,11 @@ namespace RayTrace
         public float I { get; }
         public float J { get; }
         public float K { get; }
+
+        private bool IsNaN()
+        {
+            return float.IsNaN(I) || float.IsNaN(J) || float.IsNaN(K);
+        }
 
         //public SVector() => (I, J, K) = (0, 0, 0);
 
@@ -78,6 +84,11 @@ namespace RayTrace
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
         }
 
+        private bool IsNaN()
+        {
+            return float.IsNaN(i) || float.IsNaN(j) || float.IsNaN(k);
+        }
+
         public float I { get { return i; } set { if (i != value) { i = value; Notify("I"); } } }
         public float J { get { return j; } set { if (j != value) { j = value; Notify("J"); } } }
         public float K { get { return k; } set { if (k != value) { k = value; Notify("K"); } } }
@@ -91,6 +102,8 @@ namespace RayTrace
             I = i;
             J = j;
             K = k;
+
+            Debug.Assert(!IsNaN()); 
 
             if (normalise)
             {
@@ -106,25 +119,25 @@ namespace RayTrace
 
         public Vector(XMLVector xmlVector) => (I, J, K) = (xmlVector.I, xmlVector.J, xmlVector.K);
 
-        public static Vector operator+(Vector v1, Vector v2) => new Vector(v1.I + v2.I, v1.J + v2.J, v1.K + v2.K);
+        public static Vector operator+(Vector v1, Vector v2) => new (v1.I + v2.I, v1.J + v2.J, v1.K + v2.K);
 
-        public static Vector operator-(Vector v1, Vector v2) => new Vector(v1.I - v2.I, v1.J - v2.J, v1.K - v2.K);
+        public static Vector operator-(Vector v1, Vector v2) => new (v1.I - v2.I, v1.J - v2.J, v1.K - v2.K);
 
-        public static Vector operator -(Vector v) => new Vector(-v.I, -v.J, -v.K);
+        public static Vector operator -(Vector v) => new (-v.I, -v.J, -v.K);
 
-        public static Vector operator*(Vector v, float scale) => new Vector(v.I * scale, v.J * scale, v.K * scale);
+        public static Vector operator*(Vector v, float scale) => new (v.I * scale, v.J * scale, v.K * scale);
 
         public float DotProduct(Vector v) => I* v.I + J* v.J + K* v.K;
 
-        public Vector VectorProduct(Vector v) => new Vector(J * v.K - K * v.J, K * v.I - I * v.K, I * v.J - J * v.I);
+        public Vector VectorProduct(Vector v) => new (J * v.K - K * v.J, K * v.I - I * v.K, I * v.J - J * v.I);
 
-        public Vector Add(Vector v) => new Vector(I + v.I, J + v.J, K + v.K);
+        public Vector Add(Vector v) => new (I + v.I, J + v.J, K + v.K);
 
-        public Vector Subtract(Vector v) => new Vector(I - v.I, J - v.J, K - v.K);
+        public Vector Subtract(Vector v) => new (I - v.I, J - v.J, K - v.K);
 
-        public Vector Scale(float scale) => new Vector(I * scale, J * scale, K * scale);
+        public Vector Scale(float scale) => new (I * scale, J * scale, K * scale);
 
-        public Vector Negate() => new Vector(-I, -J, -K);
+        public Vector Negate() => new (-I, -J, -K);
 
         // Return angle between Vectors in radians.
         public float Angle(Vector v)
@@ -139,10 +152,10 @@ namespace RayTrace
         public float Magnitude() => (float) Math.Sqrt(I * I + J * J + K * K);
         public float MagnitudeSquared() => I * I + J * J + K * K;
 
-        public Vector Normalise() => new Vector(I, J, K, true);
+        public Vector Normalise() => new (I, J, K, true);
 
         // Return a null vector, i.e. one with all components set to 0.
-        public static Vector Null() => new Vector(0.0f, 0.0f, 0.0f);
+        public static Vector Null() => new (0.0f, 0.0f, 0.0f);
 
         public bool IsNull() => I == 0.0 && J == 0.0 && K == 0.0;
 

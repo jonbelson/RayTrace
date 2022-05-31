@@ -36,7 +36,7 @@ namespace RayTrace
                 {
                     width = bitmap.Width;
                     height = bitmap.Height;
-                    BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadOnly, PixelFormat.Format32bppRgb);
+                    BitmapData bitmapData = bitmap.LockBits(new System.Drawing.Rectangle(0, 0, width, height), ImageLockMode.ReadOnly, PixelFormat.Format32bppRgb);
 
                     texture = new Colour[width * height];
 

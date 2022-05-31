@@ -68,6 +68,8 @@ namespace RayTrace
         public float Transparency { get => transparency; set => transparency = Math.Clamp(value, 0.0f, 1.0f); }
         public float Reflectivity { get => reflectivity; set => reflectivity = Math.Clamp(value, 0.0f, 1.0f); }
 
+        public NormalMap NormalMap { get; set; }
+
         public bool HasRoughness()
         {
             return Roughness > 0.0f;

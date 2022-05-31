@@ -250,5 +250,37 @@ namespace RayTrace
         }
         */
 
+        // 
+        // resolution   number of sub-squares per squre of width or height.
+        static public Model Rectangle(Scene scene, int width, int height, int resolution)
+        {
+            ModelData modelData = new();
+
+            int widthPoints = width*resolution + 1;
+            int heightPoints = height*resolution + 1;
+
+            int totalPoints = widthPoints * heightPoints;
+
+            List<SPoint> points = new();
+            List<SVector> normals = new();
+            List<ModelData.Triangle> triangles = new();
+
+            points.Add(new SPoint(0, 0, 0)); // Dummy point.
+
+            for (int y=-heightPoints/2; y<heightPoints/2; y++)
+            {
+                for (int x=-widthPoints/2; x<widthPoints / 2; x++)
+                {
+                    points.Add(new SPoint(x, 0, y));
+                }
+            }
+
+            modelData.points = points.ToArray();
+            modelData.normals = normals.ToArray();
+            modelData.triangles = triangles.ToArray();
+
+            return new Model(scene, new Point(0, 0, 0), modelData);
+        }
+
     }
 }

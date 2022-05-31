@@ -380,6 +380,8 @@ namespace RayTrace
 
             TextureBitmap objTexture = new(@"Data\pbr-low-poly-fox-character\textures\LP_Firefox_1001_BaseColor.png");
 
+            NormalMap normalMap = new(@"Data\pbr-low-poly-fox-character\textures\LP_Firefox_1001_Normal.png");
+
             scene.Camera.Pos = new Point(-5.994f, 4.712f, -9.275f);
             scene.Camera.Target = new Point(0, 3, 1);
 
@@ -409,9 +411,12 @@ namespace RayTrace
             Material objMaterial = new(MaterialType.Diffuse);
             //objMaterial.Texture = new TextureSolid(Palette.White);
             objMaterial.Texture = objTexture;
+            objMaterial.NormalMap = normalMap;
 
             string? fileName = Path.GetFileNameWithoutExtension(modelData.fileName);
             objMaterial.Name = fileName ?? "OBJ Material";
+
+
 
             scene.AddMaterial(objMaterial);
 
@@ -702,6 +707,34 @@ namespace RayTrace
 
 
             scene.Ambient = new Colour(0.3f, 0.3f, 0.3f);
+
+            return scene;
+        }
+
+        public static Scene NormalMapScene()
+        {
+            Scene scene = new();
+
+            Rectangle rectangle = new(scene, new Point(0, 0, 0), new Vector(0, 0, -1), new Vector(0, 1, 0), 8, 4);
+
+            TextureBitmap texture = new(@"Data\Textures\earth_gebco8_texture_8192x4096.jpg");
+            NormalMap normalMap = new(@"Data\Textures\earth_normalmap_8192x4096.jpg");
+
+            Material material = new(MaterialType.Diffuse);
+            material.Texture = texture;
+            //material.Texture = new TextureSolid(Palette.Red);
+            material.NormalMap = normalMap;
+
+            rectangle.Material = material;
+
+            scene.AddMaterial(material);
+
+            Light light = new PointLight(scene, new Point(0, 30, -10), 6000, Palette.White);
+
+            scene.Camera.Pos = new Point(0, 0, -4);
+            scene.Camera.Target = new Point(0, 0, 0);
+
+            //scene.AddShape
 
             return scene;
         }

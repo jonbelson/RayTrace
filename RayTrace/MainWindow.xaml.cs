@@ -280,7 +280,8 @@ namespace RayTrace
 
             //scene = SceneFactory.GIDemoScene();
             //scene = SceneFactory.SphereDemoScene();
-            scene = SceneFactory.ObjScene();
+            //scene = SceneFactory.ObjScene();
+            scene = SceneFactory.NormalMapScene();
 
             //scene = SceneFactory.EmptyScene();
 
