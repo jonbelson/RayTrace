@@ -76,9 +76,9 @@ namespace RayTrace
 
         public SVector GetTriangleNormal(int index) => normals[triangles[index].n];
 
-        public Texel GetTriangleColour0(int index) => texels[triangles[index].t0];
-        public Texel GetTriangleColour1(int index) => texels[triangles[index].t1];
-        public Texel GetTriangleColour2(int index) => texels[triangles[index].t2];
+        public Texel GetTriangleTexel0(int index) => texels[triangles[index].t0];
+        public Texel GetTriangleTexel1(int index) => texels[triangles[index].t1];
+        public Texel GetTriangleTexel2(int index) => texels[triangles[index].t2];
     }
 
     //
@@ -142,11 +142,14 @@ namespace RayTrace
 
         private void UpdateSubGroups()
         {
-            _subGroups.Clear();
-
-            foreach (ModelData.SubGroup group in _modelData.SubGroups)
+            if (_modelData.SubGroups != null)
             {
-                _subGroups.Add(group.Name, new ModelSubGroup(this, group));
+                _subGroups.Clear();
+
+                foreach (ModelData.SubGroup group in _modelData.SubGroups)
+                {
+                    _subGroups.Add(group.Name, new ModelSubGroup(this, group));
+                }
             }
         }
 
@@ -205,7 +208,7 @@ namespace RayTrace
 
         // c0, c1, c2   Colours for triangle.
         // u, v         Barycentric coordinates of hit point.
-        private ModelData.Texel GetColour(ModelData.Texel c0, ModelData.Texel c1, ModelData.Texel c2, float u, float v)
+        private ModelData.Texel GetTexel(ModelData.Texel c0, ModelData.Texel c1, ModelData.Texel c2, float u, float v)
         {
             float texelU = c0.u * (1.0f - u - v) + c1.u * u + c2.u * v;
             float texelV = c0.v * (1.0f - u - v) + c1.v * u + c2.v * v;
@@ -364,11 +367,11 @@ namespace RayTrace
                         fatTriangle.n2 = GetTriangleNormal(i);
                     }
 
-                    fatTriangle.n = GetTriangleNormal(i).Negate();
+                    fatTriangle.n = GetTriangleNormal(i);//.Negate(); XXX
 
-                    fatTriangle.t0 = _modelData.GetTriangleColour0(i);
-                    fatTriangle.t1 = _modelData.GetTriangleColour1(i);
-                    fatTriangle.t2 = _modelData.GetTriangleColour2(i);
+                    fatTriangle.t0 = _modelData.GetTriangleTexel0(i);
+                    fatTriangle.t1 = _modelData.GetTriangleTexel1(i);
+                    fatTriangle.t2 = _modelData.GetTriangleTexel2(i);
 
                     fatTriangles[i] = fatTriangle;
                 }
@@ -376,7 +379,7 @@ namespace RayTrace
         }
 
         // Recurse through partition tree, checking for intersections in boxes that that ray passees through.
-        private void HitTestRecurse(List<HitResult> hitResults, Node node, SPoint p1, SPoint p2, bool segmentOnly, bool firstHitOnly)
+        private void HitTestRecurse(Camera camera, List<HitResult> hitResults, Node node, SPoint p1, SPoint p2, bool segmentOnly, bool firstHitOnly)
         {
             if (firstHitOnly && hitResults.Count > 0)
             {
@@ -396,7 +399,7 @@ namespace RayTrace
                     foreach (int i in node.Triangles)
                     {
                         hr.Reset();
-                        /*HitResult hr =*/ HitTestTriangle(ref hr, i, p1, p2, ray, segmentOnly);
+                        /*HitResult hr =*/ HitTestTriangle(camera, ref hr, i, p1, p2, ray, segmentOnly);
                         if (hr.HasEntry())
                         {
                             hitResults.Add(hr);
@@ -408,11 +411,11 @@ namespace RayTrace
 
                 if (node.Left != null)
                 {
-                    HitTestRecurse(hitResults, node.Left, p1, p2, segmentOnly, firstHitOnly);
+                    HitTestRecurse(camera, hitResults, node.Left, p1, p2, segmentOnly, firstHitOnly);
                 }
                 if (node.Right != null)
                 {
-                    HitTestRecurse(hitResults, node.Right, p1, p2, segmentOnly, firstHitOnly);
+                    HitTestRecurse(camera, hitResults, node.Right, p1, p2, segmentOnly, firstHitOnly);
                 }
             }
         }
@@ -423,7 +426,7 @@ namespace RayTrace
 
             Node node = _root;
             List<HitResult> hitResults = new List<HitResult>();
-            HitTestRecurse(hitResults, node, p1, p2, segmentOnly, firstHitOnly);
+            HitTestRecurse(camera, hitResults, node, p1, p2, segmentOnly, firstHitOnly);
 
             if (hitResults.Count > 0)
             {
@@ -492,7 +495,7 @@ namespace RayTrace
 */
         }
 
-        private HitResult HitTestTriangle(ref HitResult hr, int index, in SPoint p1, in SPoint p2, in SVector ray, bool segmentOnly)
+        private HitResult HitTestTriangle(Camera camera, ref HitResult hr, int index, in SPoint p1, in SPoint p2, in SVector ray, bool segmentOnly)
         {
             //HitResult hr = new HitResult(this);
             /*
@@ -597,8 +600,15 @@ namespace RayTrace
                 Debug.Assert(uv.Item1 <= 1.0);
                 Debug.Assert(uv.Item2 <= 1.0);
 
-                hr.u = (float) uv.Item1;
-                hr.v = (float) uv.Item2;
+                //hr.u = (float) uv.Item1;
+                //hr.v = (float) uv.Item2;
+                    ModelData.Texel t0 = _modelData.GetTriangleTexel0(index);
+                    ModelData.Texel t1 = _modelData.GetTriangleTexel1(index);
+                    ModelData.Texel t2 = _modelData.GetTriangleTexel2(index);
+
+                    ModelData.Texel texel = GetTexel(t0, t1, t2, uv.Item1, uv.Item2);
+                    hr.u = texel.u;
+                    hr.v = texel.v;
 
                 hr.t = mu;
 
@@ -608,13 +618,59 @@ namespace RayTrace
 
                 if (Material != null && Material.NormalMap != null)
                 {
-                    ModelData.Texel t0 = _modelData.GetTriangleColour0(hr.Index);
-                    ModelData.Texel t1 = _modelData.GetTriangleColour1(hr.Index);
-                    ModelData.Texel t2 = _modelData.GetTriangleColour2(hr.Index);
+                    SVector tNormal = Material.NormalMap.GetNormal(texel.u, texel.v);
 
-                    ModelData.Texel texel = GetColour(t0, t1, t2, hr.u, hr.v);
+                    SVector vTriNormal = GetTriangleNormal(index);//.Negate();
 
-                    hr.EntryNormal = Material.NormalMap.GetNormal(texel.u, texel.v);
+
+        SVector n0 = tri.n0;
+        SVector n1 = tri.n1;
+        SVector n2 = tri.n2;
+
+        vTriNormal = GetNormal(n0, n1, n2, uv.Item1, uv.Item2);
+
+
+
+                    //SVector sTest = vNormal - vTriNormal;
+                    //SVector N = GetNormal(n0, n1, n2, uv.Item1, uv.Item2);
+
+
+                    //SVector edge1 = V1 - V0;
+                    //SVector edge2 = V2 - V0;
+                    //SVector deltaUV1 = uv2 - uv1;
+                    //SVector deltaUV2 = uv3 - uv1;
+
+                    //float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+
+                    //tangent1.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+                    //tangent1.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+                    //tangent1.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+
+                    //bitangent1.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
+                    //bitangent1.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
+                    //bitangent1.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
+
+
+
+                    SVector up = new(0, 1, 0);
+                    SVector vUp = camera.NormalMatrix*up;
+                    SVector vNorm = vTriNormal;
+                    //SVector vNorm = oNormal;
+                    SVector vRight = vNorm.VectorProduct(vUp);
+                    vRight = vRight.Normalise();
+
+                    SVector xaxis = vRight;
+                    SVector yaxis = vUp;
+                    SVector zaxis = vNorm;
+
+                    Matrix m = new(xaxis, yaxis, -zaxis);
+
+                    m.Transpose();
+
+                    SVector vMapNormal = m * tNormal;
+
+                    hr.EntryNormal = vMapNormal;
+
                 }
                 else if (HasVectorNormal(index))
                 {
@@ -625,7 +681,6 @@ namespace RayTrace
                     SVector n0 = tri.n0;
                     SVector n1 = tri.n1;
                     SVector n2 = tri.n2;
-
 
                     SVector N = GetNormal(n0, n1, n2, uv.Item1, uv.Item2);
                     //N = ObjectToViewNormal * N; // XXX Check normal is being treated correctly re. transforms.
@@ -764,16 +819,17 @@ namespace RayTrace
 //            TextureBitmap textureBitmap = _modelData.texture as TextureBitmap;
             if (Material.Texture is TextureBitmap textureBitmap)
             {
-                ModelData.Texel t0 = _modelData.GetTriangleColour0(hr.Index);
-                ModelData.Texel t1 = _modelData.GetTriangleColour1(hr.Index);
-                ModelData.Texel t2 = _modelData.GetTriangleColour2(hr.Index);
+                ModelData.Texel t0 = _modelData.GetTriangleTexel0(hr.Index);
+                ModelData.Texel t1 = _modelData.GetTriangleTexel1(hr.Index);
+                ModelData.Texel t2 = _modelData.GetTriangleTexel2(hr.Index);
 
-                ModelData.Texel texel = GetColour(t0, t1, t2, hr.u, hr.v);
+                ModelData.Texel texel = GetTexel(t0, t1, t2, hr.u, hr.v);
 
                 //hr.u = texel.u;
                 //hr.v = texel.v;
 
-                return textureBitmap.GetColour(texel.u, texel.v);
+//                return textureBitmap.GetColour(texel.u, texel.v);
+                return textureBitmap.GetColour(hr.u, hr.v);
             }
             else
             {

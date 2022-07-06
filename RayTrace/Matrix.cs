@@ -58,6 +58,9 @@ namespace RayTrace
             other.M.CopyTo(M, 0);
         }
 
+        //
+        // Constructor.
+        //
         public Matrix(double[] values)
         {
             if (values.Length == 16)
@@ -68,6 +71,26 @@ namespace RayTrace
             {
                 SetIdentity();
             }
+        }
+
+        //
+        // Constructor.
+        //
+        public Matrix(SVector xaxis, SVector yaxis, SVector zaxis)
+        {
+            SetIdentity();
+
+            M11 = xaxis.I;
+            M12 = xaxis.J;
+            M13 = xaxis.K;
+
+            M21 = yaxis.I;
+            M22 = yaxis.J;
+            M23 = yaxis.K;
+
+            M31 = zaxis.I;
+            M32 = zaxis.J;
+            M33 = zaxis.K;
         }
 
         private static Matrix NewMatrix { get { return new Matrix(); } }

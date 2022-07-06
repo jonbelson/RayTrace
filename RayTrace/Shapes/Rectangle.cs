@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -95,107 +96,91 @@ namespace RayTrace
 
             //SPoint vRectCentre = new(vPos.X + Width/2, vPos.Y+Height/2, vPos.Z);
 
+            SVector vRight = vNormal.VectorProduct(vUp);
+
             float xOffset;
-            SPoint start = vPos;
-            SPoint end = vPos + vUp.Normalise().Scale(Height);
+            SPoint start = vPos - vUp.Normalise().Scale(Height/2);
+            SPoint end = vPos + vUp.Normalise().Scale(Height/2);
+            //SPoint start = vPos - vUp.Normalise().Scale(Height/2);
+            //SPoint end = vPos + vUp.Normalise().Scale(Height/2);
             if (!Geometry.DistancePointToLine(Intersection, start, end, out xOffset, true))
             {
                 return hr;
             }
 
-            if (xOffset > Width)
+            if (xOffset > Width/2)
             {
                 return hr;
             }
 
             float yOffset;
-            SVector right = vNormal.VectorProduct(vUp);
-            start = vPos;
-            end = vPos + right.Normalise().Scale(Width);
+            start = vPos - vRight.Normalise().Scale(Width/2);
+            end = vPos + vRight.Normalise().Scale(Width/2);
             if (!Geometry.DistancePointToLine(Intersection, start, end, out yOffset, true))
             {
                 return hr;
             }
 
-            if (yOffset > Height)
+            if (yOffset > Height/2)
             {
                 return hr;
             }
 
             hr.Entry = Intersection;
 
-            // Intersection could have occurred from either side of the Plane, so adjust the surface normal appropriately.
-            //Vector vecP2P1 = p1 - p2;
-            vecP2P1 = vecP2P1.Normalise();
+            // Calculate texture coordinates relative to bottom left.
+            SPoint bl = vPos - vRight.Normalise().Scale(Width/2) - vUp.Normalise().Scale(Height/2);
 
-            //if (Material != null && Material.NormalMap != null)
-            //{
-            //    hr.EntryNormal = Material.NormalMap.GetNormal(u, v);
-            //}
-            //else
-            {
-                double dp = vNormal.DotProduct(vecP2P1);
-                if (dp > 0.0)
-                {
-                    hr.EntryNormal = vNormal;
-                }
-                else
-                {
-                    hr.EntryNormal = vNormal.Negate();
-                }
+            start = bl;
+            end = bl + vUp.Normalise().Scale(Height);
+            Geometry.DistancePointToLine(Intersection, start, end, out xOffset, true);
 
-                hr.EntryNormal = vNormal;
-            }
+            start = bl;
+            end = bl + vRight.Normalise().Scale(Width);
+            Geometry.DistancePointToLine(Intersection, start, end, out yOffset, true);
 
-            //            Vector v = Intersection.Difference(Pos);
-            //            hr.u = (float) v.I;
-            //            hr.v = (float) v.J;
 
-            // https://gamedev.stackexchange.com/questions/172352/finding-texture-coordinates-for-plane
-            SVector e1 = vNormal.VectorProduct(new SVector(1, 0, 0));
-            e1 = e1.Normalise();
-            if (e1.I == 0.0 && e1.J == 0.0 && e1.K == 0.0)
-            {
-                e1 = vNormal.VectorProduct(new SVector(0, 0, 1));
-                e1 = e1.Normalise();
-            }
+            float u = xOffset/Width;
+            float v = yOffset/Height;
 
-            e1 = camera.NormalMatrix * e1;
-            SVector e2 = vNormal.VectorProduct(e1);
-            e2 = e2.Normalise();
+            hr.u = u;
+            hr.v = v;
 
-            SVector vecIntersection = new SVector(Intersection.X, Intersection.Y, Intersection.Z);
-            double mag = vecIntersection.Magnitude();
-            vecIntersection = vecIntersection.Normalise();
-
-            double u = e1.DotProduct(vecIntersection);
-            double v = e2.DotProduct(vecIntersection);
-
-            int scale = 400;
-
-            u *= mag;
-            v *= mag;
-
-            u %= scale;
-            v %= scale;
-
-            u /= scale;
-            v /= scale;
-
-            if (u < 0.0) u = 1.0f + u;
-            if (v < 0.0) v = 1.0f + v;
-
-            u = xOffset/Width;
-            v = yOffset/Height;
-
-            hr.u = (float)u;
-            hr.v = (float)v;
+            //Debug.WriteLine($"u/v = {u}, {v}");
 
             if (Material != null && Material.NormalMap != null)
             {
-                hr.EntryNormal = camera.NormalMatrix * Material.NormalMap.GetNormal((float) u, (float) v);
-            }
+                SVector normalMap = Material.NormalMap.GetNormal(u, v);
 
+                SVector xaxis = vRight;
+                SVector yaxis = vUp;
+                SVector zaxis = vNormal;
+
+                Matrix m = new(xaxis, yaxis, -zaxis);
+
+                m.Transpose();
+
+                hr.EntryNormal = m * normalMap;
+//                hr.EntryNormal = camera.NormalMatrix * normalMap;
+            }
+            else
+            {
+                // Intersection could have occurred from either side of the Rectangle, so adjust the surface normal appropriately.
+                //Vector vecP2P1 = p1 - p2;
+                vecP2P1 = vecP2P1.Normalise();
+
+                //double dp = vNormal.DotProduct(vecP2P1);
+                //if (dp > 0.0)
+                //{
+                //    hr.EntryNormal = vNormal;
+                //}
+                //else
+                //{
+                //    hr.EntryNormal = vNormal.Negate();
+                //}
+
+                hr.EntryNormal = vNormal;
+            }
             return hr;
         }
 

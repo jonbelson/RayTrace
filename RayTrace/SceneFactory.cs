@@ -715,19 +715,70 @@ namespace RayTrace
         {
             Scene scene = new();
 
-            Rectangle rectangle = new(scene, new Point(0, 0, 0), new Vector(0, 0, -1), new Vector(0, 1, 0), 8, 4);
-
-            TextureBitmap texture = new(@"Data\Textures\earth_gebco8_texture_8192x4096.jpg");
-            NormalMap normalMap = new(@"Data\Textures\earth_normalmap_8192x4096.jpg");
+            TextureBitmap earthTexture = new(@"Data\Textures\earth_gebco8_texture_8192x4096.jpg");
+//            NormalMap normalMap = new(@"Data\Textures\earth_normalmap_8192x4096.jpg");
+            NormalMap earthNormal = new(@"Data\Textures\earth_normalmap_flat_8192x4096.jpg");
 
             Material material = new(MaterialType.Diffuse);
-            material.Texture = texture;
+            material.Texture = earthTexture;
             //material.Texture = new TextureSolid(Palette.Red);
-            material.NormalMap = normalMap;
-
-            rectangle.Material = material;
+            material.NormalMap = earthNormal;
 
             scene.AddMaterial(material);
+
+            TextureBitmap moonTexture = new(@"Data\Textures\mars_mola_hypsometric_8192x4096.jpg");
+            //            NormalMap normalMap = new(@"Data\Textures\earth_normalmap_8192x4096.jpg");
+            NormalMap moonNormalMap = new(@"Data\Textures\mars_mola_normalmap_8192x4096.jpg");
+
+            Material flatMoonMaterial = new(MaterialType.Diffuse);
+            flatMoonMaterial.Texture = moonTexture;
+            //material.NormalMap = moonNormalMap;
+
+            scene.AddMaterial(flatMoonMaterial);
+
+            Material bumpyMoonMaterial = new(MaterialType.Diffuse);
+            bumpyMoonMaterial.Texture = moonTexture;
+            //material.Texture = new TextureSolid(Palette.Red);
+            bumpyMoonMaterial.NormalMap = moonNormalMap;
+
+            scene.AddMaterial(bumpyMoonMaterial);
+
+
+            int option = 3;
+
+            switch (option)
+            {
+                case 0:
+                    {
+                        Rectangle rectangle = new(scene, new Point(0, 0, 0), new Vector(0, 0, -1), new Vector(0, 1, 0), 8, 4);
+                        ////Rectangle rectangle = new(scene, new Point(0, 0, 0), new Vector(0, 1, -1).Normalise(), new Vector(0, 1, 1).Normalise(), 8, 4);
+
+                        rectangle.Material = material;
+                    }
+                    break;
+                case 1:
+                    {
+                        Sphere sphere = new(scene, new Point(0, 0, 0), 1);
+                        sphere.Material = material;
+                    }
+                    break;
+
+                case 2:
+                    {
+                        Sphere sphere = new(scene, new Point(-1.2f, 0, 0), 1);
+                        Sphere sphere2 = new(scene, new Point(1.2f, 0, 0), 1);
+                        sphere.Material = flatMoonMaterial;
+                        sphere2.Material = bumpyMoonMaterial;
+                    }
+                    break;
+                case 3:
+                    {
+                        Model rectangle = ModelFactory.Rectangle(scene, 4, 2, 1);
+                        rectangle.Material = material;
+                    }
+                    break;
+            }
+
 
             Light light = new PointLight(scene, new Point(0, 30, -10), 6000, Palette.White);
 

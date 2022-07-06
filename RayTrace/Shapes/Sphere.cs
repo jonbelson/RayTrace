@@ -122,22 +122,22 @@ namespace RayTrace
 		{
 			HitResult hr = new HitResult(this);
 
-			SPoint sc = camera.WorldToView * pos;
+			SPoint vPos = camera.WorldToView * pos;
 
 			float r = radius;
 
 			SPoint p1 = ray.Origin;
-			SPoint p2 = p1 + ray.Direction;
+			//SPoint p2 = p1 + ray.Direction;
 
 			// Vector from p1 to p2.
 			//SVector dp = p2 - p1;
 			SVector dp = ray.Direction;
 
 			float a = dp.MagnitudeSquared();
-			float b = 2 * (dp.I * (p1.X - sc.X) + dp.J * (p1.Y - sc.Y) + dp.K * (p1.Z - sc.Z));
-			float c = sc.X * sc.X + sc.Y * sc.Y + sc.Z * sc.Z;
+			float b = 2 * (dp.I * (p1.X - vPos.X) + dp.J * (p1.Y - vPos.Y) + dp.K * (p1.Z - vPos.Z));
+			float c = vPos.X * vPos.X + vPos.Y * vPos.Y + vPos.Z * vPos.Z;
 			c += p1.X * p1.X + p1.Y * p1.Y + p1.Z * p1.Z;
-			c -= 2 * (sc.X * p1.X + sc.Y * p1.Y + sc.Z * p1.Z);
+			c -= 2 * (vPos.X * p1.X + vPos.Y * p1.Y + vPos.Z * p1.Z);
 			c -= r * r;
 
 			const float EPS = 0.00001f;
@@ -158,10 +158,10 @@ namespace RayTrace
 
 				SPoint hp = p + dp.Scale(u);
 
-				//Vector surfaceNormal = sc.Difference(hit);
+				//Vector surfaceNormal = vPos.Difference(hit);
 				//surfaceNormal = surfaceNormal.Normalise();
 
-				hr.EntryNormal = sc.Difference(hp).Normalise();
+				hr.EntryNormal = vPos.Difference(hp).Normalise();
 
 				CalculateUV(camera, ref hr);
 
@@ -199,7 +199,7 @@ namespace RayTrace
 
 			SPoint hit = p1 + dp.Scale(mu);
 
-			SVector surfaceNormal = sc.Difference(hit);
+			SVector surfaceNormal = vPos.Difference(hit);
 			surfaceNormal = surfaceNormal.Normalise();
 
 			hr.Entry = hit;
@@ -207,9 +207,28 @@ namespace RayTrace
 
 			CalculateUV(camera, ref hr);
 
-			// XXX Should normal perturbation affect surface texture?
-			if (HasRoughness())
+			if (Material != null && Material.NormalMap != null)
 			{
+				SVector normalMap = Material.NormalMap.GetNormal(hr.u, hr.v);
+
+				SVector up = new(0, 1, 0);
+				SVector vUp = camera.NormalMatrix*up;
+				SVector vNormal = hr.EntryNormal;
+				SVector vRight = vNormal.VectorProduct(vUp);
+
+				SVector xaxis = vRight;
+				SVector yaxis = vUp;
+				SVector zaxis = vNormal;
+
+				Matrix m = new(xaxis, yaxis, -zaxis);
+
+				m.Transpose();
+
+				hr.EntryNormal = m * normalMap;
+			}
+			else if (HasRoughness())
+			{
+			// XXX Should normal perturbation affect surface texture?
 				float Scale = 10;
 
 				SVector normal = hr.EntryNormal;

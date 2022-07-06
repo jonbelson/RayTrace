@@ -263,21 +263,85 @@ namespace RayTrace
 
             List<SPoint> points = new();
             List<SVector> normals = new();
+            List<ModelData.Texel> texels = new();
             List<ModelData.Triangle> triangles = new();
 
             points.Add(new SPoint(0, 0, 0)); // Dummy point.
+            normals.Add(new SVector(0, 0, 0));
+            texels.Add(new ModelData.Texel());
 
-            for (int y=-heightPoints/2; y<heightPoints/2; y++)
+            float startY = -height/2.0f;
+            float startX = -width/2.0f;
+            float stepY = 1.0f/resolution;
+            float stepX = 1.0f/resolution;
+
+            float y = startY;
+            for (int h=0; h<heightPoints; h++)
             {
-                for (int x=-widthPoints/2; x<widthPoints / 2; x++)
+                float x = startX;
+                for (int w=0; w<widthPoints; w++)
                 {
-                    points.Add(new SPoint(x, 0, y));
+//                    points.Add(new SPoint(x, 0, y));
+                    points.Add(new SPoint(x, y, 0));
+                    normals.Add(new SVector(0, 0, -1));
+
+                    ModelData.Texel texel = new() { u = w/(widthPoints - 1.0f), v = h/(heightPoints - 1.0f) };
+                    texels.Add(texel);
+
+                    if (h > 0 && w > 0)
+                    {
+                        int numPoints = points.Count - 1;
+                        int numTexels = texels.Count - 1;
+
+                        ModelData.Triangle triangle = new();
+                        triangle.v0 = numPoints - widthPoints - 1;
+                        triangle.v1 = numPoints - widthPoints;
+                        triangle.v2 = numPoints - 1;
+
+                        triangle.n = normals.Count - 1;
+                        triangle.n0 = normals.Count - 1;
+                        triangle.n1 = normals.Count - 1;
+                        triangle.n2 = normals.Count - 1;
+
+                        triangle.t0 = numTexels - widthPoints- 1;
+                        triangle.t1 = numTexels - widthPoints;
+                        triangle.t2 = numTexels - 1;
+
+                        triangles.Add(triangle);
+
+                        triangle = new();
+                        triangle.v0 = numPoints - 1;
+                        triangle.v1 = numPoints - widthPoints;
+                        triangle.v2 = numPoints;
+
+                        triangle.n = normals.Count - 1;
+                        triangle.n0 = normals.Count - 1;
+                        triangle.n1 = normals.Count - 1;
+                        triangle.n2 = normals.Count - 1;
+
+                        triangle.t0 = numTexels - 1;
+                        triangle.t1 = numTexels - widthPoints;
+                        triangle.t2 = numTexels;
+
+                        triangles.Add(triangle);
+                    }
+
+                    x += stepX;
                 }
+
+                y += stepY;
             }
+
+
 
             modelData.points = points.ToArray();
             modelData.normals = normals.ToArray();
+            modelData.texels = texels.ToArray();
             modelData.triangles = triangles.ToArray();
+
+            modelData.SubGroups = new ModelData.SubGroup[0];
+
+            modelData.HasVertexNormals = true;
 
             return new Model(scene, new Point(0, 0, 0), modelData);
         }

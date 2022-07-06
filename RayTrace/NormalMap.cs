@@ -127,11 +127,12 @@ namespace RayTrace
                 byte g = (byte)(val >> 8);
                 byte b = (byte)val;
 
-                float i = (r - 128) / 255.0f;
-                float j = (g - 128) / 255.0f;
-                float k = (b - 128) / 255.0f;
+                float i = (r - 128) / 128.0f;
+                float j = (g - 128) / 128.0f;
+                float k = (b - 128) / 128.0f;
 
-                SVector n = new SVector(-i, -j, -k);
+//                SVector n = new SVector(-i, -j, -k);
+                SVector n = new SVector(i, -j, -k);
                 return n.Normalise();
             }
 

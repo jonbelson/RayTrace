@@ -181,7 +181,12 @@ namespace RayTrace
 
         public virtual Colour GetColour(HitResult hr)
         {
-            return Texture.GetColour(hr);
+            if (Texture != null)
+            {
+                return Texture.GetColour(hr);
+            }
+
+            return Palette.Grey;
         }
 
         public Colour GetBrdfColour(HitResult hr, SVector source, Colour Li)
@@ -198,7 +203,12 @@ namespace RayTrace
         {
             //if (Brdf != null) return Brdf.GetBaseColour();
 
-            return Texture.GetBaseColour();
+            if (Texture != null)
+            {
+                return Texture.GetBaseColour();
+            }
+
+            return Palette.Grey;
         }
 
         //public Vector GetReflection(HitResult hr)

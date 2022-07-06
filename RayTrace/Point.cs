@@ -24,6 +24,7 @@ namespace RayTrace
         public static SPoint operator*(in SPoint p, float scale) => new(p.X * scale, p.Y * scale, p.Z * scale);
         public static SVector operator-(in SPoint p1, in SPoint p2) => new(p1.X - p2.X, p1.Y - p2.Y, p1.Z - p2.Z);
         public static SPoint operator+(in SPoint p, in SVector v) => new(p.X + v.I, p.Y + v.J, p.Z + v.K);
+        public static SPoint operator-(in SPoint p, in SVector v) => new(p.X - v.I, p.Y - v.J, p.Z - v.K);
     }
 
     // Represent a point in 3D space.

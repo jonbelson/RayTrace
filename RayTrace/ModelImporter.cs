@@ -11,11 +11,12 @@ namespace RayTrace
 {
     public class ModelImporter
     {
-        private static SVector GetNormal(List<SPoint> points, ModelData.Triangle triangle)
+        public static SVector GetNormal(List<SPoint> points, ModelData.Triangle triangle)
         {
             SVector v1 = points[triangle.v1] - points[triangle.v0];
             SVector v2 = points[triangle.v2] - points[triangle.v0];
-            SVector normal = v1.VectorProduct(v2);
+//            SVector normal = v1.VectorProduct(v2);
+            SVector normal = v2.VectorProduct(v1);
             return normal.Normalise();
         }
 
