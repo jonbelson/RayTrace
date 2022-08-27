@@ -69,6 +69,9 @@ namespace RayTrace
         public static SVector operator-(in SVector v1, in SVector v2) => new(v1.I - v2.I, v1.J - v2.J, v1.K - v2.K);
         public static SVector operator-(in SVector v) => new(-v.I, -v.J, -v.K);
         public static SVector operator*(in SVector v, float scale) => new(v.I * scale, v.J * scale, v.K * scale);
+
+        public static bool operator==(in SVector v1, in SVector v2) => v1.I == v2.I && v1.J == v2.J && v1.K == v2.K;
+        public static bool operator!=(in SVector v1, in SVector v2) => !(v1 == v2); //v1.I == v2.I && v1.J == v2.J && v1.K == v2.K;
     }
 
     public class Vector : INotifyPropertyChanged

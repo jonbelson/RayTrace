@@ -314,6 +314,13 @@ namespace RayTrace
                             material.Ambient = new() { red = r, green = g, blue = b };
                         }
                     }
+                    else if (tokens[0] == "Kd")
+                    {
+                        if (tokens.Length == 4 && Parse(tokens, out float r, out float g, out float b) == 3)
+                        {
+                            material.Diffuse = new() { red = r, green = g, blue = b };
+                        }
+                    }
                     else if (tokens[0] == "Ks")
                     {
                         if (tokens.Length == 4 && Parse(tokens, out float r, out float g, out float b) == 3)
@@ -350,6 +357,7 @@ namespace RayTrace
             }
             catch (Exception e)
             {
+                Debug.WriteLine($"Failed to load texture '{fileName}'");
                 return false;
             }
 
@@ -459,11 +467,11 @@ namespace RayTrace
                     }
                     else if (tokens[0] is "g" or "o")
                     {
-                        // Add any faces in the current group.
-//                        if (group.name != "Lashes" && group.name != "Nose" && group.name != "Eyes" && group.name != "Brow" && faces.Any())
+                        // Add any faces from the current group.
                         if (faces.Any())
                         {
                             AddTriangles(group, faces, triangles, points);
+                            group.Material = MaterialLibrary.Materials.Count;
                             groups.Add(group);
                         }
                         faces.Clear();
@@ -475,6 +483,7 @@ namespace RayTrace
                             name = string.Join("_", tokens, 1, tokens.Length - 1);
                         }
 
+                        // Create the new group.
                         group = new() { Name = name };
                     }
                     else if (tokens[0] == "mtllib")
@@ -482,7 +491,7 @@ namespace RayTrace
                         for (int i=1; i<tokens.Length; i++)
                         {
                             string materialPath = Path.Join(directoryName, tokens[i]);
-                            if (ParseMtlLib(materialPath))
+                            if (!ParseMtlLib(materialPath))
                             {
                                 Debug.WriteLine("Failed to parse material file: " + tokens[i]);
                             }

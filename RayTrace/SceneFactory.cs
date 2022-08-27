@@ -376,11 +376,12 @@ namespace RayTrace
 
             //Matrix objectToWorld = new Matrix();
 
+//            ModelData modelData = importer.ImportObj(@"Data\Firefox_IdaFabere\LP_Firefox.obj");
             ModelData modelData = importer.ImportObj(@"Data\pbr-low-poly-fox-character\source\LP_Firefox.obj");
 
-            TextureBitmap objTexture = new(@"Data\pbr-low-poly-fox-character\textures\LP_Firefox_1001_BaseColor.png");
+            TextureBitmap objTexture = new(@"Data\pbr-low-poly-fox-character\source\LP_Firefox_1001_BaseColor.png");
 
-            NormalMap normalMap = new(@"Data\pbr-low-poly-fox-character\textures\LP_Firefox_1001_Normal.png");
+            NormalMap normalMap = new(@"Data\pbr-low-poly-fox-character\source\LP_Firefox_1001_Normal.png");
 
             scene.Camera.Pos = new Point(-5.994f, 4.712f, -9.275f);
             scene.Camera.Target = new Point(0, 3, 1);

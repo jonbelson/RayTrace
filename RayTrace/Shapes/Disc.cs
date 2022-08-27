@@ -81,6 +81,7 @@ namespace RayTrace
                 return hr;
             }
 
+            hr.t = mu;
             hr.Entry = Intersection;
 
             // Intersection could have occurred from either side of the Plane, so adjust the surface normal appropriately.

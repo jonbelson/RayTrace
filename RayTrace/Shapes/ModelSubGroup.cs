@@ -15,6 +15,8 @@ namespace RayTrace
 
         private ModelData.SubGroup _group;
 
+        public ModelData.SubGroup Group { get => _group; }
+
         protected override void EnabledStateChanged()
         {
             //_model.SetGroupEnabled();

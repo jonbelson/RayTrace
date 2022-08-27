@@ -85,6 +85,8 @@ namespace RayTrace
             return Reflectivity > 0.0f;
         }
 
+        public bool HasNormalMap() => NormalMap!= null;
+
         //// True if the Shape is considered solid, or false if at least part of the interior is empty.
         //public bool IsSolid { get; set; }
 

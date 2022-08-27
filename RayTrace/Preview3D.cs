@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
@@ -11,7 +12,7 @@ namespace RayTrace
 {
     public class BoundingBox3D : ModelVisual3D
     {
-        private GeometryModel3D CreateBoundingBox(Viewport3D viewport3D)
+        private GeometryModel3D CreateBoundingBox()
         {
             double[,] box3D = new double[8, 3]
             {
@@ -64,7 +65,8 @@ namespace RayTrace
                 line.Thickness = 2;
                 line.Color = Colors.Red;
 
-                viewport3D.Children.Add(line);
+                this.Children.Add(line);
+                //viewport3D.Children.Add(line);
             }
 
             // Aligned with Y axis.
@@ -78,7 +80,8 @@ namespace RayTrace
                 line.Thickness = 2;
                 line.Color = Colors.Green;
 
-                viewport3D.Children.Add(line);
+                this.Children.Add(line);
+//                viewport3D.Children.Add(line);
             }
 
             // Aligned with Z axis.
@@ -92,15 +95,29 @@ namespace RayTrace
                 line.Thickness = 2;
                 line.Color = Colors.Blue;
 
-                viewport3D.Children.Add(line);
+                this.Children.Add(line);
+//                viewport3D.Children.Add(line);
             }
 
             return null;
         }
 
-        public BoundingBox3D(Viewport3D viewport3D)
+        public BoundingBox3D(float sx, float sy, float sz, SPoint p)
         {
-            CreateBoundingBox(viewport3D);
+            CreateBoundingBox();
+
+            var scale = new ScaleTransform3D(sx, sy, sz);
+            var translate = new TranslateTransform3D(p.X, p.Y, -p.Z);
+            Transform3DGroup transformGroup = new();
+
+            transformGroup.Children.Add(scale);
+            //transformGroup.Children.Add(new RotateTransform3D(axisRotationX));
+            //transformGroup.Children.Add(new RotateTransform3D(axisRotationY));
+            //transformGroup.Children.Add(new RotateTransform3D(axisRotationZ));
+            transformGroup.Children.Add(translate);
+
+            Transform = transformGroup;
+
         }
     }
 

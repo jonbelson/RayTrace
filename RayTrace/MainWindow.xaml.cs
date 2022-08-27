@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -197,7 +198,9 @@ namespace RayTrace
 
             foreach (Entity entity in Entities)
             {
-                entity.PropertyChanged += Entity_PropertyChanged;
+                //entity.PropertyChanged += Entity_PropertyChanged;
+
+                entity.AddPropertyChangedHandler(Entity_PropertyChanged);
             }
 
             //listView.ItemsSource = Entities;
@@ -536,8 +539,85 @@ namespace RayTrace
 
             viewport3D.Children.Add(preview3D);
 
-            BoundingBox3D boundingBox = new(viewport3D);
+            BoundingBox3D boundingBox = new(2, 2, 2, new SPoint(0, 0, 0));
             viewport3D.Children.Add(boundingBox);
+            
+            /*
+
+            BoundingBox boundingBox = new BoundingBox(0, 1, 0, 1, 0, 1);
+            BoundingBox3D bb3D = new(2, 2, 2, new SPoint(0, 0, -2));
+            Matrix mi = new();
+
+            //BoundingBox3D bb3D = new(boundingBox.GetWidth(), boundingBox.GetHeight(), boundingBox.GetDepth(), mi*boundingBox.GetCentre());
+//            viewport3D.Children.Add(bb3D);
+
+            bb3D = new(2, 2, 2, new SPoint(0, 0, -4));
+//            viewport3D.Children.Add(bb3D);
+
+
+            foreach (var shape in scene.Shapes)
+            {
+                //break;
+                if (shape is Model model)
+                {
+                    Node node = model.TreeRoot;
+                    if (node != null)
+                    {
+                        Matrix m = scene.Camera.WorldToView;
+
+                        Debug.WriteLine(m.ToString());
+
+                        m = m.GetInverse();
+
+                        Matrix m2 = m.GetInverse();
+                        Debug.WriteLine(m2.ToString());
+
+                        BoundingBox bb = node.Box;
+                        Debug.WriteLine(bb.Transform(m));
+
+                       // BoundingBox3D boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), new(model.Pos));
+                        //m = m.GetInverse();
+                        BoundingBox3D boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
+                        viewport3D.Children.Add(boundingBox3D);
+
+                        bb = node.Left.Box;
+                        Debug.WriteLine(bb);
+                        boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
+                        viewport3D.Children.Add(boundingBox3D);
+
+                        //bb = node.Left.Left.Box;
+                        //boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
+                        //viewport3D.Children.Add(boundingBox3D);
+                        //bb = node.Left.Right.Box;
+                        //boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
+                        //viewport3D.Children.Add(boundingBox3D);
+
+
+                        bb = node.Right.Box;
+                        Debug.WriteLine(bb.Transform(m));
+                        boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
+                        viewport3D.Children.Add(boundingBox3D);
+
+
+                        //bb = node.Right.Left.Box;
+                        //boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
+                        //viewport3D.Children.Add(boundingBox3D);
+                        //bb = node.Right.Right.Box;
+                        //boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
+                        //viewport3D.Children.Add(boundingBox3D);
+
+
+                    }
+                }
+            }
+
+            //BoundingBox3D boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), bb.GetCentre());
+            //Children.Add(boundingBox3D);
+
+
+            //BoundingBox3D boundingBox = new(5, new Point(0, 0, 0));
+            //viewport3D.Children.Add(boundingBox);
+*/
 
             Func<Point3D, Point3D, Point3DCollection> CreateLine = delegate (Point3D p1, Point3D p2) { return new Point3DCollection(new List<Point3D>() { p1, p2 }); };
 

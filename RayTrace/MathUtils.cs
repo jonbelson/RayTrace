@@ -224,6 +224,11 @@ namespace _3DTools
         {
             success = false;
             Matrix3D result = Matrix3D.Identity;
+// JonB
+if (visual == null)
+{
+    return ZeroMatrix;
+}
 
             Camera camera = visual.Camera;
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -43,6 +44,8 @@ namespace RayTrace
         {
             public bool Enabled { get; set; } = true;
             public string Name { get; set; }
+
+            public int Material { get; set; }
             public List<int> Triangles { get; set; } = new();
         }
 
@@ -90,7 +93,7 @@ namespace RayTrace
 
         public ModelData GetModelData() => _modelData;
 
-        public List<Model> ChildModels { get; set; }
+        //public List<Model> ChildModels { get; set; }
 
         // Cached vertices and normal vectors converted to View space.
         private SPoint[] _viewPoints = null;
@@ -109,6 +112,8 @@ namespace RayTrace
         public SVector GetTriangleNormal0(int index) => _viewNormals[_modelData.triangles[index].n0];
         public SVector GetTriangleNormal1(int index) => _viewNormals[_modelData.triangles[index].n1];
         public SVector GetTriangleNormal2(int index) => _viewNormals[_modelData.triangles[index].n2];
+
+        public Node TreeRoot { get => _root; }
 
         // If normal index is set to -1, assume that there are no vertex normals for this triangle.
         public bool HasVectorNormal(int index) => _modelData.triangles[index].n0 != -1;
@@ -130,13 +135,17 @@ namespace RayTrace
             public SVector n0, n1, n2;
             public SVector n;
 
+            public int subGroup;
+
             //public int v0, v1, v2;  // Indices into Point array.
             //public int t0, t1, t2;  // Indexes into Texel array.
             //public int n0, n1, n2;  // Indices into normal array.
             //public int n;           // Index into normal array for triangle normal.
         }
 
-        private FatTriangle[] fatTriangles;
+        private FatTriangle[] _fatTriangles;
+
+        private ModelSubGroup[] _subGroupArray;
 
         Dictionary<string, ModelSubGroup> _subGroups = new();
 
@@ -148,12 +157,14 @@ namespace RayTrace
 
                 foreach (ModelData.SubGroup group in _modelData.SubGroups)
                 {
-                    _subGroups.Add(group.Name, new ModelSubGroup(this, group));
+                    ModelSubGroup subGroup = new(this, group) { Material = this.Material };
+
+                    _subGroups.Add(group.Name, subGroup);
                 }
             }
         }
 
-        private SVector GetNormal(SPoint P0, SPoint P1, SPoint P2)
+        private static SVector GetNormal(SPoint P0, SPoint P1, SPoint P2)
         {
             SVector v1 = P1 - P0;
             SVector v2 = P2 - P0;
@@ -165,7 +176,7 @@ namespace RayTrace
 
         // https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/barycentric-coordinates
         // Return u, v (w = 1 - u - v)
-        private (float, float) GetBarymetricCoords(SPoint P0, SPoint P1, SPoint P2, SPoint hit)
+        private static (float, float) GetBarymetricCoords(SPoint P0, SPoint P1, SPoint P2, SPoint hit)
         {
             // Get triangle area.
             SVector p0p1 = P1 - P0;
@@ -199,7 +210,7 @@ namespace RayTrace
 
         // n0, n1, n2   Vector normals for triangle.
         // u, v         Barycentric coordinates of hit point.
-        private SVector GetNormal(SVector n0, SVector n1, SVector n2, float u, float v)
+        private static SVector GetNormal(SVector n0, SVector n1, SVector n2, float u, float v)
         {
             SVector N = n0*(1.0f - u - v) + n1*u + n2*v;
 
@@ -208,7 +219,7 @@ namespace RayTrace
 
         // c0, c1, c2   Colours for triangle.
         // u, v         Barycentric coordinates of hit point.
-        private ModelData.Texel GetTexel(ModelData.Texel c0, ModelData.Texel c1, ModelData.Texel c2, float u, float v)
+        private static ModelData.Texel GetTexel(ModelData.Texel c0, ModelData.Texel c1, ModelData.Texel c2, float u, float v)
         {
             float texelU = c0.u * (1.0f - u - v) + c1.u * u + c2.u * v;
             float texelV = c0.v * (1.0f - u - v) + c1.v * u + c2.v * v;
@@ -223,6 +234,37 @@ namespace RayTrace
             return new ModelData.Texel() { u = texelU, v = texelV };
         }
 
+        public override void AddPropertyChangedHandler(PropertyChangedEventHandler eventHandler)
+        {
+            PropertyChanged += eventHandler;
+            foreach (var subGroup in _subGroups.Values)
+            {
+                subGroup.AddPropertyChangedHandler(eventHandler);
+            }
+        }
+
+        public override Material GetMaterial(HitResult hr)
+        {
+            Material material = new();
+
+            int index = hr.Index;
+            if (index >= 0 && index < _fatTriangles.Length)
+            {
+                FatTriangle fatTriangle = _fatTriangles[index];
+                if (fatTriangle != null)
+                {
+                    int subGroup = fatTriangle.subGroup;
+                    if (subGroup >= 0 && subGroup < _subGroupArray.Length)
+                    {
+                        material = _subGroupArray[subGroup].Material;
+                    }
+                }
+            }
+
+            return material;
+        }
+
+
         //
         // Constructor.
         //
@@ -230,7 +272,7 @@ namespace RayTrace
         {
             _modelData = modelData;
 
-            if (centreModel)
+            if (centreModel && modelData != null)
             {
                 BoundingBox bb = modelData.GetBoundingBox();
 
@@ -240,20 +282,6 @@ namespace RayTrace
             }
 
             UpdateSubGroups();
-
-            //            Matrix rotate = Matrix.GetRotationY((float) Math.PI/2);
-            //Matrix rotate = Matrix.GetRotationX((float)Math.PI / 2);
-            //Matrix scale = Matrix.GetScale(2.0f, 2.0f, 2.0f);
-            //Matrix translate = Matrix.GetTranslation(0.0f, 0.0f, 10.0f);
-
-            //rotate = Matrix.GetRotationY((float)Math.PI / 2) * rotate;
-
-            //ObjectToWorld = rotate * scale * translate;
-
-            //ObjectToWorld = scale * translate;
-            //ObjectToWorld = scale;
-            //ObjectToWorld = rotate * scale * translate;
-            //ObjectToWorld = rotate;
         }
 
         //
@@ -336,6 +364,13 @@ namespace RayTrace
                     _viewNormals[i] = ObjectToViewNormal * _modelData.normals[i];
                 }
 
+                _subGroupArray = new ModelSubGroup[_modelData.SubGroups.Length];
+                int idx = 0;
+                foreach (var group in _subGroups)
+                {
+                    _subGroupArray[idx++] = group.Value;
+                }
+                    
                 BoundingBox bb = _modelData.GetBoundingBox();
                 _viewBoundingBox = bb.Transform(ObjectToView);
 
@@ -345,36 +380,46 @@ namespace RayTrace
                 //string graphviz = CreateGraphviz();
 
                 // Populate the fat triangle list.
-                fatTriangles = new FatTriangle[_modelData.triangles.Length];
+                _fatTriangles = new FatTriangle[_modelData.triangles.Length];
 
-                for (int i=0; i<_modelData.triangles.Length; i++)
+                idx = 0;
+                //foreach (var group in _modelData.SubGroups)
+                for (int i=0; i<_subGroupArray.Length; i++)
                 {
-                    FatTriangle fatTriangle = new FatTriangle();
-                    fatTriangle.v0 = GetTrianglePointV0(i);
-                    fatTriangle.v1 = GetTrianglePointV1(i);
-                    fatTriangle.v2 = GetTrianglePointV2(i);
-
-                    if (_modelData.HasVertexNormals)
+                    ModelSubGroup group = _subGroupArray[i];
+                    for (int tri = 0; tri < group.Group.Triangles.Count; tri++)
                     {
-                        fatTriangle.n0 = GetTriangleNormal0(i);
-                        fatTriangle.n1 = GetTriangleNormal1(i);
-                        fatTriangle.n2 = GetTriangleNormal2(i);
+                        FatTriangle fatTriangle = new();
+                        fatTriangle.v0 = GetTrianglePointV0(idx);
+                        fatTriangle.v1 = GetTrianglePointV1(idx);
+                        fatTriangle.v2 = GetTrianglePointV2(idx);
+
+                        fatTriangle.subGroup = i;
+
+                        if (_modelData.HasVertexNormals)
+                        {
+                            fatTriangle.n0 = GetTriangleNormal0(idx);
+                            fatTriangle.n1 = GetTriangleNormal1(idx);
+                            fatTriangle.n2 = GetTriangleNormal2(idx);
+                        }
+                        else
+                        {
+                            fatTriangle.n0 = GetTriangleNormal(idx);
+                            fatTriangle.n1 = GetTriangleNormal(idx);
+                            fatTriangle.n2 = GetTriangleNormal(idx);
+                        }
+
+                        fatTriangle.n = GetTriangleNormal(idx);//.Negate(); XXX
+
+                        fatTriangle.t0 = _modelData.GetTriangleTexel0(idx);
+                        fatTriangle.t1 = _modelData.GetTriangleTexel1(idx);
+                        fatTriangle.t2 = _modelData.GetTriangleTexel2(idx);
+
+                        _fatTriangles[idx++] = fatTriangle;
                     }
-                    else
-                    {
-                        fatTriangle.n0 = GetTriangleNormal(i);
-                        fatTriangle.n1 = GetTriangleNormal(i);
-                        fatTriangle.n2 = GetTriangleNormal(i);
-                    }
-
-                    fatTriangle.n = GetTriangleNormal(i);//.Negate(); XXX
-
-                    fatTriangle.t0 = _modelData.GetTriangleTexel0(i);
-                    fatTriangle.t1 = _modelData.GetTriangleTexel1(i);
-                    fatTriangle.t2 = _modelData.GetTriangleTexel2(i);
-
-                    fatTriangles[i] = fatTriangle;
                 }
+
+                Debug.Assert(idx == _modelData.triangles.Length);
             }
         }
 
@@ -422,10 +467,11 @@ namespace RayTrace
 
         private HitResult HitTestImpl(Camera camera, SPoint p1, SPoint p2, bool segmentOnly, bool firstHitOnly)
         {
-            HitResult hitResult = new HitResult(null);
+            HitResult hitResult = new(null);
 
             Node node = _root;
             List<HitResult> hitResults = new List<HitResult>();
+
             HitTestRecurse(camera, hitResults, node, p1, p2, segmentOnly, firstHitOnly);
 
             if (hitResults.Count > 0)
@@ -436,7 +482,7 @@ namespace RayTrace
                 {
                     if (hr.HasEntry())
                     {
-                        double d = p1.Distance(hr.Entry);
+                        double d = hr.t;
                         if (d < closest2)
                         {
                             closest2 = d;
@@ -445,8 +491,9 @@ namespace RayTrace
                     }
                 }
 
-                return hitResult;
+                CalculateTexelAndNormal(camera, ref hitResult);
 
+                return hitResult;
             }
 
             return new HitResult(this);
@@ -495,6 +542,87 @@ namespace RayTrace
 */
         }
 
+        private bool CalculateTexelAndNormal(Camera camera, ref HitResult hr)
+        {
+            int index = hr.Index;
+
+            SPoint intersection = hr.Entry;
+            FatTriangle tri = _fatTriangles[index];
+
+            SPoint V0 = tri.v0;
+            SPoint V1 = tri.v1;
+            SPoint V2 = tri.v2;
+
+            (float, float) uv = GetBarymetricCoords(V0, V1, V2, intersection);
+            Debug.Assert(uv.Item1 <= 1.0);
+            Debug.Assert(uv.Item2 <= 1.0);
+
+            // Use barycentric coordinates to get texel coordinates.
+            ModelData.Texel t0 = _modelData.GetTriangleTexel0(index);
+            ModelData.Texel t1 = _modelData.GetTriangleTexel1(index);
+            ModelData.Texel t2 = _modelData.GetTriangleTexel2(index);
+
+            ModelData.Texel texel = GetTexel(t0, t1, t2, uv.Item1, uv.Item2);
+            hr.u = texel.u;
+            hr.v = texel.v;
+
+            // Use barycentric coordinates to get normal vector.
+            SVector n0 = tri.n0;
+            SVector n1 = tri.n1;
+            SVector n2 = tri.n2;
+
+            // Get the triangle face normal, or vertex normal if available.
+            SVector vTriNormal = GetTriangleNormal(index);
+            if (HasVectorNormal(index))
+            {
+                vTriNormal = GetNormal(n0, n1, n2, uv.Item1, uv.Item2);
+            }
+
+            // If there's a normal map, apply it to the vertex normal.
+            if (HasNormalMap())
+            {
+                SVector tNormal = Material.NormalMap.GetNormal(texel.u, texel.v);
+
+                // Transform normal map vector to the triangle's normal.
+
+                SVector up = new(0, 1, 0);
+                SVector vUp = camera.NormalMatrix*up;
+
+                SVector vNorm = vTriNormal;
+
+                if (vUp == vNorm)
+                {
+                    SVector nearlyUp = new(1, 100, 0);
+                    nearlyUp = nearlyUp.Normalise();
+                    vUp = camera.NormalMatrix*nearlyUp;
+
+                    vNorm = vTriNormal;
+                }
+
+                //SVector vNorm = oNormal;
+                SVector vRight = vNorm.VectorProduct(vUp);
+                vRight = vRight.Normalise();
+
+                SVector xaxis = vRight;
+                SVector yaxis = vUp;
+                SVector zaxis = vNorm;
+
+                Matrix m = new(xaxis, yaxis, -zaxis);
+
+                m.Transpose();
+
+                SVector vMapNormal = m * tNormal;
+
+                hr.EntryNormal = vMapNormal;
+            }
+            else
+            {
+                hr.EntryNormal = vTriNormal;
+            }
+
+            return true;
+        }
+
         private HitResult HitTestTriangle(Camera camera, ref HitResult hr, int index, in SPoint p1, in SPoint p2, in SVector ray, bool segmentOnly)
         {
             //HitResult hr = new HitResult(this);
@@ -509,7 +637,7 @@ namespace RayTrace
             //Vector Normal = _modelData.GetTriangleNormal(index).Negate();
 
             //ModelData.Triangle tri = _modelData.triangles[index];
-            FatTriangle tri = fatTriangles[index];
+            FatTriangle tri = _fatTriangles[index];
 
             //SPoint vPos = GetTrianglePointV0(index);
             //SPoint vPos = _viewPoints[tri.v0];
@@ -595,98 +723,7 @@ namespace RayTrace
             {
                 hr.Entry = Intersection;
                 hr.EntryNormal = vNormal;
-
-                (float, float) uv = GetBarymetricCoords(V0, V1, V2, Intersection);
-                Debug.Assert(uv.Item1 <= 1.0);
-                Debug.Assert(uv.Item2 <= 1.0);
-
-                //hr.u = (float) uv.Item1;
-                //hr.v = (float) uv.Item2;
-                    ModelData.Texel t0 = _modelData.GetTriangleTexel0(index);
-                    ModelData.Texel t1 = _modelData.GetTriangleTexel1(index);
-                    ModelData.Texel t2 = _modelData.GetTriangleTexel2(index);
-
-                    ModelData.Texel texel = GetTexel(t0, t1, t2, uv.Item1, uv.Item2);
-                    hr.u = texel.u;
-                    hr.v = texel.v;
-
                 hr.t = mu;
-
-                //Vector n0 = _modelData.GetTriangleNormal0(index);
-                //Vector n1 = _modelData.GetTriangleNormal1(index);
-                //Vector n2 = _modelData.GetTriangleNormal2(index);
-
-                if (Material != null && Material.NormalMap != null)
-                {
-                    SVector tNormal = Material.NormalMap.GetNormal(texel.u, texel.v);
-
-                    SVector vTriNormal = GetTriangleNormal(index);//.Negate();
-
-
-        SVector n0 = tri.n0;
-        SVector n1 = tri.n1;
-        SVector n2 = tri.n2;
-
-        vTriNormal = GetNormal(n0, n1, n2, uv.Item1, uv.Item2);
-
-
-
-                    //SVector sTest = vNormal - vTriNormal;
-                    //SVector N = GetNormal(n0, n1, n2, uv.Item1, uv.Item2);
-
-
-                    //SVector edge1 = V1 - V0;
-                    //SVector edge2 = V2 - V0;
-                    //SVector deltaUV1 = uv2 - uv1;
-                    //SVector deltaUV2 = uv3 - uv1;
-
-                    //float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
-
-                    //tangent1.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
-                    //tangent1.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
-                    //tangent1.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
-
-                    //bitangent1.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
-                    //bitangent1.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
-                    //bitangent1.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
-
-
-
-                    SVector up = new(0, 1, 0);
-                    SVector vUp = camera.NormalMatrix*up;
-                    SVector vNorm = vTriNormal;
-                    //SVector vNorm = oNormal;
-                    SVector vRight = vNorm.VectorProduct(vUp);
-                    vRight = vRight.Normalise();
-
-                    SVector xaxis = vRight;
-                    SVector yaxis = vUp;
-                    SVector zaxis = vNorm;
-
-                    Matrix m = new(xaxis, yaxis, -zaxis);
-
-                    m.Transpose();
-
-                    SVector vMapNormal = m * tNormal;
-
-                    hr.EntryNormal = vMapNormal;
-
-                }
-                else if (HasVectorNormal(index))
-                {
-                    //SVector n0 = GetTriangleNormal0(index);
-                    //SVector n1 = GetTriangleNormal1(index);
-                    //SVector n2 = GetTriangleNormal2(index);
-
-                    SVector n0 = tri.n0;
-                    SVector n1 = tri.n1;
-                    SVector n2 = tri.n2;
-
-                    SVector N = GetNormal(n0, n1, n2, uv.Item1, uv.Item2);
-                    //N = ObjectToViewNormal * N; // XXX Check normal is being treated correctly re. transforms.
-                    hr.EntryNormal = N;
-                }
-
                 hr.Index = index;
             }
 
@@ -816,8 +853,15 @@ namespace RayTrace
 
         public override Colour GetColour(HitResult hr)
         {
+            FatTriangle triangle = _fatTriangles[hr.Index];
+            ModelSubGroup subGroup = _subGroupArray[triangle.subGroup];
+
+            Material material = subGroup.Material;
+
+            material ??= Material;
+
 //            TextureBitmap textureBitmap = _modelData.texture as TextureBitmap;
-            if (Material.Texture is TextureBitmap textureBitmap)
+            if (material.Texture is TextureBitmap textureBitmap)
             {
                 ModelData.Texel t0 = _modelData.GetTriangleTexel0(hr.Index);
                 ModelData.Texel t1 = _modelData.GetTriangleTexel1(hr.Index);
@@ -834,7 +878,7 @@ namespace RayTrace
             else
             {
 //                return _modelData.texture.GetColour(hr);
-                return Material.Texture.GetColour(hr);
+                return material.Texture.GetColour(hr);
             }
 
             //return Palette.Grey;

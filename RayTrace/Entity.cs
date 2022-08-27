@@ -32,6 +32,11 @@ namespace RayTrace
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName)); 
         }
 
+        public virtual void AddPropertyChangedHandler(PropertyChangedEventHandler eventHandler)
+        {
+            PropertyChanged += eventHandler;
+        }
+
         public Guid UID { get; /*set;*/ } = Guid.NewGuid();
 
         public Scene Scene { get; set; }

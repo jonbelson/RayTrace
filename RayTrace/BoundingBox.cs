@@ -39,6 +39,11 @@ namespace RayTrace
         public float GetCentreY() => (MinY + MaxY) / 2.0f;
         public float GetCentreZ() => (MinZ + MaxZ) / 2.0f;
 
+        public float GetWidth() => (MaxX - MinX);
+        public float GetHeight() => (MaxY - MinY);
+        public float GetDepth() => (MaxZ - MinZ);
+
+
         public Axis GetLongestAxis()
         {
             float width = Math.Abs(MaxX - MinX);
@@ -172,6 +177,13 @@ namespace RayTrace
             if (tfar < 0) return false;
 
             return true;
+        }
+
+        public override string ToString()
+        {
+            string s = $"Min: [{MinX}, {MinY}, {MinZ}] Max: [{MaxX}, {MaxY}, {MaxZ}]";
+
+            return s;
         }
     }
 }

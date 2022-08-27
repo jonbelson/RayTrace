@@ -490,25 +490,6 @@ namespace RayTrace
                 }
                 mesh.Positions = pointCollection;
 
-                /*
-                            // Add all the vertex normal vectors.
-                            Vector3DCollection vectorCollection = new(modelData.normals.Length);
-                            foreach (Vector v in modelData.normals)
-                            {
-                                vectorCollection.Add(VectorToVector3D(v));
-                            }
-                            mesh.Normals = vectorCollection;
-                */
-                /*
-                            // Add triangle indices.
-                            foreach (ModelData.Triangle triangle in modelData.triangles)
-                            {
-                                mesh.TriangleIndices.Add(triangle.v0);
-                                mesh.TriangleIndices.Add(triangle.v1);
-                                mesh.TriangleIndices.Add(triangle.v2);
-                            }
-                */
-
                 SVector[] pointNormals = new SVector[numPoints];
 
                 // Add vector normals.
@@ -521,9 +502,9 @@ namespace RayTrace
                     int v1 = triangle.v1;
                     int v2 = triangle.v2;
 
-                    mesh.TriangleIndices.Add(v2);
-                    mesh.TriangleIndices.Add(v1);
-                    mesh.TriangleIndices.Add(v0);
+                    //mesh.TriangleIndices.Add(v2);
+                    //mesh.TriangleIndices.Add(v1);
+                    //mesh.TriangleIndices.Add(v0);
 
                     if (modelData.HasVertexNormals)
                     {
@@ -554,7 +535,46 @@ namespace RayTrace
 
                     mesh.Normals.Add(v3d);
                 }
+
+                if (modelData.SubGroups.Length > 0)
+                {
+                    foreach (var group in modelData.SubGroups)
+                    {
+                        if (group.Enabled)
+                        {
+                            for (int i = 0; i < group.Triangles.Count; i++)
+                            {
+                                int iIndex = group.Triangles[i];
+                                ModelData.Triangle triangle = modelData.triangles[iIndex];
+
+                                int v0 = triangle.v0;
+                                int v1 = triangle.v1;
+                                int v2 = triangle.v2;
+
+                                mesh.TriangleIndices.Add(v2);
+                                mesh.TriangleIndices.Add(v1);
+                                mesh.TriangleIndices.Add(v0);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < numTriangles; i++)
+                    {
+                        ModelData.Triangle triangle = modelData.triangles[i];
+
+                        int v0 = triangle.v0;
+                        int v1 = triangle.v1;
+                        int v2 = triangle.v2;
+
+                        mesh.TriangleIndices.Add(v2);
+                        mesh.TriangleIndices.Add(v1);
+                        mesh.TriangleIndices.Add(v0);
+                    }
+                }
             }
+
             geometryModel.Geometry = mesh;
 
             geometryModel.Material = new DiffuseMaterial(new SolidColorBrush(DefaultColour));

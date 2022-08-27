@@ -130,6 +130,11 @@ namespace RayTrace
             }
         }
 
+        public virtual Material GetMaterial(HitResult hr)
+        {
+            return Material;
+        }
+
         private Matrix _objectToWorld = new();
         private Matrix _objectToWorldNormal = new();
         public Matrix ObjectToWorld {
@@ -165,9 +170,11 @@ namespace RayTrace
             }
         }
 
-        public bool HasRoughness() => Material.HasRoughness();
-        public bool HasTransparency() => Material.HasTransparency();
-        public bool HasReflectivity() => Material.HasReflectivity();
+        public bool HasMaterial() => Material != null;
+        public bool HasRoughness() => HasMaterial() && Material.HasRoughness();
+        public bool HasTransparency() => HasMaterial() && Material.HasTransparency();
+        public bool HasReflectivity() => HasMaterial() && Material.HasReflectivity();
+        public bool HasNormalMap() => HasMaterial() && Material.HasNormalMap();
 
         private void UpdateMatrix()
         {

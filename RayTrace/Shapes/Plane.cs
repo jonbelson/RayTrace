@@ -76,6 +76,7 @@ namespace RayTrace
             //Vector vecP2P1 = p1 - p2;
             SPoint Intersection = p1 + vecP2P1.Scale(mu);
 
+            hr.t = mu;
             hr.Entry = Intersection;
 
             // Intersection could have occurred from either side of the Plane, so adjust the surface normal appropriately.

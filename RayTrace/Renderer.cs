@@ -501,7 +501,8 @@ namespace RayTrace
             Colour diffuse = Palette.Black;
             Colour specular = Palette.Black;
 
-            MaterialType materialType = shape.Material.Type;
+            Material material = shape.GetMaterial(hr);
+            MaterialType materialType = material.Type;
 
             if (!UseBRDF && (materialType == MaterialType.BRDF_Lambertian || materialType == MaterialType.BRDF_CookTorrence))
             {
@@ -524,17 +525,18 @@ namespace RayTrace
                             {
                                 // Calculate light arriving from the random direction.
                                 Colour incoming = CalculateColour(camera, scene, hr.EntryNormal, rand, hr2, depth, true);
-                                L += hr.shape.Material.GetBrdfColour(hr, hr.EntryNormal, incoming);
+                                L += material.GetBrdfColour(hr, hr.EntryNormal, incoming);
                             }
                             else
                             {
                                 Colour incoming = scene.GetSkydomeColour(camera, ray2.Direction);
 
-                                L += hr.shape.Material.GetBrdfColour(hr, hr.EntryNormal, incoming);
+                                L += material.GetBrdfColour(hr, hr.EntryNormal, incoming);
                             }
                         }
                         else
                         {
+
                             for (int i = 0; i < NumBRDFSamples; i++)
                             {
                                 SPoint p = hr.Entry + hr.EntryNormal + GetSVectorInSphere(rand);
@@ -561,7 +563,7 @@ namespace RayTrace
                                     Colour incoming = CalculateColour(camera, scene, scattered, rand, hr2, depth, /*false*/ true);
                                     //L += hr.shape.Material.Brdf.GetColour(hr, scattered, incoming);
                                     //Colour colour = shape.GetColour(hr);
-                                    L += hr.shape.Material.GetBrdfColour(hr, scattered, incoming);
+                                    L += material.GetBrdfColour(hr, scattered, incoming);
 
                                     //float dpIN = scattered.DotProductSaturated(hr.EntryNormal);
                                     //L += hr.shape.Material.Brdf.GetColour(hr, scattered, incoming) * incoming * dpIN;
@@ -573,7 +575,7 @@ namespace RayTrace
                                     //hr3.EntryNormal = hr.EntryNormal;   // Original point we are sampling at.
                                     //hr3.Ray = scattered;
 
-                                    L += hr.shape.Material.GetBrdfColour(hr, scattered, incoming);
+                                    L += material.GetBrdfColour(hr, scattered, incoming);
                                 }
                             }
 
