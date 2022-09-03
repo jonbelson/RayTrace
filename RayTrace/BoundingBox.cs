@@ -85,6 +85,8 @@ namespace RayTrace
             //Debug.Assert(MinZ < MaxZ);
         }
 
+        public BoundingBox(BoundingBox bb) : this(bb.MinX, bb.MaxX, bb.MinY, bb.MaxY, bb.MinZ, bb.MaxZ) {}
+
         // Increase size of box to contain specified Point.
         public void AddPoint(SPoint p)
         {

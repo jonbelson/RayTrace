@@ -151,13 +151,14 @@ namespace RayTrace
 
         private void UpdateSubGroups()
         {
-            if (_modelData.SubGroups != null)
+            if (_modelData != null && _modelData.SubGroups != null)
             {
                 _subGroups.Clear();
 
                 foreach (ModelData.SubGroup group in _modelData.SubGroups)
                 {
-                    ModelSubGroup subGroup = new(this, group) { Material = this.Material };
+//                    ModelSubGroup subGroup = new(this, group) { Material = this.Material };
+                    ModelSubGroup subGroup = new(this, group) { Material = Scene.GetDefaultMaterial() };    // XXX Until subgroup Material GUIDs are saved.
 
                     _subGroups.Add(group.Name, subGroup);
                 }
@@ -256,7 +257,8 @@ namespace RayTrace
                     int subGroup = fatTriangle.subGroup;
                     if (subGroup >= 0 && subGroup < _subGroupArray.Length)
                     {
-                        material = _subGroupArray[subGroup].Material;
+                        Material subMaterial = _subGroupArray[subGroup].Material;
+                        if (subMaterial != null) material = subMaterial;
                     }
                 }
             }
@@ -470,28 +472,32 @@ namespace RayTrace
             HitResult hitResult = new(null);
 
             Node node = _root;
-            List<HitResult> hitResults = new List<HitResult>();
 
-            HitTestRecurse(camera, hitResults, node, p1, p2, segmentOnly, firstHitOnly);
-
-            if (hitResults.Count > 0)
+            if (node != null)
             {
-                double closest2 = Double.MaxValue;
+                List<HitResult> hitResults = new List<HitResult>();
 
-                foreach (HitResult hr in hitResults)
+                HitTestRecurse(camera, hitResults, node, p1, p2, segmentOnly, firstHitOnly);
+
+                if (hitResults.Count > 0)
                 {
-                    if (hr.HasEntry())
+                    double closest2 = Double.MaxValue;
+
+                    foreach (HitResult hr in hitResults)
                     {
-                        double d = hr.t;
-                        if (d < closest2)
+                        if (hr.HasEntry())
                         {
-                            closest2 = d;
-                            hitResult = hr;
+                            double d = hr.t;
+                            if (d < closest2)
+                            {
+                                closest2 = d;
+                                hitResult = hr;
+                            }
                         }
                     }
-                }
 
-                CalculateTexelAndNormal(camera, ref hitResult);
+                    CalculateTexelAndNormal(camera, ref hitResult);
+                }
 
                 return hitResult;
             }
@@ -863,11 +869,11 @@ namespace RayTrace
 //            TextureBitmap textureBitmap = _modelData.texture as TextureBitmap;
             if (material.Texture is TextureBitmap textureBitmap)
             {
-                ModelData.Texel t0 = _modelData.GetTriangleTexel0(hr.Index);
-                ModelData.Texel t1 = _modelData.GetTriangleTexel1(hr.Index);
-                ModelData.Texel t2 = _modelData.GetTriangleTexel2(hr.Index);
+                //ModelData.Texel t0 = _modelData.GetTriangleTexel0(hr.Index);
+                //ModelData.Texel t1 = _modelData.GetTriangleTexel1(hr.Index);
+                //ModelData.Texel t2 = _modelData.GetTriangleTexel2(hr.Index);
 
-                ModelData.Texel texel = GetTexel(t0, t1, t2, hr.u, hr.v);
+                //ModelData.Texel texel = GetTexel(t0, t1, t2, hr.u, hr.v);
 
                 //hr.u = texel.u;
                 //hr.v = texel.v;

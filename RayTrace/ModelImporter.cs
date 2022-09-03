@@ -148,17 +148,18 @@ namespace RayTrace
                     string[] numbers = tokens[i].Split('/');
                     if (numbers.Length == 2)
                     {
+                        // 'v/vt' format.
                         if (Int32.TryParse(numbers[0], out int v))
                         {
-                            if (Int32.TryParse(numbers[1], out int vn))
+                            if (Int32.TryParse(numbers[1], out int vt))
                             {
                                 FaceVertex faceVertex = new FaceVertex();
                                 faceVertex.vertex = v;
-                                faceVertex.texture = 0;
-                                faceVertex.normal = vn;
+                                faceVertex.texture = vt;
+                                faceVertex.normal = 0;
                                 face.vertices.Add(faceVertex);
 
-                                Debug.Assert(v >= 0 && vn >= 0);
+                                Debug.Assert(v >= 0 && vt >= 0);
                             }
                         }
                     }
@@ -294,7 +295,9 @@ namespace RayTrace
                     string[] tokens = line.Split(delim, StringSplitOptions.RemoveEmptyEntries);
                     if (tokens.Length == 0) continue;
 
-                    if (tokens[0] == "newmtl")
+                    string cmd = tokens[0].Trim();
+
+                    if (cmd == "newmtl")
                     {
                         if (material != null)
                         {
@@ -307,28 +310,28 @@ namespace RayTrace
                             material.Name = tokens[1];
                         }
                     }
-                    else if (tokens[0] == "Ka")
+                    else if (cmd == "Ka")
                     {
                         if (tokens.Length == 4 && Parse(tokens, out float r, out float g, out float b) == 3)
                         {
                             material.Ambient = new() { red = r, green = g, blue = b };
                         }
                     }
-                    else if (tokens[0] == "Kd")
+                    else if (cmd == "Kd")
                     {
                         if (tokens.Length == 4 && Parse(tokens, out float r, out float g, out float b) == 3)
                         {
                             material.Diffuse = new() { red = r, green = g, blue = b };
                         }
                     }
-                    else if (tokens[0] == "Ks")
+                    else if (cmd == "Ks")
                     {
                         if (tokens.Length == 4 && Parse(tokens, out float r, out float g, out float b) == 3)
                         {
                             material.Specular = new() { red = r, green = g, blue = b };
                         }
                     }
-                    else if (tokens[0] == "map_Kd")
+                    else if (cmd == "map_Kd")
                     {
                         int idx = 1;
                         while (idx < tokens.Length)

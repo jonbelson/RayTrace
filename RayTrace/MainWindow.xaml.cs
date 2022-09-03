@@ -553,8 +553,8 @@ namespace RayTrace
 
             bb3D = new(2, 2, 2, new SPoint(0, 0, -4));
 //            viewport3D.Children.Add(bb3D);
-
-
+*/
+/*
             foreach (var shape in scene.Shapes)
             {
                 //break;
@@ -605,8 +605,6 @@ namespace RayTrace
                         //bb = node.Right.Right.Box;
                         //boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
                         //viewport3D.Children.Add(boundingBox3D);
-
-
                     }
                 }
             }
