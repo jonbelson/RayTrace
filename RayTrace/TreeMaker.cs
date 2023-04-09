@@ -74,52 +74,6 @@ namespace RayTrace
 
         private enum Side { GreaterThan, LessThan, Overlap };
 
-/*
-        private BoundingBox SplitBoundingBox(BoundingBox parent, BoundingBox.Axis axis, bool left)
-        {
-            BoundingBox bb = new(parent.MinX, parent.MaxX, parent.MinY, parent.MaxY, parent.MinZ, parent.MaxZ);
-
-            float width = bb.GetWidth();
-            float height = bb.GetHeight();
-            float depth = bb.GetDepth();
-
-            switch (axis)
-            {
-                case BoundingBox.Axis.X:
-                    if (left)
-                    {
-                        bb.MaxX = bb.MinX + width/2;
-                    }
-                    else
-                    {
-                        bb.MinX = bb.MaxX - width/2;
-                    }
-                    break;
-                case BoundingBox.Axis.Y:
-                    if (left)
-                    {
-                        bb.MaxY = bb.MinY + height/2;
-                    }
-                    else
-                    {
-                        bb.MinY = bb.MaxY - height/2;
-                    }
-                    break;
-                case BoundingBox.Axis.Z:
-                    if (left)
-                    {
-                        bb.MaxZ = bb.MinZ + depth/2;
-                    }
-                    else
-                    {
-                        bb.MinZ = bb.MaxZ - depth/2;
-                    }
-                    break;
-            }
-            return bb;
-        }
-*/
-
         private Side CheckSideX(ModelData modelData, int index, double threshold)
         {
             int count = 0;
@@ -210,7 +164,7 @@ namespace RayTrace
             return (minor, major);
         }
 
-        // Recursively build tree by dividing the bounding box along the longest axis and splitting the triangles between the two halves.
+        // Recursively build tree by dividing the bounding box along an axis and splitting the triangles between the two halves.
         private Node MakeNode(ModelData modelData, List<int> triangles, BoundingBox bb, int depth, Node parentNode = null)
         {
             Node node = new();
@@ -393,7 +347,7 @@ namespace RayTrace
             }
             else
             {
-                Debug.WriteLine("Max. depth reached. left: " + left.Count + " right: " + right.Count);
+                //Debug.WriteLine("Max. depth reached. left: " + left.Count + " right: " + right.Count);
             }
 
             if (node.Left == null && node.Right == null)

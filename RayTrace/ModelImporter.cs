@@ -6,6 +6,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+//using System.Windows.Shapes;
+//using System.Windows.Shapes;
 
 namespace RayTrace
 {
@@ -98,9 +100,10 @@ namespace RayTrace
 
         }
 
-        public class Material
+        public class ObjMaterial
         {
             public string Name;
+            public string Directory;     // Path specified in material file (whcih may or may not be correct).
 
             public MaterialRgb Ambient; // Ka;    // Ambient reflectivity.
             public MaterialRgb Diffuse; // Kd;    // Diffuse reflectivity.
@@ -116,7 +119,8 @@ namespace RayTrace
             public float Ior;   // Ni;    // Index of refraction. Optical density of surface.
 
             public string AmbientFilename;
-            public string DiffuseFilename;
+            public string DiffuseFilename;      // map_Kd
+            public string BumpFilename;         // map_Bump
 
             // Texture map statements.
             public TextureOptions map_Ka;
@@ -131,7 +135,7 @@ namespace RayTrace
         {
             //public string Name;
             //            public Mtl[] Materials;
-            public List<Material> Materials = new();
+            public List<ObjMaterial> Materials = new();
         }
 
         public MaterialLib MaterialLibrary { get; } = new();
@@ -206,7 +210,7 @@ namespace RayTrace
         }
 
 
-        private static void AddTriangles(ModelData.SubGroup group, List<Face> faces, List<ModelData.Triangle> triangles, List<SPoint> points)
+        private static void AddTriangles(ModelData.SubGroup group, List<Face> faces, List<ModelData.Triangle> triangles, List<SPoint> points, List<SVector> normals)
         {
             foreach (Face face in faces)
             {
@@ -238,8 +242,58 @@ namespace RayTrace
                 }
                 else if (face.vertices.Count > 3)
                 {
-                    //Debug.WriteLine($"Skipping face with {face.vertices.Count} vertices");
+                    //Debug.Assert(face.vertices.Count < 5);
 
+                    List<SPoint> polygon = new();
+                    List<int> mapping = new();
+
+                    for (int i=0; i<face.vertices.Count; i++)
+                    {
+                        int index = face.vertices[i].vertex;
+                        polygon.Add(new(points[index]));
+                        mapping.Add(index);
+                    }
+
+                    Triangulator triangulator = new (polygon);
+                    if (triangulator.Triangulate(normals[face.vertices[0].normal]))
+                    {
+                        var tris = triangulator.Triangles;
+                        foreach (var tri in tris)
+                        {
+                            // Convert polygoniser vertex indices back into our ones.
+                            int idx1 = mapping[tri.v1];
+                            int idx2 = mapping[tri.v2];
+                            int idx3 = mapping[tri.v3];
+
+
+                            ModelData.Triangle triangle = new();
+                            triangle.v0 = idx1;
+                            triangle.v1 = idx2;
+                            triangle.v2 = idx3;
+
+                            triangle.n0 = face.vertices[tri.v1].normal;
+                            triangle.n1 = face.vertices[tri.v2].normal;
+                            triangle.n2 = face.vertices[tri.v3].normal;
+
+                            //Debug.Assert(triangle.n != 1);
+
+                            //SVector n = GetNormal(points, triangle);
+                            //faceNormals.Add(n);
+                            //triangle.n = normals.Count() - 1;
+
+                            triangle.t0 = face.vertices[tri.v1].texture;
+                            triangle.t1 = face.vertices[tri.v2].texture;
+                            triangle.t2 = face.vertices[tri.v3].texture;
+
+                            triangles.Add(triangle);
+
+                            group.Triangles.Add(triangles.Count - 1);
+
+
+                        }
+                    }
+
+/*
                     int numTris = face.vertices.Count - 2;
                     //int v1 = 0; // Anchor point.
                     int v2 = 1; // Second point.
@@ -271,6 +325,7 @@ namespace RayTrace
                         v2++;
                         v3 = (v3 + 1) % face.vertices.Count;
                     }
+*/
                 }
             }
         }
@@ -281,7 +336,9 @@ namespace RayTrace
             {
                 StreamReader fileStream = new(fileName);
 
-                Material material = null;// new();
+                string directoryName = Path.GetDirectoryName(fileName); // XXX Specify path to function? Material paths are often incorrect.
+
+                ObjMaterial material = null;// new();
 
                 //Mtl mtl = new();
 
@@ -308,6 +365,7 @@ namespace RayTrace
                         {
                             material = new();
                             material.Name = tokens[1];
+                            material.Directory = directoryName;
                         }
                     }
                     else if (cmd == "Ka")
@@ -331,6 +389,27 @@ namespace RayTrace
                             material.Specular = new() { red = r, green = g, blue = b };
                         }
                     }
+                    else if (cmd == "map_Ka")
+                    {
+                        int idx = 1;
+                        while (idx < tokens.Length)
+                        {
+                            if (tokens[idx].Length > 0)
+                            {
+                                if (tokens[idx][0] == '-')
+                                {
+                                    // XXX Process options
+                                }
+                                else
+                                {
+                                    string name = string.Join(" ", tokens, idx, tokens.Length - idx);   // Handle filenames with spaces.
+                                    material.AmbientFilename = name;    // Path.Join(directoryName, name);
+                                    idx = tokens.Length;
+                                }
+                            }
+                            idx++;
+                        }
+                    }
                     else if (cmd == "map_Kd")
                     {
                         int idx = 1;
@@ -344,7 +423,8 @@ namespace RayTrace
                                 }
                                 else
                                 {
-                                    material.AmbientFilename = string.Join(" ", tokens, idx, tokens.Length - idx);
+                                    string name = string.Join(" ", tokens, idx, tokens.Length - idx);   // Handle filenames with spaces.
+                                    material.DiffuseFilename = name;    // Path.Join(directoryName, name);
                                     idx = tokens.Length;
                                 }
                             }
@@ -473,8 +553,8 @@ namespace RayTrace
                         // Add any faces from the current group.
                         if (faces.Any())
                         {
-                            AddTriangles(group, faces, triangles, points);
-                            group.Material = MaterialLibrary.Materials.Count;
+                            AddTriangles(group, faces, triangles, points, normals);
+                            group.Material = MaterialLibrary.Materials.Count - 1;
                             groups.Add(group);
                         }
                         faces.Clear();
@@ -485,6 +565,8 @@ namespace RayTrace
                         {
                             name = string.Join("_", tokens, 1, tokens.Length - 1);
                         }
+
+                        //Debug.Assert(!String.Equals(name, "Cylinder.043_Cylinder.036"));
 
                         // Create the new group.
                         group = new() { Name = name };
@@ -509,7 +591,7 @@ namespace RayTrace
 
                 if (faces.Any())
                 {
-                    AddTriangles(group, faces, triangles, points);
+                    AddTriangles(group, faces, triangles, points, normals);
                     groups.Add(group);
                 }
             }
@@ -581,7 +663,7 @@ namespace RayTrace
                     {
                         SVector n = GetNormal(points, triangle);
                         normals.Add(n);
-                        triangle.n = normals.Count() - 1;
+                        triangle.n = normals.Count - 1;
                     }
 
                     // Indexes start at '1' so add a dummy entry to the list.
@@ -597,6 +679,61 @@ namespace RayTrace
                 //return (modelData, modelData.texture);
 
             return modelData;
+        }
+
+        private string FindTexture(string directory, string relativeOrAbsolutePath)
+        {
+            if (File.Exists(relativeOrAbsolutePath))
+            {
+                return relativeOrAbsolutePath;
+            }
+
+            string fileName = Path.GetFileName(relativeOrAbsolutePath);
+
+            string path = Path.Join(directory, fileName);
+
+            if (File.Exists(path))
+            {
+                return path;
+            }
+
+            return String.Empty;
+        }
+
+       public List<Material> CreateMaterials()
+        {
+            List<Material> materials = new();
+
+            foreach (var mat in MaterialLibrary.Materials)
+            {
+                Material material = new(MaterialType.Diffuse);
+
+                material.Name = mat.Name;
+
+                if (mat.BumpFilename != null)
+                {
+                    string path = FindTexture(mat.Directory, mat.BumpFilename);
+                    if (!String.IsNullOrEmpty(path))
+                    {
+                        NormalMap normalMap = new(path);
+                        material.NormalMap = normalMap;
+                    }
+                }
+
+                if (mat.DiffuseFilename != null)
+                {
+                    string path = FindTexture(mat.Directory, mat.DiffuseFilename);
+                    if (!String.IsNullOrEmpty(path))
+                    {
+                        TextureBitmap texture = new(path);
+                        material.Texture = texture;
+                    }
+                }
+
+                materials.Add(material);
+            }
+
+            return materials;
         }
 
     }

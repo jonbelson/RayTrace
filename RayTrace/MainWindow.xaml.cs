@@ -240,6 +240,16 @@ namespace RayTrace
         {
             InitializeComponent();
 
+//            List<SPoint> points = new List<SPoint>() { new SPoint(0, 0, 0), new SPoint(1, 0, 0), new SPoint(1, 1, 0), new SPoint(0, 1, 0) };
+            List<SPoint> points = new List<SPoint>() { new SPoint(0, 0, 0), new SPoint(5, 0, 0), new SPoint(5, 5, 0), new SPoint(0, 5, 0) };
+            Triangulator triangulator = new(points);
+
+            if (triangulator.Triangulate())
+            {
+
+            }
+
+
             Quaternion q = new Quaternion(new SVector(0, 1, 0), (float)Math.PI / 2);
             SVector v = new(0, 0, 1);
             SVector vr = q.Rotate(v);
@@ -1071,12 +1081,28 @@ namespace RayTrace
                                 ModelImporter importer = new();
 
                                 ModelData modelData = importer.ImportObj(filename);
+                                List<Material> materials = importer.CreateMaterials();
 
-                                Model model = new Model(scene, new Point(0, 0, 0), modelData, true);
+                                Model model = new Model(scene, new Point(0, 0, 0), modelData, materials, true);
 
                                 model.Name = System.IO.Path.GetFileNameWithoutExtension(modelData.fileName);
 
                                 shape = model;
+
+                                if (materials.Count > 0)
+                                {
+                                    MaterialTileMaker materialTileMaker = new() { Size = 150 };
+                                    foreach (var material in materials)
+                                    //for (int i=0; i<materials.Count; i++)
+                                    {
+                                        MaterialTile newTile = materialTileMaker.MakeTile(material);
+                                        newTile.WriteableBitmap = BitmapToWriteableBitmap(newTile.Bitmap);
+                                        MaterialTiles.Add(newTile);
+
+                                        scene.AddMaterial(material);
+                                    }
+                                    materialListBox.Items.Refresh();
+                                }
                             }
                         }
                         break;

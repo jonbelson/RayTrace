@@ -7,13 +7,12 @@ using System.Threading.Tasks;
 
 namespace RayTrace
 {
+    // Represents an AABB.
     public class BoundingBox
     {
-        private void Swap(ref float d1, ref float d2)
+        private static void Swap(ref float d1, ref float d2)
         {
-            float temp = d1;
-            d1 = d2;
-            d2 = temp;
+            (d2, d1) = (d1, d2);
         }
 
         public float MinX { get; set; }
@@ -60,7 +59,7 @@ namespace RayTrace
             }
         }
 
-        // Default BoundingBox that contains, well, nothing.
+        // Default BoundingBox constructor that contains, well, nothing.
         public BoundingBox()
         {
             MinX = float.MaxValue;
@@ -71,6 +70,9 @@ namespace RayTrace
             MaxZ = float.MinValue;
         }
 
+        //
+        // Constructor.
+        //
         public BoundingBox(float minX, float maxX, float minY, float maxY, float minZ, float maxZ)
         {
             MinX = minX;
@@ -85,6 +87,9 @@ namespace RayTrace
             //Debug.Assert(MinZ < MaxZ);
         }
 
+        //
+        // Constructor.
+        //
         public BoundingBox(BoundingBox bb) : this(bb.MinX, bb.MaxX, bb.MinY, bb.MaxY, bb.MinZ, bb.MaxZ) {}
 
         // Increase size of box to contain specified Point.
@@ -114,7 +119,7 @@ namespace RayTrace
             SPoint p7 = matrix * new SPoint(MaxX, MaxY, MaxZ);
             SPoint p8 = matrix * new SPoint(MaxX, MinY, MaxZ);
 
-            BoundingBox bb = new BoundingBox();
+            BoundingBox bb = new();
             bb.AddPoint(p1);
             bb.AddPoint(p2);
             bb.AddPoint(p3);
@@ -130,14 +135,14 @@ namespace RayTrace
         public bool Intersects(SPoint p1, SPoint p2)
         {
             // Get bounding box extents.
-            SPoint B0 = new SPoint(MinX, MinY, MinZ);
-            SPoint B1 = new SPoint(MaxX, MaxY, MaxZ);
+            SPoint B0 = new(MinX, MinY, MinZ);
+            SPoint B1 = new(MaxX, MaxY, MaxZ);
 
             SVector D = p2 - p1;
             //D = D.Normalise();
 
-            float tnear = float.MinValue;   // -9999999999;
-            float tfar = float.MaxValue;  // 999999999;
+            float tnear = float.MinValue;
+            float tfar = float.MaxValue;
 
             // X
             float InvDI = 1.0f / D.I;

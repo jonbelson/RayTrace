@@ -58,9 +58,12 @@ namespace RayTrace
             MaterialTile = materialTileMaker.MakeTile(material);
             //WriteableBitmap wb = BitmapToWriteableBitmap(materialTile.Bitmap);
 
-            WriteableBitmap wb = MaterialTile.Bitmap.ToWriteableBitmap();
+            if (MaterialTile.Bitmap != null)
+            {
+                WriteableBitmap wb = MaterialTile.Bitmap.ToWriteableBitmap();
 
-            preview.Source = wb;
+                preview.Source = wb;
+            }
         }
 
         //
@@ -70,24 +73,28 @@ namespace RayTrace
         {
             material = mat;
             texture = material.Texture;
-            textureType = material.Texture.Type;
 
-            // Serialse the Material to XML in case the user cancels.
-            _textureOrig = mat.Texture;
-            //mat.Texture = null;
-            _xmlMaterialOrig = mat.ToXML();
-            //mat.Texture = _textureOrig;
+            if (texture != null)
+            {
+                textureType = material.Texture.Type;
 
-            InitializeComponent();
+                // Serialse the Material to XML in case the user cancels.
+                _textureOrig = mat.Texture;
+                //mat.Texture = null;
+                _xmlMaterialOrig = mat.ToXML();
+                //mat.Texture = _textureOrig;
 
-            DataContext = this;
+                InitializeComponent();
 
-            Materials.Add(material);
+                DataContext = this;
 
-            comboBoxMaterialType.ItemsSource = materialTypes;
-            comboBoxMaterialType.SelectedItem = mat.Type;
+                Materials.Add(material);
 
-            //comboBoxTexture.ItemSource = Textures;
+                comboBoxMaterialType.ItemsSource = materialTypes;
+                comboBoxMaterialType.SelectedItem = mat.Type;
+
+                //comboBoxTexture.ItemSource = Textures;
+            }
 
             UpdatePreview();
         }

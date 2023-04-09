@@ -45,7 +45,7 @@ namespace RayTrace
             public bool Enabled { get; set; } = true;
             public string Name { get; set; }
 
-            public int Material { get; set; }
+            public int Material { get; set; } = -1;
             public List<int> Triangles { get; set; } = new();
         }
 
@@ -284,6 +284,29 @@ namespace RayTrace
             }
 
             UpdateSubGroups();
+        }
+
+        public Model(Scene scene, Point p, ModelData modelData, List<Material> materials, bool centreModel = false) : this(scene, p, modelData, centreModel)
+        {
+            _subGroups.Clear();
+
+            //foreach (ModelData.SubGroup group in _modelData.SubGroups)
+            for (int i = 0; i<_modelData.SubGroups.Length; i++)
+            {
+                ModelData.SubGroup group = _modelData.SubGroups[i];
+
+                //ModelSubGroup subGroup = new(this, group) { Material = this.Material };
+                ModelSubGroup subGroup = new(this, group);
+                if (group.Material != -1)
+                {
+                    subGroup.Material = materials[group.Material];
+                }
+                else
+                {
+                    subGroup.Material = Scene.GetDefaultMaterial();    // XXX Until subgroup Material GUIDs are saved.
+                }
+                _subGroups.Add(group.Name, subGroup);
+            }
         }
 
         //

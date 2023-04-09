@@ -14,6 +14,7 @@ namespace RayTrace
 
         //public SPoint() => (X, Y, Z) = (0, 0, 0);
 
+        public SPoint(SPoint p) => (X, Y, Z) = (p.X, p.Y, p.Z);
         public SPoint(float x, float y, float z) => (X, Y, Z) = (x, y, z);
 
         public SPoint Scale(float scale) => new(X * scale, Y * scale, Z * scale);

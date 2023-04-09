@@ -12,7 +12,8 @@ namespace RayTrace
         private int height;
         private String fileName;
 
-        private Colour[] texture = null;
+        //private Colour[] texture = null;
+        private int[] texture = null;
 
         public override TextureType Type { get; } = TextureType.Bitmap;
 
@@ -38,22 +39,23 @@ namespace RayTrace
                     height = bitmap.Height;
                     BitmapData bitmapData = bitmap.LockBits(new System.Drawing.Rectangle(0, 0, width, height), ImageLockMode.ReadOnly, PixelFormat.Format32bppRgb);
 
-                    texture = new Colour[width * height];
+                    //texture = new Colour[width * height];
+                    texture = new int[width * height];
 
-                    int[] row = new int[width];
+                    //int[] row = new int[width];
 
                     for (int y = 0; y < height; y++)
                     {
                         IntPtr source = bitmapData.Scan0 + (height - y - 1) * bitmapData.Stride;
 
-                        //                    System.Runtime.InteropServices.Marshal.Copy(row, 0, dest, width);
-                        System.Runtime.InteropServices.Marshal.Copy(source, row, 0, width);
+                        //System.Runtime.InteropServices.Marshal.Copy(source, row, 0, width);
+                        System.Runtime.InteropServices.Marshal.Copy(source, texture, y*width, width);
 
-                        for (int i = 0; i < width; i++)
-                        {
-                            uint rgb = (uint)row[i];
-                            texture[y * width + i] = new Colour(rgb);
-                        }
+                        //for (int i = 0; i < width; i++)
+                        //{
+                        //    uint rgb = (uint)row[i];
+                        //    texture[y * width + i] = new Colour(rgb);
+                        //}
                     }
 
                     bitmap.UnlockBits(bitmapData);
@@ -119,7 +121,10 @@ namespace RayTrace
 
                 Debug.Assert(y * width + x < texture.Length);
 
-                return texture[y * width + x];
+                //return texture[y * width + x];
+
+                uint rgb = (uint) texture[y * width + x];
+                return new Colour(rgb);
             }
 
             return Palette.Grey;
@@ -138,7 +143,9 @@ namespace RayTrace
                 int x = (int)(u * (width - 1));
                 int y = (int)(v * (height - 1));
 
-                return texture[y * width + x];
+                //return texture[y * width + x];
+                uint rgb = (uint)texture[y * width + x];
+                return new Colour(rgb);
             }
 
             return Palette.Grey;
