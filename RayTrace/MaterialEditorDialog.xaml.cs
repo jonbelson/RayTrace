@@ -94,9 +94,10 @@ namespace RayTrace
                 comboBoxMaterialType.SelectedItem = mat.Type;
 
                 //comboBoxTexture.ItemSource = Textures;
+
+                UpdatePreview();
             }
 
-            UpdatePreview();
         }
 
         private void okButton_Click(object sender, RoutedEventArgs e)

@@ -906,11 +906,15 @@ namespace RayTrace
             }
             else
             {
-//                return _modelData.texture.GetColour(hr);
-                return material.Texture.GetColour(hr);
+                //                return _modelData.texture.GetColour(hr);
+
+                if (material.Texture != null)
+                {
+                    return material.Texture.GetColour(hr);
+                }
             }
 
-            //return Palette.Grey;
+            return Palette.Grey;
         }
 
         protected override void AsXMLImpl(XMLEntity xml)

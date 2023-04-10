@@ -1083,7 +1083,7 @@ namespace RayTrace
                                 ModelData modelData = importer.ImportObj(filename);
                                 List<Material> materials = importer.CreateMaterials();
 
-                                Model model = new Model(scene, new Point(0, 0, 0), modelData, materials, true);
+                                Model model = new(scene, new Point(0, 0, 0), modelData, materials, true);
 
                                 model.Name = System.IO.Path.GetFileNameWithoutExtension(modelData.fileName);
 

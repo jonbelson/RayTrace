@@ -359,6 +359,10 @@ namespace RayTrace
 
             int numVertices = Indices.Count;
 
+            // XXX Worth doing?
+            // How many times we loop without finding ears before we quit.
+            //int numAttempts = numVertices;
+
             while (Indices.Count > 3)
             {
                 // Search for an ear.

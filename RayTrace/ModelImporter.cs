@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Xml.Linq;
 //using System.Windows.Shapes;
 //using System.Windows.Shapes;
 
@@ -139,6 +140,13 @@ namespace RayTrace
         }
 
         public MaterialLib MaterialLibrary { get; } = new();
+
+        // Return index of specified ObjMaterial, or -1 if not found.
+        // XXX Take path into account in case more than one material has the same name?
+        private int FindMaterialByName(string name)
+        {
+            return MaterialLibrary.Materials.FindIndex(x => x.Name == name);
+        }
 
         private static Face ParseFace(string[] tokens)
         {
@@ -474,6 +482,8 @@ namespace RayTrace
 
             texels.Add(new ModelData.Texel());
 
+            int currentMaterial = -1;
+
             try
             {
                 StreamReader file = new StreamReader(path);
@@ -554,7 +564,7 @@ namespace RayTrace
                         if (faces.Any())
                         {
                             AddTriangles(group, faces, triangles, points, normals);
-                            group.Material = MaterialLibrary.Materials.Count - 1;
+                            group.Material = currentMaterial;   // MaterialLibrary.Materials.Count - 1;
                             groups.Add(group);
                         }
                         faces.Clear();
@@ -581,6 +591,25 @@ namespace RayTrace
                                 Debug.WriteLine("Failed to parse material file: " + tokens[i]);
                             }
                         }
+                    }
+                    else if (tokens[0] == "usemtl")
+                    {
+                        if (tokens.Length > 1)
+                        {
+                            string materalName = string.Join("_", tokens, 1, tokens.Length - 1);
+
+                            currentMaterial = FindMaterialByName(materalName);
+
+                            if (currentMaterial == -1)
+                            {
+                                Debug.WriteLine($"Failed to find material '${materalName}");
+                            }
+                        }
+                        else
+                        {
+                            Debug.WriteLine("Skipping malformed 'usemtl' line");
+                        }
+
                     }
                     else
                     {
