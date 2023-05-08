@@ -14,8 +14,6 @@ namespace RayTrace
     // http://www.humus.name/index.php?page=Textures
     public class Skybox : Skydome
     {
-        //private int width;
-        //private int height;
         private string _directory;
 
         public string Directory
@@ -26,7 +24,11 @@ namespace RayTrace
             }
         }
 
-        //        private Colour[] faces = new Colour[6];
+        private string _displayName;
+
+        public string DisplayName { get => _displayName; }
+
+        // private Colour[] faces = new Colour[6];
         private BitmapUtils.ColourTexture[] faces = new BitmapUtils.ColourTexture[6];
 
         private const int Right = 0;
@@ -119,7 +121,7 @@ namespace RayTrace
                         throw new ArgumentException($"Failed to extract zipfile '{zipFile}'");
                     }
 
-                    _directory = extractionDir;
+                    _displayName = Path.GetFileNameWithoutExtension(name);
                 }
                 else
                 {
@@ -129,6 +131,8 @@ namespace RayTrace
             else
             {
                 _directory = name;
+
+                _displayName = Path.GetFileNameWithoutExtension(name);
             }
 
             _ = LoadTextures(_directory);
