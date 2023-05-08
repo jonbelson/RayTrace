@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,17 +11,18 @@ namespace RayTrace
 {
     // Represent the environment via a cube map.
     // Sky bitmap can either be a single texture or six separate textures.
+    // http://www.humus.name/index.php?page=Textures
     public class Skybox : Skydome
     {
         //private int width;
         //private int height;
-        private string directory;
+        private string _directory;
 
         public string Directory
         {
             get
             {
-                return new DirectoryInfo(directory).Name;
+                return new DirectoryInfo(_directory).Name;
             }
         }
 
@@ -41,8 +43,8 @@ namespace RayTrace
             public List<string> faces = new List<string>();
         };
 
-//        private Fileset fileset1 = new Fileset() { right="posx.jpg", left = "negx.jpg", top="posy.jpg", bottom="negy.jpg", front="posz.jpg", back="negz.jpg" };
-        private Fileset fileset1 = new Fileset() { faces = { "posx.jpg", "negx.jpg", "posy.jpg", "negy.jpg", "posz.jpg", "negz.jpg" } };
+//      private Fileset fileset1 = new Fileset() { right="posx.jpg", left = "negx.jpg", top="posy.jpg", bottom="negy.jpg", front="posz.jpg", back="negz.jpg" };
+        private readonly Fileset fileset1 = new Fileset() { faces = { "posx.jpg", "negx.jpg", "posy.jpg", "negy.jpg", "posz.jpg", "negz.jpg" } };
 
         // Attempt to load skybox textures by trying a few common formats.
         private bool LoadTextures(string directory)
@@ -77,11 +79,59 @@ namespace RayTrace
             return ok;
         }
 
-        public Skybox(string directory)
+        private static string ExtractZip(string zipFile)
         {
-            this.directory = directory;
+            try
+            {
+                using ZipArchive archive = ZipFile.OpenRead(zipFile);
 
-            _ = LoadTextures(directory);
+                //string tempDir = System.IO.Path.GetTempPath();
+                string appDataDir = Storage.DataDir;
+                string dirName = Guid.NewGuid().ToString();
+                string dir = Path.Combine(appDataDir, dirName);
+
+                archive.ExtractToDirectory(dir, true);
+
+                return dir;
+            }
+            catch
+            {
+            }
+            return string.Empty;
+        }
+
+        //
+        // Constructor
+        // name     Name of skybox directory. If not found, look for a matching ZIP file containing the skybox files.
+        //
+        public Skybox(string name)
+        {
+            if (!System.IO.Directory.Exists(name))
+            {
+                // Not matching directory, so look for a ZIP.
+                string zipFile = name + ".zip";
+                if (File.Exists(zipFile))
+                {
+                    string extractionDir = ExtractZip(zipFile);
+
+                    if (string.IsNullOrEmpty(extractionDir))
+                    {
+                        throw new ArgumentException($"Failed to extract zipfile '{zipFile}'");
+                    }
+
+                    _directory = extractionDir;
+                }
+                else
+                {
+                    throw new ArgumentException($"Invalid skybox '{name}'");
+                }
+            }
+            else
+            {
+                _directory = name;
+            }
+
+            _ = LoadTextures(_directory);
 
  /*
             BitmapUtils.ColourTexture colourTexture;
@@ -103,9 +153,9 @@ namespace RayTrace
 
         public Skybox(XMLSkybox xmlSkybox)
         {
-            this.directory = xmlSkybox.Directory;
+            this._directory = xmlSkybox.Directory;
 
-            _ = LoadTextures(directory);
+            _ = LoadTextures(_directory);
         }
 
         //private (float u, float v) CalculateUV(Camera camera, SVector ray)
@@ -113,7 +163,7 @@ namespace RayTrace
 
         //}
 
-        private Colour GetColour(BitmapUtils.ColourTexture texture, float u, float v)
+        private static Colour GetColour(BitmapUtils.ColourTexture texture, float u, float v)
         {
             u = Math.Clamp(u, 0, 1);
             v = Math.Clamp(v, 0, 1);
@@ -254,7 +304,7 @@ namespace RayTrace
         {
             XMLSkybox xml = new();
 
-            xml.Directory = directory;
+            xml.Directory = _directory;
 
             return xml;
         }

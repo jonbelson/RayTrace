@@ -28,7 +28,9 @@ namespace RayTrace
             scene.Camera.Pos = new Point(3, 5, -16);
             scene.Camera.Target = new Point(0, 0, 0);
 
-            //scene.AddLight(new PointLight(new Point(0, 10, 0), 1000, Palette.White));
+            new PointLight(scene, new Point(0, 10, 0), 1000, Palette.White);
+
+            scene.Skydome = new Skybox("Data\\skyboxes\\Forest");
 
             return scene;
         }
@@ -463,7 +465,8 @@ namespace RayTrace
             //scene.AddLight(light);
 
             //scene.Skydome = new SkydomeBitmap("Data\\skydomes\\immenstadter_horn_2048.jpg");
-            scene.Skydome = new Skybox("Data\\skyboxes\\Yokohama2");
+//            scene.Skydome = new Skybox("Data\\skyboxes\\Yokohama2");
+            scene.Skydome = new Skybox("Data\\skyboxes\\Forest");
 
             return scene;
         }

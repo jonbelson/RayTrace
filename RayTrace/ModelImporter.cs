@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -21,6 +22,30 @@ namespace RayTrace
 //            SVector normal = v1.VectorProduct(v2);
             SVector normal = v2.VectorProduct(v1);
             return normal.Normalise();
+        }
+
+        private static int Parse(string[] tokens, out int i1)
+        {
+            i1 = 0;
+
+            int count = 0;
+            if (int.TryParse(tokens[1], out i1))
+            {
+                count++;
+            }
+            return count;
+        }
+
+        private static int Parse(string[] tokens, out float f1)
+        {
+            f1 = 0.0f;
+
+            int count = 0;
+            if (Single.TryParse(tokens[1], out f1))
+            {
+                count++;
+            }
+            return count;
         }
 
         private static int Parse(string[] tokens, out float f1, out float f2)
@@ -96,7 +121,25 @@ namespace RayTrace
             -t u v w
             -texres value
         */
-        public class TextureOptions
+
+        // Supported material types for OBJ materials.
+        // https://www.fileformat.info/format/material/
+        public enum TextureOptions
+        {
+            Constant = 0,
+            Diffuse = 1,
+            DiffuseAndSpecular = 2,
+            DiffuseSpecularAndReflection = 3,
+            Glass = 4,
+            DiffuseSpecularAndFresnel = 5,
+            Refract = 6,
+            RefractAndFresnel = 7,
+            DiffuseSpecularAndReflectionNoTrace = 8,
+            GlassNoTrace = 9,
+            ShadowMatte = 10
+        }
+
+        private enum MaterialIllum
         {
 
         }
@@ -106,22 +149,24 @@ namespace RayTrace
             public string Name;
             public string Directory;     // Path specified in material file (whcih may or may not be correct).
 
-            public MaterialRgb Ambient; // Ka;    // Ambient reflectivity.
-            public MaterialRgb Diffuse; // Kd;    // Diffuse reflectivity.
-            public MaterialRgb Specular;    // Ks;    // Specular reflectivity.
-            public MaterialRgb Transmission;    // Tf;    // Transmission filter (i.e. which colours can pass through).
+            public MaterialRgb Ambient;     // Ka  Ambient reflectivity.
+            public MaterialRgb Diffuse;     // Kd  Diffuse reflectivity.
+            public MaterialRgb Specular;    // Ks  Specular reflectivity.
+            public MaterialRgb Transmission;// Tf  Transmission filter (i.e. which colours can pass through).
 
             public int Illum;    // Illumination model to use.
 
-            public float dissolve = 1.0f;  // 'Dissolve'. 1.0 is opaque, 0.0 is transparent.
+            public float Dissolve = 1.0f;   // d   'Dissolve'. 1.0 is opaque, 0.0 is transparent.
 
-            public float Shininess; // Ns;    // Specular exponent.
-            public float Sharpness; // Sharpness of reflections from reflection map.
-            public float Ior;   // Ni;    // Index of refraction. Optical density of surface.
+            public float Shininess;         // Ns   Specular exponent.
+            public float Sharpness;         // Sharpness of reflections from reflection map.
+            public float Ior = 1;           // Ni   Index of refraction. Optical density of surface.
 
-            public string AmbientFilename;
+            public string AmbientFilename;      // map_Ka
             public string DiffuseFilename;      // map_Kd
+            public string SpecularFilename;     // Map_Ks
             public string BumpFilename;         // map_Bump
+            //public string ReflectionMapFilename;// refl
 
             // Texture map statements.
             public TextureOptions map_Ka;
@@ -376,28 +421,42 @@ namespace RayTrace
                             material.Directory = directoryName;
                         }
                     }
-                    else if (cmd == "Ka")
+                    else if (cmd == "Ka")   // Ambient colour.
                     {
                         if (tokens.Length == 4 && Parse(tokens, out float r, out float g, out float b) == 3)
                         {
                             material.Ambient = new() { red = r, green = g, blue = b };
                         }
                     }
-                    else if (cmd == "Kd")
+                    else if (cmd == "Kd")   // Diffuse colour.
                     {
                         if (tokens.Length == 4 && Parse(tokens, out float r, out float g, out float b) == 3)
                         {
                             material.Diffuse = new() { red = r, green = g, blue = b };
                         }
                     }
-                    else if (cmd == "Ks")
+                    else if (cmd == "Ks")   // Specular colour.
                     {
                         if (tokens.Length == 4 && Parse(tokens, out float r, out float g, out float b) == 3)
                         {
                             material.Specular = new() { red = r, green = g, blue = b };
                         }
                     }
-                    else if (cmd == "map_Ka")
+                    else if (cmd == "Ni")
+                    {
+                        if (tokens.Length == 2 && Parse(tokens, out float f) == 1)
+                        {
+                            material.Ior = f;
+                        }
+                    }
+                    else if (cmd == "illum")
+                    {
+                        if (tokens.Length == 2 && Parse(tokens, out int i) == 1)
+                        {
+                            material.Illum = i;
+                        }
+                    }
+                    else if (cmd == "map_Ka")   // Ambient texture map.
                     {
                         int idx = 1;
                         while (idx < tokens.Length)
@@ -418,7 +477,7 @@ namespace RayTrace
                             idx++;
                         }
                     }
-                    else if (cmd == "map_Kd")
+                    else if (cmd == "map_Kd")   // Diffuse texture map.
                     {
                         int idx = 1;
                         while (idx < tokens.Length)
@@ -437,6 +496,28 @@ namespace RayTrace
                                 }
                             }
                             idx++;
+                        }
+                    }
+                    else if (cmd == "map_bump" || cmd == "bump" || cmd == "map_Bump")
+                    {
+                        int idx = 1;
+                        while (idx < tokens.Length)
+                        {
+                            if (tokens[idx].Length > 0)
+                            {
+                                if (tokens[idx][0] == '-')
+                                {
+                                    // XXX Process options
+                                }
+                                else
+                                {
+                                    string name = string.Join(" ", tokens, idx, tokens.Length - idx);   // Handle filenames with spaces.
+                                    material.BumpFilename = name;    // Path.Join(directoryName, name);
+                                    idx = tokens.Length;
+                                }
+                            }
+                            idx++;
+
                         }
                     }
                 }
@@ -735,7 +816,7 @@ namespace RayTrace
 
             foreach (var mat in MaterialLibrary.Materials)
             {
-                Material material = new(MaterialType.Diffuse);
+                Material material = new(MaterialType.Phong /*Diffuse*/);
 
                 material.Name = mat.Name;
 

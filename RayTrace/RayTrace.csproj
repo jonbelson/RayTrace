@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net5.0-windows</TargetFramework>
+    <TargetFramework>net6.0-windows</TargetFramework>
     <OutputType>WinExe</OutputType>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <UseWPF>true</UseWPF>
@@ -48,6 +48,6 @@
     </None>
   </ItemGroup>
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="xcopy &quot;$(ProjectDir)\Data&quot; &quot;$(TargetDir)\Data\&quot; /Y /S&#xD;&#xA;" />
+    <Exec Command="rem xcopy &quot;$(ProjectDir)\Data&quot; &quot;$(TargetDir)\Data\&quot; /Y /S&#xD;&#xA;xcopy &quot;$(OutDir)&quot; &quot;$(SolutionDir)\bin\&quot;" />
   </Target>
 </Project>

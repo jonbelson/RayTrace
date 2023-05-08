@@ -6,6 +6,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -21,11 +22,56 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Media.Media3D;
 using System.Windows.Navigation;
-using System.Windows.Shapes;
+//using System.Windows.Shapes;
 using System.Windows.Threading;
 
 namespace RayTrace
 {
+    // Utiity class to return application-specific directories.
+    public static class Storage
+    {
+        private static string _appDataDir;
+        private static string _appTempDir;
+
+        // Return directory for storing app-specific data.
+        public static string DataDir {
+            get
+            {
+                if (_appDataDir == null)
+                {
+                    string appDataDir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+                    _appDataDir = Path.Combine(appDataDir, AppDomain.CurrentDomain.FriendlyName);
+
+                    if (!Directory.Exists(_appDataDir))
+                    {
+                        Directory.CreateDirectory(_appDataDir);
+                    }
+                }
+                return _appDataDir;
+            }
+        }
+
+        // Return directory for storing temporary app-specific data.
+        public static string TempDir {
+            get
+            {
+                if (_appTempDir == null)
+                {
+                    string tempPath = System.IO.Path.GetTempPath();
+                    _appTempDir = Path.Combine(tempPath, AppDomain.CurrentDomain.FriendlyName);
+
+                    if (!Directory.Exists(_appTempDir))
+                    {
+                        Directory.CreateDirectory(_appTempDir);
+                    }
+                }
+
+                return _appTempDir;
+            }
+        }
+    }
+
     // Model for Entities displayed in the TreeView.
     public class TreeViewEntityModel
     {
@@ -97,6 +143,7 @@ namespace RayTrace
         // Flags for Scene Preview.
         public bool PreviewGroundPlane { get; set; } = true;
         public bool PreviewAxis { get; set; } = true;
+
 
         // Update the Entity TreeView from the current Entity list.
         private void UpdateEntityTreeView()
@@ -240,7 +287,7 @@ namespace RayTrace
         {
             InitializeComponent();
 
-//            List<SPoint> points = new List<SPoint>() { new SPoint(0, 0, 0), new SPoint(1, 0, 0), new SPoint(1, 1, 0), new SPoint(0, 1, 0) };
+            //            List<SPoint> points = new List<SPoint>() { new SPoint(0, 0, 0), new SPoint(1, 0, 0), new SPoint(1, 1, 0), new SPoint(0, 1, 0) };
             List<SPoint> points = new List<SPoint>() { new SPoint(0, 0, 0), new SPoint(5, 0, 0), new SPoint(5, 5, 0), new SPoint(0, 5, 0) };
             Triangulator triangulator = new(points);
 
@@ -248,6 +295,12 @@ namespace RayTrace
             {
 
             }
+
+            Console.WriteLine($"Launched from {Environment.CurrentDirectory}");
+            Console.WriteLine($"Physical location {AppDomain.CurrentDomain.BaseDirectory}");
+            Console.WriteLine($"AppContext.BaseDir {AppContext.BaseDirectory}");
+            Console.WriteLine($"Runtime Call {System.IO.Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName)}");
+
 
 
             Quaternion q = new Quaternion(new SVector(0, 1, 0), (float)Math.PI / 2);
@@ -293,10 +346,10 @@ namespace RayTrace
 
             //scene = SceneFactory.GIDemoScene();
             //scene = SceneFactory.SphereDemoScene();
-            scene = SceneFactory.ObjScene();
+            //scene = SceneFactory.ObjScene();
             //scene = SceneFactory.NormalMapScene();
 
-            //scene = SceneFactory.EmptyScene();
+            scene = SceneFactory.EmptyScene();
 
             /*
                         Matrix m = new Matrix(new double[] { 2, 5, 1, 4,  4, 1, 6, 3,  5, 3, 7, 2,  1, 0, 2, 4 });
@@ -551,7 +604,7 @@ namespace RayTrace
 
             BoundingBox3D boundingBox = new(2, 2, 2, new SPoint(0, 0, 0));
             viewport3D.Children.Add(boundingBox);
-            
+
             /*
 
             BoundingBox boundingBox = new BoundingBox(0, 1, 0, 1, 0, 1);
@@ -564,68 +617,68 @@ namespace RayTrace
             bb3D = new(2, 2, 2, new SPoint(0, 0, -4));
 //            viewport3D.Children.Add(bb3D);
 */
-/*
-            foreach (var shape in scene.Shapes)
-            {
-                //break;
-                if (shape is Model model)
-                {
-                    Node node = model.TreeRoot;
-                    if (node != null)
-                    {
-                        Matrix m = scene.Camera.WorldToView;
+            /*
+                        foreach (var shape in scene.Shapes)
+                        {
+                            //break;
+                            if (shape is Model model)
+                            {
+                                Node node = model.TreeRoot;
+                                if (node != null)
+                                {
+                                    Matrix m = scene.Camera.WorldToView;
 
-                        Debug.WriteLine(m.ToString());
+                                    Debug.WriteLine(m.ToString());
 
-                        m = m.GetInverse();
+                                    m = m.GetInverse();
 
-                        Matrix m2 = m.GetInverse();
-                        Debug.WriteLine(m2.ToString());
+                                    Matrix m2 = m.GetInverse();
+                                    Debug.WriteLine(m2.ToString());
 
-                        BoundingBox bb = node.Box;
-                        Debug.WriteLine(bb.Transform(m));
+                                    BoundingBox bb = node.Box;
+                                    Debug.WriteLine(bb.Transform(m));
 
-                       // BoundingBox3D boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), new(model.Pos));
-                        //m = m.GetInverse();
-                        BoundingBox3D boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
-                        viewport3D.Children.Add(boundingBox3D);
+                                   // BoundingBox3D boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), new(model.Pos));
+                                    //m = m.GetInverse();
+                                    BoundingBox3D boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
+                                    viewport3D.Children.Add(boundingBox3D);
 
-                        bb = node.Left.Box;
-                        Debug.WriteLine(bb);
-                        boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
-                        viewport3D.Children.Add(boundingBox3D);
+                                    bb = node.Left.Box;
+                                    Debug.WriteLine(bb);
+                                    boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
+                                    viewport3D.Children.Add(boundingBox3D);
 
-                        //bb = node.Left.Left.Box;
-                        //boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
-                        //viewport3D.Children.Add(boundingBox3D);
-                        //bb = node.Left.Right.Box;
-                        //boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
-                        //viewport3D.Children.Add(boundingBox3D);
-
-
-                        bb = node.Right.Box;
-                        Debug.WriteLine(bb.Transform(m));
-                        boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
-                        viewport3D.Children.Add(boundingBox3D);
+                                    //bb = node.Left.Left.Box;
+                                    //boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
+                                    //viewport3D.Children.Add(boundingBox3D);
+                                    //bb = node.Left.Right.Box;
+                                    //boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
+                                    //viewport3D.Children.Add(boundingBox3D);
 
 
-                        //bb = node.Right.Left.Box;
-                        //boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
-                        //viewport3D.Children.Add(boundingBox3D);
-                        //bb = node.Right.Right.Box;
-                        //boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
-                        //viewport3D.Children.Add(boundingBox3D);
-                    }
-                }
-            }
-
-            //BoundingBox3D boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), bb.GetCentre());
-            //Children.Add(boundingBox3D);
+                                    bb = node.Right.Box;
+                                    Debug.WriteLine(bb.Transform(m));
+                                    boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
+                                    viewport3D.Children.Add(boundingBox3D);
 
 
-            //BoundingBox3D boundingBox = new(5, new Point(0, 0, 0));
-            //viewport3D.Children.Add(boundingBox);
-*/
+                                    //bb = node.Right.Left.Box;
+                                    //boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
+                                    //viewport3D.Children.Add(boundingBox3D);
+                                    //bb = node.Right.Right.Box;
+                                    //boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
+                                    //viewport3D.Children.Add(boundingBox3D);
+                                }
+                            }
+                        }
+
+                        //BoundingBox3D boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), bb.GetCentre());
+                        //Children.Add(boundingBox3D);
+
+
+                        //BoundingBox3D boundingBox = new(5, new Point(0, 0, 0));
+                        //viewport3D.Children.Add(boundingBox);
+            */
 
             Func<Point3D, Point3D, Point3DCollection> CreateLine = delegate (Point3D p1, Point3D p2) { return new Point3DCollection(new List<Point3D>() { p1, p2 }); };
 
@@ -1288,7 +1341,7 @@ namespace RayTrace
 
         private void materialContextMenuDelete_Click(object sender, RoutedEventArgs e)
         {
-            MaterialTile tile = (MaterialTile) materialListBox.SelectedItem;
+            MaterialTile tile = (MaterialTile)materialListBox.SelectedItem;
             if (tile != null)
             {
                 scene.RemoveMaterial(tile.Material);
@@ -1301,7 +1354,7 @@ namespace RayTrace
             TreeView treeView = (TreeView)sender;
             if (treeView != null)
             {
-                TreeViewEntityModel entityModel = (TreeViewEntityModel) treeView.SelectedItem;
+                TreeViewEntityModel entityModel = (TreeViewEntityModel)treeView.SelectedItem;
                 if (entityModel != null)
                 {
                     ContextMenu contextMenu = treeView.ContextMenu;
@@ -1381,6 +1434,33 @@ namespace RayTrace
             RayHitTestParameters rayParams = new RayHitTestParameters(testPoint3D, testDirection3D);
 
             VisualTreeHelper.HitTest(viewport3D, null, ViewportHitResult, hitTestParams);
+        }
+
+        private void ButtonSkybox_Click(object sender, RoutedEventArgs e)
+        {
+            SkyboxSelectDlg dialog = new();
+            dialog.Owner = this;
+
+            bool? result = dialog.ShowDialog();
+            if (result == true)
+            {
+                SkyboxSelectDlg.SkyboxEntry skybox = dialog.Selection;
+
+                scene.Skydome = new Skybox(System.IO.Path.Combine("Data/Skyboxes/", skybox.Name));
+
+                UpdateEntities();
+                UpdateEntityTreeView();
+            }
+
+            /*
+                        OpenFileDialog dialog = new OpenFileDialog() { Filter = "Image Files | *.bmp;*.jpg;*.jpeg;*.png;*.tiff", FileName = "" };
+                        if (dialog.ShowDialog() == true)
+                        {
+                            string fileName = dialog.FileName;
+
+                            scene.Skydome = new Skybox(fileName);
+                        }
+            */
         }
     }
 }
