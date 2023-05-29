@@ -325,20 +325,21 @@ namespace RayTrace
                 int idx = i;
                 Task renderTask = Task.Factory.StartNew(() =>
                 {
-                    try
-                    {
-                        if (token.IsCancellationRequested) return;
+                try
+                {
+                    if (token.IsCancellationRequested) return;
 
-                        Thread.CurrentThread.Name = $"Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...";
-                        Debug.WriteLine($"Starting Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...");
-                        Renderer.Render(Scene, OutputCanvas, rb.StartX, rb.StartY, rb.Width, rb.Height, token);
-                        Debug.WriteLine($"Done Task {idx}...");
+                    Thread.CurrentThread.Name = $"Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...";
+                    Debug.WriteLine($"Starting Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...");
 
-                        Dispatcher.Invoke(DispatcherPriority.Normal,
-                                            (ThreadStart)delegate ()
-                                            {
-                                            Update(rb.StartX, rb.StartY, rb.Width, rb.Height);
-                                            }
+                    Renderer.Render(Scene, OutputCanvas, rb.StartX, rb.StartY, rb.Width, rb.Height, token);
+                    Debug.WriteLine($"Done Task {idx}...");
+
+                    // Run on UI thread.
+                    Dispatcher.Invoke(DispatcherPriority.Normal, () =>
+                            {
+                                Update(rb.StartX, rb.StartY, rb.Width, rb.Height);
+                            }
                         );
                     }
                     catch (Exception e)

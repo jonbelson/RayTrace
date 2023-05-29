@@ -29,7 +29,7 @@ namespace RayTrace
         public string DisplayName { get => _displayName; }
 
         // private Colour[] faces = new Colour[6];
-        private BitmapUtils.ColourTexture[] faces = new BitmapUtils.ColourTexture[6];
+        private BitmapUtils.RgbTexture[] faces = new BitmapUtils.RgbTexture[6];
 
         private const int Right = 0;
         private const int Left = 1;
@@ -71,7 +71,7 @@ namespace RayTrace
                 {
                     string fileName = directory + "\\" + fileset1.faces[i];
 
-                    if (BitmapUtils.LoadTexture(fileName, out BitmapUtils.ColourTexture colourTexture))
+                    if (BitmapUtils.LoadTexture(fileName, out BitmapUtils.RgbTexture colourTexture))
                     {
                         faces[i] = colourTexture;
                     }
@@ -81,6 +81,9 @@ namespace RayTrace
             return ok;
         }
 
+        //
+        // Extract the specified zip file to a new directory.
+        //
         private static string ExtractZip(string zipFile)
         {
             try
@@ -121,6 +124,7 @@ namespace RayTrace
                         throw new ArgumentException($"Failed to extract zipfile '{zipFile}'");
                     }
 
+                    _directory = extractionDir;
                     _displayName = Path.GetFileNameWithoutExtension(name);
                 }
                 else
@@ -155,6 +159,9 @@ namespace RayTrace
  */
         }
 
+        //
+        // Constructor.
+        //
         public Skybox(XMLSkybox xmlSkybox)
         {
             this._directory = xmlSkybox.Directory;
@@ -167,24 +174,29 @@ namespace RayTrace
 
         //}
 
-        private static Colour GetColour(BitmapUtils.ColourTexture texture, float u, float v)
+        private static Colour GetColour(BitmapUtils.RgbTexture texture, float u, float v)
         {
-            u = Math.Clamp(u, 0, 1);
-            v = Math.Clamp(v, 0, 1);
-
-            int x = (int)(u * (texture.Width - 1));
-            int y = (int)(v * (texture.Height - 1));
-
-            Debug.Assert(y * texture.Width + x < texture.Texture.Length);
-
-            try
+            if (texture != null)
             {
-                Colour c = texture.Texture[y * texture.Width + x];
-                return c;
-            }
-            catch (Exception e)
-            {
-                //MessageBox.Show(e.Message);
+                u = Math.Clamp(u, 0, 1);
+                v = Math.Clamp(v, 0, 1);
+
+                int x = (int)(u * (texture.Width - 1));
+                int y = (int)(v * (texture.Height - 1));
+
+                Debug.Assert(y * texture.Width + x < texture.Texture.Length);
+
+                try
+                {
+                    uint rgb = (uint)texture.Texture[y * texture.Width + x];
+                    return new Colour(rgb);
+                    //Colour c = texture.Texture[y * texture.Width + x];
+                    //return c;
+                }
+                catch (Exception e)
+                {
+                    //MessageBox.Show(e.Message);
+                }
             }
 
             return Palette.Grey;

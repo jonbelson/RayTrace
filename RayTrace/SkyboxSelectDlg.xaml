@@ -3,13 +3,19 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:RayTrace"
+        xmlns:local="clr-namespace:RayTrace" d:DataContext="{d:DesignInstance Type=local:SkyboxSelectDlg}"
         mc:Ignorable="d"
-        Title="SkyboxSelectDlg" Height="429" Width="432">
+        Name="dialog"
+        Title="SkyboxSelectDlg" Height="538" Width="820">
 
+    <Window.Resources>
+        <local:SelectedItemConverter x:Key="SelectedItemConverter"></local:SelectedItemConverter>
+    </Window.Resources>
+    
     <Grid Margin="8" ShowGridLines="True">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="0*"/>
+            <ColumnDefinition/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
@@ -19,7 +25,7 @@
         <!--  SelectedItem="{Binding Path=Selection, Mode=TwoWay}" -->
 
         <!-- https://wpf.2000things.com/2011/10/04/400-using-a-wrappanel-as-the-items-panel-for-a-listbox/ -->
-        <ListBox x:Name="skyboxList" ItemsSource="{Binding Path=Skyboxes}" SelectedItem="{Binding Path=Selection, Mode=TwoWay}" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+        <ListBox x:Name="SkyboxList" ItemsSource="{Binding Path=Skyboxes}" SelectedItem="{Binding Path=Selection, Mode=TwoWay}" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Grid.ColumnSpan="2">
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Vertical">
@@ -34,7 +40,7 @@
                 </ItemsPanelTemplate>
             </ListBox.ItemsPanel>
         </ListBox>
-        
+
         <!--
         <ItemsControl x:Name="skyboxControl" ItemsSource="{Binding Path=Skyboxes}">
             <ItemsControl.ItemsPanel>
@@ -55,7 +61,7 @@
             </ItemsControl.ItemTemplate>
         </ItemsControl>
         -->
-        
+
         <!--
         <ListView x:Name="listView" ItemsSource="{Binding Path=Skyboxes}" SelectedItem="{Binding Path=Selection, Mode=TwoWay}" ScrollViewer.CanContentScroll="False">
                <ListView.ItemTemplate>
@@ -70,9 +76,9 @@
             </ListView>
         -->
 
-        <StackPanel Grid.Column="0" Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
-            <Button Name="okButton" Margin="0,0,7,0" Click="okButton_Click" MinWidth="60">OK</Button>
-            <Button Name="cancelButton" Click="cancelButton_Click" MinWidth="60">Cancel</Button>
+        <StackPanel Grid.Column="1" Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+            <Button Name="OkButton" Margin="0,0,7,0" IsEnabled="{Binding SelectedIndex, ElementName=SkyboxList, Converter={StaticResource SelectedItemConverter} }" Click="OkButton_Click" MinWidth="60">OK</Button>
+            <Button Name="CancelButton" Click="CancelButton_Click" MinWidth="60">Cancel</Button>
         </StackPanel>
     </Grid>
 </Window>

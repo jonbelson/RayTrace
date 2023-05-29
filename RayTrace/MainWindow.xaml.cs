@@ -121,7 +121,7 @@ namespace RayTrace
             TopToBottom, Diagonal, CentreOut
         }
 
-        private RenderDirection[] renderDirection = { RenderDirection.TopToBottom, RenderDirection.Diagonal, RenderDirection.CentreOut };
+        private readonly RenderDirection[] renderDirection = { RenderDirection.TopToBottom, RenderDirection.Diagonal, RenderDirection.CentreOut };
         public RenderDirection[] RenderDirections => renderDirection;
 
         private readonly List<Renderer.AntiAliasType> antiAlias = new List<Renderer.AntiAliasType>() { Renderer.AntiAliasType.None, Renderer.AntiAliasType.NoiseGrid, Renderer.AntiAliasType.SuperSampling, Renderer.AntiAliasType.AdaptiveSupersampling };
@@ -311,6 +311,12 @@ namespace RayTrace
             q = new Quaternion(new SVector(1, 0, 0), (float)Math.PI / 2);
             v = new(0, 1, 0);
             vr = q.Rotate(v);
+
+
+            string assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            //MessageBox.Show(assemblyPath);
+            var cwd = Directory.GetCurrentDirectory();
+            //MessageBox.Show(cwd);
 
 
             checkBoxAmbient.IsChecked = renderer.UseAmbient;
@@ -507,9 +513,9 @@ namespace RayTrace
                 //scene.Camera.UpdateMatrix();    // XXX Needed?
                 //scene.CreateCaches();
 
-                ThreadPool.GetMaxThreads(out int workerThreads, out int completonPortThreads);
+                //ThreadPool.GetMaxThreads(out int workerThreads, out int completonPortThreads);
 
-                _ = ThreadPool.SetMaxThreads(16, completonPortThreads);
+                //_ = ThreadPool.SetMaxThreads(16, completonPortThreads);
 
                 outputWindow.Scene = scene;
                 outputWindow.Renderer = renderer;
@@ -943,6 +949,9 @@ namespace RayTrace
             dragging = false;
         }
 
+        //
+        // Handle mouse drags over the 3D preview.
+        //
         private void Border_MouseMove(object sender, MouseEventArgs e)
         {
             bool ctrlPressed = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
@@ -978,14 +987,16 @@ namespace RayTrace
                     //WriteSVector("viewVector", viewVector);
                     //WriteSVector("left", left);
 
+                    const float factor = 200.0f;
+
                     // Yaw.
-                    Quaternion q = new(new SVector(0, 1, 0), xDiff / 200);
+                    Quaternion q = new(new SVector(0, 1, 0), xDiff / factor);
                     SVector rotY = q.Rotate(view);
 
                     //WriteSVector("rotY", rotY);
 
                     // Pitch.
-                    Quaternion qPitch = new(-left, yDiff / 200);
+                    Quaternion qPitch = new(-left, yDiff / factor);
                     SVector rotLeft = qPitch.Rotate(view);
 
                     //WriteSVector("rotLeft", rotLeft);
@@ -998,7 +1009,7 @@ namespace RayTrace
 
                     //WriteSVector("total", total);
 
-                    Debug.WriteLine("");
+                    //Debug.WriteLine("");
 
                     scene.Camera.Target = scene.Camera.Pos + new Vector(total); // new Vector(rotY) + new Vector(rotLeft);
 
@@ -1020,6 +1031,9 @@ namespace RayTrace
 
                     Vector offset = left * xDiff - up * yDiff;
 
+                    const float factor = 0.15f;
+                    offset *= factor;
+
                     scene.Camera.Pos += offset;
                     scene.Camera.Target += offset;
                 }
@@ -1036,6 +1050,9 @@ namespace RayTrace
                     view.J = 0.0f;
 
                     Vector offset = left * xDiff + view * yDiff;
+
+                    const float factor = 0.15f;
+                    offset *= factor;
 
                     scene.Camera.Pos += offset;
                     scene.Camera.Target += offset;
@@ -1446,10 +1463,13 @@ namespace RayTrace
             {
                 SkyboxSelectDlg.SkyboxEntry skybox = dialog.Selection;
 
-                scene.Skydome = new Skybox(System.IO.Path.Combine("Data/Skyboxes/", skybox.Name));
+                if (skybox.Name != null)
+                {
+                    scene.Skydome = new Skybox(System.IO.Path.Combine("Data/Skyboxes/", skybox.Name));
 
-                UpdateEntities();
-                UpdateEntityTreeView();
+                    UpdateEntities();
+                    UpdateEntityTreeView();
+                }
             }
 
             /*
@@ -1461,6 +1481,38 @@ namespace RayTrace
                             scene.Skydome = new Skybox(fileName);
                         }
             */
+        }
+
+        //
+        // Handle changes to VIew mode.
+        //
+        private void TabCtrlView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (sender is TabControl tc)
+            {
+                Vector3D up;
+                up.X = 0;
+                up.Y = 1;
+                up.Z = 0;
+
+                switch (tc.SelectedIndex)
+                {
+                    case 0: // 3D
+                        viewport3D.Camera = new PerspectiveCamera(new Point3D(0, 0, 6), new Vector3D(0, 0, -1), up, 45);
+                        break;
+                    case 1: // Front
+                        viewport3D.Camera = new OrthographicCamera(new Point3D(0, 0, 10), new Vector3D(0, 0, -1), up, 10);
+                        break;
+                    case 2: // Top
+                        viewport3D.Camera = new OrthographicCamera(new Point3D(0, 20, 0), new Vector3D(0, -0.99999, 0.001), new Vector3D(0, 1, 0), 10);
+                        break;
+                    case 3: // Left
+                        viewport3D.Camera = new OrthographicCamera(new Point3D(-10.0, 0, 0), new Vector3D(1, 0, 0), up, 10);
+                        break;
+                    default:
+                        break;
+                }
+            }
         }
     }
 }

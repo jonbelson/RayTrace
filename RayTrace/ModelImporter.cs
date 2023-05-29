@@ -840,6 +840,13 @@ namespace RayTrace
                     }
                 }
 
+                if (material.Texture == null)
+                {
+                    Colour c = new(mat.Diffuse.red, mat.Diffuse.green, mat.Diffuse.blue);
+                    TextureSolid texture = new(c);
+                    material.Texture = texture;
+                }
+
                 materials.Add(material);
             }
 

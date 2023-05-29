@@ -43,6 +43,15 @@ namespace RayTrace
             public ColourTexture(Colour[] texture, int width, int height) { Width = width; Height = height; Texture = texture; }
         };
 
+        public class RgbTexture
+        {
+            public int Width { get; set; }
+            public int Height { get; set; }
+            public int[] Texture { get; set; }
+
+            public RgbTexture(int[] texture, int width, int height) { Width = width; Height = height; Texture = texture; }
+        }
+
         public static bool CreateTexture(Colour colour, int width, int height, out ColourTexture colourTexture)
         {
             Colour[] texture = new Colour[width*height];
@@ -57,6 +66,9 @@ namespace RayTrace
             return true;
         }
 
+         //
+        // Load a bitmap as a Color texture.
+        //
         public static bool LoadTexture(string fileName, out ColourTexture colourTexture)
         {
             Colour[] texture = null;
@@ -108,5 +120,62 @@ namespace RayTrace
 
             return false;
         }
+
+        //
+        // Load a bitmap as an RGB texture.
+        //
+        public static bool LoadTexture(string fileName, out RgbTexture colourTexture)
+        {
+            int[] texture = null;
+            try
+            {
+                Bitmap bitmap = new Bitmap(fileName);
+                if (bitmap != null)
+                {
+                    int width = bitmap.Width;
+                    int height = bitmap.Height;
+                    BitmapData bitmapData = bitmap.LockBits(new System.Drawing.Rectangle(0, 0, width, height), ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppRgb);
+
+                    texture = new int[width * height];
+
+                    //int[] row = new int[width];
+
+                    for (int y = 0; y < height; y++)
+                    {
+                        IntPtr source = bitmapData.Scan0 + (height - y - 1) * bitmapData.Stride;
+
+                        //System.Runtime.InteropServices.Marshal.Copy(source, row, 0, width);
+                        System.Runtime.InteropServices.Marshal.Copy(source, texture, y*width, width);
+
+                        // XXX Need to UnGamme
+                        for (int i = 0; i < width; i++)
+                        {
+                            uint rgb = (uint)texture[y*width + i];
+                            // Need to 'ungamma' the image since we apply gamma when saving.
+                            Colour c = new(rgb);
+                            texture[y*width + i] = (int) c.ToRGB(2.2f);
+                            //texture[y * width + i] = new Colour(rgb);
+                        }
+                    }
+
+                    bitmap.UnlockBits(bitmapData);
+
+                    //this.fileName = fileName;
+
+                    colourTexture = new RgbTexture(texture, width, height);
+
+                    return true;
+                }
+            }
+            catch (ArgumentException e)
+            {
+                MessageBox.Show(e.Message);
+            }
+
+            colourTexture = null;
+
+            return false;
+        }
+
     }
 }

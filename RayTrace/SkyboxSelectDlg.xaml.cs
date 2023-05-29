@@ -37,7 +37,9 @@ namespace RayTrace
 
         public ObservableCollection<SkyboxEntry> Skyboxes { get; set; } = new();
 
-        public SkyboxEntry Selection { get; set; }
+        private object _lock = new();
+
+        public SkyboxEntry Selection { get; set; } = new();
 
         ~SkyboxSelectDlg()
         {
@@ -70,7 +72,20 @@ namespace RayTrace
             }
         }
 
+        //
+        // Run ScanSkyboxes as a Task.
+        //
+        private async Task ScanSkyboxesAsync()
+        {
+            await Task.Run(() =>
+            {
+                ScanSkyboxes();
+            });
+        }
+
+        //
         // Scan the 'Skybox' directory for valid skybox files.
+        //
         private void ScanSkyboxes()
         {
             string[] files = Directory.GetFiles("Data/Skyboxes/", "*.zip");
@@ -93,14 +108,16 @@ namespace RayTrace
 
                         entry.ExtractToFile(filePath, true);
 
-                        Skyboxes.Add(new SkyboxEntry()
+                        lock (_lock)
                         {
-                            Name = baseName,
-                            Path = entry.FullName,
-                            File = file,
-                            TempFile = filePath,
-                        });
-
+                            Skyboxes.Add(new SkyboxEntry()
+                            {
+                                Name = baseName,
+                                Path = entry.FullName,
+                                File = file,
+                                TempFile = filePath,
+                            });
+                        }
                     }
 
                 }
@@ -117,6 +134,8 @@ namespace RayTrace
 
             DataContext = this;
 
+            BindingOperations.EnableCollectionSynchronization(Skyboxes, _lock);
+
             try
             {
                 _tempDir = Path.Combine(Storage.TempDir, Guid.NewGuid().ToString());
@@ -127,17 +146,19 @@ namespace RayTrace
                 int i = 0;
             }
 
-            ScanSkyboxes();
+            //ScanSkyboxes();
+
+            _ = ScanSkyboxesAsync();
         }
 
-        private void cancelButton_Click(object sender, RoutedEventArgs e)
+        private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
 
             //DeleteTempFiles();
         }
 
-        private void okButton_Click(object sender, RoutedEventArgs e)
+        private void OkButton_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = true;
 
