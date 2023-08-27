@@ -164,7 +164,9 @@ namespace RayTrace
             itemsSource.Add(shapeCategory);
             foreach (Shape shape in Entities.OfType<Shape>())
             {
-                shapeCategory.Children.Add(shape.ToTreeModel());
+                var treeModel = shape.ToTreeModel();
+                if (shape == selectedEntity) treeModel.IsSelected = true;
+                shapeCategory.Children.Add(treeModel);
             }
 
             TreeViewEntityModel lightCategory = new() { Name = "Lights", IsCategory = true };
