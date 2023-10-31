@@ -370,6 +370,33 @@ namespace RayTrace
             return scene;
         }
 
+        public static Scene GltfScene()
+        {
+            Scene scene = new();
+
+            glTFImporter importer = new();
+            ModelData modelData = importer.ImportModel("C:\\Users\\Jon\\Downloads\\thunderjaw_from_horizon_zero_dawn\\scene.gltf");
+
+            scene.Camera.Pos = new Point(-5.994f, 4.712f, -9.275f);
+            scene.Camera.Target = new Point(0, 3, 1);
+
+            Model model = new Model(scene, new Point(0, 0, 0), modelData, true);
+
+            scene.AddShape(model);
+
+            Light light = new PointLight(scene, new Point(-50, 50, 10), 6000, Palette.White);
+            //scene.AddLight(light);
+
+            light = new PointLight(scene, new Point(10, 30, -30), 3000, Palette.White);
+            //scene.AddLight(light);
+
+            //scene.Skydome = new SkydomeBitmap("Data\\skydomes\\immenstadter_horn_2048.jpg");
+            //            scene.Skydome = new Skybox("Data\\skyboxes\\Yokohama2");
+            scene.Skydome = new Skybox("Data\\skyboxes\\Forest");
+
+            return scene;
+        }
+
         public static Scene ObjScene()
         {
             Scene scene = new Scene();

@@ -1,9 +1,12 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Numerics;
 
 namespace RayTrace
 {
+    using SVector2 = Vector4;
+
     public readonly struct SVector
     {
         public float I { get; }
@@ -61,6 +64,8 @@ namespace RayTrace
         }
 
         public SPoint AsPoint() => new(I, J, K);
+        public Vector4 ToVector4() => new(I, J, K, 0);
+        public Vector4 ToPoint4() => new(I, J, K, 1);
 
         // Return a null vector, i.e. one with all components set to 0.
         public static SVector Null() => new(0.0f, 0.0f, 0.0f);
@@ -173,6 +178,12 @@ namespace RayTrace
         public XMLVector ToXML()
         {
             return new XMLVector() { I = this.I, J = this.J, K = this.K };
+        }
+
+        // Convert to SIMD-capable Vector4 format.
+        public Vector4 ToVector4()
+        {
+            return new Vector4(I, J, K, 1.0f);
         }
     }
 }

@@ -763,7 +763,7 @@ namespace RayTrace
                         if (dpLN > 0.0f)
                         {
                             // diffuse += light.GetIntensityAtPoint(camera, hr.Entry) * dpLN * shape.Material.Albedo;
-                            diffuse += lightIntensity * dpLN * shape.GetColour(hr) * hr.shape.Material.PhongDiffuse;
+                            diffuse += lightIntensity * dpLN * shape.GetColour(hr) * material.PhongDiffuse;
 
                             if (UseSpecular)
                             {
@@ -779,12 +779,12 @@ namespace RayTrace
                                 // Ignore negative dp as it means the vectors are pointing away from each other.
                                 if (dpVR > 0.0)
                                 {
-                                    double d = Math.Pow(dpVR, shape.Material.PhongShininess);
+                                    double d = Math.Pow(dpVR, material.PhongShininess);
                                     if (d < 0.0) d = 0.0;
 
                                     Colour specularColour = lightIntensity * d;
 
-                                    specular += specularColour * shape.Material.PhongSpecular;
+                                    specular += specularColour * material.PhongSpecular;
                                 }
                             }
                         }

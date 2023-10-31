@@ -26,6 +26,11 @@ namespace RayTrace
         public float u;
         public float v;
 
+        // Barycentric coordinates.
+        public float bu;
+        public float bv;
+        public float bw;
+
         // Optional value used by certain Shapes (e.g. triangle that was hit in a Model).
         public int Index { get; set; }
 
@@ -45,6 +50,7 @@ namespace RayTrace
             this.shape = shape;
             t = 0;
             u = v = 0.0f;
+            bu = bv = bw = 0.0f;
             _entry = new SPoint();
             _hasEntry = false;
             Ray = new SVector();

@@ -191,6 +191,10 @@ namespace RayTrace
             return Palette.Grey;
         }
 
+        // Calculate the colour of the hit point based on a light sample from the specified direction.
+        // hr       The point hit on this Material.
+        // source   A vector from hr towards the source of the incoming light.
+        // Li       The colour of the incoming light.
         public Colour GetBrdfColour(HitResult hr, SVector source, Colour Li)
         {
             if (Brdf != null)

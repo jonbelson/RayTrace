@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Numerics;
 using System.Security.Permissions;
 using System.Text;
 using System.Threading.Tasks;
@@ -507,6 +508,18 @@ namespace RayTrace
             }
 
             return s.ToString();
+        }
+
+        // Convert to SIMD-capable Matrix4x4 format.
+        public Matrix4x4 ToMatrix4x4()
+        {
+            Matrix4x4 m = new Matrix4x4(M[0], M[1], M[2], M[3],  M[4], M[5], M[6], M[7],  M[8], M[9], M[10], M[11],  M[12], M[13], M[14], M[15]);
+
+            // We need to transpose our values to match the Matrix4x4 format.
+            m = Matrix4x4.Transpose(m);
+
+            return m;
+
         }
     }
 }

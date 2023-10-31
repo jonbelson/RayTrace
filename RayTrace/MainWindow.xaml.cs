@@ -8,7 +8,9 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
+using System.Runtime.Intrinsics.X86;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,6 +26,7 @@ using System.Windows.Media.Media3D;
 using System.Windows.Navigation;
 //using System.Windows.Shapes;
 using System.Windows.Threading;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace RayTrace
 {
@@ -113,6 +116,12 @@ namespace RayTrace
         private OutputWindow outputWindow = new();
 
         private Preview3D preview3D;
+
+        // Cameras for each of the views.
+        private PerspectiveCamera camera3D;
+        private OrthographicCamera cameraFront;
+        private OrthographicCamera cameraTop;
+        private OrthographicCamera cameraLeft;
 
         public int NumRenderBlocks { get; set; } = 16;
 
@@ -289,7 +298,7 @@ namespace RayTrace
         {
             InitializeComponent();
 
-            //            List<SPoint> points = new List<SPoint>() { new SPoint(0, 0, 0), new SPoint(1, 0, 0), new SPoint(1, 1, 0), new SPoint(0, 1, 0) };
+            //List<SPoint> points = new List<SPoint>() { new SPoint(0, 0, 0), new SPoint(1, 0, 0), new SPoint(1, 1, 0), new SPoint(0, 1, 0) };
             List<SPoint> points = new List<SPoint>() { new SPoint(0, 0, 0), new SPoint(5, 0, 0), new SPoint(5, 5, 0), new SPoint(0, 5, 0) };
             Triangulator triangulator = new(points);
 
@@ -303,17 +312,35 @@ namespace RayTrace
             Console.WriteLine($"AppContext.BaseDir {AppContext.BaseDirectory}");
             Console.WriteLine($"Runtime Call {System.IO.Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName)}");
 
+            {
+                Debug.Assert(Sse.IsSupported);
+                Debug.Assert(Avx.IsSupported);
+                Debug.Assert(Avx2.IsSupported);
+
+                Matrix4x4 m = Matrix4x4.CreateTranslation(1, 2, 3);
+
+                Vector4 v = new Vector4(0, 0, 0, 1);
+
+                Vector4 result = Vector4.Transform(v, m);
+
+                Matrix m2 = Matrix.GetTranslation(1, 2, 3);
+                Matrix4x4 m3 = m2.ToMatrix4x4();
+
+                Vector3 vv = new();
+
+                int i = 0;
+            }
+
+            {
+                Quaternion q = new Quaternion(new SVector(0, 1, 0), (float)Math.PI / 2);
+                SVector v = new(0, 0, 1);
+                SVector vr = q.Rotate(v);
 
 
-            Quaternion q = new Quaternion(new SVector(0, 1, 0), (float)Math.PI / 2);
-            SVector v = new(0, 0, 1);
-            SVector vr = q.Rotate(v);
-
-
-            q = new Quaternion(new SVector(1, 0, 0), (float)Math.PI / 2);
-            v = new(0, 1, 0);
-            vr = q.Rotate(v);
-
+                q = new Quaternion(new SVector(1, 0, 0), (float)Math.PI / 2);
+                v = new(0, 1, 0);
+                vr = q.Rotate(v);
+            }
 
             string assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             //MessageBox.Show(assemblyPath);
@@ -355,9 +382,10 @@ namespace RayTrace
             //scene = SceneFactory.GIDemoScene();
             //scene = SceneFactory.SphereDemoScene();
             //scene = SceneFactory.ObjScene();
+            scene = SceneFactory.GltfScene();
             //scene = SceneFactory.NormalMapScene();
 
-            scene = SceneFactory.EmptyScene();
+            //scene = SceneFactory.EmptyScene();
 
             /*
                         Matrix m = new Matrix(new double[] { 2, 5, 1, 4,  4, 1, 6, 3,  5, 3, 7, 2,  1, 0, 2, 4 });
@@ -369,7 +397,12 @@ namespace RayTrace
                         Debug.WriteLine(product.ToString());
             */
 
+            Vector3D up = new(0.0, 1.0, 0.0);
 
+            camera3D = new PerspectiveCamera(new Point3D(0, 0, 6), new Vector3D(0, 0, -1), up, 45);
+            cameraFront = new OrthographicCamera(new Point3D(0, 0, 10), new Vector3D(0, 0, -1), up, 10);
+            cameraTop = new OrthographicCamera(new Point3D(0, 20, 0), new Vector3D(0, -0.99999, 0.001), new Vector3D(0, 1, 0), 10);
+            cameraLeft = new OrthographicCamera(new Point3D(-10.0, 0, 0), new Vector3D(1, 0, 0), up, 10);
 
             UpdateViewport3D();
 
@@ -591,8 +624,15 @@ namespace RayTrace
             // Set up camera.
             Point cameraPos = scene.Camera.Pos;
             Vector cameraView = scene.Camera.GetViewVector().Normalise();
-            viewport3D.Camera = new PerspectiveCamera(new Point3D(cameraPos.X, cameraPos.Y, -cameraPos.Z), new Vector3D(cameraView.I, cameraView.J, -cameraView.K), new Vector3D(0.0, 1.0, 0.0), scene.Camera.FovH /* /2 */);
 
+            viewport3D.Camera = new PerspectiveCamera(new Point3D(cameraPos.X, cameraPos.Y, -cameraPos.Z), new Vector3D(cameraView.I, cameraView.J, -cameraView.K), new Vector3D(0.0, 1.0, 0.0), scene.Camera.FovH /* /2 */);
+/*
+            viewport3D.Camera = camera3D;
+            camera3D.Position = new Point3D(cameraPos.X, cameraPos.Y, -cameraPos.Z);
+            camera3D.LookDirection = new Vector3D(cameraView.I, cameraView.J, -cameraView.K);
+            camera3D.UpDirection = new Vector3D(0.0, 1.0, 0.0);
+            camera3D.FieldOfView = scene.Camera.FovH;
+*/
             if (sender is Camera && (propName == "Pos" || propName == "Target"))
             {
                 //viewport3D.Visibility = Visibility.Visible;
@@ -1500,16 +1540,16 @@ namespace RayTrace
                 switch (tc.SelectedIndex)
                 {
                     case 0: // 3D
-                        viewport3D.Camera = new PerspectiveCamera(new Point3D(0, 0, 6), new Vector3D(0, 0, -1), up, 45);
+                        viewport3D.Camera = camera3D;   // new PerspectiveCamera(new Point3D(0, 0, 6), new Vector3D(0, 0, -1), up, 45);
                         break;
                     case 1: // Front
-                        viewport3D.Camera = new OrthographicCamera(new Point3D(0, 0, 10), new Vector3D(0, 0, -1), up, 10);
+                        viewport3D.Camera = cameraFront;    // new OrthographicCamera(new Point3D(0, 0, 10), new Vector3D(0, 0, -1), up, 10);
                         break;
                     case 2: // Top
-                        viewport3D.Camera = new OrthographicCamera(new Point3D(0, 20, 0), new Vector3D(0, -0.99999, 0.001), new Vector3D(0, 1, 0), 10);
+                        viewport3D.Camera = cameraTop;  //  new OrthographicCamera(new Point3D(0, 20, 0), new Vector3D(0, -0.99999, 0.001), new Vector3D(0, 1, 0), 10);
                         break;
                     case 3: // Left
-                        viewport3D.Camera = new OrthographicCamera(new Point3D(-10.0, 0, 0), new Vector3D(1, 0, 0), up, 10);
+                        viewport3D.Camera = cameraLeft; // new OrthographicCamera(new Point3D(-10.0, 0, 0), new Vector3D(1, 0, 0), up, 10);
                         break;
                     default:
                         break;

@@ -254,10 +254,10 @@ namespace RayTrace
         //    Texture = texture;
         //}
 
-        // Calculate Colour at point given in hr based on radiance (Li) coming from direction source.
+        // Calculate Colour at point given in hr based on radiance (Li) coming from direction 'source'.
         // colour   Colour of surface at hit point.
-        // source   Vector pointing outwards from hit point.
-        // Li       Colour received from hit point.
+        // source   A vector from hr towards the source of the incoming light.
+        // Li       The colour of the incoming light.
         public override Colour GetColour(HitResult hr, Colour colour, SVector source, Colour Li)
         {
             Debug.Assert(!source.IsNull());

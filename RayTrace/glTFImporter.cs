@@ -1,0 +1,802 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+using System.Text.Json;
+using System.IO;
+using System.Windows.Media;
+using System.Diagnostics;
+using System.Reflection;
+using System.Xml.Linq;
+using System.Windows;
+using System.Runtime.InteropServices;
+using static RayTrace.ModelImporter;
+
+namespace RayTrace
+{
+    //
+    // Importer for glTF format.
+    // https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/Specification.adoc
+    //
+    internal class glTFImporter
+    {
+
+        class GltfPrimitive
+        {
+            // Attributes.
+            //public Vec3T<float> positions = new Vec3T<float>();
+            public Vec3T<float>[] positions;
+            //public Vec3T<float> normals = new Vec3T<float>();
+            public Vec3T<float>[] normals;
+            //public Vec4T<float> tangents = new Vec4T<float>();
+            public Vec4T<float>[] tangents;
+            public Vec2T<float> texCoord = new Vec2T<float>();
+            //public Vec3T<float> colours = new Vec3T<float>();
+            public Vec3T<float>[] colours;
+            public Vec4T<float> joints = new Vec4T<float>();
+            public Vec4T<float> weights = new Vec4T<float>();
+
+            //public List<int> Indices = new List<int>();
+            public UInt32[] indices;
+            public int material = 0;
+            public MeshPrimitiveMode mode = MeshPrimitiveMode.TRIANGLES;
+        }
+
+        //class GltfMaterial
+        //{
+        //    public bool doubleSided;
+        //    public string name;
+
+        //}
+
+        class GltfMesh
+        {
+            public string name;
+            public List<GltfPrimitive> primitives = new();
+        }
+
+        class GltfAsset
+        {
+            public List<GltfMesh> meshes = new();
+
+        }
+
+        private GltfAsset _asset = null;
+
+        enum AccessorDataType
+        {
+            SignedByte = 5120,
+            UnsignedByte = 5121,
+            SignedShort = 5122,
+            UnsignedShort = 5123,
+            UnsignedInt = 5125,
+            Float = 5126
+        }
+
+        // The topology type of primitives to render.
+        // https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#_mesh_primitive_mode
+        enum MeshPrimitiveMode
+        {
+            POINTS = 0,
+            LINES = 1,
+            LINE_LOOP = 2,
+            LINE_STRIP = 3,
+            TRIANGLES = 4,
+            TRIANGLE_STRIP = 5,
+            TRIANGLE_FAN = 6
+        }
+
+        /*
+            "SCALAR" 1
+            "VEC2" 2
+            "VEC3" 3
+            "VEC4" 4
+            "MAT2" 4
+            "MAT3" 9
+            "MAT4" 16
+         */
+
+        /*
+         * Vertex attributes
+         * 
+            POSITION VEC3 float Unitless XYZ vertex positions
+            NORMAL VEC3 float Normalized XYZ vertex normals
+            TANGENT VEC4 float XYZW vertex tangents where the XYZ portion is normalized, and the W component is a sign value (-1 or +1) indicating handedness of the tangent basis
+            TEXCOORD_n VEC2 float nsigned byte normalized unsigned short normalized ST texture coordinates
+            COLOR_n VEC3 EC4 float unsigned byte normalized unsigned short normalized RGB or RGBA vertex color linear multiplier
+            JOINTS_n VEC4 unsigned byte unsigned short See Skinned Mesh Attributes
+            WEIGHTS_n VEC4 float nsigned byte normalized nsigned short normalized See Skinned Mesh Attributes
+         */
+
+        // BufferView.Target
+        private const Int32 ARRAY_BUFFER = 34962;
+        private const Int32 ELEMENT_ARRAY_BUFFER = 34963;
+
+        //struct Vec2
+        //{
+        //    public Vec2(float x, float y) { this.x = x; this.y = y; }
+        //    public float x; public float y;
+        //}
+
+        //struct Vec3
+        //{
+        //    public Vec3(float x, float y, float z) { this.x = x; this.y = y; this.z = z; }
+        //    public float x; public float y; public float z;
+        //}
+
+        //struct Vec4
+        //{
+        //    public Vec4(float x, float y, float z, float w) { this.x = x; this.y = y; this.z = z; this.w = w; }
+        //    public float x; public float y; public float z; public float w;
+        //}
+
+        struct Vec2T<T>
+        {
+            public T x; public T y;
+            public Vec2T(T x, T y, T z) { this.x = x; this.y = y; }
+        }
+
+        struct Vec3T<T>
+        {
+            public T x; public T y; public T z; 
+            public Vec3T(T x, T y, T z) { this.x = x; this.y = y; this.z = z; }
+        }
+
+        struct Vec4T<T>
+        {
+            public T x; public T y; public T z; public T w;
+            public Vec4T(T x, T y, T z, T w) { this.x = x; this.y = y; this.z = z; this.w = w;  }
+        }
+
+        private Dictionary<int, byte[]> _buffers = new();
+
+        class Extras
+        {
+            public string author { get; set; }
+            public string license { get; set; }
+            public string source { get; set; }
+            public string title { get; set; }
+        }
+
+        class Asset
+        {
+            public Extras extras { get; set; }
+            public string generator { get; set; }
+            public string version { get; set; }
+        }
+
+        private class Buffer
+        {
+            public Int32 byteLength { get; set; }
+            public string uri { get; set; }
+        }
+
+        public class BufferView
+        {
+            public int buffer { get; set; }
+            public Int32 byteLength { get; set; }
+            public Int32 byteOffset { get; set; }
+            public Int32 byteStride { get; set; }
+            public string name { get; set; }
+            public Int32 target { get; set; }
+        }
+
+        class Node
+        {
+            public string name { get; set; }
+            public List<int> children { get; set; }
+
+            // XXX matrix
+        }
+
+        class Accessor
+        {
+            public Int32 bufferView { get; set; }
+            public Int32 byteOffset { get; set; }
+            public Int32 componentType { get; set; }
+            public Int32 count { get; set; }
+
+            public List<float> min { get; set; }
+            public List<float> max { get; set; }
+
+            public string type { get; set; }
+        }
+
+        class Attribute
+        {
+            // XXX Use a map instead?
+            // XXX Handle '_n' ?
+            //public Dictionary<string, UInt32> ?? { get; set; }
+
+            public Int32? POSITION { get; set; }
+            public Int32? NORMAL { get; set; }
+            public Int32? TANGENT { get; set; }
+            public Int32? TEXCOORD_0 { get; set; }
+            public Int32? COLOR_0 { get; set; }
+            public Int32? JOINTS_0 { get; set; }
+            public Int32? WEIGHTS_0 { get; set; }
+        }
+
+        class Primitive
+        {
+            public Attribute attributes { get; set; }
+
+            public Int32? indices { get; set; }     // The index of the accessor that contains the vertex indices
+            public Int32? material { get; set; }
+            public Int32? mode { get; set; }
+        }
+
+        class Mesh
+        {
+            public string name { get; set; }
+
+            public List<Primitive> primitives { get; set; }
+        }
+
+        class Scene
+        {
+            public string name { get; set; }
+            public List<UInt32> nodes { get; set; }
+        }
+
+        private class JsonAsset
+        {
+            public Asset asset { get; set; }
+
+            public List<Buffer> buffers { get; set; }
+            public List<BufferView> bufferViews { get; set; }
+
+            public List<Accessor> accessors { get; set; }
+
+            public List<Mesh> meshes { get; set; }
+
+            public List<Node> nodes { get; set; }
+
+            public List<Scene> scenes { get; set; }
+            public Int32? scene { get; set; }
+        };
+
+        private static Accessor GetAccessor(JsonAsset jsonAsset, int index)
+        {
+            if (jsonAsset is not null && jsonAsset.accessors is not null)
+            {
+                if (jsonAsset.accessors.Count > index)
+                {
+                    return jsonAsset.accessors[index];
+                }
+            }
+
+            return null;
+        }
+
+        private static BufferView GetBufferView(JsonAsset jsonAsset, int index)
+        {
+            if (jsonAsset is not null && jsonAsset.accessors is not null)
+            {
+                if (jsonAsset.bufferViews.Count > index)
+                {
+                    return jsonAsset.bufferViews[index];
+                }
+            }
+
+            return null;
+        }
+
+        private Buffer GetBuffer(JsonAsset jsonAsset, int index)
+        {
+            if (jsonAsset is not null && jsonAsset.buffers is not null)
+            {
+                if (jsonAsset.buffers.Count > index)
+                {
+                    return jsonAsset.buffers[index];
+                }
+            }
+
+            return null;
+
+        }
+
+        // Return a ReadOnlySpan<> of Vec3T<T> to a memory buffer.
+        private ReadOnlySpan<Vec3T<T>> ParseVEC3<T>(int bufferIndex, Int32 byteOffset, Int32 count)
+        {
+            ReadOnlySpan<Vec3T<T>> vecs = new();
+
+            if (bufferIndex >= 0 || bufferIndex < _buffers.Count)
+            {
+                byte[] bytes = _buffers[bufferIndex];
+
+                ReadOnlySpan<byte> span = bytes.AsSpan(byteOffset);
+
+                ReadOnlySpan<Vec3T<T>> asVecT = MemoryMarshal.Cast<byte, Vec3T<T>>(span);
+
+                vecs = asVecT.Slice(0, count);
+            }
+
+            return vecs;
+        }
+
+        // Return a ReadOnlySpan<> of Vec4T<T> to a memory buffer.
+        private ReadOnlySpan<Vec4T<T>> ParseVEC4<T>(int bufferIndex, Int32 byteOffset, Int32 count)
+        {
+            ReadOnlySpan<Vec4T<T>> vecs = new();
+
+            if (bufferIndex >= 0 || bufferIndex < _buffers.Count)
+            {
+                byte[] bytes = _buffers[bufferIndex];
+
+                ReadOnlySpan<byte> span = bytes.AsSpan(byteOffset);
+
+                ReadOnlySpan<Vec4T<T>> asVecT = MemoryMarshal.Cast<byte, Vec4T<T>>(span);
+
+                vecs = asVecT.Slice(0, count);
+            }
+
+            return vecs;
+        }
+
+        /*
+                private List<Vec3> ParseVEC3(Buffer buffer, Int32 byteOffset, Int32 count, Int32 componentType)
+                {
+                    Debug.Assert(componentType == (int)AccessorDataType.Float);
+
+                    List<Vec3> array = new();
+
+                    using (FileStream fs = File.OpenRead(buffer.uri))
+                    {
+                        fs.Position = byteOffset;
+
+                        using (BinaryReader reader = new BinaryReader(fs))
+                        {
+                            for (UInt32 i = 0; i<count; i++)
+                            {
+                                float f1 = (float)reader.ReadSingle();
+                                float f2 = (float)reader.ReadSingle();
+                                float f3 = (float)reader.ReadSingle();
+
+                                array.Add(new(f1, f2, f3));
+                            }
+                        }
+                    }
+
+                    return array;
+                }
+        */
+        private ReadOnlySpan<T> ParseSCALAR<T>(int bufferIndex, Int32 byteOffset, Int32 count) where T : struct
+        {
+            ReadOnlySpan<T> vecs = new();
+
+            if (bufferIndex >= 0 || bufferIndex < _buffers.Count)
+            {
+                byte[] bytes = _buffers[bufferIndex];
+
+                ReadOnlySpan<byte> span = bytes.AsSpan(byteOffset);
+
+                ReadOnlySpan<T> asT = MemoryMarshal.Cast<byte, T>(span);
+
+                vecs = asT.Slice(0, count);
+            }
+
+            return vecs;
+        }
+/*
+        private List<Int32> ParseSCALAR(Buffer buffer, Int32 byteOffset, Int32 count, Int32 componentType)
+        {
+            Debug.Assert(componentType == (int)AccessorDataType.UnsignedInt);
+
+            List<Int32> array = new();
+
+            using (FileStream fs = File.OpenRead(buffer.uri))
+            {
+                fs.Position = byteOffset;
+
+                using (BinaryReader reader = new BinaryReader(fs))
+                {
+                    for (UInt32 i = 0; i<count; i++)
+                    {
+                        int val = reader.ReadInt32();
+
+                        array.Add(val);
+                    }
+                }
+            }
+
+            return array;
+        }
+*/
+        private ReadOnlySpan<Vec3T<T>> ParseAccessorAsVEC3<T>(JsonAsset jsonAsset, Accessor accessor)
+        {
+            Debug.Assert(accessor.type == "VEC3");
+
+            BufferView bufferView = GetBufferView(jsonAsset, (int)accessor.bufferView);
+            if (bufferView is not null)
+            {
+                int offset = accessor.byteOffset + bufferView.byteOffset;
+
+                ReadOnlySpan<Vec3T<T>> vec = ParseVEC3<T>(bufferView.buffer, offset, accessor.count);
+
+                return vec;
+            }
+
+            return null;
+        }
+
+        private ReadOnlySpan<Vec4T<T>> ParseAccessorAsVEC4<T>(JsonAsset jsonAsset, Accessor accessor)
+        {
+            Debug.Assert(accessor.type == "VEC4");
+
+            BufferView bufferView = GetBufferView(jsonAsset, (int)accessor.bufferView);
+            if (bufferView is not null)
+            {
+                int offset = accessor.byteOffset + bufferView.byteOffset;
+
+                ReadOnlySpan<Vec4T<T>> vec = ParseVEC4<T>(bufferView.buffer, offset, accessor.count);
+
+                return vec;
+            }
+
+            return null;
+        }
+
+        private ReadOnlySpan<T> ParseAccessorAsSCALAR<T>(JsonAsset jsonAsset, Accessor accessor) where T : struct
+        {
+            Debug.Assert(accessor.type == "SCALAR");
+
+            BufferView bufferView = GetBufferView(jsonAsset, (int)accessor.bufferView);
+            if (bufferView is not null)
+            {
+                Buffer buffer = GetBuffer(jsonAsset, bufferView.buffer);
+
+                Int32 target = bufferView.target;
+
+                int offset = accessor.byteOffset + bufferView.byteOffset;
+
+                ReadOnlySpan<T> vec = ParseSCALAR<T>(bufferView.buffer, offset, accessor.count);
+
+                return vec;
+            }
+
+            return null;
+        }
+        /*
+                private bool ParseAccessor(Asset asset, Accessor accessor)
+                {
+                    BufferView bufferView = GetBufferView(asset, (int)accessor.bufferView);
+                    if (bufferView is not null)
+                    {
+                        Buffer buffer = GetBuffer(asset, bufferView.buffer);
+
+                        Int32 target = bufferView.target;
+
+                        int offset = bufferView.byteOffset + accessor.byteOffset;
+
+                        switch (accessor.type)
+                        {
+                            case "VEC3":
+                                var array = ParseVEC3(buffer, offset, accessor.count, accessor.componentType);
+                                break;
+                            case "SCALAR":
+                                var array2 = ParseSCALAR(buffer, offset, accessor.count, accessor.componentType);
+                                break;
+                            default:
+                                Debug.Assert(false);
+                                break;
+                        }
+                    }
+
+                    return true;
+                }
+        */
+
+        private bool LoadBuffers(JsonAsset jsonAsset)
+        {
+            // Load all the buffers.
+            for (int i=0; i<jsonAsset.buffers.Count; i++)
+            {
+                Buffer buffer = jsonAsset.buffers[i];
+
+                try
+                {
+                    using (FileStream fs = File.OpenRead(buffer.uri))
+                    {
+                        byte[] temp = new byte[buffer.byteLength];
+                        fs.Read(temp, 0, temp.Length);
+
+                        _buffers[i] = temp;
+                    }
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show($"Failed to open buffer {buffer.uri} : {e.Message}");
+
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        // Create a ModelData instance from the contents of _asset
+        private ModelData CreateModel()
+        {
+            ModelData modelData = new();
+
+            modelData.fileName = "wibble";
+
+            List<SPoint> points = new List<SPoint>();
+            List<SVector> normals = new List<SVector>();
+            List<ModelData.Texel> texels = new List<ModelData.Texel>();
+            List<Colour> colours = new List<Colour>();
+            List<Face> faces = new List<Face>();
+            List<ModelData.Triangle> triangles = new List<ModelData.Triangle>();
+
+            List<ModelData.SubGroup> groups = new();
+
+
+            //int offset = 0;
+            foreach (GltfMesh mesh in _asset.meshes)
+            {
+                ModelData.SubGroup group = new() { Name = mesh.name };
+
+                foreach (GltfPrimitive primitive in mesh.primitives)
+                {
+                    // Current offsets.
+                    int pointOffset = points.Count;
+                    int normalOffset = normals.Count;
+                    int colourOffset = colours.Count;
+
+                    foreach (var position in primitive.positions)
+                    {
+                        points.Add(new SPoint(position.x, position.y, -position.z));
+                    }
+                    foreach (var colour in primitive.colours)
+                    {
+                        colours.Add(new Colour(colour.x, colour.y, colour.z));
+                    }
+                    foreach (var normal in primitive.normals)
+                    {
+                        normals.Add(new SVector(normal.x, normal.y, -normal.z));
+                    }
+
+                    //int numTriangles = 0;
+                    for (uint i=0; i<=primitive.indices.Length - 3; i+=3)
+                    {
+                        if (i + 3 > primitive.indices.Length) break;
+
+                        try
+                        {
+                            ModelData.Triangle triangle = new();
+                            triangle.v0 = pointOffset + (int)primitive.indices[i];
+                            triangle.v1 = pointOffset + (int)primitive.indices[i + 1];
+                            triangle.v2 = pointOffset + (int)primitive.indices[i + 2];
+
+                            triangle.n0 = normalOffset + (int)primitive.indices[i];
+                            triangle.n1 = normalOffset + (int)primitive.indices[i + 1];
+                            triangle.n2 = normalOffset + (int)primitive.indices[i + 2];
+
+                            triangle.c0 = colourOffset + (int)primitive.indices[i];
+                            triangle.c1 = colourOffset + (int)primitive.indices[i + 1];
+                            triangle.c2 = colourOffset + (int)primitive.indices[i + 2];
+
+
+                            triangles.Add(triangle);
+                            //points.Add(new SPoint(position.x, position.y, position.z));
+
+                            group.Triangles.Add(triangles.Count - 1);
+
+                        }
+                        catch (Exception e)
+                        {
+                            int iiii = 0;
+                            break;
+                        }
+                    }
+                    //points.Clear();
+                    //normals.Clear();
+
+                }
+
+                
+                groups.Add(group);
+
+            }
+
+
+            modelData.HasVertexNormals = normals.Count > 0;
+            modelData.HasVertexColours = colours.Count > 0;
+            modelData.HasVertexTexels = texels.Count > 0;
+
+            // Finally, calculate the face normals for each triangle. These are used when there are no vertex normals.
+            foreach (ModelData.Triangle triangle in triangles)
+            {
+                SVector n = GetNormal(points, triangle);
+                //n = -n;
+                normals.Add(n);
+                triangle.n = normals.Count - 1;
+            }
+
+            modelData.points = points.ToArray();
+            modelData.colours = colours.ToArray();
+            modelData.normals = normals.ToArray();
+            modelData.triangles = triangles.ToArray();
+            modelData.SubGroups = groups.ToArray();
+
+
+            modelData.minX = modelData.minY = modelData.minZ = float.MaxValue;
+            modelData.maxX = modelData.maxY = modelData.maxZ = float.MinValue;
+
+            for (int i = 1; i<modelData.points.Length; i++)
+            {
+                SPoint p = modelData.points[i];
+                modelData.minX = Math.Min(p.X, modelData.minX);
+                modelData.minY = Math.Min(p.Y, modelData.minY);
+                modelData.minZ = Math.Min(p.Z, modelData.minZ);
+                modelData.maxX = Math.Max(p.X, modelData.maxX);
+                modelData.maxY = Math.Max(p.Y, modelData.maxY);
+                modelData.maxZ = Math.Max(p.Z, modelData.maxZ);
+            }
+
+            Debug.WriteLine($"X : [ {modelData.minX} {modelData.maxX} ]");
+            Debug.WriteLine($"Y : [ {modelData.minY} {modelData.maxY} ]");
+            Debug.WriteLine($"Z : [ {modelData.minZ} {modelData.maxZ} ]");
+
+            Debug.WriteLine($"Number points : {points.Count}");
+            Debug.WriteLine($"Number faces : {faces.Count}");
+
+            Debug.WriteLine($"Number triangles : {triangles.Count}");
+
+            string groupInfo = "Groups :";
+            foreach (ModelData.SubGroup g in modelData.SubGroups)
+            {
+                groupInfo += " '" + g.Name + "'";
+            }
+            Debug.WriteLine(groupInfo);
+
+
+            return modelData;
+        }
+
+        private bool ParseAsset(JsonAsset jsonAsset)
+        {
+            if (!LoadBuffers(jsonAsset)) return false;
+
+            _asset = new();
+
+            foreach (Mesh mesh in jsonAsset.meshes)
+            {
+                Debug.WriteLine($"Processing mesh {mesh.name}");
+
+                GltfMesh gltfMesh = new();
+
+                gltfMesh.name = mesh.name;
+
+                // A Mesh contains one or more Primitives.
+                foreach (Primitive primitive in mesh.primitives)
+                {
+                    GltfPrimitive gltfPrimitive = new();
+
+                    Attribute attributes = primitive.attributes;
+
+                    if (attributes != null)
+                    {
+                        if (attributes.POSITION.HasValue)
+                        {
+                            Accessor accessor = GetAccessor(jsonAsset, (int)attributes.POSITION.Value);
+                            if (accessor != null)
+                            {
+                                Debug.Assert((AccessorDataType)accessor.componentType == AccessorDataType.Float);
+                                Debug.Assert(accessor.type == "VEC3");
+
+                                ReadOnlySpan<Vec3T<float>> positions = ParseAccessorAsVEC3<float>(jsonAsset, accessor);
+
+                                gltfPrimitive.positions = positions.ToArray();
+                            }
+                        }
+                        if (attributes.COLOR_0.HasValue)
+                        {
+                            Accessor accessor = GetAccessor(jsonAsset, (int)attributes.COLOR_0.Value);
+                            if (accessor != null)
+                            {
+                                Debug.Assert((AccessorDataType)accessor.componentType == AccessorDataType.Float);   // Can also be unsigned byte or unsigned short.
+                                Debug.Assert(accessor.type == "VEC3");
+
+                                ReadOnlySpan<Vec3T<float>> colours = ParseAccessorAsVEC3<float>(jsonAsset, accessor);
+
+                                gltfPrimitive.colours = colours.ToArray();
+                            }
+                        }
+                        if (attributes.NORMAL.HasValue)
+                        {
+                            Accessor accessor = GetAccessor(jsonAsset, (int)attributes.NORMAL.Value);
+                            if (accessor != null)
+                            {
+                                Debug.Assert((AccessorDataType)accessor.componentType == AccessorDataType.Float);
+                                Debug.Assert(accessor.type == "VEC3");
+
+                                ReadOnlySpan<Vec3T<float>> normals = ParseAccessorAsVEC3<float>(jsonAsset, accessor);
+
+                                gltfPrimitive.normals = normals.ToArray();
+                            }
+                        }
+                        if (attributes.TANGENT.HasValue)
+                        {
+                            Accessor accessor = GetAccessor(jsonAsset, (int)attributes.TANGENT.Value);
+                            if (accessor != null)
+                            {
+                                Debug.Assert((AccessorDataType)accessor.componentType == AccessorDataType.Float);
+                                Debug.Assert(accessor.type == "VEC4");
+
+                                ReadOnlySpan<Vec4T<float>> tangents = ParseAccessorAsVEC4<float>(jsonAsset, accessor);
+
+                                gltfPrimitive.tangents = tangents.ToArray();
+                            }
+                        }
+
+                        Debug.Assert(!attributes.TEXCOORD_0.HasValue);
+                        Debug.Assert(!attributes.JOINTS_0.HasValue);
+                        Debug.Assert(!attributes.WEIGHTS_0.HasValue);
+                    }
+
+                    if (primitive.indices.HasValue)
+                    {
+                        // indices
+                        Accessor accessor = GetAccessor(jsonAsset, primitive.indices.Value);
+                        if (accessor != null)
+                        {
+                            AccessorDataType dataType = (AccessorDataType)accessor.componentType;
+
+                            Debug.Assert(dataType == AccessorDataType.UnsignedInt);
+                            Debug.Assert(accessor.type == "SCALAR");
+
+                            ReadOnlySpan<UInt32> indices = ParseAccessorAsSCALAR<UInt32>(jsonAsset, accessor);
+
+                            gltfPrimitive.indices = indices.ToArray();
+                        }
+                    }
+
+                    gltfPrimitive.material = primitive.material.HasValue ? primitive.material.Value : -1;
+                    gltfPrimitive.mode = primitive.mode.HasValue ? (MeshPrimitiveMode)primitive.mode.Value : MeshPrimitiveMode.TRIANGLES;
+
+                    gltfMesh.primitives.Add(gltfPrimitive);
+                }
+
+                _asset.meshes.Add(gltfMesh);
+            }
+
+            return true;
+        }
+
+        // 
+        public ModelData ImportModel(string path)
+        {
+            _asset = null;
+
+            ModelData modelData = null;
+
+            try
+            {
+                JsonAsset asset;
+                using (StreamReader r = new(path))
+                {
+                    string json = r.ReadToEnd();
+
+                    asset = System.Text.Json.JsonSerializer.Deserialize<JsonAsset>(json);
+
+                }
+
+                if (ParseAsset(asset))
+                {
+                    modelData = CreateModel();
+
+                }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show($"Failed to parse file {path} : {e.Message}");
+            }
+
+            return modelData;
+        }
+    }
+}

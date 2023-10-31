@@ -15,6 +15,8 @@ namespace RayTrace
     {
         public Node Left { get; set; } = null;
         public Node Right { get; set; } = null;
+        public Node Parent { get; set; } = null;
+        public int Depth { get; set; } = -1;
 
         public List<int> Triangles = new List<int>();
 
@@ -28,8 +30,8 @@ namespace RayTrace
     //
     public class TreeMaker
     {
-        public int MaxDepth { get; set; } = 40;
-        public int MinTrianglesPerNode { get; set; } = 10;
+        public int MaxDepth { get; set; } = 10;//40;
+        public int MinTrianglesPerNode { get; set; } = 50;//10;
 
         private Matrix _objectToView = new Matrix();
 
@@ -53,7 +55,7 @@ namespace RayTrace
                 p.Z += p0.Z + p1.Z + p2.Z;
             }
 
-            int numPoints = triangles.Count() * 3;  // Three vertices for each triangle.
+            int numPoints = triangles.Count * 3;  // Three vertices for each triangle.
 
             return p.Scale(1.0f/numPoints);
         }
@@ -123,6 +125,7 @@ namespace RayTrace
             else if (side == Side.Overlap) { left.Add(i); right.Add(i); }
         }
 
+        // Check if two lists contain exactly the same elements.
         private static bool CheckEquality<T>(List<T> list1, List<T> list2)
         {
             if (list1.Count != list2.Count) return false;
@@ -130,7 +133,7 @@ namespace RayTrace
             return !list1.Except(list2).Any();
         }
 
-        // Split a bounding box into two at the specified point.
+        // Split a bounding box into two at the specified point along the specified axis.
         private static (BoundingBox, BoundingBox) SplitBoundingBox(BoundingBox bb, BoundingBox.Axis axis, float p)
         {
             BoundingBox minor = new(bb);
@@ -167,8 +170,12 @@ namespace RayTrace
         // Recursively build tree by dividing the bounding box along an axis and splitting the triangles between the two halves.
         private Node MakeNode(ModelData modelData, List<int> triangles, BoundingBox bb, int depth, Node parentNode = null)
         {
-            Node node = new();
-            node.Box = bb;
+            Node node = new()
+            {
+                Box = bb,
+                Depth = depth,
+                Parent = parentNode
+            };
 
             // Don't bother subdividing further if there are too few triangles.
             if (triangles.Count < MinTrianglesPerNode)
@@ -190,85 +197,11 @@ namespace RayTrace
                 case 2: bestAxis = BoundingBox.Axis.Z; f = centre.Z; break;
             }
 
-            var boxes = SplitBoundingBox(bb, bestAxis, f);
-            BoundingBox minor = boxes.Item1;
-            BoundingBox major = boxes.Item2;
-
-            /*
-                            // Find which split axis (X, Y or Z) gives the best split of triangles.
-
-                            int leftX = 0;
-                            int rightX = 0;
-                            int overlapX = 0;
-                            int leftY = 0;
-                            int rightY = 0;
-                            int overlapY = 0;
-                            int leftZ = 0;
-                            int rightZ = 0;
-                            int overlapZ = 0;
-
-                            foreach (int i in triangles)
-                            {
-                                switch (CheckSideX(modelData, i, centre.X))
-                                {
-                                    case Side.LessThan: leftX++; break;
-                                    case Side.GreaterThan: rightX++; break;
-                                    case Side.Overlap: overlapX++; break;
-                                    default: break;
-                                }
-                                switch (CheckSideY(modelData, i, centre.Y))
-                                {
-                                    case Side.LessThan: leftY++; break;
-                                    case Side.GreaterThan: rightY++; break;
-                                    case Side.Overlap: overlapY++; break;
-                                    default: break;
-                                }
-                                switch (CheckSideZ(modelData, i, centre.Z))
-                                {
-                                    case Side.LessThan: leftZ++; break;
-                                    case Side.GreaterThan: rightZ++; break;
-                                    case Side.Overlap: overlapZ++; break;
-                                    default: break;
-                                }
-                            }
-
-                            float ratioX = (float)leftX / rightX;
-                            float ratioY = (float)leftY / rightY;
-                            float ratioZ = (float)leftZ / rightZ;
-
-                            float ratioOverlapX = (float)overlapX / triangles.Count;
-                            float ratioOverlapY = (float)overlapY / triangles.Count;
-                            float ratioOverlapZ = (float)overlapZ / triangles.Count;
-
-                            Func<float, float> DistFromOne = delegate (float f) { return Math.Abs(1f - f); };
-
-                            float factorX = DistFromOne(ratioX) + 2*ratioOverlapX;
-                            float factorY = DistFromOne(ratioY) + 2*ratioOverlapY;
-                            float factorZ = DistFromOne(ratioZ) + 2*ratioOverlapZ;
-
-                            BoundingBox.Axis BestAxis;
-
-                            if (factorX < factorY)
-                            {
-                                if (factorX < factorZ)
-                                    BestAxis = BoundingBox.Axis.X;
-                                else
-                                    BestAxis = BoundingBox.Axis.Z;
-                            }
-                            else
-                            {
-                                if (factorY < factorZ)
-                                    BestAxis = BoundingBox.Axis.Y;
-                                else
-                                    BestAxis = BoundingBox.Axis.Z;
-                            }
-            */
-
             List<int> left = new List<int>();
             List<int> right = new List<int>();
 
-            //var longestAxis = bb.GetLongestAxis();
-            switch (bestAxis /*longestAxis*/)
+            // Split triangles into two groups, divided by the specified plane.
+            switch (bestAxis)
             {
                 case BoundingBox.Axis.X:
                     foreach (int i in triangles)
@@ -295,6 +228,7 @@ namespace RayTrace
                     break;
             }
 
+            // Check that left and right triangle lists aren't just repeating their parent's.
             if (parentNode != null)
             {
                 if (CheckEquality(parentNode.Triangles, left))
@@ -319,37 +253,62 @@ namespace RayTrace
             depth++;
             if (depth < MaxDepth)
             {
-                // Create child Nodes if there are any triangles.
-                if (left.Count > 0)
+                // Split the BoundingBox into half along the chosen axis.
+                var boxes = SplitBoundingBox(bb, bestAxis, f);
+                BoundingBox minor = boxes.Item1;
+                BoundingBox major = boxes.Item2;
+
+                Node CreateNode(ModelData modelData, List<int> triangles, BoundingBox bbox, int depth, Node parentNode)
                 {
-                    node.Left = MakeNode(modelData, left, minor, depth, node);
-                }
-                if (right.Count > 0)
-                {
-                    node.Right = MakeNode(modelData, right, major, depth, node);
+                    return (triangles.Count > 0) ? MakeNode(modelData, triangles, bbox, depth, parentNode) : null;
                 }
 
-                // Check that the child Nodes children aren't just repeating our children.
-                //if (node.Left != null)
-                //{
-                //    if (CheckEquality(node.Left.Triangles, triangles /*node.Triangles*/))
-                //    {
-                //        node.Left = null;
-                //    }
-                //}
-                //if (node.Right != null)
-                //{
-                //    if (CheckEquality(node.Right.Triangles, triangles /*node.Triangles*/))
-                //    {
-                //        node.Right = null;
-                //    }
-                //}
+                if (depth < 2)
+                {
+                    Task task1 = Task.Factory.StartNew(() =>
+                    {
+                        node.Left = CreateNode(modelData, left, minor, depth, node);
+                        //if (left.Count > 0)
+                        //{
+                        //    node.Left = MakeNode(modelData, left, minor, depth, node);
+                        //}
+                    });
+
+                    Task task2 = Task.Factory.StartNew(() =>
+                    {
+                        node.Right = CreateNode(modelData, right, major, depth, node);
+                        //if (right.Count > 0)
+                        //{
+                        //    node.Right = MakeNode(modelData, right, major, depth, node);
+                        //}
+                    });
+
+                    Task.WaitAll(task1, task2);
+                }
+                else
+                {
+                    // Create left/right child Nodes if they would have any triangles.
+                    node.Left = CreateNode(modelData, left, minor, depth, node);
+                    node.Right = CreateNode(modelData, right, major, depth, node);
+
+                    /*
+                    if (left.Count > 0)
+                    {
+                        node.Left = MakeNode(modelData, left, minor, depth, node);
+                    }
+                    if (right.Count > 0)
+                    {
+                        node.Right = MakeNode(modelData, right, major, depth, node);
+                    }
+                    */
+                }
             }
             else
             {
                 //Debug.WriteLine("Max. depth reached. left: " + left.Count + " right: " + right.Count);
             }
 
+            // If we cannot split further, assign all the triangles to this Node.
             if (node.Left == null && node.Right == null)
             {
                 node.Triangles = triangles;
@@ -358,6 +317,9 @@ namespace RayTrace
             return node;
         }
 
+        //
+        // Build a BSP tree from the specified ModelData, transformed according to the passed-in Matrix.
+        //
         public Node MakeTree(ModelData modelData, Matrix objectToView)
         {
             _objectToView = objectToView;

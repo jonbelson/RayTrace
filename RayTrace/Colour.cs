@@ -1,9 +1,12 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Numerics;
 
 namespace RayTrace
 {
+    using SColour = Vector4;
+
     public class Palette
     {
         public static Colour Red { get { return new Colour(1.0f, 0.0f, 0.0f); } } 
@@ -258,6 +261,11 @@ namespace RayTrace
         public XMLColour ToXML()
         {
             return new XMLColour() { Red = Red, Green = Green, Blue = Blue };
+        }
+
+        public SColour ToVector4()
+        {
+            return new SColour(Red, Green, Blue, 0);
         }
     }
 }

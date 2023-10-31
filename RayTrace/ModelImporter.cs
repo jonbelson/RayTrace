@@ -421,6 +421,13 @@ namespace RayTrace
                             material.Directory = directoryName;
                         }
                     }
+                    else if (cmd == "Ns")
+                    {
+                        if (tokens.Length == 2 && Parse(tokens, out float a) == 1)
+                        {
+                            material.Shininess = a;
+                        }
+                    }
                     else if (cmd == "Ka")   // Ambient colour.
                     {
                         if (tokens.Length == 4 && Parse(tokens, out float r, out float g, out float b) == 3)
@@ -702,6 +709,7 @@ namespace RayTrace
                 if (faces.Any())
                 {
                     AddTriangles(group, faces, triangles, points, normals);
+                    group.Material = currentMaterial;
                     groups.Add(group);
                 }
             }
@@ -807,6 +815,13 @@ namespace RayTrace
                 return path;
             }
 
+            path = Path.Join(directory, relativeOrAbsolutePath);
+
+            if (File.Exists(path))
+            {
+                return path;
+            }
+
             return String.Empty;
         }
 
@@ -819,6 +834,10 @@ namespace RayTrace
                 Material material = new(MaterialType.Phong /*Diffuse*/);
 
                 material.Name = mat.Name;
+
+                material.PhongShininess = mat.Shininess;
+                //material.PhongSpecular = mat.Specular;
+                //material.PhongDiffuse = mat.
 
                 if (mat.BumpFilename != null)
                 {
@@ -842,9 +861,17 @@ namespace RayTrace
 
                 if (material.Texture == null)
                 {
-                    Colour c = new(mat.Diffuse.red, mat.Diffuse.green, mat.Diffuse.blue);
-                    TextureSolid texture = new(c);
-                    material.Texture = texture;
+                    if (mat.Diffuse != null)
+                    {
+                        Colour c = new(mat.Diffuse.red, mat.Diffuse.green, mat.Diffuse.blue);
+                        TextureSolid texture = new(c);
+                        material.Texture = texture;
+                    }
+                    else
+                    {
+                        TextureSolid texture = new();
+                        material.Texture = texture;
+                    }
                 }
 
                 materials.Add(material);
