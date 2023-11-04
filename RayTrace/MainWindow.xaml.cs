@@ -312,6 +312,13 @@ namespace RayTrace
             Console.WriteLine($"AppContext.BaseDir {AppContext.BaseDirectory}");
             Console.WriteLine($"Runtime Call {System.IO.Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName)}");
 
+            ModelData.Triangle triangle = new();
+            triangle.v0 = 0;
+            triangle.v1 = 1;
+            triangle.v2 = 2;
+
+            SVector normal = ModelImporter.GetNormal(points, triangle);
+
             {
                 Debug.Assert(Sse.IsSupported);
                 Debug.Assert(Avx.IsSupported);
