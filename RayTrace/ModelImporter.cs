@@ -826,7 +826,7 @@ namespace RayTrace
         }
 
        public List<Material> CreateMaterials()
-        {
+       {
             List<Material> materials = new();
 
             foreach (var mat in MaterialLibrary.Materials)

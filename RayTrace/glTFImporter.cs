@@ -13,6 +13,7 @@ using System.Xml.Linq;
 using System.Windows;
 using System.Runtime.InteropServices;
 using static RayTrace.ModelImporter;
+using System.Windows.Media.Media3D;
 
 namespace RayTrace
 {
@@ -32,7 +33,7 @@ namespace RayTrace
             public Vec3T<float>[] normals;
             //public Vec4T<float> tangents = new Vec4T<float>();
             public Vec4T<float>[] tangents;
-            public Vec2T<float> texCoord = new Vec2T<float>();
+            public Vec2T<float>[] texCoords;
             //public Vec3T<float> colours = new Vec3T<float>();
             public Vec3T<float>[] colours;
             public Vec4T<float> joints = new Vec4T<float>();
@@ -44,12 +45,21 @@ namespace RayTrace
             public MeshPrimitiveMode mode = MeshPrimitiveMode.TRIANGLES;
         }
 
-        //class GltfMaterial
-        //{
-        //    public bool doubleSided;
-        //    public string name;
+        class GltfMaterial
+        {
+            public string baseColorTexture;
+            public string metallicRoughnessTexture;
+            public string normalTexture;
 
-        //}
+            public string name;
+        }
+
+        // Provides mapping from textures to images.
+        class GltfTexture
+        {
+            //public int sampler { get; set; }
+            public int source { get; set; }
+        }
 
         class GltfMesh
         {
@@ -59,8 +69,15 @@ namespace RayTrace
 
         class GltfAsset
         {
-            public List<GltfMesh> meshes = new();
+            // Name of loaded glTF file.
+            public string fileName;
 
+            // Directory from which glTF was loaded.
+            public string directory;
+
+            public List<GltfMesh> meshes = new();
+            public List<GltfMaterial> materials = new();
+            public List<GltfTexture> textures { get; set; } = new();
         }
 
         private GltfAsset _asset = null;
@@ -183,11 +200,17 @@ namespace RayTrace
             public Int32 target { get; set; }
         }
 
+        public class Images
+        {
+            public string uri { get; set; }
+        }
+
         class Node
         {
             public string name { get; set; }
             public List<int> children { get; set; }
 
+            public float[] translation { get; set; }
             // XXX matrix
         }
 
@@ -235,10 +258,45 @@ namespace RayTrace
             public List<Primitive> primitives { get; set; }
         }
 
+        class Material
+        {
+            public class PbrMetallicRoughness
+            {
+                public class BaseColorTexture
+                {
+                    public int index { get; set; }
+                }
+
+                public class MetallicRoughnessTexture
+                {
+                    public int index { get; set; }
+                }
+
+                public BaseColorTexture baseColorTexture { get; set; }
+                public MetallicRoughnessTexture metallicRoughnessTexture { get; set; }
+            }
+
+            public PbrMetallicRoughness pbrMetallicRoughness { get; set; }
+
+            public class NormalTexture
+            {
+                public int index { get; set; }
+            }
+
+            public NormalTexture normalTexture { get; set; }
+
+            public string name { get; set; }
+        }
+
         class Scene
         {
             public string name { get; set; }
             public List<UInt32> nodes { get; set; }
+        }
+
+        class Texture
+        {
+            public int source { get; set; }
         }
 
         private class JsonAsset
@@ -247,15 +305,20 @@ namespace RayTrace
 
             public List<Buffer> buffers { get; set; }
             public List<BufferView> bufferViews { get; set; }
+            public List<Images> images { get; set; }
+
 
             public List<Accessor> accessors { get; set; }
 
             public List<Mesh> meshes { get; set; }
+            public List<Material> materials { get; set; }
 
             public List<Node> nodes { get; set; }
 
             public List<Scene> scenes { get; set; }
             public Int32? scene { get; set; }
+
+            public List<Texture> textures { get; set; }
         };
 
         private static Accessor GetAccessor(JsonAsset jsonAsset, int index)
@@ -295,7 +358,38 @@ namespace RayTrace
             }
 
             return null;
+        }
 
+        private static string GetImage(JsonAsset jsonAsset, int index)
+        {
+            if (jsonAsset is not null && jsonAsset.images is not null)
+            {
+                if (jsonAsset.images.Count > index)
+                {
+                    return jsonAsset.images[index].uri;
+                }
+            }
+
+            return null;
+        }
+
+        // Return a ReadOnlySpan<> of Vec2T<T> to a memory buffer.
+        private ReadOnlySpan<Vec2T<T>> ParseVEC2<T>(int bufferIndex, Int32 byteOffset, Int32 count)
+        {
+            ReadOnlySpan<Vec2T<T>> vecs = new();
+
+            if (bufferIndex >= 0 || bufferIndex < _buffers.Count)
+            {
+                byte[] bytes = _buffers[bufferIndex];
+
+                ReadOnlySpan<byte> span = bytes.AsSpan(byteOffset);
+
+                ReadOnlySpan<Vec2T<T>> asVecT = MemoryMarshal.Cast<byte, Vec2T<T>>(span);
+
+                vecs = asVecT.Slice(0, count);
+            }
+
+            return vecs;
         }
 
         // Return a ReadOnlySpan<> of Vec3T<T> to a memory buffer.
@@ -380,31 +474,49 @@ namespace RayTrace
 
             return vecs;
         }
-/*
-        private List<Int32> ParseSCALAR(Buffer buffer, Int32 byteOffset, Int32 count, Int32 componentType)
-        {
-            Debug.Assert(componentType == (int)AccessorDataType.UnsignedInt);
-
-            List<Int32> array = new();
-
-            using (FileStream fs = File.OpenRead(buffer.uri))
-            {
-                fs.Position = byteOffset;
-
-                using (BinaryReader reader = new BinaryReader(fs))
+        /*
+                private List<Int32> ParseSCALAR(Buffer buffer, Int32 byteOffset, Int32 count, Int32 componentType)
                 {
-                    for (UInt32 i = 0; i<count; i++)
-                    {
-                        int val = reader.ReadInt32();
+                    Debug.Assert(componentType == (int)AccessorDataType.UnsignedInt);
 
-                        array.Add(val);
+                    List<Int32> array = new();
+
+                    using (FileStream fs = File.OpenRead(buffer.uri))
+                    {
+                        fs.Position = byteOffset;
+
+                        using (BinaryReader reader = new BinaryReader(fs))
+                        {
+                            for (UInt32 i = 0; i<count; i++)
+                            {
+                                int val = reader.ReadInt32();
+
+                                array.Add(val);
+                            }
+                        }
                     }
+
+                    return array;
                 }
+        */
+
+        private ReadOnlySpan<Vec2T<T>> ParseAccessorAsVEC2<T>(JsonAsset jsonAsset, Accessor accessor)
+        {
+            Debug.Assert(accessor.type == "VEC2");
+
+            BufferView bufferView = GetBufferView(jsonAsset, (int)accessor.bufferView);
+            if (bufferView is not null)
+            {
+                int offset = accessor.byteOffset + bufferView.byteOffset;
+
+                ReadOnlySpan<Vec2T<T>> vec = ParseVEC2<T>(bufferView.buffer, offset, accessor.count);
+
+                return vec;
             }
 
-            return array;
+            return null;
         }
-*/
+
         private ReadOnlySpan<Vec3T<T>> ParseAccessorAsVEC3<T>(JsonAsset jsonAsset, Accessor accessor)
         {
             Debug.Assert(accessor.type == "VEC3");
@@ -489,7 +601,7 @@ namespace RayTrace
                 }
         */
 
-        private bool LoadBuffers(JsonAsset jsonAsset)
+        private bool LoadBuffers(JsonAsset jsonAsset, string directoryName)
         {
             // Load all the buffers.
             for (int i=0; i<jsonAsset.buffers.Count; i++)
@@ -498,7 +610,9 @@ namespace RayTrace
 
                 try
                 {
-                    using (FileStream fs = File.OpenRead(buffer.uri))
+                    string uriPath = Path.Join(directoryName, buffer.uri);
+
+                    using (FileStream fs = File.OpenRead(uriPath))
                     {
                         byte[] temp = new byte[buffer.byteLength];
                         fs.Read(temp, 0, temp.Length);
@@ -522,7 +636,7 @@ namespace RayTrace
         {
             ModelData modelData = new();
 
-            modelData.fileName = "wibble";
+            modelData.fileName = _asset.fileName;
 
             List<SPoint> points = new List<SPoint>();
             List<SVector> normals = new List<SVector>();
@@ -545,15 +659,34 @@ namespace RayTrace
                     int pointOffset = points.Count;
                     int normalOffset = normals.Count;
                     int colourOffset = colours.Count;
+                    int texelOffset = texels.Count;
 
                     foreach (var position in primitive.positions)
                     {
                         points.Add(new SPoint(position.x, position.y, -position.z));
                     }
-                    foreach (var colour in primitive.colours)
+
+                    if (primitive.texCoords != null)
                     {
-                        colours.Add(new Colour(colour.x, colour.y, colour.z));
+                        foreach (var texCoord in primitive.texCoords)
+                        {
+                            var texel = new ModelData.Texel()
+                            {
+                                u = texCoord.x,
+                                v = texCoord.y
+                            };
+                            texels.Add(texel);
+                        }
                     }
+
+                    if (primitive.colours != null)
+                    {
+                        foreach (var colour in primitive.colours)
+                        {
+                            colours.Add(new Colour(colour.x, colour.y, colour.z));
+                        }
+                    }
+
                     foreach (var normal in primitive.normals)
                     {
                         normals.Add(new SVector(normal.x, normal.y, -normal.z));
@@ -579,6 +712,10 @@ namespace RayTrace
                             triangle.c1 = colourOffset + (int)primitive.indices[i + 1];
                             triangle.c2 = colourOffset + (int)primitive.indices[i + 2];
 
+                            triangle.t0 = texelOffset + (int)primitive.indices[i];
+                            triangle.t1 = texelOffset + (int)primitive.indices[i + 1];
+                            triangle.t2 = texelOffset + (int)primitive.indices[i + 2];
+
 
                             triangles.Add(triangle);
                             //points.Add(new SPoint(position.x, position.y, position.z));
@@ -594,6 +731,10 @@ namespace RayTrace
                     }
                     //points.Clear();
                     //normals.Clear();
+
+                    // XXX Material should be per-primitive, not per-mesh (though most models seem to have a single prinitive per mesh?)
+                    int material = primitive.material;
+                    group.Material = material;
 
                 }
 
@@ -621,7 +762,7 @@ namespace RayTrace
             modelData.normals = normals.ToArray();
             modelData.triangles = triangles.ToArray();
             modelData.SubGroups = groups.ToArray();
-
+            modelData.texels = texels.ToArray();
 
             modelData.minX = modelData.minY = modelData.minZ = float.MaxValue;
             modelData.maxX = modelData.maxY = modelData.maxZ = float.MinValue;
@@ -657,11 +798,15 @@ namespace RayTrace
             return modelData;
         }
 
-        private bool ParseAsset(JsonAsset jsonAsset)
+        private bool ParseAsset(JsonAsset jsonAsset, string fileName, string directoryName)
         {
-            if (!LoadBuffers(jsonAsset)) return false;
+            if (!LoadBuffers(jsonAsset, directoryName)) return false;
 
-            _asset = new();
+            _asset = new()
+            {
+                fileName = fileName,
+                directory = directoryName
+            };
 
             foreach (Mesh mesh in jsonAsset.meshes)
             {
@@ -693,19 +838,7 @@ namespace RayTrace
                                 gltfPrimitive.positions = positions.ToArray();
                             }
                         }
-                        if (attributes.COLOR_0.HasValue)
-                        {
-                            Accessor accessor = GetAccessor(jsonAsset, (int)attributes.COLOR_0.Value);
-                            if (accessor != null)
-                            {
-                                Debug.Assert((AccessorDataType)accessor.componentType == AccessorDataType.Float);   // Can also be unsigned byte or unsigned short.
-                                Debug.Assert(accessor.type == "VEC3");
 
-                                ReadOnlySpan<Vec3T<float>> colours = ParseAccessorAsVEC3<float>(jsonAsset, accessor);
-
-                                gltfPrimitive.colours = colours.ToArray();
-                            }
-                        }
                         if (attributes.NORMAL.HasValue)
                         {
                             Accessor accessor = GetAccessor(jsonAsset, (int)attributes.NORMAL.Value);
@@ -719,6 +852,7 @@ namespace RayTrace
                                 gltfPrimitive.normals = normals.ToArray();
                             }
                         }
+
                         if (attributes.TANGENT.HasValue)
                         {
                             Accessor accessor = GetAccessor(jsonAsset, (int)attributes.TANGENT.Value);
@@ -733,7 +867,34 @@ namespace RayTrace
                             }
                         }
 
-                        Debug.Assert(!attributes.TEXCOORD_0.HasValue);
+                        if (attributes.TEXCOORD_0.HasValue)
+                        {
+                            Accessor accessor = GetAccessor(jsonAsset, (int)attributes.TEXCOORD_0.Value);
+                            if (accessor != null)
+                            {
+                                Debug.Assert((AccessorDataType)accessor.componentType == AccessorDataType.Float);
+                                Debug.Assert(accessor.type == "VEC2");
+
+                                ReadOnlySpan<Vec2T<float>> texcoords = ParseAccessorAsVEC2<float>(jsonAsset, accessor);
+
+                                gltfPrimitive.texCoords = texcoords.ToArray();
+                            }
+                        }
+
+                        if (attributes.COLOR_0.HasValue)
+                        {
+                            Accessor accessor = GetAccessor(jsonAsset, (int)attributes.COLOR_0.Value);
+                            if (accessor != null)
+                            {
+                                Debug.Assert((AccessorDataType)accessor.componentType == AccessorDataType.Float);   // Can also be unsigned byte or unsigned short.
+                                Debug.Assert(accessor.type == "VEC3");
+
+                                ReadOnlySpan<Vec3T<float>> colours = ParseAccessorAsVEC3<float>(jsonAsset, accessor);
+
+                                gltfPrimitive.colours = colours.ToArray();
+                            }
+                        }
+
                         Debug.Assert(!attributes.JOINTS_0.HasValue);
                         Debug.Assert(!attributes.WEIGHTS_0.HasValue);
                     }
@@ -746,12 +907,22 @@ namespace RayTrace
                         {
                             AccessorDataType dataType = (AccessorDataType)accessor.componentType;
 
-                            Debug.Assert(dataType == AccessorDataType.UnsignedInt);
+                            Debug.Assert(dataType == AccessorDataType.UnsignedInt || dataType == AccessorDataType.UnsignedShort);
                             Debug.Assert(accessor.type == "SCALAR");
 
-                            ReadOnlySpan<UInt32> indices = ParseAccessorAsSCALAR<UInt32>(jsonAsset, accessor);
+                            if (dataType == AccessorDataType.UnsignedInt)
+                            {
+                                ReadOnlySpan<UInt32> indices = ParseAccessorAsSCALAR<UInt32>(jsonAsset, accessor);
+                                gltfPrimitive.indices = indices.ToArray();
+                            }
+                            else if (dataType == AccessorDataType.UnsignedShort)
+                            {
+                                ReadOnlySpan<UInt16> indices = ParseAccessorAsSCALAR<UInt16>(jsonAsset, accessor);
 
-                            gltfPrimitive.indices = indices.ToArray();
+                                var array16 = indices.ToArray();
+                                var array32 = Array.ConvertAll<UInt16, UInt32>(array16, x => (UInt16) x);
+                                gltfPrimitive.indices = array32;
+                            }
                         }
                     }
 
@@ -764,7 +935,92 @@ namespace RayTrace
                 _asset.meshes.Add(gltfMesh);
             }
 
+            if (jsonAsset.textures is not null)
+            {
+                foreach (var texture in jsonAsset.textures)
+                {
+                    GltfTexture gltfTexture = new()
+                    {
+                        source = texture.source
+                    };
+                    _asset.textures.Add(gltfTexture);
+                }
+            }
+
+            if (jsonAsset.materials is not null)
+            {
+                foreach (Material material in jsonAsset.materials)
+                {
+                    Debug.WriteLine($"Processing material {material.name}");
+
+                    GltfMaterial gltfMaterial = new()
+                    {
+                        name = material.name
+                    };
+
+                    if (material.pbrMetallicRoughness.baseColorTexture != null)
+                    {
+                        int textureIndex = material.pbrMetallicRoughness.baseColorTexture.index;
+                        int imageIndex = jsonAsset.textures[textureIndex].source;
+
+                        string baseColor = GetImage(jsonAsset, imageIndex);
+                        if (baseColor is not null) gltfMaterial.baseColorTexture = baseColor;
+                    }
+
+                    if (material.pbrMetallicRoughness.metallicRoughnessTexture != null)
+                    {
+                        int textureIndex = material.pbrMetallicRoughness.metallicRoughnessTexture.index;
+                        int imageIndex = jsonAsset.textures[textureIndex].source;
+
+                        string metallicRoughnessTexture = GetImage(jsonAsset, imageIndex);
+                        if (metallicRoughnessTexture is not null) gltfMaterial.metallicRoughnessTexture = metallicRoughnessTexture;
+                    }
+
+                    if (material.normalTexture != null)
+                    {
+                        int textureIndex = material.normalTexture.index;
+                        int imageIndex = jsonAsset.textures[textureIndex].source;
+
+                        string normalTexture = GetImage(jsonAsset, imageIndex);
+                        if (normalTexture is not null) gltfMaterial.normalTexture = normalTexture;
+                    }
+
+                    _asset.materials.Add(gltfMaterial);
+                }
+            }
+
             return true;
+        }
+
+        // Try to find the specified image file, which could be a relative or absolute path.
+        // directory                Directory from which the glTF was loaded.
+        // relativeOrAbsolutePath   Texture path read from the glTF (techinically a URI, but hey).
+        private static string FindImage(string directory, string relativeOrAbsolutePath)
+        {
+            if (File.Exists(relativeOrAbsolutePath))
+            {
+                return relativeOrAbsolutePath;
+            }
+
+            string fileName = Path.GetFileName(relativeOrAbsolutePath);
+
+            string path = Path.Join(directory, fileName);
+
+            if (File.Exists(path))
+            {
+                return path;
+            }
+
+            path = Path.Join(directory, relativeOrAbsolutePath);
+
+            if (File.Exists(path))
+            {
+                return path;
+            }
+
+            return String.Empty;
+
+
         }
 
         // 
@@ -773,6 +1029,9 @@ namespace RayTrace
             _asset = null;
 
             ModelData modelData = null;
+
+            string fileName = Path.GetFileName(path);
+            string directoryName = Path.GetDirectoryName(path);
 
             try
             {
@@ -785,10 +1044,9 @@ namespace RayTrace
 
                 }
 
-                if (ParseAsset(asset))
+                if (ParseAsset(asset, fileName, directoryName))
                 {
                     modelData = CreateModel();
-
                 }
             }
             catch (Exception e)
@@ -797,6 +1055,45 @@ namespace RayTrace
             }
 
             return modelData;
+        }
+
+        public List<RayTrace.Material> CreateMaterials()
+        {
+            List<RayTrace.Material> materials = new();
+
+            foreach (GltfMaterial material in _asset.materials)
+            {
+                TextureBitmap texture = new();
+
+                RayTrace.Material mat = new()
+                {
+                    Texture = texture,
+                    Name = material.name
+                };
+
+                if (!string.IsNullOrEmpty(material.baseColorTexture))
+                {
+                    string path = FindImage(_asset.directory, material.baseColorTexture);
+                    if (!String.IsNullOrEmpty(path))
+                    {
+                        texture.FileName = path;
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(material.normalTexture))
+                {
+                    string path = FindImage(_asset.directory, material.normalTexture);
+                    if (!String.IsNullOrEmpty(path))
+                    {
+                        NormalMap normalMap = new NormalMap(path);
+                        mat.NormalMap = normalMap;
+                    }
+                }
+
+                materials.Add(mat);
+            }
+
+            return materials;
         }
     }
 }

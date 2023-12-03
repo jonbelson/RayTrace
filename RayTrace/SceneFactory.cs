@@ -374,15 +374,18 @@ namespace RayTrace
         {
             Scene scene = new();
 
-            glTFImporter importer = new();
-            ModelData modelData = importer.ImportModel("C:\\Users\\Jon\\Downloads\\thunderjaw_from_horizon_zero_dawn\\scene.gltf");
-
             scene.Camera.Pos = new Point(-5.994f, 4.712f, -9.275f);
             scene.Camera.Target = new Point(0, 3, 1);
 
-            Model model = new Model(scene, new Point(0, 0, 0), modelData, true);
+            glTFImporter importer = new();
+//            ModelData modelData = importer.ImportModel("C:\\Users\\Jon\\Downloads\\thunderjaw_from_horizon_zero_dawn\\scene.gltf");
+            ModelData modelData = importer.ImportModel(@"Data\thunderjaw_from_horizon_zero_dawn\scene.gltf");
+            if (modelData != null)
+            {
+                Model model = new Model(scene, new Point(0, 0, 0), modelData, true);
 
-            scene.AddShape(model);
+                scene.AddShape(model);
+            }
 
             Light light = new PointLight(scene, new Point(-50, 50, 10), 6000, Palette.White);
             //scene.AddLight(light);

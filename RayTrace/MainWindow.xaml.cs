@@ -1186,7 +1186,7 @@ namespace RayTrace
                             OpenFileDialog dialog = new Microsoft.Win32.OpenFileDialog();
                             dialog.FileName = ""; // Default file name
                             dialog.DefaultExt = ".obj"; // Default file extension
-                            dialog.Filter = "OBJ documents (.obj)|*.obj"; // Filter files by extension
+                            dialog.Filter = "OBJ documents (.obj)|*.obj|glTF documents (.gltf)|*.gltf"; // Filter files by extension
 
                             // Show open file dialog box
                             bool? result = dialog.ShowDialog();
@@ -1197,30 +1197,48 @@ namespace RayTrace
                                 // Open document
                                 string filename = dialog.FileName;
 
-                                ModelImporter importer = new();
+                                ModelData modelData = null;
+                                List<Material> materials = new();
 
-                                ModelData modelData = importer.ImportObj(filename);
-                                List<Material> materials = importer.CreateMaterials();
+                                string ext = Path.GetExtension(filename);
 
-                                Model model = new(scene, new Point(0, 0, 0), modelData, materials, true);
-
-                                model.Name = System.IO.Path.GetFileNameWithoutExtension(modelData.fileName);
-
-                                shape = model;
-
-                                if (materials.Count > 0)
+                                if (ext.Equals(".obj", StringComparison.OrdinalIgnoreCase))
                                 {
-                                    MaterialTileMaker materialTileMaker = new() { Size = 150 };
-                                    foreach (var material in materials)
-                                    //for (int i=0; i<materials.Count; i++)
-                                    {
-                                        MaterialTile newTile = materialTileMaker.MakeTile(material);
-                                        newTile.WriteableBitmap = BitmapToWriteableBitmap(newTile.Bitmap);
-                                        MaterialTiles.Add(newTile);
+                                    ModelImporter importer = new();
 
-                                        scene.AddMaterial(material);
+                                    modelData = importer.ImportObj(filename);
+                                    materials = importer.CreateMaterials();
+                                }
+                                else if (ext.Equals(".gltf", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    glTFImporter importer = new();
+
+                                    modelData = importer.ImportModel(filename);
+                                    materials = importer.CreateMaterials();
+                                }
+
+                                if (modelData != null)
+                                {
+                                    Model model = new(scene, new Point(0, 0, 0), modelData, materials, true);
+
+                                    model.Name = System.IO.Path.GetFileNameWithoutExtension(modelData.fileName);
+
+                                    shape = model;
+
+                                    if (materials.Count > 0)
+                                    {
+                                        MaterialTileMaker materialTileMaker = new() { Size = 150 };
+                                        foreach (var material in materials)
+                                        //for (int i=0; i<materials.Count; i++)
+                                        {
+                                            MaterialTile newTile = materialTileMaker.MakeTile(material);
+                                            newTile.WriteableBitmap = BitmapToWriteableBitmap(newTile.Bitmap);
+                                            MaterialTiles.Add(newTile);
+
+                                            scene.AddMaterial(material);
+                                        }
+                                        materialListBox.Items.Refresh();
                                     }
-                                    materialListBox.Items.Refresh();
                                 }
                             }
                         }

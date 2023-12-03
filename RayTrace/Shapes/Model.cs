@@ -181,14 +181,16 @@ namespace RayTrace
 
                     string groupName = group.Name;
 
+                    // Make sure we're not adding a group with a duplicate name.
                     if (_subGroups.ContainsKey(groupName))
                     {
                         //string name;
                         int i = 1;
                         do
                         {
+                            i++;
                             groupName = group.Name + i;
-                        } while (!_subGroups.ContainsKey(groupName));
+                        } while (_subGroups.ContainsKey(groupName));
                     }
 
                     _subGroups.Add(groupName, subGroup);
@@ -329,13 +331,25 @@ namespace RayTrace
 
         public Model(Scene scene, Point p, ModelData modelData, List<Material> materials, bool centreModel = false) : this(scene, p, modelData, centreModel)
         {
-            _subGroups.Clear();
+            //_subGroups.Clear();
 
             //foreach (ModelData.SubGroup group in _modelData.SubGroups)
-            for (int i = 0; i<_modelData.SubGroups.Length; i++)
+            //for (int i = 0; i<_modelData.SubGroups.Length; i++)
+            foreach (var subGroup in _subGroups.Values)
             {
-                ModelData.SubGroup group = _modelData.SubGroups[i];
+                int materialIndex = subGroup.Group.Material;
 
+                if (materialIndex != -1)
+                {
+                    subGroup.Material = materials[subGroup.Group.Material];
+                }
+                else
+                {
+                    subGroup.Material = Scene.GetDefaultMaterial();    // XXX Until subgroup Material GUIDs are saved.
+                }
+
+                //ModelData.SubGroup group = _modelData.SubGroups[i];
+/*
                 //ModelSubGroup subGroup = new(this, group) { Material = this.Material };
                 ModelSubGroup subGroup = new(this, group);
                 if (group.Material != -1)
@@ -347,6 +361,7 @@ namespace RayTrace
                     subGroup.Material = Scene.GetDefaultMaterial();    // XXX Until subgroup Material GUIDs are saved.
                 }
                 _subGroups.Add(group.Name, subGroup);
+*/
             }
         }
 
@@ -479,9 +494,12 @@ namespace RayTrace
 
                         if (_modelData.HasVertexTexels)
                         {
-                            fatTriangle.t0 = _modelData.GetTriangleTexel0(idx);
-                            fatTriangle.t1 = _modelData.GetTriangleTexel1(idx);
-                            fatTriangle.t2 = _modelData.GetTriangleTexel2(idx);
+                            if (_modelData.texels != null)
+                            {
+                                fatTriangle.t0 = _modelData.GetTriangleTexel0(idx);
+                                fatTriangle.t1 = _modelData.GetTriangleTexel1(idx);
+                                fatTriangle.t2 = _modelData.GetTriangleTexel2(idx);
+                            }
                         }
 
                         _fatTriangles[idx++] = fatTriangle;
