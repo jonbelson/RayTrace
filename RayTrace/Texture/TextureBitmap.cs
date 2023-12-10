@@ -17,6 +17,15 @@ namespace RayTrace
 
         public override TextureType Type { get; } = TextureType.Bitmap;
 
+        // How to deal with uv values that are ouside of the 0 - 1 range.
+        public enum WrappingMode
+        {
+            ClampToEdge, MirroredRepeat, Repeat
+        }
+
+        public WrappingMode WrapU { get; set; } = WrappingMode.Repeat;
+        public WrappingMode WrapV { get; set; } = WrappingMode.Repeat;
+
         public string FileName {
             get => fileName;
             set {
@@ -28,6 +37,7 @@ namespace RayTrace
             }
         }
 
+        // Attempt to load teh specified bitmap texture.
         private bool LoadTexture(string fileName)
         {
             try
@@ -50,12 +60,6 @@ namespace RayTrace
 
                         //System.Runtime.InteropServices.Marshal.Copy(source, row, 0, width);
                         System.Runtime.InteropServices.Marshal.Copy(source, texture, y*width, width);
-
-                        //for (int i = 0; i < width; i++)
-                        //{
-                        //    uint rgb = (uint)row[i];
-                        //    texture[y * width + i] = new Colour(rgb);
-                        //}
                     }
 
                     bitmap.UnlockBits(bitmapData);
@@ -113,8 +117,63 @@ namespace RayTrace
         {
             if (texture != null)
             {
-                u = Math.Clamp(u, 0, 1);
-                v = Math.Clamp(v, 0, 1);
+                switch (WrapU)
+                {
+                    case WrappingMode.ClampToEdge:
+                        u = Math.Clamp(u, 0, 1);
+                        break;
+                    case WrappingMode.Repeat:
+                        {
+                            if (u > 0.0f)
+                            {
+                                u = u - (float) Math.Floor(u);
+                            }
+                            else
+                            {
+                                float u2 = Math.Abs(u);
+                                u2 = u2 - (float)Math.Floor(u2);
+                                u = 1.0f - u2;
+                            }
+                            u = Math.Clamp(u, 0, 1);
+                        }
+                        break;
+                    case WrappingMode.MirroredRepeat:
+                        {
+                            // TODO
+                        }
+                        break;
+                }
+
+                switch (WrapV)
+                {
+                    case WrappingMode.ClampToEdge:
+                        v = Math.Clamp(v, 0, 1);
+                        break;
+                    case WrappingMode.Repeat:
+                        {
+                            if (v > 0.0f)
+                            {
+                                v = v - (float)Math.Floor(v);
+                            }
+                            else
+                            {
+                                float v2 = Math.Abs(v);
+                                v2 = v2 - (float)Math.Floor(v2);
+                                v = 1.0f - v2;
+                            }
+                            v = Math.Clamp(v, 0, 1);
+                        }
+                        break;
+                    case WrappingMode.MirroredRepeat:
+                        {
+                            // TODO
+                        }
+                        break;
+                }
+
+
+                //u = Math.Clamp(u, 0, 1);
+                //v = Math.Clamp(v, 0, 1);
 
                 int x = (int)(u * (width - 1));
                 int y = (int)(v * (height - 1));

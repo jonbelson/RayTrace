@@ -13,7 +13,7 @@ using System.Xml.Linq;
 
 namespace RayTrace
 {
-    public class ModelImporter
+    public class ObjImporter
     {
         public static SVector GetNormal(List<SPoint> points, ModelData.Triangle triangle)
         {
@@ -749,6 +749,7 @@ namespace RayTrace
                     Debug.WriteLine($"Number faces : {faces.Count}");
 
                     modelData.HasVertexNormals = normals.Count > 1;
+                    modelData.HasVertexTexels = texels.Count > 0;
 
                     // XXX Try to figure out if the normals need inverting.
 

@@ -404,7 +404,7 @@ namespace RayTrace
         {
             Scene scene = new Scene();
 
-            ModelImporter importer = new ModelImporter();
+            ObjImporter importer = new ObjImporter();
 
             //Matrix objectToWorld = new Matrix();
 

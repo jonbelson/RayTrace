@@ -317,7 +317,7 @@ namespace RayTrace
             triangle.v1 = 1;
             triangle.v2 = 2;
 
-            SVector normal = ModelImporter.GetNormal(points, triangle);
+            SVector normal = ObjImporter.GetNormal(points, triangle);
 
             {
                 Debug.Assert(Sse.IsSupported);
@@ -1204,7 +1204,7 @@ namespace RayTrace
 
                                 if (ext.Equals(".obj", StringComparison.OrdinalIgnoreCase))
                                 {
-                                    ModelImporter importer = new();
+                                    ObjImporter importer = new();
 
                                     modelData = importer.ImportObj(filename);
                                     materials = importer.CreateMaterials();

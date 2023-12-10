@@ -179,7 +179,7 @@ namespace RayTrace
 //                    ModelSubGroup subGroup = new(this, group) { Material = this.Material };
                     ModelSubGroup subGroup = new(this, group) { Material = Scene.GetDefaultMaterial() };    // XXX Until subgroup Material GUIDs are saved.
 
-                    string groupName = group.Name;
+                    string groupName = group.Name ?? "Untitled";
 
                     // Make sure we're not adding a group with a duplicate name.
                     if (_subGroups.ContainsKey(groupName))
@@ -408,7 +408,7 @@ namespace RayTrace
             }
             else
             {
-                ModelImporter importer = new();
+                ObjImporter importer = new();
                 ModelData modelData = importer.ImportObj(xmlModel.FileName);
 
                 _modelData = modelData;

@@ -12,8 +12,9 @@ using System.Reflection;
 using System.Xml.Linq;
 using System.Windows;
 using System.Runtime.InteropServices;
-using static RayTrace.ModelImporter;
+using static RayTrace.ObjImporter;
 using System.Windows.Media.Media3D;
+using Microsoft.Windows.Themes;
 
 namespace RayTrace
 {
@@ -103,6 +104,20 @@ namespace RayTrace
             TRIANGLES = 4,
             TRIANGLE_STRIP = 5,
             TRIANGLE_FAN = 6
+        }
+
+        enum SamplerWrapS
+        {
+            CLAMP_TO_EDGE = 33071,
+            MIRRORED_REPEAT = 33648,
+            REPEAT = 10497 
+        }
+
+        enum SamplerWrapT
+        {
+            CLAMP_TO_EDGE = 33071,
+            MIRRORED_REPEAT = 33648,
+            REPEAT = 10497
         }
 
         /*
@@ -211,6 +226,9 @@ namespace RayTrace
             public List<int> children { get; set; }
 
             public float[] translation { get; set; }
+            public float[] scale { get; set; }
+            public float[] rotation { get; set; }
+
             // XXX matrix
         }
 
@@ -307,7 +325,6 @@ namespace RayTrace
             public List<BufferView> bufferViews { get; set; }
             public List<Images> images { get; set; }
 
-
             public List<Accessor> accessors { get; set; }
 
             public List<Mesh> meshes { get; set; }
@@ -366,7 +383,8 @@ namespace RayTrace
             {
                 if (jsonAsset.images.Count > index)
                 {
-                    return jsonAsset.images[index].uri;
+                    string s = jsonAsset.images[index].uri;
+                    return System.Uri.UnescapeDataString(s);
                 }
             }
 
@@ -673,7 +691,7 @@ namespace RayTrace
                             var texel = new ModelData.Texel()
                             {
                                 u = texCoord.x,
-                                v = texCoord.y
+                                v = 1.0f - texCoord.y
                             };
                             texels.Add(texel);
                         }
@@ -1078,6 +1096,10 @@ namespace RayTrace
                     {
                         texture.FileName = path;
                     }
+                    else
+                    {
+                        Debug.WriteLine($"Failed to find image {material.baseColorTexture}");
+                    }
                 }
 
                 if (!string.IsNullOrEmpty(material.normalTexture))
@@ -1087,6 +1109,10 @@ namespace RayTrace
                     {
                         NormalMap normalMap = new NormalMap(path);
                         mat.NormalMap = normalMap;
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"Failed to find image {material.normalTexture}");
                     }
                 }
 
