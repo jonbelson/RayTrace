@@ -17,6 +17,12 @@ namespace RayTrace
 
         public ModelData.SubGroup Group { get => _group; }
 
+        public bool HasMaterial() => Material != null;
+        public bool HasRoughness() => HasMaterial() && Material.HasRoughness();
+        public bool HasTransparency() => HasMaterial() && Material.HasTransparency();
+        public bool HasReflectivity() => HasMaterial() && Material.HasReflectivity();
+        public bool HasNormalMap() => HasMaterial() && Material.HasNormalMap();
+
         protected override void EnabledStateChanged()
         {
             //_model.SetGroupEnabled();

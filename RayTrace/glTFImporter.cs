@@ -139,10 +139,10 @@ namespace RayTrace
             TEXCOORD_n VEC2 float nsigned byte normalized unsigned short normalized ST texture coordinates
             COLOR_n VEC3 EC4 float unsigned byte normalized unsigned short normalized RGB or RGBA vertex color linear multiplier
             JOINTS_n VEC4 unsigned byte unsigned short See Skinned Mesh Attributes
-            WEIGHTS_n VEC4 float nsigned byte normalized nsigned short normalized See Skinned Mesh Attributes
+            WEIGHTS_n VEC4 float nsigned byte normalized nsigned short normalized See Skinned JsonMesh Attributes
          */
 
-        // BufferView.Target
+        // JsonBufferView.Target
         private const Int32 ARRAY_BUFFER = 34962;
         private const Int32 ELEMENT_ARRAY_BUFFER = 34963;
 
@@ -184,7 +184,7 @@ namespace RayTrace
 
         private Dictionary<int, byte[]> _buffers = new();
 
-        class Extras
+        class JsonExtras
         {
             public string author { get; set; }
             public string license { get; set; }
@@ -192,20 +192,20 @@ namespace RayTrace
             public string title { get; set; }
         }
 
-        class Asset
+        class JsonAsset
         {
-            public Extras extras { get; set; }
+            public JsonExtras extras { get; set; }
             public string generator { get; set; }
             public string version { get; set; }
         }
 
-        private class Buffer
+        private class JsonBuffer
         {
             public Int32 byteLength { get; set; }
             public string uri { get; set; }
         }
 
-        public class BufferView
+        public class JsonBufferView
         {
             public int buffer { get; set; }
             public Int32 byteLength { get; set; }
@@ -215,13 +215,14 @@ namespace RayTrace
             public Int32 target { get; set; }
         }
 
-        public class Images
+        public class JsonImages
         {
             public string uri { get; set; }
         }
 
-        class Node
+        class JsonNode
         {
+            public int mesh { get; set; }
             public string name { get; set; }
             public List<int> children { get; set; }
 
@@ -232,7 +233,7 @@ namespace RayTrace
             // XXX matrix
         }
 
-        class Accessor
+        class JsonAccessor
         {
             public Int32 bufferView { get; set; }
             public Int32 byteOffset { get; set; }
@@ -245,7 +246,7 @@ namespace RayTrace
             public string type { get; set; }
         }
 
-        class Attribute
+        class JsonAttribute
         {
             // XXX Use a map instead?
             // XXX Handle '_n' ?
@@ -260,23 +261,23 @@ namespace RayTrace
             public Int32? WEIGHTS_0 { get; set; }
         }
 
-        class Primitive
+        class JsonPrimitive
         {
-            public Attribute attributes { get; set; }
+            public JsonAttribute attributes { get; set; }
 
             public Int32? indices { get; set; }     // The index of the accessor that contains the vertex indices
             public Int32? material { get; set; }
             public Int32? mode { get; set; }
         }
 
-        class Mesh
+        class JsonMesh
         {
             public string name { get; set; }
 
-            public List<Primitive> primitives { get; set; }
+            public List<JsonPrimitive> primitives { get; set; }
         }
 
-        class Material
+        class JsonMaterial
         {
             public class PbrMetallicRoughness
             {
@@ -306,84 +307,84 @@ namespace RayTrace
             public string name { get; set; }
         }
 
-        class Scene
+        class JsonScene
         {
             public string name { get; set; }
             public List<UInt32> nodes { get; set; }
         }
 
-        class Texture
+        class JsonTexture
         {
             public int source { get; set; }
         }
 
-        private class JsonAsset
+        private class Asset
         {
-            public Asset asset { get; set; }
+            public JsonAsset asset { get; set; }
 
-            public List<Buffer> buffers { get; set; }
-            public List<BufferView> bufferViews { get; set; }
-            public List<Images> images { get; set; }
+            public List<JsonBuffer> buffers { get; set; }
+            public List<JsonBufferView> bufferViews { get; set; }
+            public List<JsonImages> images { get; set; }
 
-            public List<Accessor> accessors { get; set; }
+            public List<JsonAccessor> accessors { get; set; }
 
-            public List<Mesh> meshes { get; set; }
-            public List<Material> materials { get; set; }
+            public List<JsonMesh> meshes { get; set; }
+            public List<JsonMaterial> materials { get; set; }
 
-            public List<Node> nodes { get; set; }
+            public List<JsonNode> nodes { get; set; }
 
-            public List<Scene> scenes { get; set; }
+            public List<JsonScene> scenes { get; set; }
             public Int32? scene { get; set; }
 
-            public List<Texture> textures { get; set; }
+            public List<JsonTexture> textures { get; set; }
         };
 
-        private static Accessor GetAccessor(JsonAsset jsonAsset, int index)
+        private static JsonAccessor GetAccessor(Asset asset, int index)
         {
-            if (jsonAsset is not null && jsonAsset.accessors is not null)
+            if (asset is not null && asset.accessors is not null)
             {
-                if (jsonAsset.accessors.Count > index)
+                if (asset.accessors.Count > index)
                 {
-                    return jsonAsset.accessors[index];
+                    return asset.accessors[index];
                 }
             }
 
             return null;
         }
 
-        private static BufferView GetBufferView(JsonAsset jsonAsset, int index)
+        private static JsonBufferView GetBufferView(Asset asset, int index)
         {
-            if (jsonAsset is not null && jsonAsset.accessors is not null)
+            if (asset is not null && asset.accessors is not null)
             {
-                if (jsonAsset.bufferViews.Count > index)
+                if (asset.bufferViews.Count > index)
                 {
-                    return jsonAsset.bufferViews[index];
+                    return asset.bufferViews[index];
                 }
             }
 
             return null;
         }
 
-        private Buffer GetBuffer(JsonAsset jsonAsset, int index)
+        private JsonBuffer GetBuffer(Asset asset, int index)
         {
-            if (jsonAsset is not null && jsonAsset.buffers is not null)
+            if (asset is not null && asset.buffers is not null)
             {
-                if (jsonAsset.buffers.Count > index)
+                if (asset.buffers.Count > index)
                 {
-                    return jsonAsset.buffers[index];
+                    return asset.buffers[index];
                 }
             }
 
             return null;
         }
 
-        private static string GetImage(JsonAsset jsonAsset, int index)
+        private static string GetImage(Asset asset, int index)
         {
-            if (jsonAsset is not null && jsonAsset.images is not null)
+            if (asset is not null && asset.images is not null)
             {
-                if (jsonAsset.images.Count > index)
+                if (asset.images.Count > index)
                 {
-                    string s = jsonAsset.images[index].uri;
+                    string s = asset.images[index].uri;
                     return System.Uri.UnescapeDataString(s);
                 }
             }
@@ -449,7 +450,7 @@ namespace RayTrace
         }
 
         /*
-                private List<Vec3> ParseVEC3(Buffer buffer, Int32 byteOffset, Int32 count, Int32 componentType)
+                private List<Vec3> ParseVEC3(JsonBuffer buffer, Int32 byteOffset, Int32 count, Int32 componentType)
                 {
                     Debug.Assert(componentType == (int)AccessorDataType.Float);
 
@@ -493,7 +494,7 @@ namespace RayTrace
             return vecs;
         }
         /*
-                private List<Int32> ParseSCALAR(Buffer buffer, Int32 byteOffset, Int32 count, Int32 componentType)
+                private List<Int32> ParseSCALAR(JsonBuffer buffer, Int32 byteOffset, Int32 count, Int32 componentType)
                 {
                     Debug.Assert(componentType == (int)AccessorDataType.UnsignedInt);
 
@@ -518,11 +519,11 @@ namespace RayTrace
                 }
         */
 
-        private ReadOnlySpan<Vec2T<T>> ParseAccessorAsVEC2<T>(JsonAsset jsonAsset, Accessor accessor)
+        private ReadOnlySpan<Vec2T<T>> ParseAccessorAsVEC2<T>(Asset asset, JsonAccessor accessor)
         {
             Debug.Assert(accessor.type == "VEC2");
 
-            BufferView bufferView = GetBufferView(jsonAsset, (int)accessor.bufferView);
+            JsonBufferView bufferView = GetBufferView(asset, (int)accessor.bufferView);
             if (bufferView is not null)
             {
                 int offset = accessor.byteOffset + bufferView.byteOffset;
@@ -535,11 +536,11 @@ namespace RayTrace
             return null;
         }
 
-        private ReadOnlySpan<Vec3T<T>> ParseAccessorAsVEC3<T>(JsonAsset jsonAsset, Accessor accessor)
+        private ReadOnlySpan<Vec3T<T>> ParseAccessorAsVEC3<T>(Asset asset, JsonAccessor accessor)
         {
             Debug.Assert(accessor.type == "VEC3");
 
-            BufferView bufferView = GetBufferView(jsonAsset, (int)accessor.bufferView);
+            JsonBufferView bufferView = GetBufferView(asset, (int)accessor.bufferView);
             if (bufferView is not null)
             {
                 int offset = accessor.byteOffset + bufferView.byteOffset;
@@ -552,11 +553,11 @@ namespace RayTrace
             return null;
         }
 
-        private ReadOnlySpan<Vec4T<T>> ParseAccessorAsVEC4<T>(JsonAsset jsonAsset, Accessor accessor)
+        private ReadOnlySpan<Vec4T<T>> ParseAccessorAsVEC4<T>(Asset asset, JsonAccessor accessor)
         {
             Debug.Assert(accessor.type == "VEC4");
 
-            BufferView bufferView = GetBufferView(jsonAsset, (int)accessor.bufferView);
+            JsonBufferView bufferView = GetBufferView(asset, (int)accessor.bufferView);
             if (bufferView is not null)
             {
                 int offset = accessor.byteOffset + bufferView.byteOffset;
@@ -569,14 +570,14 @@ namespace RayTrace
             return null;
         }
 
-        private ReadOnlySpan<T> ParseAccessorAsSCALAR<T>(JsonAsset jsonAsset, Accessor accessor) where T : struct
+        private ReadOnlySpan<T> ParseAccessorAsSCALAR<T>(Asset asset, JsonAccessor accessor) where T : struct
         {
             Debug.Assert(accessor.type == "SCALAR");
 
-            BufferView bufferView = GetBufferView(jsonAsset, (int)accessor.bufferView);
+            JsonBufferView bufferView = GetBufferView(asset, (int)accessor.bufferView);
             if (bufferView is not null)
             {
-                Buffer buffer = GetBuffer(jsonAsset, bufferView.buffer);
+                JsonBuffer buffer = GetBuffer(asset, bufferView.buffer);
 
                 Int32 target = bufferView.target;
 
@@ -590,12 +591,12 @@ namespace RayTrace
             return null;
         }
         /*
-                private bool ParseAccessor(Asset asset, Accessor accessor)
+                private bool ParseAccessor(JsonAsset asset, JsonAccessor accessor)
                 {
-                    BufferView bufferView = GetBufferView(asset, (int)accessor.bufferView);
+                    JsonBufferView bufferView = GetBufferView(asset, (int)accessor.bufferView);
                     if (bufferView is not null)
                     {
-                        Buffer buffer = GetBuffer(asset, bufferView.buffer);
+                        JsonBuffer buffer = GetBuffer(asset, bufferView.buffer);
 
                         Int32 target = bufferView.target;
 
@@ -619,12 +620,12 @@ namespace RayTrace
                 }
         */
 
-        private bool LoadBuffers(JsonAsset jsonAsset, string directoryName)
+        private bool LoadBuffers(Asset asset, string directoryName)
         {
             // Load all the buffers.
-            for (int i=0; i<jsonAsset.buffers.Count; i++)
+            for (int i=0; i<asset.buffers.Count; i++)
             {
-                Buffer buffer = jsonAsset.buffers[i];
+                JsonBuffer buffer = asset.buffers[i];
 
                 try
                 {
@@ -816,9 +817,9 @@ namespace RayTrace
             return modelData;
         }
 
-        private bool ParseAsset(JsonAsset jsonAsset, string fileName, string directoryName)
+        private bool ParseAsset(Asset asset, string fileName, string directoryName)
         {
-            if (!LoadBuffers(jsonAsset, directoryName)) return false;
+            if (!LoadBuffers(asset, directoryName)) return false;
 
             _asset = new()
             {
@@ -826,32 +827,41 @@ namespace RayTrace
                 directory = directoryName
             };
 
-            foreach (Mesh mesh in jsonAsset.meshes)
+            foreach (JsonNode node in asset.nodes)
             {
+                Debug.WriteLine($"Processing node {node.name}");
+
+                //int mesh = node.mesh;
+
+                JsonMesh mesh = asset.meshes[node.mesh];
+            //}
+
+            //foreach (JsonMesh mesh in jsonAsset.meshes)
+            //{
                 Debug.WriteLine($"Processing mesh {mesh.name}");
 
                 GltfMesh gltfMesh = new();
 
                 gltfMesh.name = mesh.name;
 
-                // A Mesh contains one or more Primitives.
-                foreach (Primitive primitive in mesh.primitives)
+                // A JsonMesh contains one or more Primitives.
+                foreach (JsonPrimitive primitive in mesh.primitives)
                 {
                     GltfPrimitive gltfPrimitive = new();
 
-                    Attribute attributes = primitive.attributes;
+                    JsonAttribute attributes = primitive.attributes;
 
                     if (attributes != null)
                     {
                         if (attributes.POSITION.HasValue)
                         {
-                            Accessor accessor = GetAccessor(jsonAsset, (int)attributes.POSITION.Value);
+                            JsonAccessor accessor = GetAccessor(asset, (int)attributes.POSITION.Value);
                             if (accessor != null)
                             {
                                 Debug.Assert((AccessorDataType)accessor.componentType == AccessorDataType.Float);
                                 Debug.Assert(accessor.type == "VEC3");
 
-                                ReadOnlySpan<Vec3T<float>> positions = ParseAccessorAsVEC3<float>(jsonAsset, accessor);
+                                ReadOnlySpan<Vec3T<float>> positions = ParseAccessorAsVEC3<float>(asset, accessor);
 
                                 gltfPrimitive.positions = positions.ToArray();
                             }
@@ -859,13 +869,13 @@ namespace RayTrace
 
                         if (attributes.NORMAL.HasValue)
                         {
-                            Accessor accessor = GetAccessor(jsonAsset, (int)attributes.NORMAL.Value);
+                            JsonAccessor accessor = GetAccessor(asset, (int)attributes.NORMAL.Value);
                             if (accessor != null)
                             {
                                 Debug.Assert((AccessorDataType)accessor.componentType == AccessorDataType.Float);
                                 Debug.Assert(accessor.type == "VEC3");
 
-                                ReadOnlySpan<Vec3T<float>> normals = ParseAccessorAsVEC3<float>(jsonAsset, accessor);
+                                ReadOnlySpan<Vec3T<float>> normals = ParseAccessorAsVEC3<float>(asset, accessor);
 
                                 gltfPrimitive.normals = normals.ToArray();
                             }
@@ -873,13 +883,13 @@ namespace RayTrace
 
                         if (attributes.TANGENT.HasValue)
                         {
-                            Accessor accessor = GetAccessor(jsonAsset, (int)attributes.TANGENT.Value);
+                            JsonAccessor accessor = GetAccessor(asset, (int)attributes.TANGENT.Value);
                             if (accessor != null)
                             {
                                 Debug.Assert((AccessorDataType)accessor.componentType == AccessorDataType.Float);
                                 Debug.Assert(accessor.type == "VEC4");
 
-                                ReadOnlySpan<Vec4T<float>> tangents = ParseAccessorAsVEC4<float>(jsonAsset, accessor);
+                                ReadOnlySpan<Vec4T<float>> tangents = ParseAccessorAsVEC4<float>(asset, accessor);
 
                                 gltfPrimitive.tangents = tangents.ToArray();
                             }
@@ -887,13 +897,13 @@ namespace RayTrace
 
                         if (attributes.TEXCOORD_0.HasValue)
                         {
-                            Accessor accessor = GetAccessor(jsonAsset, (int)attributes.TEXCOORD_0.Value);
+                            JsonAccessor accessor = GetAccessor(asset, (int)attributes.TEXCOORD_0.Value);
                             if (accessor != null)
                             {
                                 Debug.Assert((AccessorDataType)accessor.componentType == AccessorDataType.Float);
                                 Debug.Assert(accessor.type == "VEC2");
 
-                                ReadOnlySpan<Vec2T<float>> texcoords = ParseAccessorAsVEC2<float>(jsonAsset, accessor);
+                                ReadOnlySpan<Vec2T<float>> texcoords = ParseAccessorAsVEC2<float>(asset, accessor);
 
                                 gltfPrimitive.texCoords = texcoords.ToArray();
                             }
@@ -901,13 +911,13 @@ namespace RayTrace
 
                         if (attributes.COLOR_0.HasValue)
                         {
-                            Accessor accessor = GetAccessor(jsonAsset, (int)attributes.COLOR_0.Value);
+                            JsonAccessor accessor = GetAccessor(asset, (int)attributes.COLOR_0.Value);
                             if (accessor != null)
                             {
                                 Debug.Assert((AccessorDataType)accessor.componentType == AccessorDataType.Float);   // Can also be unsigned byte or unsigned short.
                                 Debug.Assert(accessor.type == "VEC3");
 
-                                ReadOnlySpan<Vec3T<float>> colours = ParseAccessorAsVEC3<float>(jsonAsset, accessor);
+                                ReadOnlySpan<Vec3T<float>> colours = ParseAccessorAsVEC3<float>(asset, accessor);
 
                                 gltfPrimitive.colours = colours.ToArray();
                             }
@@ -920,7 +930,7 @@ namespace RayTrace
                     if (primitive.indices.HasValue)
                     {
                         // indices
-                        Accessor accessor = GetAccessor(jsonAsset, primitive.indices.Value);
+                        JsonAccessor accessor = GetAccessor(asset, primitive.indices.Value);
                         if (accessor != null)
                         {
                             AccessorDataType dataType = (AccessorDataType)accessor.componentType;
@@ -930,12 +940,12 @@ namespace RayTrace
 
                             if (dataType == AccessorDataType.UnsignedInt)
                             {
-                                ReadOnlySpan<UInt32> indices = ParseAccessorAsSCALAR<UInt32>(jsonAsset, accessor);
+                                ReadOnlySpan<UInt32> indices = ParseAccessorAsSCALAR<UInt32>(asset, accessor);
                                 gltfPrimitive.indices = indices.ToArray();
                             }
                             else if (dataType == AccessorDataType.UnsignedShort)
                             {
-                                ReadOnlySpan<UInt16> indices = ParseAccessorAsSCALAR<UInt16>(jsonAsset, accessor);
+                                ReadOnlySpan<UInt16> indices = ParseAccessorAsSCALAR<UInt16>(asset, accessor);
 
                                 var array16 = indices.ToArray();
                                 var array32 = Array.ConvertAll<UInt16, UInt32>(array16, x => (UInt16) x);
@@ -953,9 +963,9 @@ namespace RayTrace
                 _asset.meshes.Add(gltfMesh);
             }
 
-            if (jsonAsset.textures is not null)
+            if (asset.textures is not null)
             {
-                foreach (var texture in jsonAsset.textures)
+                foreach (var texture in asset.textures)
                 {
                     GltfTexture gltfTexture = new()
                     {
@@ -965,9 +975,9 @@ namespace RayTrace
                 }
             }
 
-            if (jsonAsset.materials is not null)
+            if (asset.materials is not null)
             {
-                foreach (Material material in jsonAsset.materials)
+                foreach (JsonMaterial material in asset.materials)
                 {
                     Debug.WriteLine($"Processing material {material.name}");
 
@@ -979,27 +989,27 @@ namespace RayTrace
                     if (material.pbrMetallicRoughness.baseColorTexture != null)
                     {
                         int textureIndex = material.pbrMetallicRoughness.baseColorTexture.index;
-                        int imageIndex = jsonAsset.textures[textureIndex].source;
+                        int imageIndex = asset.textures[textureIndex].source;
 
-                        string baseColor = GetImage(jsonAsset, imageIndex);
+                        string baseColor = GetImage(asset, imageIndex);
                         if (baseColor is not null) gltfMaterial.baseColorTexture = baseColor;
                     }
 
                     if (material.pbrMetallicRoughness.metallicRoughnessTexture != null)
                     {
                         int textureIndex = material.pbrMetallicRoughness.metallicRoughnessTexture.index;
-                        int imageIndex = jsonAsset.textures[textureIndex].source;
+                        int imageIndex = asset.textures[textureIndex].source;
 
-                        string metallicRoughnessTexture = GetImage(jsonAsset, imageIndex);
+                        string metallicRoughnessTexture = GetImage(asset, imageIndex);
                         if (metallicRoughnessTexture is not null) gltfMaterial.metallicRoughnessTexture = metallicRoughnessTexture;
                     }
 
                     if (material.normalTexture != null)
                     {
                         int textureIndex = material.normalTexture.index;
-                        int imageIndex = jsonAsset.textures[textureIndex].source;
+                        int imageIndex = asset.textures[textureIndex].source;
 
-                        string normalTexture = GetImage(jsonAsset, imageIndex);
+                        string normalTexture = GetImage(asset, imageIndex);
                         if (normalTexture is not null) gltfMaterial.normalTexture = normalTexture;
                     }
 
@@ -1012,7 +1022,7 @@ namespace RayTrace
 
         // Try to find the specified image file, which could be a relative or absolute path.
         // directory                Directory from which the glTF was loaded.
-        // relativeOrAbsolutePath   Texture path read from the glTF (techinically a URI, but hey).
+        // relativeOrAbsolutePath   JsonTexture path read from the glTF (techinically a URI, but hey).
         private static string FindImage(string directory, string relativeOrAbsolutePath)
         {
             if (File.Exists(relativeOrAbsolutePath))
@@ -1053,12 +1063,12 @@ namespace RayTrace
 
             try
             {
-                JsonAsset asset;
+                Asset asset;
                 using (StreamReader r = new(path))
                 {
                     string json = r.ReadToEnd();
 
-                    asset = System.Text.Json.JsonSerializer.Deserialize<JsonAsset>(json);
+                    asset = System.Text.Json.JsonSerializer.Deserialize<Asset>(json);
 
                 }
 

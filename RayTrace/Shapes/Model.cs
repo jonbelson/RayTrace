@@ -700,6 +700,7 @@ namespace RayTrace
 
             SPoint intersection = hr.Entry;
             FatTriangle tri = _fatTriangles[index];
+            ModelSubGroup subGroup = _subGroupArray[tri.subGroup];
 
             SPoint V0 = tri.v0;
             SPoint V1 = tri.v1;
@@ -737,10 +738,12 @@ namespace RayTrace
                 hr.u = texel.u;
                 hr.v = texel.v;
 
+                Material material = subGroup.Material ?? Material;
+
                 // If there's a normal map, apply it to the vertex normal.
-                if (HasNormalMap())
+                if (material.HasNormalMap())
                 {
-                    SVector tNormal = Material.NormalMap.GetNormal(texel.u, texel.v);
+                    SVector tNormal = material.NormalMap.GetNormal(texel.u, texel.v);
 
                     // Transform normal map vector to the triangle's normal.
 
