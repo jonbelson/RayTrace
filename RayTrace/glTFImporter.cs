@@ -15,6 +15,10 @@ using System.Runtime.InteropServices;
 using static RayTrace.ObjImporter;
 using System.Windows.Media.Media3D;
 using Microsoft.Windows.Themes;
+using System.Security.Policy;
+using System.Numerics;
+using static RayTrace.ModelData;
+using System.Drawing;
 
 namespace RayTrace
 {
@@ -62,10 +66,25 @@ namespace RayTrace
             public int source { get; set; }
         }
 
+        class GltfNode
+        {
+            public string name;
+            public List<GltfNode> children = new();
+            public GltfMesh mesh = null;
+            //public float[] matrix = new float[16];
+            public Matrix4x4 matrix = Matrix4x4.Identity;
+        }
+
         class GltfMesh
         {
             public string name;
             public List<GltfPrimitive> primitives = new();
+        }
+
+        class GltfScene
+        {
+            public string name;
+            public List<GltfNode> nodes = new();
         }
 
         class GltfAsset
@@ -76,9 +95,12 @@ namespace RayTrace
             // Directory from which glTF was loaded.
             public string directory;
 
+            public List<GltfNode> nodes = new();
             public List<GltfMesh> meshes = new();
             public List<GltfMaterial> materials = new();
             public List<GltfTexture> textures { get; set; } = new();
+
+            public List<GltfScene> scenes = new();
         }
 
         private GltfAsset _asset = null;
@@ -228,7 +250,7 @@ namespace RayTrace
 
             public float[] translation { get; set; }
             public float[] scale { get; set; }
-            public float[] rotation { get; set; }
+            public float[] rotation { get; set; }   // XYZW
 
             // XXX matrix
         }
@@ -310,7 +332,7 @@ namespace RayTrace
         class JsonScene
         {
             public string name { get; set; }
-            public List<UInt32> nodes { get; set; }
+            public List<Int32> nodes { get; set; }
         }
 
         class JsonTexture
@@ -650,6 +672,117 @@ namespace RayTrace
             return true;
         }
 
+        private List<SPoint> points = new List<SPoint>();
+        private List<SVector> normals = new List<SVector>();
+        private List<ModelData.Texel> texels = new List<ModelData.Texel>();
+        private List<Colour> colours = new List<Colour>();
+        private List<ModelData.Triangle> triangles = new List<ModelData.Triangle>();
+
+
+        // node     Node which we are working on.
+        // matrix   Current transform matrix, which is the product of all parent Node matrixes.
+        private void CreateGroupFromNode(ModelData.SubGroup group, GltfNode node, Matrix4x4 matrix)
+        {
+            GltfMesh mesh = node.mesh;
+            Matrix4x4 m = matrix*node.matrix;
+
+            foreach (var child in node.children)
+            {
+//                Matrix4x4 m2 = m*matrix;
+//                CreateGroupFromNode(group, child, m /*matrix*/ /*m2*/);
+                CreateGroupFromNode(group, child, m /*matrix*/ /*m2*/);
+            }
+
+            foreach (GltfPrimitive primitive in mesh.primitives)
+            {
+                // Current offsets.
+                int pointOffset = points.Count;
+                int normalOffset = normals.Count;
+                int colourOffset = colours.Count;
+                int texelOffset = texels.Count;
+
+                foreach (var position in primitive.positions)
+                {
+                    Vector3 v = new(position.x, position.y, position.z);
+//                    v = Vector3.Transform(v, node.matrix);
+                    v = Vector3.Transform(v, m /*matrix*/);
+                    points.Add(new SPoint(v.X, v.Y, -v.Z));
+                }
+
+                if (primitive.texCoords != null)
+                {
+                    foreach (var texCoord in primitive.texCoords)
+                    {
+                        var texel = new ModelData.Texel()
+                        {
+                            u = texCoord.x,
+                            v = 1.0f - texCoord.y
+                        };
+                        texels.Add(texel);
+                    }
+                }
+
+                if (primitive.colours != null)
+                {
+                    foreach (var colour in primitive.colours)
+                    {
+                        colours.Add(new Colour(colour.x, colour.y, colour.z));
+                    }
+                }
+
+                foreach (var normal in primitive.normals)
+                {
+                    normals.Add(new SVector(normal.x, normal.y, -normal.z));
+                }
+
+                //int numTriangles = 0;
+                for (uint i = 0; i<=primitive.indices.Length - 3; i+=3)
+                {
+                    if (i + 3 > primitive.indices.Length) break;
+
+                    try
+                    {
+                        ModelData.Triangle triangle = new();
+                        triangle.v0 = pointOffset + (int)primitive.indices[i];
+                        triangle.v1 = pointOffset + (int)primitive.indices[i + 1];
+                        triangle.v2 = pointOffset + (int)primitive.indices[i + 2];
+
+                        triangle.n0 = normalOffset + (int)primitive.indices[i];
+                        triangle.n1 = normalOffset + (int)primitive.indices[i + 1];
+                        triangle.n2 = normalOffset + (int)primitive.indices[i + 2];
+
+                        triangle.c0 = colourOffset + (int)primitive.indices[i];
+                        triangle.c1 = colourOffset + (int)primitive.indices[i + 1];
+                        triangle.c2 = colourOffset + (int)primitive.indices[i + 2];
+
+                        triangle.t0 = texelOffset + (int)primitive.indices[i];
+                        triangle.t1 = texelOffset + (int)primitive.indices[i + 1];
+                        triangle.t2 = texelOffset + (int)primitive.indices[i + 2];
+
+
+                        triangles.Add(triangle);
+                        //points.Add(new SPoint(position.x, position.y, position.z));
+
+                        group.Triangles.Add(triangles.Count - 1);
+
+                    }
+                    catch (Exception e)
+                    {
+                        int iiii = 0;
+                        break;
+                    }
+                }
+                //points.Clear();
+                //normals.Clear();
+
+                // XXX Material should be per-primitive, not per-mesh (though most models seem to have a single primitive per mesh?)
+                int material = primitive.material;
+                group.Material = material;
+
+            }
+
+        }
+
         // Create a ModelData instance from the contents of _asset
         private ModelData CreateModel()
         {
@@ -657,111 +790,127 @@ namespace RayTrace
 
             modelData.fileName = _asset.fileName;
 
-            List<SPoint> points = new List<SPoint>();
-            List<SVector> normals = new List<SVector>();
-            List<ModelData.Texel> texels = new List<ModelData.Texel>();
-            List<Colour> colours = new List<Colour>();
-            List<Face> faces = new List<Face>();
-            List<ModelData.Triangle> triangles = new List<ModelData.Triangle>();
+            points.Clear();
+            normals.Clear();
+            texels.Clear();
+            colours.Clear();
+            triangles.Clear();
+
+            //List<SPoint> points = new List<SPoint>();
+            //List<SVector> normals = new List<SVector>();
+            //List<ModelData.Texel> texels = new List<ModelData.Texel>();
+            //List<Colour> colours = new List<Colour>();
+            //List<ModelData.Triangle> triangles = new List<ModelData.Triangle>();
 
             List<ModelData.SubGroup> groups = new();
 
 
-            //int offset = 0;
-            foreach (GltfMesh mesh in _asset.meshes)
+            // Convert each Node in a Scene to a SubGroup.
+            // XXX Only the first Scene is handled.
+            if (_asset.scenes.Count > 0)
             {
-                ModelData.SubGroup group = new() { Name = mesh.name };
+                GltfScene gltfScene = _asset.scenes[0];
 
-                foreach (GltfPrimitive primitive in mesh.primitives)
+                // For each of the top-level Nodes in the Scene...
+                foreach (var node in gltfScene.nodes)
                 {
-                    // Current offsets.
-                    int pointOffset = points.Count;
-                    int normalOffset = normals.Count;
-                    int colourOffset = colours.Count;
-                    int texelOffset = texels.Count;
+                    ModelData.SubGroup group = new() { Name = node.name };
 
-                    foreach (var position in primitive.positions)
-                    {
-                        points.Add(new SPoint(position.x, position.y, -position.z));
-                    }
+                    CreateGroupFromNode(group, node, /*node.matrix*/ Matrix4x4.Identity);
 
-                    if (primitive.texCoords != null)
+#if false
+                    GltfMesh mesh = node.mesh;
+
+                    foreach (GltfPrimitive primitive in mesh.primitives)
                     {
-                        foreach (var texCoord in primitive.texCoords)
+                        // Current offsets.
+                        int pointOffset = points.Count;
+                        int normalOffset = normals.Count;
+                        int colourOffset = colours.Count;
+                        int texelOffset = texels.Count;
+
+                        foreach (var position in primitive.positions)
                         {
-                            var texel = new ModelData.Texel()
+                            Vector3 v = new(position.x, position.y, position.z);
+                            v = Vector3.Transform(v, node.matrix);
+                            points.Add(new SPoint(v.X, v.Y, -v.Z));
+                        }
+
+                        if (primitive.texCoords != null)
+                        {
+                            foreach (var texCoord in primitive.texCoords)
                             {
-                                u = texCoord.x,
-                                v = 1.0f - texCoord.y
-                            };
-                            texels.Add(texel);
+                                var texel = new ModelData.Texel()
+                                {
+                                    u = texCoord.x,
+                                    v = 1.0f - texCoord.y
+                                };
+                                texels.Add(texel);
+                            }
                         }
-                    }
 
-                    if (primitive.colours != null)
-                    {
-                        foreach (var colour in primitive.colours)
+                        if (primitive.colours != null)
                         {
-                            colours.Add(new Colour(colour.x, colour.y, colour.z));
+                            foreach (var colour in primitive.colours)
+                            {
+                                colours.Add(new Colour(colour.x, colour.y, colour.z));
+                            }
                         }
-                    }
 
-                    foreach (var normal in primitive.normals)
-                    {
-                        normals.Add(new SVector(normal.x, normal.y, -normal.z));
-                    }
-
-                    //int numTriangles = 0;
-                    for (uint i=0; i<=primitive.indices.Length - 3; i+=3)
-                    {
-                        if (i + 3 > primitive.indices.Length) break;
-
-                        try
+                        foreach (var normal in primitive.normals)
                         {
-                            ModelData.Triangle triangle = new();
-                            triangle.v0 = pointOffset + (int)primitive.indices[i];
-                            triangle.v1 = pointOffset + (int)primitive.indices[i + 1];
-                            triangle.v2 = pointOffset + (int)primitive.indices[i + 2];
-
-                            triangle.n0 = normalOffset + (int)primitive.indices[i];
-                            triangle.n1 = normalOffset + (int)primitive.indices[i + 1];
-                            triangle.n2 = normalOffset + (int)primitive.indices[i + 2];
-
-                            triangle.c0 = colourOffset + (int)primitive.indices[i];
-                            triangle.c1 = colourOffset + (int)primitive.indices[i + 1];
-                            triangle.c2 = colourOffset + (int)primitive.indices[i + 2];
-
-                            triangle.t0 = texelOffset + (int)primitive.indices[i];
-                            triangle.t1 = texelOffset + (int)primitive.indices[i + 1];
-                            triangle.t2 = texelOffset + (int)primitive.indices[i + 2];
-
-
-                            triangles.Add(triangle);
-                            //points.Add(new SPoint(position.x, position.y, position.z));
-
-                            group.Triangles.Add(triangles.Count - 1);
-
+                            normals.Add(new SVector(normal.x, normal.y, -normal.z));
                         }
-                        catch (Exception e)
+
+                        //int numTriangles = 0;
+                        for (uint i = 0; i<=primitive.indices.Length - 3; i+=3)
                         {
-                            int iiii = 0;
-                            break;
+                            if (i + 3 > primitive.indices.Length) break;
+
+                            try
+                            {
+                                ModelData.Triangle triangle = new();
+                                triangle.v0 = pointOffset + (int)primitive.indices[i];
+                                triangle.v1 = pointOffset + (int)primitive.indices[i + 1];
+                                triangle.v2 = pointOffset + (int)primitive.indices[i + 2];
+
+                                triangle.n0 = normalOffset + (int)primitive.indices[i];
+                                triangle.n1 = normalOffset + (int)primitive.indices[i + 1];
+                                triangle.n2 = normalOffset + (int)primitive.indices[i + 2];
+
+                                triangle.c0 = colourOffset + (int)primitive.indices[i];
+                                triangle.c1 = colourOffset + (int)primitive.indices[i + 1];
+                                triangle.c2 = colourOffset + (int)primitive.indices[i + 2];
+
+                                triangle.t0 = texelOffset + (int)primitive.indices[i];
+                                triangle.t1 = texelOffset + (int)primitive.indices[i + 1];
+                                triangle.t2 = texelOffset + (int)primitive.indices[i + 2];
+
+
+                                triangles.Add(triangle);
+                                //points.Add(new SPoint(position.x, position.y, position.z));
+
+                                group.Triangles.Add(triangles.Count - 1);
+
+                            }
+                            catch (Exception e)
+                            {
+                                int iiii = 0;
+                                break;
+                            }
                         }
+                        //points.Clear();
+                        //normals.Clear();
+
+                        // XXX Material should be per-primitive, not per-mesh (though most models seem to have a single primitive per mesh?)
+                        int material = primitive.material;
+                        group.Material = material;
+
                     }
-                    //points.Clear();
-                    //normals.Clear();
-
-                    // XXX Material should be per-primitive, not per-mesh (though most models seem to have a single prinitive per mesh?)
-                    int material = primitive.material;
-                    group.Material = material;
-
+#endif
+                    groups.Add(group);
                 }
-
-                
-                groups.Add(group);
-
             }
-
 
             modelData.HasVertexNormals = normals.Count > 0;
             modelData.HasVertexColours = colours.Count > 0;
@@ -802,7 +951,7 @@ namespace RayTrace
             Debug.WriteLine($"Z : [ {modelData.minZ} {modelData.maxZ} ]");
 
             Debug.WriteLine($"Number points : {points.Count}");
-            Debug.WriteLine($"Number faces : {faces.Count}");
+            //Debug.WriteLine($"Number faces : {faces.Count}");
 
             Debug.WriteLine($"Number triangles : {triangles.Count}");
 
@@ -817,6 +966,58 @@ namespace RayTrace
             return modelData;
         }
 
+        private static JsonNode GetNode(Asset asset, int index)
+        {
+            if (asset is not null && asset.nodes is not null)
+            {
+                if (asset.nodes.Count > index)
+                {
+                    return asset.nodes[index];
+                }
+            }
+
+            return null;
+        }
+
+        /*
+        private GltfScene ParseScenes()
+        {
+
+        }
+
+        private GltfNode ParseNode(Asset asset, JsonNode node)
+        {
+            GltfNode gltfNode = new();
+
+            foreach (int i in node.children )
+            {
+                JsonNode child = GetNode(asset, i);
+            }
+
+        }
+        */
+
+        /*
+        // XXX Only a single layer of Nodes are supported, so 
+        private GltfNode ParseNode(Asset asset, JsonNode node)
+        {
+            var gltfNode = new GltfNode();
+
+            foreach (var nodeIndex in node.children)
+            {
+                JsonNode childNode = GetNode(asset, nodeIndex);
+
+                var gltfChildNode = ParseNode(asset, childNode);
+
+                foreach ()
+                {
+
+                }
+            }
+        }
+        */
+
+        // Convert the json into an intermediate format.
         private bool ParseAsset(Asset asset, string fileName, string directoryName)
         {
             if (!LoadBuffers(asset, directoryName)) return false;
@@ -827,22 +1028,15 @@ namespace RayTrace
                 directory = directoryName
             };
 
-            foreach (JsonNode node in asset.nodes)
+            // First of all, extract all the mesh data.
+            foreach (JsonMesh mesh in asset.meshes)
             {
-                Debug.WriteLine($"Processing node {node.name}");
-
-                //int mesh = node.mesh;
-
-                JsonMesh mesh = asset.meshes[node.mesh];
-            //}
-
-            //foreach (JsonMesh mesh in jsonAsset.meshes)
-            //{
                 Debug.WriteLine($"Processing mesh {mesh.name}");
 
-                GltfMesh gltfMesh = new();
-
-                gltfMesh.name = mesh.name;
+                GltfMesh gltfMesh = new()
+                {
+                    name = mesh.name
+                };
 
                 // A JsonMesh contains one or more Primitives.
                 foreach (JsonPrimitive primitive in mesh.primitives)
@@ -948,7 +1142,7 @@ namespace RayTrace
                                 ReadOnlySpan<UInt16> indices = ParseAccessorAsSCALAR<UInt16>(asset, accessor);
 
                                 var array16 = indices.ToArray();
-                                var array32 = Array.ConvertAll<UInt16, UInt32>(array16, x => (UInt16) x);
+                                var array32 = Array.ConvertAll<UInt16, UInt32>(array16, x => (UInt16)x);
                                 gltfPrimitive.indices = array32;
                             }
                         }
@@ -961,6 +1155,80 @@ namespace RayTrace
                 }
 
                 _asset.meshes.Add(gltfMesh);
+            }
+
+            // Now extract all the Nodes.
+            foreach (JsonNode node in asset.nodes)
+            {
+                Debug.WriteLine($"Processing Node {node.name}");
+
+                GltfNode gltfNode = new()
+                {
+                    name = node.name
+                };
+
+                if (node.children != null)
+                {
+                    foreach (var child in node.children)
+                    {
+                        GltfNode childNode = _asset.nodes[child];
+                        gltfNode.children.Add(childNode);
+
+                    }
+                }
+
+                gltfNode.mesh = _asset.meshes[node.mesh];
+
+                if (node.rotation is not null && node.rotation.Length == 4)
+                {
+                    System.Numerics.Quaternion q = new(node.rotation[0], node.rotation[1], node.rotation[2], node.rotation[3]);
+                    Matrix4x4 R = Matrix4x4.CreateFromQuaternion(q);
+                    gltfNode.matrix *= R;
+                }
+
+                if (node.translation is not null && node.translation.Length == 3)
+                {
+                    Matrix4x4 T = Matrix4x4.CreateTranslation(node.translation[0], node.translation[1], node.translation[2]);
+                    gltfNode.matrix *= T;
+                }
+
+                /*
+                if (node.children is not null)
+                {
+                    foreach (int childIndex in node.children)
+                    {
+                        gltfNode.children.Add(_asset.nodes[childIndex]);
+                    }
+                }
+                */
+
+                _asset.nodes.Add(gltfNode);
+            }
+
+            // XXX We can only handle a single Scene at the moment.
+            foreach (JsonScene scene in asset.scenes)
+            {
+                Debug.WriteLine($"Processing scene {scene.name}");
+
+                GltfScene gltfScene = new()
+                {
+                    name = scene.name
+                };
+
+                foreach (int nodeIndex in scene.nodes)
+                {
+                    GltfNode gltfNode = _asset.nodes[nodeIndex];
+
+                    if (gltfNode is null)
+                    {
+                        Debug.WriteLine($"Failed to retrieve GltfNode for {nodeIndex} in Scene {scene.name}");
+                        continue;
+                    }
+
+                    gltfScene.nodes.Add(gltfNode);
+                }
+
+                _asset.scenes.Add(gltfScene);
             }
 
             if (asset.textures is not null)

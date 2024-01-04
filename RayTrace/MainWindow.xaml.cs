@@ -1186,7 +1186,9 @@ namespace RayTrace
                             OpenFileDialog dialog = new Microsoft.Win32.OpenFileDialog();
                             dialog.FileName = ""; // Default file name
                             dialog.DefaultExt = ".obj"; // Default file extension
-                            dialog.Filter = "OBJ documents (.obj)|*.obj|glTF documents (.gltf)|*.gltf"; // Filter files by extension
+//                            dialog.Filter = "OBJ documents (.obj)|*.obj|glTF documents (.gltf)|*.gltf"; // Filter files by extension
+                            dialog.Filter = "All Models (.obj;.gltf)|*.obj;*.gltf| OBJ Models (.obj)|*.obj|glTF Models (.gltf)|*.gltf"; // Filter files by extension
+                            dialog.FilterIndex = 0;
 
                             // Show open file dialog box
                             bool? result = dialog.ShowDialog();

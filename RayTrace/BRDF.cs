@@ -330,4 +330,202 @@ namespace RayTrace
             return xml;
         }
     }
+
+    // Reference BRDF in glTF specification.
+    // V    Normalised vector towards eye.
+    // L    Normalised vector to light.
+    // N    Surface normal.
+    // H    Normalised half vector |L + V|
+    public class GltfBRDF : BRDF
+    {
+        public float _metallic { get; set; }
+
+        public float Metallic {
+            get => _metallic;
+            set { Math.Clamp(_metallic, 0.0f, 1.0f); _metallic = value; }
+        }
+
+        public float Ior { get; set; } = 1.5f;
+
+        private float _roughness = 0.5f;
+        public float Roughness {
+            get => _roughness;
+            set { _roughness = Math.Clamp(value, 0, 1); }
+        }
+
+        private float Alpha { get => _roughness*_roughness; }
+
+        // https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#fresnel
+        // f0   Reflection colour at 0 degree/normal incidence.
+        // f90  Reflection colour at 90 degree incidence.
+        private float ConductorFresnel(float f0, float VdotH)
+        {
+            float v = Math.Clamp(1.0f - Math.Abs(VdotH), 0.0f, 1.0f);
+            float v5 = v*v*v*v*v;
+
+            return f0 + (1.0f - f0)*v5;
+        }
+
+        // Dialectric BRDF
+        // https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#fresnel
+        // base     Diffuse component.
+        // layer    Specular component.
+        private Colour FresnelMix(Colour _base, Colour layer, float VdotH)
+        {
+            float f = (1.0f - Ior)/(1.0f + Ior);
+            float f0 = f*f;
+            float v = 1.0f - Math.Abs(VdotH);
+            float v5 = v*v*v*v*v;
+
+            float f90 = 1.0f;
+            float fr = f0 + (f90 - f0)*v5;
+
+            return Colour.LinearBlend(_base, layer, fr);
+        }
+
+        private static float Heaviside(float x)
+        {
+            return (x > 0.0f) ? 1.0f : 0.0f;
+        }
+
+        // Calculate GGX microfactet distribution, or 'D'.
+        // https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#specular-brdf
+        private float CalculateD_GGX(SVector N, SVector H)
+        {
+            float alpha = Alpha;
+            float alphaSql = alpha*alpha;
+
+            float NdotH = N.DotProductSaturated(H);
+
+            float numerator = alphaSql*Heaviside(NdotH);
+
+            float val = NdotH*NdotH*(alphaSql - 1.0f) + 1.0f;
+            float denominator = (float) Math.PI*val*val;
+
+            return numerator/denominator;
+        }
+
+        // https://cdn2.unrealengine.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf
+        // [Equation 4]
+        private float CalculateG_Eq4(float NdotL, float NdotV)
+        {
+            float val = _roughness + 1;
+            float k = val*val/8.0f;
+
+            float Gl = NdotL/(NdotL*(1.0f - k) + k);
+            float Gv = NdotV/(NdotV*(1.0f - k) + k);
+
+            return Gl*Gv;
+        }
+
+        /*
+        private float CalculateG(float NdotL, float NdotV, float HdotL, float HdotV)
+        {
+            float alpha = Alpha;
+            float alphaSql = alpha*alpha;
+
+
+        }
+        */
+
+        private float CalculateV(float NdotL, float NdotV)
+        {
+            float G = CalculateG_Eq4(NdotL, NdotV);
+
+            float denominator = 4.0f*Math.Abs(NdotL)*Math.Abs(NdotV);
+
+            return G/denominator;
+        }
+
+        // Equation 15
+        private float CalculateV_Equ15(float NdotL, float NdotV)
+        {
+            float alphaSqr = Alpha*Alpha;
+            double denom1 = NdotL*Math.Sqrt(NdotV*NdotV*(1.0f - alphaSqr) + alphaSqr);
+            double denom2 = NdotV*Math.Sqrt(NdotL*NdotL*(1.0f - alphaSqr) + alphaSqr);
+
+            float denominator = (float) (denom1 + denom2);
+            if (denominator != 0)
+            {
+                return 0.5f/denominator;
+            }
+            return 0;
+        }
+
+        // Equation 16
+        // Faster but less accurate
+        private float CalculateV_Equ16(float NdotL, float NdotV)
+        {
+            double denom1 = NdotL*(NdotV*(1.0f - Alpha) + Alpha);
+            double denom2 = NdotV*(NdotL*(1.0f - Alpha) + Alpha);
+
+            float denominator = (float)(denom1 + denom2);
+            if (denominator != 0)
+            {
+                return 0.5f/denominator;
+            }
+            return 0;
+
+        }
+
+        //private Colour SpecularBrdf(SVector N, SVector L, SVector V)
+        //{
+
+        //}
+
+        // https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#diffuse-brdf
+        private Colour DiffuseBrdf(Colour c)
+        {
+            return c*((float)(1.0/Math.PI));
+        }
+
+        //private SVector SpecularBrdf()
+        //{
+
+        //}
+
+        public GltfBRDF()
+        {
+            Name = "Gltf (BRDF)";
+        }
+
+        //public GltfBRDF(XMLGltfBrdf xml)
+        //{
+        //    Name = xml.Name;
+        //    Roughness = xml.Roughness;
+        //    Ior = xml.Ior;
+        //}
+
+        // Calculate Colour at point given in hr based on radiance (Li) coming from direction 'source'.
+        // colour   Colour of surface at hit point.
+        // source   A vector from hr towards the source of the incoming light.
+        // Li       The colour of the incoming light.
+        public override Colour GetColour(HitResult hr, Colour colour, SVector source, Colour Li)
+        {
+            Debug.Assert(!source.IsNull());
+            Debug.Assert(!hr.Ray.IsNull());
+
+            SVector normal = hr.EntryNormal;
+            SVector viewDirection = hr.Ray.Normalise().Negate();
+            SVector halfVector = (viewDirection + source).Normalise();
+
+
+
+            return Palette.Red;
+        }
+
+        public override XMLBrdf ToXML()
+        {
+            throw new NotImplementedException();
+        }
+
+        //public override XMLBrdf ToXML()
+        //{
+        //    GltfBRDF xml = new();
+
+        //    xml.Name = Name;
+        //    xml.Ior = Ior;
+        //    xml.Roughness = Roughness;
+        //}
+    }
 }
