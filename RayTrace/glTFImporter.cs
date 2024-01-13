@@ -103,7 +103,7 @@ namespace RayTrace
             public List<GltfScene> scenes = new();
         }
 
-        private GltfAsset _asset = null;
+        private GltfAsset _gltfAsset = null;
 
         enum AccessorDataType
         {
@@ -252,7 +252,7 @@ namespace RayTrace
             public float[] scale { get; set; }
             public float[] rotation { get; set; }   // XYZW
 
-            // XXX matrix
+            public float[] matrix { get; set; }
         }
 
         class JsonAccessor
@@ -684,7 +684,8 @@ namespace RayTrace
         private void CreateGroupFromNode(ModelData.SubGroup group, GltfNode node, Matrix4x4 matrix)
         {
             GltfMesh mesh = node.mesh;
-            Matrix4x4 m = matrix*node.matrix;
+//            Matrix4x4 m = matrix*node.matrix;
+            Matrix4x4 m = node.matrix*matrix;
 
             foreach (var child in node.children)
             {
@@ -788,7 +789,7 @@ namespace RayTrace
         {
             ModelData modelData = new();
 
-            modelData.fileName = _asset.fileName;
+            modelData.fileName = _gltfAsset.fileName;
 
             points.Clear();
             normals.Clear();
@@ -807,9 +808,9 @@ namespace RayTrace
 
             // Convert each Node in a Scene to a SubGroup.
             // XXX Only the first Scene is handled.
-            if (_asset.scenes.Count > 0)
+            if (_gltfAsset.scenes.Count > 0)
             {
-                GltfScene gltfScene = _asset.scenes[0];
+                GltfScene gltfScene = _gltfAsset.scenes[0];
 
                 // For each of the top-level Nodes in the Scene...
                 foreach (var node in gltfScene.nodes)
@@ -1022,7 +1023,7 @@ namespace RayTrace
         {
             if (!LoadBuffers(asset, directoryName)) return false;
 
-            _asset = new()
+            _gltfAsset = new()
             {
                 fileName = fileName,
                 directory = directoryName
@@ -1154,10 +1155,19 @@ namespace RayTrace
                     gltfMesh.primitives.Add(gltfPrimitive);
                 }
 
-                _asset.meshes.Add(gltfMesh);
+                _gltfAsset.meshes.Add(gltfMesh);
             }
 
-            // Now extract all the Nodes.
+            // Now extract all the Nodes. The first pass is to create all the GltfNode
+            //  instances, the second is to populate the GltfNode children.
+
+            //for (int i = 0; i<asset.nodes.Count; i++)
+            //{
+            //    _asset.nodes.Add(new GltfNode());
+            //}
+
+            _gltfAsset.nodes.Capacity = asset.nodes.Count;
+
             foreach (JsonNode node in asset.nodes)
             {
                 Debug.WriteLine($"Processing Node {node.name}");
@@ -1167,22 +1177,29 @@ namespace RayTrace
                     name = node.name
                 };
 
-                if (node.children != null)
+                //if (node.children != null)
+                //{
+                //    foreach (var child in node.children)
+                //    {
+                //        GltfNode childNode = _asset.nodes[child];
+                //        gltfNode.children.Add(childNode);
+
+                //    }
+                //}
+
+                gltfNode.mesh = _gltfAsset.meshes[node.mesh];
+
+                if (node.scale is not null && node.scale.Length == 3)
                 {
-                    foreach (var child in node.children)
-                    {
-                        GltfNode childNode = _asset.nodes[child];
-                        gltfNode.children.Add(childNode);
-
-                    }
+                    Matrix4x4 S = Matrix4x4.CreateScale(node.scale[0], node.scale[1], node.scale[2]);
+                    gltfNode.matrix *= S;
                 }
-
-                gltfNode.mesh = _asset.meshes[node.mesh];
 
                 if (node.rotation is not null && node.rotation.Length == 4)
                 {
                     System.Numerics.Quaternion q = new(node.rotation[0], node.rotation[1], node.rotation[2], node.rotation[3]);
                     Matrix4x4 R = Matrix4x4.CreateFromQuaternion(q);
+                    //R = Matrix4x4.Transpose(R);
                     gltfNode.matrix *= R;
                 }
 
@@ -1190,6 +1207,23 @@ namespace RayTrace
                 {
                     Matrix4x4 T = Matrix4x4.CreateTranslation(node.translation[0], node.translation[1], node.translation[2]);
                     gltfNode.matrix *= T;
+                }
+
+                if (node.matrix is not null && node.matrix.Length == 16)
+                {
+                    var M = node.matrix;
+                    Matrix4x4 matrix = new(M[0], M[1], M[2], M[3],
+                                            M[4], M[5], M[6], M[7],
+                                            M[8], M[9], M[10], M[11],
+                                            M[12], M[13], M[14], M[15]);
+
+                    Vector3 scale;
+                    System.Numerics.Quaternion rotation;
+                    Vector3 translation;
+                    Matrix4x4.Decompose(matrix, out scale, out rotation, out translation);
+
+                    gltfNode.matrix = matrix;
+
                 }
 
                 /*
@@ -1202,7 +1236,24 @@ namespace RayTrace
                 }
                 */
 
-                _asset.nodes.Add(gltfNode);
+                _gltfAsset.nodes.Add(gltfNode);
+            }
+
+            for (int i=0; i<asset.nodes.Count; i++)
+            {
+                GltfNode gltfNode = _gltfAsset.nodes[i];
+                JsonNode node = asset.nodes[i];
+
+                if (node.children != null)
+                {
+                    foreach (var child in node.children)
+                    {
+                        GltfNode childNode = _gltfAsset.nodes[child];
+                        gltfNode.children.Add(childNode);
+
+                    }
+                }
+
             }
 
             // XXX We can only handle a single Scene at the moment.
@@ -1217,7 +1268,7 @@ namespace RayTrace
 
                 foreach (int nodeIndex in scene.nodes)
                 {
-                    GltfNode gltfNode = _asset.nodes[nodeIndex];
+                    GltfNode gltfNode = _gltfAsset.nodes[nodeIndex];
 
                     if (gltfNode is null)
                     {
@@ -1228,7 +1279,7 @@ namespace RayTrace
                     gltfScene.nodes.Add(gltfNode);
                 }
 
-                _asset.scenes.Add(gltfScene);
+                _gltfAsset.scenes.Add(gltfScene);
             }
 
             if (asset.textures is not null)
@@ -1239,7 +1290,7 @@ namespace RayTrace
                     {
                         source = texture.source
                     };
-                    _asset.textures.Add(gltfTexture);
+                    _gltfAsset.textures.Add(gltfTexture);
                 }
             }
 
@@ -1281,7 +1332,7 @@ namespace RayTrace
                         if (normalTexture is not null) gltfMaterial.normalTexture = normalTexture;
                     }
 
-                    _asset.materials.Add(gltfMaterial);
+                    _gltfAsset.materials.Add(gltfMaterial);
                 }
             }
 
@@ -1322,7 +1373,7 @@ namespace RayTrace
         // 
         public ModelData ImportModel(string path)
         {
-            _asset = null;
+            _gltfAsset = null;
 
             ModelData modelData = null;
 
@@ -1357,7 +1408,7 @@ namespace RayTrace
         {
             List<RayTrace.Material> materials = new();
 
-            foreach (GltfMaterial material in _asset.materials)
+            foreach (GltfMaterial material in _gltfAsset.materials)
             {
                 TextureBitmap texture = new();
 
@@ -1369,7 +1420,7 @@ namespace RayTrace
 
                 if (!string.IsNullOrEmpty(material.baseColorTexture))
                 {
-                    string path = FindImage(_asset.directory, material.baseColorTexture);
+                    string path = FindImage(_gltfAsset.directory, material.baseColorTexture);
                     if (!String.IsNullOrEmpty(path))
                     {
                         texture.FileName = path;
@@ -1382,7 +1433,7 @@ namespace RayTrace
 
                 if (!string.IsNullOrEmpty(material.normalTexture))
                 {
-                    string path = FindImage(_asset.directory, material.normalTexture);
+                    string path = FindImage(_gltfAsset.directory, material.normalTexture);
                     if (!String.IsNullOrEmpty(path))
                     {
                         NormalMap normalMap = new NormalMap(path);

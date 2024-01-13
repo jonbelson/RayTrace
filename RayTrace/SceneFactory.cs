@@ -395,7 +395,14 @@ namespace RayTrace
 
             //scene.Skydome = new SkydomeBitmap("Data\\skydomes\\immenstadter_horn_2048.jpg");
             //            scene.Skydome = new Skybox("Data\\skyboxes\\Yokohama2");
-            scene.Skydome = new Skybox("Data\\skyboxes\\Forest");
+            try
+            {
+                scene.Skydome = new Skybox("Data\\skyboxes\\Forest");
+            }
+            catch (Exception ex)
+            {
+
+            }
 
             return scene;
         }

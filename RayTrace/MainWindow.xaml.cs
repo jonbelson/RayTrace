@@ -404,6 +404,19 @@ namespace RayTrace
                         Debug.WriteLine(product.ToString());
             */
 
+            {
+                Matrix4x4 m = Matrix4x4.CreateTranslation(2, 0, 4);
+
+                Matrix4x4 m2 = Matrix4x4.CreateRotationY((float)Math.PI/2.0f);
+
+                var m3 = m*m2;
+
+                Vector3 v = new(1.0f, 0, 0);
+
+                Vector3 v2 = Vector3.Transform(v, m3);
+
+            }
+
             Vector3D up = new(0.0, 1.0, 0.0);
 
             camera3D = new PerspectiveCamera(new Point3D(0, 0, 6), new Vector3D(0, 0, -1), up, 45);
