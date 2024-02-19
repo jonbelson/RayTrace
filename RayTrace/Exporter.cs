@@ -59,6 +59,17 @@ namespace RayTrace
     }
 
     [Serializable]
+    public class XMLGltfBrdf : XMLBrdf
+    {
+        public float Metallic;
+        public float Ior;
+        public float Roughness;
+
+        public override BRDF Create() => new GltfBRDF(this);
+    }
+
+
+    [Serializable]
     [XmlInclude(typeof(XMLSkybox))]
     [XmlInclude(typeof(XMLSkydomeBitmap))]
     [XmlInclude(typeof(XMLSkydomeGradient))]

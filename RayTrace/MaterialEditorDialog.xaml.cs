@@ -25,7 +25,7 @@ namespace RayTrace
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
-        private readonly List<MaterialType> materialTypes = new() { MaterialType.Diffuse, MaterialType.Reflective, MaterialType.RefractiveAndReflective, MaterialType.Phong, MaterialType.BRDF_Lambertian, MaterialType.BRDF_CookTorrence };
+        private readonly List<MaterialType> materialTypes = new() { MaterialType.Diffuse, MaterialType.Reflective, MaterialType.RefractiveAndReflective, MaterialType.Phong, MaterialType.BRDF_Lambertian, MaterialType.BRDF_CookTorrence, MaterialType.BRDF_Gltf };
 
         private readonly MaterialTileMaker materialTileMaker = new();
 

@@ -156,6 +156,15 @@ namespace RayTrace
             return diffSquared < MinDiff * MinDiff;
         }
 
+        public bool IsNormal()
+        {
+            if (Red < 0.0f || Red > 1.0f) return false;
+            if (Green < 0.0f || Green > 1.0f) return false;
+            if (Blue < 0.0f || Blue > 1.0f) return false;
+
+            return true;
+        }
+
         // Return gamma-corrected version of this Colour.
         public Colour ApplyGamma(float gamma)
         {

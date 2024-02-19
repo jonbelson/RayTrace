@@ -9,7 +9,7 @@ namespace RayTrace
 {
     public enum MaterialType
     {
-        Diffuse, Reflective, RefractiveAndReflective, Phong, BRDF_Lambertian, BRDF_CookTorrence
+        Diffuse, Reflective, RefractiveAndReflective, Phong, BRDF_Lambertian, BRDF_CookTorrence, BRDF_Gltf
     }
 
     public class MaterialManager
@@ -173,6 +173,9 @@ namespace RayTrace
                     case MaterialType.BRDF_CookTorrence:
                         Brdf = new CookTorrence();
                         break;
+                    case MaterialType.BRDF_Gltf:
+                        Brdf = new GltfBRDF();
+                        break;
                     default:
                         throw new NotImplementedException();
                 }
@@ -257,7 +260,7 @@ namespace RayTrace
             //return Name;
             if (Name.Length > 12)
             {
-                return Name.Substring(0, 10) + "...";
+                return string.Concat(Name.AsSpan(0, 10), "...");
             }
             return Name;
         }

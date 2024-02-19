@@ -52,6 +52,10 @@ namespace RayTrace
 
         class GltfMaterial
         {
+            public float metallicFactor = 1.0f;
+            public float roughnessFactor = 1.0f;
+            public Vec4T<float> baseColorFactor = new( 1.0f, 1.0f, 1.0f, 1.0f );
+
             public string baseColorTexture;
             public string metallicRoughnessTexture;
             public string normalTexture;
@@ -313,8 +317,13 @@ namespace RayTrace
                     public int index { get; set; }
                 }
 
+                public float[] baseColorFactor { get; set; }
+
                 public BaseColorTexture baseColorTexture { get; set; }
                 public MetallicRoughnessTexture metallicRoughnessTexture { get; set; }
+
+                public float metallicFactor { get; set; }
+                public float roughnessFactor { get; set; }
             }
 
             public PbrMetallicRoughness pbrMetallicRoughness { get; set; }
@@ -1217,10 +1226,10 @@ namespace RayTrace
                                             M[8], M[9], M[10], M[11],
                                             M[12], M[13], M[14], M[15]);
 
-                    Vector3 scale;
+                    //Vector3 scale;
                     System.Numerics.Quaternion rotation;
-                    Vector3 translation;
-                    Matrix4x4.Decompose(matrix, out scale, out rotation, out translation);
+                    //Vector3 translation;
+                    Matrix4x4.Decompose(matrix, out Vector3 scale, out rotation, out Vector3 translation);
 
                     gltfNode.matrix = matrix;
 
@@ -1302,8 +1311,16 @@ namespace RayTrace
 
                     GltfMaterial gltfMaterial = new()
                     {
-                        name = material.name
+                        name = material.name,
+                        metallicFactor = material.pbrMetallicRoughness.metallicFactor,
+                        roughnessFactor = material.pbrMetallicRoughness.roughnessFactor,
                     };
+
+                    if (material.pbrMetallicRoughness.baseColorFactor != null)
+                    {
+                        var bcf = material.pbrMetallicRoughness.baseColorFactor;
+                        gltfMaterial.baseColorFactor = new Vec4T<float>(bcf[0], bcf[1], bcf[2], bcf[3]);
+                    }
 
                     if (material.pbrMetallicRoughness.baseColorTexture != null)
                     {
@@ -1410,12 +1427,18 @@ namespace RayTrace
 
             foreach (GltfMaterial material in _gltfAsset.materials)
             {
-                TextureBitmap texture = new();
+                //TextureBitmap texture = new();
+                //Texture texture = new TextureBitmap();
 
-                RayTrace.Material mat = new()
+                GltfBRDF brdf = new();
+                brdf.Metallic = material.metallicFactor;
+                brdf.Roughness = material.roughnessFactor;
+
+                RayTrace.Material mat = new(MaterialType.BRDF_Gltf)
                 {
-                    Texture = texture,
-                    Name = material.name
+                    //Texture = texture,
+                    Name = material.name,
+                    Brdf = brdf
                 };
 
                 if (!string.IsNullOrEmpty(material.baseColorTexture))
@@ -1423,12 +1446,21 @@ namespace RayTrace
                     string path = FindImage(_gltfAsset.directory, material.baseColorTexture);
                     if (!String.IsNullOrEmpty(path))
                     {
+                        TextureBitmap texture = new();
+                        mat.Texture = texture;
                         texture.FileName = path;
                     }
                     else
                     {
                         Debug.WriteLine($"Failed to find image {material.baseColorTexture}");
                     }
+                }
+                else
+                {
+                    var bcf = material.baseColorFactor;
+
+                    TextureSolid texture = new(new Colour(bcf.x, bcf.y, bcf.z));
+                    mat.Texture = texture;
                 }
 
                 if (!string.IsNullOrEmpty(material.normalTexture))

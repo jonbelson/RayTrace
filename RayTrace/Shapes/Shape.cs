@@ -190,6 +190,10 @@ namespace RayTrace
 
 //            _objectToWorld = Matrix.GetScale(scale) * Matrix.GetRotationZ(rotateZRadians) * Matrix.GetRotationY(rotateYRadians) * Matrix.GetRotationX(rotateXRadians) * Matrix.GetTranslation(Pos.X, Pos.Y, Pos.Z);
             _objectToWorld = Matrix.GetTranslation(Pos.X, Pos.Y, Pos.Z) * Matrix.GetRotationZ(rotateZRadians) * Matrix.GetRotationY(rotateYRadians) * Matrix.GetRotationX(rotateXRadians) * Matrix.GetScale(scale);
+
+            _objectToWorldNormal = Matrix.GetRotationZ(rotateZRadians) * Matrix.GetRotationY(rotateYRadians) * Matrix.GetRotationX(rotateXRadians);
+
+            /*
             _objectToWorldNormal = new Matrix(_objectToWorld)
             {
                 // Remove translation component.
@@ -197,6 +201,7 @@ namespace RayTrace
                 M24 = 0.0f,
                 M34 = 0.0f,
             };
+            */
         }
 
         //

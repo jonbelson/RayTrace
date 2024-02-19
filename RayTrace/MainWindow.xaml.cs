@@ -490,9 +490,9 @@ namespace RayTrace
                 return false;
             }
 
-            if (BRDFSamples < 1)
+            if (BRDFSamples < 0)
             {
-                MessageBox.Show("Number of BRDF samples depth must be at least 1.");
+                MessageBox.Show("Number of BRDF samples must be at least 0.");
                 return false;
             }
 

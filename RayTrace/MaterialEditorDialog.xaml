@@ -678,6 +678,79 @@
 
 
 
+        <!--
+            glTF BRDF Material template.
+        -->
+        <DataTemplate x:Key="BRDF_GltfTemplate">
+            <DataTemplate.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}" />
+            </DataTemplate.Resources>
+            <StackPanel DataContext="dialog">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="8" />
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="Texture:" HorizontalAlignment="Right"></TextBlock>
+                    <ComboBox Grid.Column="2" Name="comboBoxTexture" ItemsSource="{Binding  ElementName=dialog, Path=Textures}" SelectedItem="{Binding ElementName=dialog, Path=textureType, Mode=TwoWay}" SelectionChanged="comboBoxTexture_SelectionChanged"></ComboBox>
+
+                    <ContentControl Grid.Row="1" Grid.ColumnSpan="3" Content="{Binding  Path=Texture, Mode=Twoway}">
+                        <ContentControl.Style>
+                            <Style TargetType="{x:Type ContentControl}">
+
+                                <Style.Triggers>
+                                    <!--<DataTrigger Binding="{Binding Path=SelectedValue, ElementName=comboBoxTexture}" Value="{x:Static local:TextureType.Perlin}">-->
+                                    <DataTrigger Binding="{Binding Path=textureType, ElementName=dialog}" Value="{x:Static local:TextureType.Perlin}">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource TextureNoiseTemplate}"></Setter>
+                                    </DataTrigger>
+                                    <!--<DataTrigger Binding="{Binding Path=SelectedValue, ElementName=comboBoxTexture}" Value="{x:Static local:TextureType.Solid}">-->
+                                    <DataTrigger Binding="{Binding Path=textureType, ElementName=dialog}" Value="{x:Static local:TextureType.Solid}">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource TextureSolidTemplate}"></Setter>
+                                    </DataTrigger>
+                                    <!--<DataTrigger Binding="{Binding Path=SelectedValue, ElementName=comboBoxTexture}" Value="{x:Static local:TextureType.Squares}">-->
+                                    <DataTrigger Binding="{Binding Path=textureType, ElementName=dialog}" Value="{x:Static local:TextureType.Squares}">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource TextureSquaresTemplate}"></Setter>
+                                    </DataTrigger>
+                                    <!--<DataTrigger Binding="{Binding Path=SelectedValue, ElementName=comboBoxTexture}" Value="{x:Static local:TextureType.Gradient}">-->
+                                    <DataTrigger Binding="{Binding Path=textureType, ElementName=dialog}" Value="{x:Static local:TextureType.Gradient}">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource TextureGradientTemplate}"></Setter>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Path=textureType, ElementName=dialog}" Value="{x:Static local:TextureType.Bitmap}">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource TextureBitmapTemplate}"></Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ContentControl.Style>
+
+                    </ContentControl>
+
+                    <!--<TextBlock Text="Type:" Grid.Row="2"></TextBlock>-->
+                    <TextBlock Text="Ior:" Grid.Row="2"></TextBlock>
+                    <TextBlock Text="Roughness:" Grid.Row="3"></TextBlock>
+                    <TextBlock Text="Metallic:" Grid.Row="4"></TextBlock>
+
+                    <!--<ComboBox Name="comboBoxType" ItemsSource="{Binding Source={StaticResource dataFromCookTorrenceSurfaceTypeEnum}, NotifyOnSourceUpdated=True}" SelectedItem="{Binding ElementName=dialog, Path=material.Brdf.Type, Mode=TwoWay, NotifyOnSourceUpdated=True}" Grid.Column="2" Grid.Row="2"  HorizontalAlignment="Left" MinWidth="200" SelectionChanged="comboBoxType_SelectionChanged" SourceUpdated="Control_SourceUpdated"></ComboBox>-->
+                    <TextBox Text="{Binding ElementName=dialog, Path=material.Brdf.Ior, Mode=TwoWay, NotifyOnSourceUpdated=True}" Grid.Column="2" Grid.Row="2" MinWidth="50" SourceUpdated="Control_SourceUpdated"></TextBox>
+                    <TextBox Text="{Binding ElementName=dialog, Path=material.Brdf.Roughness, Mode=TwoWay, NotifyOnSourceUpdated=True}" Grid.Column="2" Grid.Row="3" MinWidth="50" SourceUpdated="Control_SourceUpdated"></TextBox>
+                    <TextBox Text="{Binding ElementName=dialog, Path=material.Brdf.Metallic, Mode=TwoWay, NotifyOnSourceUpdated=True}" Grid.Column="2" Grid.Row="4" MinWidth="50" SourceUpdated="Control_SourceUpdated"></TextBox>
+<!--                    <TextBox Text="{Binding ElementName=dialog, Path=material.Brdf.Shininess, Mode=TwoWay, NotifyOnSourceUpdated=True}" Grid.Column="2" Grid.Row="5" MinWidth="50" SourceUpdated="Control_SourceUpdated"></TextBox> -->
+
+
+                </Grid>
+            </StackPanel>
+        </DataTemplate>
+
+
 
 
 
@@ -774,6 +847,9 @@
                         </DataTrigger>
                         <DataTrigger Binding="{Binding Path=SelectedValue, ElementName=comboBoxMaterialType}" Value="{x:Static local:MaterialType.BRDF_CookTorrence}">
                             <Setter Property="ContentTemplate" Value="{StaticResource BRDF_CookTorrenceTemplate}"></Setter>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Path=SelectedValue, ElementName=comboBoxMaterialType}" Value="{x:Static local:MaterialType.BRDF_Gltf}">
+                            <Setter Property="ContentTemplate" Value="{StaticResource BRDF_GltfTemplate}"></Setter>
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>

@@ -513,6 +513,7 @@ namespace RayTrace
             {
                 case MaterialType.BRDF_Lambertian:
                 case MaterialType.BRDF_CookTorrence:
+                case MaterialType.BRDF_Gltf:
                     {
                         Colour L = new();
 
@@ -615,6 +616,45 @@ namespace RayTrace
                         diffuse = L;
                     }
                     break;
+/*
+                case MaterialType.BRDF_Gltf:
+                    {
+                        Colour L = new();
+                        foreach (Light light in scene.Lights)
+                        {
+                            if (!light.Enabled) continue;
+
+                            PointLight pointLight = light as PointLight;
+                            if (pointLight != null && pointLight.Radius > 0)
+                            {
+                                bool gotHit = scene.HitTestFast(camera, hr.Entry, pointLight._pos);
+                                if (!gotHit)
+                                {
+                                    SVector toLight = pointLight._pos - hr.Entry;
+                                    toLight = toLight.Normalise();
+                                    //SVector vecToLight = vecToLight.Normalise();
+                                    //double dpLN = 1.0;// toLight.DotProduct(hr.EntryNormal);
+                                    double dpLN = toLight.DotProductSaturated(hr.EntryNormal);
+
+                                    ///Debug.Assert();
+                                    if (dpLN > 0)
+                                    {
+                                        Colour incoming = pointLight.GetIntensityAtPoint(camera, hr.Entry) * dpLN;
+                                        L += material.GetBrdfColour(hr, toLight, incoming);
+                                        //L += hr.shape.Material.Brdf.GetColour(hr, toLight, incoming) / (4 * Math.PI * pointLight.Radius * pointLight.Radius);
+                                        //L += c;
+                                    }
+                                }
+
+                            }
+
+                        }
+                        diffuse = L;
+
+                    }
+
+                    break;
+*/
                 case MaterialType.Reflective:
                     {
                         reflected = GetReflectedColour(camera, scene, ray, rand, hr, depth) * 0.8;

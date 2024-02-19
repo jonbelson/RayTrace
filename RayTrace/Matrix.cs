@@ -18,6 +18,9 @@ namespace RayTrace
     //  8  9 10 11
     // 12 13 14 15
     //
+    // M14 M24 M34 - translation
+    // M11 M22 M33 - scale
+    //
     public class Matrix
     {
         private static readonly int Size = 4;
