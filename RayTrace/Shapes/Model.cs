@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
@@ -29,6 +30,9 @@ namespace RayTrace
     {
         // Source file name if loaded from a file.
         public string fileName;
+
+        // Directory containing model if loaded from a file.
+        public string directoryName;
 
 //        public TextureBitmap texture = null;
         public Texture texture = null;
@@ -313,11 +317,11 @@ namespace RayTrace
         //
         // Constructor.
         //
-        public Model(Scene scene, Point p, ModelData modelData, bool centreModel=false) : base(scene, p)
+        public Model(Scene scene, Point p, ModelData modelData, bool centreModel=true) : base(scene, p)
         {
             _modelData = modelData??throw new ArgumentNullException("modelData");
 
-            if (centreModel && modelData != null)
+            if (false && centreModel && modelData != null)
             {
                 BoundingBox bb = modelData.GetBoundingBox();
 
@@ -375,6 +379,7 @@ namespace RayTrace
             if (string.IsNullOrEmpty(xmlModel.FileName))
             {
                 _modelData.fileName = xmlModel.FileName;
+                _modelData.directoryName = xmlModel.DirectoryName;
 
                 List<SPoint> points = new List<SPoint>();
                 foreach (XMLPoint p in xmlModel.Points)
@@ -409,7 +414,7 @@ namespace RayTrace
             else
             {
                 ObjImporter importer = new();
-                ModelData modelData = importer.ImportObj(xmlModel.FileName);
+                ModelData modelData = importer.ImportObj(Path.Join(xmlModel.DirectoryName, xmlModel.FileName));
 
                 _modelData = modelData;
                 //Material.Texture = objData.Item2;
@@ -1185,6 +1190,7 @@ namespace RayTrace
             if (xml is XMLModel xmlModel)
             {
                 xmlModel.FileName = _modelData.fileName;
+                xmlModel.DirectoryName = _modelData.directoryName;
 
                 if (String.IsNullOrEmpty(_modelData.fileName))
                 {
@@ -1300,5 +1306,50 @@ namespace RayTrace
 
             return modelModel;
         }
+
+        public override (Point, Point) GetBoundingBox()
+        {
+            //Point min = new(_modelData.minX*Scale, _modelData.minY*Scale, _modelData.minZ*Scale);
+            //Point max = new(_modelData.maxX*Scale, _modelData.maxY*Scale, _modelData.maxZ*Scale);
+
+            Point min = new(_modelData.minX, _modelData.minY, _modelData.minZ);
+            Point max = new(_modelData.maxX, _modelData.maxY, _modelData.maxZ);
+
+
+            //min.X += Pos.X;
+            //min.Y += Pos.Y;
+            //min.Z += Pos.Z;
+
+            //max.X += Pos.X;
+            //max.Y += Pos.Y;
+            //max.Z += Pos.Z;
+
+            return (min, max);
+        }
+
+        public virtual BoundingBox3D GetBoundingBox2()
+        {
+            BoundingBox3D bb = new();
+
+            var axisRotationX = new AxisAngleRotation3D(new Vector3D(1, 0, 0), RotateX);
+            var axisRotationY = new AxisAngleRotation3D(new Vector3D(0, 1, 0), RotateY);
+            var axisRotationZ = new AxisAngleRotation3D(new Vector3D(0, 0, 1), RotateZ);
+            var scale = new ScaleTransform3D(Scale, Scale, Scale);
+            var translate = new TranslateTransform3D(Pos.X, Pos.Y, Pos.Z);
+
+            Transform3DGroup transformGroup = new();
+
+            transformGroup.Children.Add(scale);
+            transformGroup.Children.Add(new RotateTransform3D(axisRotationX));
+            transformGroup.Children.Add(new RotateTransform3D(axisRotationY));
+            transformGroup.Children.Add(new RotateTransform3D(axisRotationZ));
+            transformGroup.Children.Add(translate);
+
+            bb.Transform = transformGroup;
+
+            return bb;
+        }
+
+
     }
 }

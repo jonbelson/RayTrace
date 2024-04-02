@@ -1,6 +1,8 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Dynamic;
+using System.Windows.Media.Media3D;
+using System.Windows.Shapes;
 
 namespace RayTrace
 {
@@ -302,6 +304,34 @@ namespace RayTrace
             XMLShape xml = new();
             AsXMLImpl(xml);
             return xml;
+        }
+
+        public virtual (Point, Point) GetBoundingBox()
+        {
+            return (new Point(), new Point());
+        }
+
+        public virtual BoundingBox3D GetBoundingBox2()
+        {
+            BoundingBox3D bb = new();
+
+            var axisRotationX = new AxisAngleRotation3D(new Vector3D(1, 0, 0), RotateX);
+            var axisRotationY = new AxisAngleRotation3D(new Vector3D(0, 1, 0), RotateY);
+            var axisRotationZ = new AxisAngleRotation3D(new Vector3D(0, 0, 1), RotateZ);
+            var scale = new ScaleTransform3D(Scale, Scale, Scale);
+            var translate = new TranslateTransform3D(Pos.X, Pos.Y, Pos.Z);
+
+            Transform3DGroup transformGroup = new();
+
+            transformGroup.Children.Add(scale);
+            transformGroup.Children.Add(new RotateTransform3D(axisRotationX));
+            transformGroup.Children.Add(new RotateTransform3D(axisRotationY));
+            transformGroup.Children.Add(new RotateTransform3D(axisRotationZ));
+            transformGroup.Children.Add(translate);
+
+            bb.Transform = transformGroup;
+
+            return bb;
         }
     }
 }

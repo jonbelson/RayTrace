@@ -214,6 +214,8 @@ namespace RayTrace
 
             //Trace.WriteLine("Skybox vector: " + v.ToString());
 
+//v =  new(v.I, v.J, -v.K);
+
             float iAbs = Math.Abs(v.I);
             float jAbs = Math.Abs(v.J);
             float kAbs = Math.Abs(v.K);
@@ -280,7 +282,7 @@ namespace RayTrace
                     // Bottom face.
                     float U = ((v.I / jAbs) + 1) / 2;
                     float V = ((-v.K / jAbs) + 1) / 2;
-                    return GetColour(faces[Bottom], U, V);
+                    return GetColour(faces[Bottom], U, 1.0f - V);
                     //return Palette.White;
                 }
                 else
@@ -288,7 +290,7 @@ namespace RayTrace
                     // Top face.
                     float U = ((v.I / jAbs) + 1) / 2;
                     float V = ((v.K / jAbs) + 1) / 2;
-                    return GetColour(faces[Top], U, V);
+                    return GetColour(faces[Top], U, 1.0f - V);
                     //return Palette.Green;
                 }
             }

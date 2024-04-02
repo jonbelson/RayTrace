@@ -478,7 +478,7 @@ namespace RayTrace
 
             //int numTriangles = modelData.triangles.Length;
 
-            if (modelData.points != null)
+            if (modelData != null && modelData.points != null)
             {
                 int numPoints = modelData.points.Length;
 

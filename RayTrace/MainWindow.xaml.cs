@@ -123,6 +123,8 @@ namespace RayTrace
         private OrthographicCamera cameraTop;
         private OrthographicCamera cameraLeft;
 
+        private BoundingBox3D boundingBox;
+
         public int NumRenderBlocks { get; set; } = 16;
 
         public enum RenderDirection
@@ -388,8 +390,8 @@ namespace RayTrace
 
             //scene = SceneFactory.GIDemoScene();
             //scene = SceneFactory.SphereDemoScene();
-            //scene = SceneFactory.ObjScene();
-            scene = SceneFactory.GltfScene();
+            scene = SceneFactory.ObjScene();
+            //scene = SceneFactory.GltfScene();
             //scene = SceneFactory.NormalMapScene();
 
             //scene = SceneFactory.EmptyScene();
@@ -424,6 +426,8 @@ namespace RayTrace
             cameraTop = new OrthographicCamera(new Point3D(0, 20, 0), new Vector3D(0, -0.99999, 0.001), new Vector3D(0, 1, 0), 10);
             cameraLeft = new OrthographicCamera(new Point3D(-10.0, 0, 0), new Vector3D(1, 0, 0), up, 10);
 
+            SelectedEntity.CollectionChanged += SelectedEntity_CollectionChanged;
+
             UpdateViewport3D();
 
             /*
@@ -456,6 +460,45 @@ namespace RayTrace
 
             // materialListBox.Items.Add();
             //*/
+        }
+
+        private void SelectedEntity_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            if (SelectedEntity.Count != 0)
+            {
+                Entity entity = SelectedEntity.First();
+
+                if (boundingBox != null)
+                {
+                    viewport3D.Children.Remove(boundingBox);
+                }
+
+                if (entity is Shape shape)
+                {
+                    var ( Min, Max ) = shape.GetBoundingBox();
+
+                    boundingBox = new(new(Min), new(Max));
+
+                    var axisRotationX = new AxisAngleRotation3D(new Vector3D(1, 0, 0), -shape.RotateX);
+                    var axisRotationY = new AxisAngleRotation3D(new Vector3D(0, 1, 0), -shape.RotateY);
+                    var axisRotationZ = new AxisAngleRotation3D(new Vector3D(0, 0, 1), shape.RotateZ);
+                    var scale = new ScaleTransform3D(shape.Scale, shape.Scale, shape.Scale);
+                    var translate = new TranslateTransform3D(shape.Pos.X, shape.Pos.Y, -shape.Pos.Z);
+
+
+                    var transformGroup = boundingBox.Transform as Transform3DGroup;
+
+                    transformGroup.Children.Add(scale);
+                    transformGroup.Children.Add(new RotateTransform3D(axisRotationX));
+                    transformGroup.Children.Add(new RotateTransform3D(axisRotationY));
+                    transformGroup.Children.Add(new RotateTransform3D(axisRotationZ));
+                    transformGroup.Children.Add(translate);
+
+                    boundingBox.Transform = transformGroup;
+
+                    viewport3D.Children.Add(boundingBox);
+                }
+            }
         }
 
         private void Entity_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -670,8 +713,11 @@ namespace RayTrace
 
             viewport3D.Children.Add(preview3D);
 
-            BoundingBox3D boundingBox = new(2, 2, 2, new SPoint(0, 0, 0));
-            viewport3D.Children.Add(boundingBox);
+            //BoundingBox3D boundingBox = new(2, 2, 2, new SPoint(0, 0, 0));
+            //viewport3D.Children.Add(boundingBox);
+
+            //viewport3D.Children.Add(boundingBox);
+
 
             /*
 

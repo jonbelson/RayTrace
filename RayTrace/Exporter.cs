@@ -260,6 +260,7 @@ namespace RayTrace
     public class XMLModel : XMLShape
     {
         public string FileName;
+        public string DirectoryName;
 
         public List<XMLPoint> Points;
         public List<XMLTexel> Texels;

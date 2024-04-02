@@ -320,5 +320,12 @@ namespace RayTrace
 			AsXMLImpl(xml);
 			return xml;
 		}
-	}
+
+        public override (Point, Point) GetBoundingBox()
+        {
+//            return (new Point(-Scale, -Scale, -Scale), new Point(Scale, Scale, Scale));
+            return (new Point(-1, -1, -1), new Point(1, 1, 1));
+        }
+
+    }
 }

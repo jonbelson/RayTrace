@@ -578,6 +578,7 @@ namespace RayTrace
 
                 modelData = new ModelData();
                 modelData.fileName = fileName;
+                modelData.directoryName = directoryName;
 
                 char[] delim = new char[] { ' ' };
                 //double d1, d2, d3;

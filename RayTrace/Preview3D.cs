@@ -119,6 +119,38 @@ namespace RayTrace
             Transform = transformGroup;
 
         }
+
+        public BoundingBox3D()
+        {
+            CreateBoundingBox();
+        }
+
+        public BoundingBox3D(SPoint min, SPoint max)
+        {
+            CreateBoundingBox();
+
+            float dx = max.X - min.X;
+            float dy = max.Y - min.Y;
+            float dz = max.Z - min.Z;
+
+            SPoint mid = new((min.X + max.X)/2.0f, (min.Y + max.Y)/2.0f, (min.Z + max.Z)/2.0f);
+
+            var scale = new ScaleTransform3D(dx/1.0f, dy/1.0f, dz/1.0f);
+            //var translate = new TranslateTransform3D(mid.X, mid.Y/2.0f, -mid.Z/2.0f);
+
+            float tx = min.X + dx/2.0f;
+            float ty = min.Y + dy/2.0f;
+            float tz = min.Z + dz/2.0f;
+
+            var translate = new TranslateTransform3D(tx, ty, -tz);
+            Transform3DGroup transformGroup = new();
+
+            transformGroup.Children.Add(scale);
+            transformGroup.Children.Add(translate);
+
+            Transform = transformGroup;
+
+        }
     }
 
 
