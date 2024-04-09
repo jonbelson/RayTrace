@@ -601,6 +601,32 @@ namespace RayTrace
 
             return geometryModel;
         }
+
+        public static BoundingBox3D CreateBoundingBox(Shape shape)
+        {
+            var (Min, Max) = shape.GetBoundingBox();
+
+            BoundingBox3D boundingBox = new(new(Min), new(Max));
+
+            var axisRotationX = new AxisAngleRotation3D(new Vector3D(1, 0, 0), -shape.RotateX);
+            var axisRotationY = new AxisAngleRotation3D(new Vector3D(0, 1, 0), -shape.RotateY);
+            var axisRotationZ = new AxisAngleRotation3D(new Vector3D(0, 0, 1), shape.RotateZ);
+            var scale = new ScaleTransform3D(shape.Scale, shape.Scale, shape.Scale);
+            var translate = new TranslateTransform3D(shape.Pos.X, shape.Pos.Y, -shape.Pos.Z);
+
+
+            var transformGroup = boundingBox.Transform as Transform3DGroup;
+
+            transformGroup.Children.Add(scale);
+            transformGroup.Children.Add(new RotateTransform3D(axisRotationX));
+            transformGroup.Children.Add(new RotateTransform3D(axisRotationY));
+            transformGroup.Children.Add(new RotateTransform3D(axisRotationZ));
+            transformGroup.Children.Add(translate);
+
+            boundingBox.Transform = transformGroup;
+
+            return boundingBox;
+        }
     }
 }
 

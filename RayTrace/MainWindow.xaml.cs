@@ -462,42 +462,33 @@ namespace RayTrace
             //*/
         }
 
+        private void UpdateBoundingBox()
+        {
+            ClearBoundingBox();
+
+            Entity entity = SelectedEntity.First();
+
+            if (entity is Shape shape)
+            {
+                boundingBox = GeometryModel3DFactory.CreateBoundingBox(shape);
+
+                viewport3D.Children.Add(boundingBox);
+            }
+        }
+
+        private void ClearBoundingBox()
+        {
+            if (boundingBox != null)
+            {
+                viewport3D.Children.Remove(boundingBox);
+            }
+        }
+
         private void SelectedEntity_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
             if (SelectedEntity.Count != 0)
             {
-                Entity entity = SelectedEntity.First();
-
-                if (boundingBox != null)
-                {
-                    viewport3D.Children.Remove(boundingBox);
-                }
-
-                if (entity is Shape shape)
-                {
-                    var ( Min, Max ) = shape.GetBoundingBox();
-
-                    boundingBox = new(new(Min), new(Max));
-
-                    var axisRotationX = new AxisAngleRotation3D(new Vector3D(1, 0, 0), -shape.RotateX);
-                    var axisRotationY = new AxisAngleRotation3D(new Vector3D(0, 1, 0), -shape.RotateY);
-                    var axisRotationZ = new AxisAngleRotation3D(new Vector3D(0, 0, 1), shape.RotateZ);
-                    var scale = new ScaleTransform3D(shape.Scale, shape.Scale, shape.Scale);
-                    var translate = new TranslateTransform3D(shape.Pos.X, shape.Pos.Y, -shape.Pos.Z);
-
-
-                    var transformGroup = boundingBox.Transform as Transform3DGroup;
-
-                    transformGroup.Children.Add(scale);
-                    transformGroup.Children.Add(new RotateTransform3D(axisRotationX));
-                    transformGroup.Children.Add(new RotateTransform3D(axisRotationY));
-                    transformGroup.Children.Add(new RotateTransform3D(axisRotationZ));
-                    transformGroup.Children.Add(translate);
-
-                    boundingBox.Transform = transformGroup;
-
-                    viewport3D.Children.Add(boundingBox);
-                }
+                UpdateBoundingBox();
             }
         }
 
@@ -1048,7 +1039,11 @@ namespace RayTrace
 
         private void Border_MouseDown(object sender, MouseButtonEventArgs e)
         {
+            // We got the click and not the Viewport3D, so presumably no geometry was clicked on.
+            ClearBoundingBox();
+
             clickPoint = e.GetPosition(viewport3D);
+
             dragging = true;
         }
 
