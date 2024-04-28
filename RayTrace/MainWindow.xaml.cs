@@ -123,6 +123,8 @@ namespace RayTrace
         private OrthographicCamera cameraTop;
         private OrthographicCamera cameraLeft;
 
+        private InputMode _inputMode;
+
         private BoundingBox3D boundingBox;
 
         public int NumRenderBlocks { get; set; } = 16;
@@ -294,6 +296,8 @@ namespace RayTrace
             UpdateMaterials();
 
             //UpdateViewport3D();
+
+            _inputMode = new InputMode3D(camera3D, scene);
         }
 
         public MainWindow()
@@ -422,11 +426,13 @@ namespace RayTrace
             Vector3D up = new(0.0, 1.0, 0.0);
 
             camera3D = new PerspectiveCamera(new Point3D(0, 0, 6), new Vector3D(0, 0, -1), up, 45);
-            cameraFront = new OrthographicCamera(new Point3D(0, 0, 10), new Vector3D(0, 0, -1), up, 10);
-            cameraTop = new OrthographicCamera(new Point3D(0, 20, 0), new Vector3D(0, -0.99999, 0.001), new Vector3D(0, 1, 0), 10);
-            cameraLeft = new OrthographicCamera(new Point3D(-10.0, 0, 0), new Vector3D(1, 0, 0), up, 10);
+            cameraFront = new OrthographicCamera(new Point3D(0, 0, 10), new Vector3D(0, 0, -1), up, 50);
+            cameraTop = new OrthographicCamera(new Point3D(0, 20, 0), new Vector3D(0, -0.99999, 0.001), up, 50);
+            cameraLeft = new OrthographicCamera(new Point3D(-10.0, 0, 0), new Vector3D(1, 0, 0), up, 50);
 
             SelectedEntity.CollectionChanged += SelectedEntity_CollectionChanged;
+
+            _inputMode = new InputMode3D(camera3D, scene);
 
             UpdateViewport3D();
 
@@ -673,20 +679,22 @@ namespace RayTrace
             return true;
         }
 
-        private void UpdateViewport3D(object sender = null, string propName = "")
+        /*private*/ public void UpdateViewport3D(object sender = null, string propName = "")
         {
             // Set up camera.
             Point cameraPos = scene.Camera.Pos;
             Vector cameraView = scene.Camera.GetViewVector().Normalise();
 
-            viewport3D.Camera = new PerspectiveCamera(new Point3D(cameraPos.X, cameraPos.Y, -cameraPos.Z), new Vector3D(cameraView.I, cameraView.J, -cameraView.K), new Vector3D(0.0, 1.0, 0.0), scene.Camera.FovH /* /2 */);
-/*
+            //viewport3D.Camera = new PerspectiveCamera(new Point3D(cameraPos.X, cameraPos.Y, -cameraPos.Z), new Vector3D(cameraView.I, cameraView.J, -cameraView.K), new Vector3D(0.0, 1.0, 0.0), scene.Camera.FovH /* /2 */);
+
+
+///*
             viewport3D.Camera = camera3D;
             camera3D.Position = new Point3D(cameraPos.X, cameraPos.Y, -cameraPos.Z);
             camera3D.LookDirection = new Vector3D(cameraView.I, cameraView.J, -cameraView.K);
             camera3D.UpDirection = new Vector3D(0.0, 1.0, 0.0);
             camera3D.FieldOfView = scene.Camera.FovH;
-*/
+//*/
             if (sender is Camera && (propName == "Pos" || propName == "Target"))
             {
                 //viewport3D.Visibility = Visibility.Visible;
@@ -1042,14 +1050,18 @@ namespace RayTrace
             // We got the click and not the Viewport3D, so presumably no geometry was clicked on.
             ClearBoundingBox();
 
-            clickPoint = e.GetPosition(viewport3D);
+            _inputMode.DoLButtonDown(e.GetPosition(viewport3D));
 
-            dragging = true;
+//            clickPoint = e.GetPosition(viewport3D);
+
+//            dragging = true;
         }
 
         private void Border_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            dragging = false;
+            //            dragging = false;
+
+            _inputMode.DoLButtonUp(e.GetPosition(viewport3D));
         }
 
         //
@@ -1057,6 +1069,9 @@ namespace RayTrace
         //
         private void Border_MouseMove(object sender, MouseEventArgs e)
         {
+            _inputMode.DoMouseMove(e.GetPosition(viewport3D));
+            return;
+
             bool ctrlPressed = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
             bool shiftPressed = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
 
@@ -1189,11 +1204,13 @@ namespace RayTrace
         {
             int delta = e.Delta;
 
-            Vector v = scene.Camera.GetViewVector().Normalise();
+            _inputMode?.DoMouseWheel(delta);
 
-            if (delta < 0) v = -v;
+            //Vector v = scene.Camera.GetViewVector().Normalise();
 
-            scene.Camera.Pos += v;
+            //if (delta < 0) v = -v;
+
+            //scene.Camera.Pos += v;
 
             e.Handled = true;
         }
@@ -1621,16 +1638,33 @@ namespace RayTrace
                 switch (tc.SelectedIndex)
                 {
                     case 0: // 3D
-                        viewport3D.Camera = camera3D;   // new PerspectiveCamera(new Point3D(0, 0, 6), new Vector3D(0, 0, -1), up, 45);
+                        {
+                            Point cameraPos = scene.Camera.Pos;
+                            Vector cameraView = scene.Camera.GetViewVector().Normalise();
+
+                            camera3D.Position = new Point3D(cameraPos.X, cameraPos.Y, -cameraPos.Z);
+                            camera3D.LookDirection = new Vector3D(cameraView.I, cameraView.J, -cameraView.K);
+                            camera3D.UpDirection = new Vector3D(0.0, 1.0, 0.0);
+                            camera3D.FieldOfView = scene.Camera.FovH;
+
+                            viewport3D.Camera = camera3D;   // new PerspectiveCamera(new Point3D(0, 0, 6), new Vector3D(0, 0, -1), up, 45);
+
+                            _inputMode = new InputMode3D(camera3D, scene);
+
+                            UpdateViewport3D();
+                        }
                         break;
                     case 1: // Front
-                        viewport3D.Camera = cameraFront;    // new OrthographicCamera(new Point3D(0, 0, 10), new Vector3D(0, 0, -1), up, 10);
+                        viewport3D.Camera = cameraFront;
+                        _inputMode = new InputModeFront(cameraFront);
                         break;
                     case 2: // Top
-                        viewport3D.Camera = cameraTop;  //  new OrthographicCamera(new Point3D(0, 20, 0), new Vector3D(0, -0.99999, 0.001), new Vector3D(0, 1, 0), 10);
+                        viewport3D.Camera = cameraTop;
+                        _inputMode = new InputModeTop(cameraTop);
                         break;
                     case 3: // Left
-                        viewport3D.Camera = cameraLeft; // new OrthographicCamera(new Point3D(-10.0, 0, 0), new Vector3D(1, 0, 0), up, 10);
+                        viewport3D.Camera = cameraLeft;
+                        _inputMode = new InputModeLeft(cameraLeft);
                         break;
                     default:
                         break;
