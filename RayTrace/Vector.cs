@@ -7,6 +7,15 @@ namespace RayTrace
 {
     using SVector2 = Vector4;
 
+    public static class ExtensionMethods
+    {
+        public static string AsString(this SVector v)
+        {
+            Vector vector = new(v);
+            return vector.ToString();
+        }
+    }
+
     public readonly struct SVector
     {
         public float I { get; }
@@ -70,6 +79,16 @@ namespace RayTrace
 
         // Return a null vector, i.e. one with all components set to 0.
         public static SVector Null() => new(0.0f, 0.0f, 0.0f);
+
+        public static SVector Lerp(in SVector v1, in SVector v2, float ratio)
+        {
+            ratio = ratio < 0.0f ? 0.0f : ratio;
+            ratio = ratio > 1.0f ? 1.0f : ratio;
+
+            SVector v = v1 + (v2 - v1)*ratio;
+
+            return v;
+        }
 
         public static SVector operator+(in SVector v1, in SVector v2) => new(v1.I + v2.I, v1.J + v2.J, v1.K + v2.K);
         public static SVector operator-(in SVector v1, in SVector v2) => new(v1.I - v2.I, v1.J - v2.J, v1.K - v2.K);

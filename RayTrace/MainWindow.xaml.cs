@@ -115,7 +115,7 @@ namespace RayTrace
 
         private OutputWindow outputWindow = new();
 
-        private Preview3D preview3D;
+        //private PreviewVisual3D preview3D;
 
         // Cameras for each of the views.
         private PerspectiveCamera camera3D;
@@ -126,6 +126,7 @@ namespace RayTrace
         private InputMode _inputMode;
 
         private BoundingBox3D boundingBox;
+        private ModelAxis3D modelAxis;
 
         public int NumRenderBlocks { get; set; } = 16;
 
@@ -295,9 +296,7 @@ namespace RayTrace
 
             UpdateMaterials();
 
-            //UpdateViewport3D();
-
-            _inputMode = new InputMode3D(camera3D, scene);
+            _inputMode = new InputMode3D(this, viewport3D, camera3D, scene);
         }
 
         public MainWindow()
@@ -432,7 +431,7 @@ namespace RayTrace
 
             SelectedEntity.CollectionChanged += SelectedEntity_CollectionChanged;
 
-            _inputMode = new InputMode3D(camera3D, scene);
+            _inputMode = new InputMode3D(this, viewport3D, camera3D, scene);
 
             UpdateViewport3D();
 
@@ -476,18 +475,13 @@ namespace RayTrace
 
             if (entity is Shape shape)
             {
-                boundingBox = GeometryModel3DFactory.CreateBoundingBox(shape);
-
-                viewport3D.Children.Add(boundingBox);
+                viewport3D.UpdateBoundingBox(shape);
             }
         }
 
         private void ClearBoundingBox()
         {
-            if (boundingBox != null)
-            {
-                viewport3D.Children.Remove(boundingBox);
-            }
+            viewport3D.ClearBoundingBox();
         }
 
         private void SelectedEntity_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
@@ -685,11 +679,9 @@ namespace RayTrace
             Point cameraPos = scene.Camera.Pos;
             Vector cameraView = scene.Camera.GetViewVector().Normalise();
 
-            //viewport3D.Camera = new PerspectiveCamera(new Point3D(cameraPos.X, cameraPos.Y, -cameraPos.Z), new Vector3D(cameraView.I, cameraView.J, -cameraView.K), new Vector3D(0.0, 1.0, 0.0), scene.Camera.FovH /* /2 */);
-
-
 ///*
             viewport3D.Camera = camera3D;
+
             camera3D.Position = new Point3D(cameraPos.X, cameraPos.Y, -cameraPos.Z);
             camera3D.LookDirection = new Vector3D(cameraView.I, cameraView.J, -cameraView.K);
             camera3D.UpDirection = new Vector3D(0.0, 1.0, 0.0);
@@ -701,160 +693,38 @@ namespace RayTrace
                 return;
             }
 
+            if (sender is Shape shape && (propName == "Pos"))
+            {
+                viewport3D.Update(shape);
+                return;
+            }
+
             viewport3D.Visibility = Visibility.Hidden;
             viewport3D.Children.Clear();
 
             // Add Entities to preview.
-            preview3D = new(scene);
+            //preview3D = new(scene);
 
-            preview3D.UseAmbient = (bool)checkBoxAmbient.IsChecked;
-            preview3D.Update();
+            //preview3D.UseAmbient = (bool)checkBoxAmbient.IsChecked;
+            //preview3D.Update();
 
-            viewport3D.Children.Add(preview3D);
+            //viewport3D.Children.Add(preview3D);
 
-            //BoundingBox3D boundingBox = new(2, 2, 2, new SPoint(0, 0, 0));
-            //viewport3D.Children.Add(boundingBox);
+            viewport3D.UseAmbient = (bool)checkBoxAmbient.IsChecked;
+            viewport3D.UpdatePreview(scene);
 
-            //viewport3D.Children.Add(boundingBox);
-
-
-            /*
-
-            BoundingBox boundingBox = new BoundingBox(0, 1, 0, 1, 0, 1);
-            BoundingBox3D bb3D = new(2, 2, 2, new SPoint(0, 0, -2));
-            Matrix mi = new();
-
-            //BoundingBox3D bb3D = new(boundingBox.GetWidth(), boundingBox.GetHeight(), boundingBox.GetDepth(), mi*boundingBox.GetCentre());
-//            viewport3D.Children.Add(bb3D);
-
-            bb3D = new(2, 2, 2, new SPoint(0, 0, -4));
-//            viewport3D.Children.Add(bb3D);
-*/
-            /*
-                        foreach (var shape in scene.Shapes)
-                        {
-                            //break;
-                            if (shape is Model model)
-                            {
-                                Node node = model.TreeRoot;
-                                if (node != null)
-                                {
-                                    Matrix m = scene.Camera.WorldToView;
-
-                                    Debug.WriteLine(m.ToString());
-
-                                    m = m.GetInverse();
-
-                                    Matrix m2 = m.GetInverse();
-                                    Debug.WriteLine(m2.ToString());
-
-                                    BoundingBox bb = node.Box;
-                                    Debug.WriteLine(bb.Transform(m));
-
-                                   // BoundingBox3D boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), new(model.Pos));
-                                    //m = m.GetInverse();
-                                    BoundingBox3D boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
-                                    viewport3D.Children.Add(boundingBox3D);
-
-                                    bb = node.Left.Box;
-                                    Debug.WriteLine(bb);
-                                    boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
-                                    viewport3D.Children.Add(boundingBox3D);
-
-                                    //bb = node.Left.Left.Box;
-                                    //boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
-                                    //viewport3D.Children.Add(boundingBox3D);
-                                    //bb = node.Left.Right.Box;
-                                    //boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
-                                    //viewport3D.Children.Add(boundingBox3D);
-
-
-                                    bb = node.Right.Box;
-                                    Debug.WriteLine(bb.Transform(m));
-                                    boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
-                                    viewport3D.Children.Add(boundingBox3D);
-
-
-                                    //bb = node.Right.Left.Box;
-                                    //boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
-                                    //viewport3D.Children.Add(boundingBox3D);
-                                    //bb = node.Right.Right.Box;
-                                    //boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), m*bb.GetCentre()); ;
-                                    //viewport3D.Children.Add(boundingBox3D);
-                                }
-                            }
-                        }
-
-                        //BoundingBox3D boundingBox3D = new BoundingBox3D(bb.GetWidth(), bb.GetHeight(), bb.GetDepth(), bb.GetCentre());
-                        //Children.Add(boundingBox3D);
-
-
-                        //BoundingBox3D boundingBox = new(5, new Point(0, 0, 0));
-                        //viewport3D.Children.Add(boundingBox);
-            */
-
-            Func<Point3D, Point3D, Point3DCollection> CreateLine = delegate (Point3D p1, Point3D p2) { return new Point3DCollection(new List<Point3D>() { p1, p2 }); };
+            //Func<Point3D, Point3D, Point3DCollection> CreateLine = delegate (Point3D p1, Point3D p2) { return new Point3DCollection(new List<Point3D>() { p1, p2 }); };
 
             // Add ground plane to preview.
             if (PreviewGroundPlane)
             {
-                int planeSize = 64;
-
-                for (int z = -planeSize / 2; z <= planeSize / 2; z += 2)
-                {
-                    _3DTools.ScreenSpaceLines3D line = new();
-
-                    line.Points = CreateLine(new Point3D(-planeSize / 2, 0, z), new Point3D(planeSize / 2, 0, z));
-                    line.Color = Colors.DarkGray;
-                    line.Thickness = (z % 10 == 0) ? 2 : 1;
-
-                    viewport3D.Children.Add(line);
-                }
-
-
-                for (int x = -planeSize / 2; x <= planeSize / 2; x += 2)
-                {
-                    _3DTools.ScreenSpaceLines3D line = new();
-
-                    line.Points = CreateLine(new Point3D(x, 0, -planeSize / 2), new Point3D(x, 0, planeSize / 2));
-                    line.Color = Colors.DarkGray;
-                    line.Thickness = (x % 10 == 0) ? 2 : 1;
-
-                    viewport3D.Children.Add(line);
-                }
+                viewport3D.CreateGroundPlane();
             }
 
             // Add axis to preview.
             if (PreviewAxis)
             {
-                int axisSize = 10;
-                {
-                    _3DTools.ScreenSpaceLines3D lines = new();
-
-                    lines.Points = CreateLine(new Point3D(0, 0, 0), new Point3D(axisSize, 0, 0));
-                    lines.Thickness = 5;
-                    lines.Color = Colors.Red;
-
-                    viewport3D.Children.Add(lines);
-                }
-                {
-                    _3DTools.ScreenSpaceLines3D lines = new();
-
-                    lines.Points = CreateLine(new Point3D(0, 0, 0), new Point3D(0, axisSize, 0));
-                    lines.Thickness = 5;
-                    lines.Color = Colors.Green;
-
-                    viewport3D.Children.Add(lines);
-                }
-                {
-                    _3DTools.ScreenSpaceLines3D lines = new();
-
-                    lines.Points = CreateLine(new Point3D(0, 0, 0), new Point3D(0, 0, -axisSize));
-                    lines.Thickness = 5;
-                    lines.Color = Colors.Blue;
-
-                    viewport3D.Children.Add(lines);
-                }
+                viewport3D.CreateGroundAxis();
             }
 
             viewport3D.Visibility = Visibility.Visible;
@@ -1047,10 +917,10 @@ namespace RayTrace
 
         private void Border_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            // We got the click and not the Viewport3D, so presumably no geometry was clicked on.
-            ClearBoundingBox();
-
             _inputMode.DoLButtonDown(e.GetPosition(viewport3D));
+
+            // We got the click and not the Viewport3D, so presumably no geometry was clicked on.
+            //ClearBoundingBox();
 
 //            clickPoint = e.GetPosition(viewport3D);
 
@@ -1555,15 +1425,56 @@ namespace RayTrace
             AddMaterial();
         }
 
+        public GeometryModel3D HitTestGeometry(System.Windows.Point mousePos)
+        {
+            List<GeometryModel3D> hitResults = new();
+
+            GeometryModel3D model;
+
+            HitTestResultBehavior HitTestCallback(HitTestResult hitTestResult)
+            {
+                if (hitTestResult is RayHitTestResult results)
+                {
+                    if (results is RayMeshGeometry3DHitTestResult meshResults)
+                    {
+                        GeometryModel3D hitGeometry = meshResults.ModelHit as GeometryModel3D;
+
+                        hitResults.Add(hitGeometry);
+
+                        /*
+                        Entity entity = preview3D.GetEntityFromGeometry(hitGeometry);
+                        if (entity != null)
+                        {
+                            SelectedEntity.Clear();
+                            SelectedEntity.Add(entity);
+
+                            UpdateEntityTreeView();
+
+                            return HitTestResultBehavior.Stop;
+                        }
+                        */
+                    }
+                }
+                return HitTestResultBehavior.Continue;
+            }
+
+            Point3D testPoint3D = new Point3D(mousePos.X, mousePos.Y, 0);
+            Vector3D testDirection3D = new Vector3D(mousePos.X, mousePos.Y, 10);
+            PointHitTestParameters hitTestParams = new(mousePos);
+            RayHitTestParameters rayParams = new RayHitTestParameters(testPoint3D, testDirection3D);
+
+            VisualTreeHelper.HitTest(viewport3D, null, HitTestCallback, hitTestParams);
+
+            if (hitResults.Count > 0) { return hitResults[0];  }
+
+            return null;
+        }
+/*
         private HitTestResultBehavior ViewportHitResult(HitTestResult hitTestResult)
         {
-            RayHitTestResult results = hitTestResult as RayHitTestResult;
-
-            if (results != null)
+            if (hitTestResult is RayHitTestResult results)
             {
-                RayMeshGeometry3DHitTestResult meshResults = results as RayMeshGeometry3DHitTestResult;
-
-                if (meshResults != null)
+                if (results is RayMeshGeometry3DHitTestResult meshResults)
                 {
                     GeometryModel3D hitGeometry = meshResults.ModelHit as GeometryModel3D;
 
@@ -1581,9 +1492,12 @@ namespace RayTrace
             }
             return HitTestResultBehavior.Continue;
         }
-
+*/
         private void viewport3D_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
+            _inputMode.DoLButtonDown(e.GetPosition(viewport3D));
+            return;
+/*
             System.Windows.Point mousePos = e.GetPosition(viewport3D);
             Point3D testPoint3D = new Point3D(mousePos.X, mousePos.Y, 0);
             Vector3D testDirection3D = new Vector3D(mousePos.X, mousePos.Y, 10);
@@ -1591,7 +1505,7 @@ namespace RayTrace
             RayHitTestParameters rayParams = new RayHitTestParameters(testPoint3D, testDirection3D);
 
             VisualTreeHelper.HitTest(viewport3D, null, ViewportHitResult, hitTestParams);
-        }
+ */       }
 
         private void ButtonSkybox_Click(object sender, RoutedEventArgs e)
         {
@@ -1649,7 +1563,7 @@ namespace RayTrace
 
                             viewport3D.Camera = camera3D;   // new PerspectiveCamera(new Point3D(0, 0, 6), new Vector3D(0, 0, -1), up, 45);
 
-                            _inputMode = new InputMode3D(camera3D, scene);
+                            _inputMode = new InputMode3D(this, viewport3D, camera3D, scene);
 
                             UpdateViewport3D();
                         }
@@ -1671,5 +1585,11 @@ namespace RayTrace
                 }
             }
         }
+
+        // XXX Probably temporary, preview3d moving to PreviewVisual3D/
+        //public Entity GetEntityFromGeometry(GeometryModel3D geometry)
+        //{
+        //    return preview3D.GetEntityFromGeometry(geometry);
+        //}
     }
 }

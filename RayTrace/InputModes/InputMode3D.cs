@@ -1,9 +1,12 @@
-﻿using System;
+﻿using _3DTools;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -22,14 +25,40 @@ namespace RayTrace
 
     internal class InputMode3D : InputMode
     {
+        private MainWindow _mainWindow; // XXX Required to update selected Entity :(
+        private PreviewViewport3D _viewport3D;
         private readonly PerspectiveCamera _camera;
         private readonly Scene _scene;
 
         private System.Windows.Point _clickPoint;
-        private bool _dragging = false;
+        private System.Windows.Point _mousePoint;
 
-        public InputMode3D(PerspectiveCamera camera, Scene scene)
+        private PreviewHitResult _hitResult;
+
+        private GeometryModel3D _yPlane;
+
+        private enum State
         {
+            Normal, DragView, DragObjectX, DragObjectY, DragObjectZ
+        }
+
+        private State _state = State.Normal;
+
+        private Entity _entity = null;
+
+        private void MakeYPlane()
+        {
+            GeometryModel3D model = new();
+
+            MeshGeometry3D mesh = GeometryModel3DFactory.MakePlane(new Vector(0, 1.0f, 0));
+
+            _yPlane = model;
+        }
+
+        public InputMode3D(MainWindow mainWindow, PreviewViewport3D viewport3D, PerspectiveCamera camera, Scene scene)
+        {
+            _mainWindow = mainWindow;
+            _viewport3D = viewport3D;
             _camera = camera;
             _scene = scene;
         }
@@ -48,16 +77,194 @@ namespace RayTrace
             bool ctrlPressed = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
             bool shiftPressed = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
 
-            if (!_dragging)
+            switch (_state)
             {
-                _clickPoint = p;
-                //_dragging = true;
-
-                return;
+                case State.DragView:
+                    {
+                        HandleDragView(p);
+                        break;
+                    }
+                case State.DragObjectX:
+                case State.DragObjectY:
+                case State.DragObjectZ:
+                    {
+                        HandleDragEntity(p);
+                        break;
+                    }
             }
 
-            float xDiff = (float)(p.X - _clickPoint.X);
-            float yDiff = (float)(p.Y - _clickPoint.Y);
+
+            _mousePoint = p;
+        }
+
+        private void ConvertPoint(System.Windows.Point p)
+        {
+            Viewport3DVisual vpv = VisualTreeHelper.GetParent(_viewport3D.Children[0]) as Viewport3DVisual; ;
+
+            bool success;
+            Matrix3D m = MathUtils.TryWorldToViewportTransform(vpv, out success);
+            if (success)
+            {
+                m.Invert();
+
+                Point3D pointClicked = new Point3D(p.X, p.Y, 1.0);
+
+                Point3D point3D = m.Transform(pointClicked);
+
+                Debug.WriteLine("click: " + p + " in 3D: " + point3D);
+
+            }
+        }
+
+        private SVector PointToVector(System.Windows.Point p)
+        {
+            double width = _viewport3D.ActualWidth;
+            double height = _viewport3D.ActualHeight;
+            double aspect = width/height;
+
+
+            // Get normalised click position (0 - 1)
+            double xNorm = p.X/width;
+            double yNorm = p.Y/height;
+
+            // Calculate vectors to edges of frustum/
+            var look = _camera.LookDirection;
+            //var up = _camera.UpDirection;
+            var Yaxis = new SVector(0, 1, 0);
+
+            double hFov = _camera.FieldOfView;
+            double vFov = hFov/aspect;
+
+
+
+            SVector vLook = new((float)look.X, (float)look.Y, (float)look.Z);
+            //SVector vUp = new((float)up.X, (float)up.Y, (float)up.Z);
+
+            SVector vRight = vLook.VectorProduct(Yaxis);
+
+            SVector vUp = vRight.VectorProduct(vLook);
+
+            Quaternion rotLeft = new(vUp, (float)DegToRad(-hFov/2));
+            Quaternion rotRight = new(vUp, (float)DegToRad(hFov/2));
+
+            Quaternion rotUp = new(vRight, (float)DegToRad(-vFov/2));
+            Quaternion rotDown = new(vRight, (float)DegToRad(vFov/2));
+
+
+            SVector vLeftEdge = rotLeft.Rotate(vLook.Normalise());
+            SVector vRightEdge = rotRight.Rotate(vLook.Normalise());
+
+            SVector vTopEdge = rotUp.Rotate(vLook.Normalise());
+            SVector vBottomEdge = rotDown.Rotate(vLook.Normalise());
+
+            //SVector vClick = SVector.Lerp();
+
+
+            Debug.WriteLine("vLeftEdge: " + vLeftEdge.AsString());
+            Debug.WriteLine("vRightEdge: " + vRightEdge.AsString());
+            Debug.WriteLine("vTopEdge: " + vTopEdge.AsString());
+            Debug.WriteLine("vBottomEdge: " + vBottomEdge.AsString());
+
+
+            float x = (float)(vLeftEdge.I + (vRightEdge.I - vLeftEdge.I)*xNorm);
+            float y = (float)(vBottomEdge.J + (vTopEdge.J - vBottomEdge.J)*yNorm);
+
+            float z = 1.0f - x*x + y*y;
+
+            Debug.WriteLine($"x/y/z -> {x}, {y}, {z}");
+
+            SVector vClick = new(x, y, z);
+
+            return vClick;
+        }
+
+        private readonly Func<double, double> DegToRad = (a) => (a/360.0)*2*Math.PI;
+
+        public override void DoLButtonDown(System.Windows.Point p)
+        {
+
+            SVector vToClick = PointToVector(p);
+
+            Point3D cam = _camera.Position;
+
+            // Vector intersects the XZ place at Y = 0.
+            // y = camy + t.j
+            // 0 = camy + t.j
+            // t = -camy/j
+
+            if (vToClick.J != 0)
+            {
+                float t = (float)(-cam.Y/vToClick.J);
+
+                float XZx = (float) cam.X + t*vToClick.I;
+                float XZz = (float) cam.Z + t*vToClick.K;
+
+                SPoint pointOnPlane = new(XZx, 0.0f, XZz);
+
+                var p3d = new Point(pointOnPlane);
+                var v3d = new Vector(vToClick);
+                Debug.WriteLine(p + " -> " + v3d + " -> " + p3d);
+            }
+
+
+            Matrix3D m = GetProjectionMatrix(_camera, 1.0);
+
+            Point3D point = new(p.X, p.Y, 1.0);
+            Point3D.Multiply(point, m);
+
+            //Debug.WriteLine(p + " -> " + point);
+
+            ConvertPoint(p);
+
+
+
+
+
+
+
+            
+
+
+            _mousePoint = p;
+            _clickPoint = p;
+
+            PreviewHitResult hitResult = _viewport3D.HitTest(p);
+
+            PreviewHitResult.HitType hitType = hitResult.Type;
+
+            Debug.WriteLine(hitType.ToString());
+
+            if (hitType == PreviewHitResult.HitType.None)
+            {
+                _state = State.DragView;
+            }
+            else if (hitType == PreviewHitResult.HitType.Entity)
+            {
+                _mainWindow.SelectedEntity.Clear();
+                _mainWindow.SelectedEntity.Add(hitResult.Entity);
+
+                _viewport3D.UpdateBoundingBox((Shape)hitResult.Entity);
+            }
+            else
+            {
+                switch (hitType)
+                {
+                    case PreviewHitResult.HitType.ModelAxisX: { _state = State.DragObjectX; break; }
+                    case PreviewHitResult.HitType.ModelAxisY: { _state = State.DragObjectY; break; }
+                    case PreviewHitResult.HitType.ModelAxisZ: { _state = State.DragObjectZ; break; }
+                }
+            }
+
+            _hitResult = hitResult;
+        }
+
+        private void HandleDragView(System.Windows.Point p)
+        {
+            bool ctrlPressed = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
+            bool shiftPressed = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
+
+            float xDiff = (float)(p.X - _mousePoint.X);
+            float yDiff = (float)(p.Y - _mousePoint.Y);
 
             Action<string, SVector> WriteSVector = delegate (string name, SVector v) { Debug.WriteLine(name + ":" + v.I + ", " + v.J + ", " + v.K); };
 
@@ -165,22 +372,112 @@ namespace RayTrace
 
                 _scene.Camera.Pos = _scene.Camera.Target + targetToCamera;
             }
-
-            _clickPoint = p;
         }
 
-        public override void DoLButtonDown(System.Windows.Point p)
+        private void HandleDragEntity(System.Windows.Point p)
         {
-            _clickPoint = p;
+            SVector vToClick = PointToVector(p);
 
-            _dragging = true;
+            Point3D cam = _camera.Position;
+
+            // Vector intersects the XZ place at Y = 0.
+            // y = camy + t.j
+            // 0 = camy + t.j
+            // t = -camy/j
+
+            if (vToClick.J != 0)
+            {
+                float t = (float)(-cam.Y/vToClick.J);
+
+                float XZx = (float)cam.X + t*vToClick.I;
+                float XZz = (float)cam.Z + t*vToClick.K;
+
+                SPoint pointOnPlane = new(XZx, 0.0f, XZz);
+
+            }
+
+
+
+
+            float xDiff = (float)(p.X - _clickPoint.X);
+            float yDiff = (float)(p.Y - _clickPoint.Y);
+
+            if (_mainWindow.SelectedEntity.Count > 0)
+            {
+                Entity entity = _mainWindow.SelectedEntity[0];
+
+                if (entity is Shape shape)
+                {
+                    if (false)
+                    {
+                        MakeYPlane();
+
+
+                        PreviewHitResult hitResult = _viewport3D.HitTest(p);
+
+                        PreviewHitResult.HitType hitType = hitResult.Type;
+
+                        //if (hitType == PreviewHitResult.HitType.Geometry)
+                        //{
+                        //}
+
+
+                    }
+                    else
+                    {
+
+
+                        Vector offset = Vector.Null();
+
+
+                        switch (_state)
+                        {
+                            case State.DragObjectX:
+                                break;
+                        }
+
+                        switch (_state)
+                        {
+                            case State.DragObjectX: offset = new(1.0f, 0.0f, 0.0f); break;
+                            case State.DragObjectY: offset = new(0.0f, 1.0f, 0.0f); break;
+                            case State.DragObjectZ: offset = new(0.0f, 0.0f, 1.0f); break;
+                        }
+
+                        shape.Pos += offset.Scale(0.1f);
+                    }
+                }
+            }
+        }
+
+        // Get transform matrix from PerspectiveCamera.
+        // Based on D3DXMatrixPerspectiveFovRH() docs and '3DTools'
+        private static Matrix3D GetProjectionMatrix(PerspectiveCamera camera, double aspectRatio)
+        {
+            double fieldOfView = camera.FieldOfView/360.0*2*Math.PI;
+
+            double far = camera.FarPlaneDistance;
+            double near = camera.NearPlaneDistance;
+
+            double xScale = 1.0/Math.Tan(fieldOfView/2);
+            double yScale = xScale*aspectRatio;
+
+            double m33 = far == double.PositiveInfinity ? -1 : far/(near - far);
+            double m43 = near*m33;
+
+            var m = new Matrix3D(xScale, 0, 0, 0,
+                                0, yScale, 0, 0,
+                                0, 0, m33, -1.0,
+                                0, 0, m43, 0);
+
+            return m;
         }
 
         public override void DoLButtonUp(System.Windows.Point p)
         {
-            _dragging = false;
+            _state = State.Normal;
+
+            _mousePoint = p;
+            _clickPoint = p;
         }
-
-
     }
 }

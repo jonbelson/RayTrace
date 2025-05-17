@@ -653,17 +653,17 @@
                 </TabControl>
                 
                 <Border Grid.Row="1" Background="Gray" MouseDown="Border_MouseDown" MouseUp="Border_MouseUp" MouseMove="Border_MouseMove" MouseWheel="Border_MouseWheel">
-                    <Viewport3D x:Name="viewport3D" MinWidth="200" MinHeight="200" Panel.ZIndex="2" MouseLeftButtonDown="viewport3D_MouseLeftButtonDown">
-                        <Viewport3D.Camera>
+                    <local:PreviewViewport3D x:Name="viewport3D" MinWidth="200" MinHeight="200" Panel.ZIndex="2" MouseLeftButtonDown="viewport3D_MouseLeftButtonDown">
+ <!--                       <PreviewViewport3D.Camera>
                             <PerspectiveCamera Position="0, 0, 6" LookDirection="0, 0, -1" UpDirection="0, 1, 0" FieldOfView="45" />
-                        </Viewport3D.Camera>
+                        </PreviewViewport3D.Camera>
                         <ModelVisual3D>
                             <ModelVisual3D.Content>
                                 <Model3DGroup>
                                 </Model3DGroup>
                             </ModelVisual3D.Content>
-                        </ModelVisual3D>
-                    </Viewport3D>
+                        </ModelVisual3D> -->
+                    </local:PreviewViewport3D>
                 </Border>
             </Grid>
         </DockPanel>
