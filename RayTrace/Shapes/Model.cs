@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define USE_SIMD
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -423,6 +425,7 @@ namespace RayTrace
             UpdateSubGroups();
         }
 
+
         // Transform all vertices to View space based on current Camera position and orientation.
         public override void CreateCache(Camera camera)
         {
@@ -436,19 +439,31 @@ namespace RayTrace
 
                 _viewPoints = new SPoint[_modelData.points.Length];
 
+#if USE_SIMD
+
+                Matrix m = ObjectToView.GetTranspose();
+                m.MatrixMultiplySIMD(_modelData.points, _viewPoints);
+
+#else
                 for (int i = 0; i < _modelData.points.Length; i++)
                 {
                     _viewPoints[i] = ObjectToView * _modelData.points[i];
                 }
+#endif
 
                 Matrix ObjectToViewNormal = camera.NormalMatrix * ObjectToWorldNormal;
 
                 _viewNormals = new SVector[_modelData.normals.Length];
 
+#if USE_SIMD
+                Matrix m2 = ObjectToViewNormal.GetTranspose();
+                m2.MatrixMultiplySIMD(_modelData.normals, _viewNormals);
+#else
                 for (int i=0; i<_modelData.normals.Length; i++)
                 {
                     _viewNormals[i] = ObjectToViewNormal * _modelData.normals[i];
                 }
+#endif
 
                 _subGroupArray = new ModelSubGroup[_modelData.SubGroups.Length];
                 int idx = 0;

@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 using System.Text;
 using System.Threading;
@@ -317,6 +318,36 @@ namespace RayTrace
             Console.WriteLine($"AppContext.BaseDir {AppContext.BaseDirectory}");
             Console.WriteLine($"Runtime Call {System.IO.Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName)}");
 
+
+            {
+                Matrix m2 = Matrix.GetTranslation(1.0f, 2.0f, 3.0f);
+
+                Matrix m = m2.GetTranspose();
+
+                SPoint[] p =
+                [
+                    new(0.0f, 0.0f, 0.0f),
+                    new(10.0f, 20.0f, 30.0f)
+                ];
+
+                SPoint[] res = new SPoint[2];
+
+                m.MatrixMultiplySIMD(p, res);
+
+/*
+
+                SVector[] vectors = new SVector[]
+                {
+                    new(0.0f, 0.0f, 0.0f),
+                    new(10.0f, 20.0f, 30.0f)
+                };
+
+                SVector[] results = new SVector[2];
+
+                m.MatrixMultiplySIMD(vectors, results);
+*/            }
+
+
             ModelData.Triangle triangle = new();
             triangle.v0 = 0;
             triangle.v1 = 1;
@@ -421,6 +452,7 @@ namespace RayTrace
                 Vector3 v2 = Vector3.Transform(v, m3);
 
             }
+
 
             Vector3D up = new(0.0, 1.0, 0.0);
 
@@ -714,6 +746,8 @@ namespace RayTrace
             viewport3D.UpdatePreview(scene);
 
             //Func<Point3D, Point3D, Point3DCollection> CreateLine = delegate (Point3D p1, Point3D p2) { return new Point3DCollection(new List<Point3D>() { p1, p2 }); };
+
+            viewport3D.CreateDragPlaneXZ();
 
             // Add ground plane to preview.
             if (PreviewGroundPlane)

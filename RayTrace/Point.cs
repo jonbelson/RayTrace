@@ -7,9 +7,10 @@ namespace RayTrace
 {
     public readonly struct SPoint
     {
-        public float X { get; }
-        public float Y { get; }
-        public float Z { get; }
+        public readonly float X { get; }
+        public readonly float Y { get; }
+        public readonly float Z { get; }
+        private readonly float W = 1.0f;
 
         public SPoint(Point p) => (X, Y, Z) = (p.X, p.Y, p.Z);  // Temporary
 

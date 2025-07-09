@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
 using System.Security.Permissions;
 using System.Text;
 using System.Threading.Tasks;
@@ -522,6 +525,115 @@ namespace RayTrace
             m = Matrix4x4.Transpose(m);
 
             return m;
+
+        }
+
+        unsafe public void MatrixMultiplySIMD(SPoint[] points, SPoint[] results)
+        {
+            //fixed (float* matrixPtr = M, SVector* vectorPtr = vectors)
+            fixed (SPoint* pointPtr = points)
+            fixed (SPoint* resultPtr = results)
+            {
+                float* pointFloats = (float*)pointPtr;
+                float* resultFloats = (float*)resultPtr;
+
+                fixed (float* matrixPtr = M)
+                {
+                    int numPoints = points.Length;
+
+                    MatrixMultiplySIMD(matrixPtr, pointFloats, resultFloats, numPoints);
+
+                }
+            }
+        }
+
+        unsafe public void MatrixMultiplySIMD(SVector[] vectors, SVector[] results)
+        {
+            //fixed (float* matrixPtr = M, SVector* vectorPtr = vectors)
+            fixed (SVector* vectorPtr = vectors)
+                fixed (SVector* resultPtr = results)
+                {
+                    float* vectorFloats = (float*)vectorPtr;
+                    float* resultFloats = (float*)resultPtr;
+
+                    fixed (float* matrixPtr = M)
+                    {
+                        int numVectors = vectors.Length;
+
+                        MatrixMultiplySIMD(matrixPtr, vectorFloats, resultFloats, numVectors);
+
+                    }
+                }
+        }
+
+        unsafe static void MatrixMultiplySIMD(float* matrixPtr, float* vectorsPtr, float* resultsPtr, int numVectors)
+        {
+            //fixed (float* matrixPtr = matrix, vectorsPtr = vectors, resultsPtr = results)
+            {
+                Vector256<float> row0;
+                Vector256<float> row1;
+                Vector256<float> row2;
+                Vector256<float> row3;
+
+                row0 = Avx2.BroadcastVector128ToVector256(matrixPtr);
+                row1 = Avx2.BroadcastVector128ToVector256(matrixPtr + 4);
+                row2 = Avx2.BroadcastVector128ToVector256(matrixPtr + 8);
+                row3 = Avx2.BroadcastVector128ToVector256(matrixPtr + 12);
+
+                // Process vectors in pairs.
+                for (int v=0; v<numVectors - 1; v += 2)
+                {
+                    // Load two 4-element vectors (8 floats total)
+                    Vector256<float> vecs = Avx.LoadVector256(vectorsPtr + v*4);
+
+                    // Extract and broadcast elements from each vector
+                    // Broadcast element 0 within 128-bit lanes (0x00 = 0)
+                    Vector256<float> v0 = Avx.Permute(vecs, 0x00);
+
+                    // Broadcast element 1 within 128-bit lanes (0x55 = 85)
+                    Vector256<float> v1 = Avx.Permute(vecs, 0x55);
+
+                    // Broadcast element 2 within 128-bit lanes (0xAA = 170)
+                    Vector256<float> v2 = Avx.Permute(vecs, 0xAA);
+
+                    // Broadcast element 3 within 128-bit lanes (0xFF = 255)
+                    Vector256<float> v3 = Avx.Permute(vecs, 0xFF);
+
+                    // Multiply each row bythe corresponding vector element and accumulate using FMA
+                    Vector256<float> result = Avx.Multiply(row0, v0);
+
+                    // Now use FMA instructions for better performance
+                    result = Fma.MultiplyAdd(row1, v1, result);    // result += row1*v1
+                    result = Fma.MultiplyAdd(row2, v2, result);    // result += row2*v2
+                    result = Fma.MultiplyAdd(row3, v3, result);    // result += row3*v3
+
+                    // Store the results for both vectors (8 floats total)
+                    Avx.Store(resultsPtr + v*4, result);
+
+                }
+
+                // Process the last vector is numVectors is odd
+                if (numVectors%2 != 0)
+                {
+                    int v = numVectors - 1;
+
+                    // Use the single vector approach for the last one
+                    Vector256<float> vec0 = Vector256.Create(vectorsPtr[v*4]);
+                    Vector256<float> vec1 = Vector256.Create(vectorsPtr[v*4 + 1]);
+                    Vector256<float> vec2 = Vector256.Create(vectorsPtr[v*4 + 2]);
+                    Vector256<float> vec3 = Vector256.Create(vectorsPtr[v*4 + 3]);
+
+                    Vector256<float> sum = Avx.Multiply(row0, vec0);
+
+                    // Use FMA for the remaining operations
+                    sum = Fma.MultiplyAdd(row1, vec1, sum);
+                    sum = Fma.MultiplyAdd(row2, vec2, sum);
+                    sum = Fma.MultiplyAdd(row3, vec3, sum);
+
+                    // Store just the first 4 elements of the result
+                    Sse.Store(resultsPtr + v*4, Avx.ExtractVector128(sum, 0));
+                }
+            }
 
         }
     }

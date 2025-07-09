@@ -1,6 +1,7 @@
 ﻿using _3DTools;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
@@ -39,7 +40,7 @@ namespace RayTrace
 
         private enum State
         {
-            Normal, DragView, DragObjectX, DragObjectY, DragObjectZ
+            Normal, DragView, DragObjectX, DragObjectY, DragObjectZ, DragObject
         }
 
         private State _state = State.Normal;
@@ -87,6 +88,7 @@ namespace RayTrace
                 case State.DragObjectX:
                 case State.DragObjectY:
                 case State.DragObjectZ:
+                case State.DragObject:
                     {
                         HandleDragEntity(p);
                         break;
@@ -115,14 +117,129 @@ namespace RayTrace
 
             }
         }
+/*
+        private void GetLocalLine(out Point3D origin, out Vector3D direction)
+        {
+            if (HasWorldTransformMatrix)
+            {
+                LineUtil.Transform(WorldTransformMatrix, ref origin, ref direction, out isRay);
+            }
 
+        }
+
+        private void HitTestXZPlane(System.Windows.Point p)
+        {
+            Point3D testPoint3D = new(p.X, p.Y, 0);
+            Vector3D testDirection3D = new(p.X, p.Y, 10);
+            PointHitTestParameters hitTestParams = new(p);
+            RayHitTestParameters rayParams = new(testPoint3D, testDirection3D);
+
+            GeometryModel3D model;
+
+            model.RayHitTest();
+
+            Geometry3D geometry;// = new();
+
+            geometry.RayHitTest();
+
+            Point3D origin;
+            Vector3D direction;
+
+            rayParams.GetLocalLine(out origin, out direction);
+
+            geometry.RayHitTestCore();
+
+        }
+*/
         private SVector PointToVector(System.Windows.Point p)
         {
             double width = _viewport3D.ActualWidth;
             double height = _viewport3D.ActualHeight;
             double aspect = width/height;
 
+            float sceneWidth = _scene.Camera.GetSceneWidth();
+            float sceneHeight = _scene.Camera.GetSceneHeight();
 
+            double hfov = _camera.FieldOfView*Math.PI/180.0;
+            sceneWidth = 2.0f*(float)Math.Tan(hfov/2);
+            sceneHeight = sceneWidth;
+
+            float Size = sceneWidth;
+            height = width;
+
+            float sceneStartX = -Size / 2.0f;
+            float sceneStartY = Size / 2.0f;
+            float sceneStepX = (float)(Size / width);       // Step per pixel in Scene units.
+            float sceneStepY = (float)(Size / height);
+
+
+            float ratioX = (float)(p.X/width);
+            float ratioY = 1.0f - (float)(p.Y/height);
+
+            float sceneX = ratioX*sceneWidth;
+            float sceneY = ratioY*sceneHeight;
+
+            //float x = (float)(-Size/2 + p.X);
+            //float y = (float)(Size/2 - p.Y);
+
+            float x = sceneStartX + (float)(p.X*sceneStepX);
+            float y = sceneStartY - (float)(p.Y*sceneStepY);
+
+
+
+            SPoint origin = new(0, 0, 0);
+            SVector dir = new(x, y, 1.0f);
+            Ray ray = new(origin, dir.Normalise());
+
+            SPoint planePos = new(0, 0, 0);
+            SVector planeNormal = new(0, 1, 0);
+
+            SPoint vPos = _scene.Camera.WorldToView*planePos;
+            SVector vNormal = _scene.Camera.NormalMatrix*planeNormal;
+
+            SPoint p1 = ray.Origin;
+            SPoint p2 = ray.Origin + ray.Direction;
+
+            float A = vNormal.I;
+            float B = vNormal.J;
+            float C = vNormal.K;
+
+            // Since Ax + By + Cz + D = 0...
+            float D = -(A * vPos.X + B * vPos.Y + C * vPos.Z);
+
+            float num = A * p1.X + B * p1.Y + C * p1.Z + D;
+            float denom = A * (p1.X - p2.X) + B * (p1.Y - p2.Y) + C * (p1.Z - p2.Z);
+
+            if (denom == 0)
+            {
+                return new(0, 0, 0);
+            }
+
+            float mu = num / denom;
+
+            double THRESH = 0.000001;
+
+            if (mu < THRESH)
+            {
+                // Not interested in intersections that happen behind us.
+                return new(0, 0, 0);
+            }
+
+            SVector vecP2P1 = p2 - p1;
+            //Vector vecP2P1 = p1 - p2;
+            SPoint Intersection = p1 + vecP2P1.Scale(mu);
+
+            //hr.t = mu;
+            //hr.Entry = Intersection;
+
+
+            return new(Intersection.X, Intersection.Y, Intersection.Z);
+
+
+
+
+
+#if false
             // Get normalised click position (0 - 1)
             double xNorm = p.X/width;
             double yNorm = p.Y/height;
@@ -176,14 +293,32 @@ namespace RayTrace
             SVector vClick = new(x, y, z);
 
             return vClick;
+#endif
         }
 
         private readonly Func<double, double> DegToRad = (a) => (a/360.0)*2*Math.PI;
 
         public override void DoLButtonDown(System.Windows.Point p)
         {
+/*
+            PreviewHitResult hitResult2 = _viewport3D.HitTestPlaneXZ(p);
 
+            if (hitResult2.Type == PreviewHitResult.HitType.DragPlaneXZ)
+            {
+                Point3D point = hitResult2.Point;
+                new Sphere(_scene, new Point((float)point.X, (float)point.Y, (float)-point.Z), 1);
+                _viewport3D.UpdatePreview(_scene);
+            }
+*/
+            /*
             SVector vToClick = PointToVector(p);
+
+            if (!vToClick.IsNull())
+            {
+                new Sphere(_scene, new Point(vToClick.I, vToClick.J, vToClick.K), 1);
+                _viewport3D.UpdatePreview(_scene);
+            }
+            */
 
             Point3D cam = _camera.Position;
 
@@ -192,6 +327,7 @@ namespace RayTrace
             // 0 = camy + t.j
             // t = -camy/j
 
+            /*
             if (vToClick.J != 0)
             {
                 float t = (float)(-cam.Y/vToClick.J);
@@ -215,7 +351,7 @@ namespace RayTrace
             //Debug.WriteLine(p + " -> " + point);
 
             ConvertPoint(p);
-
+            */
 
 
 
@@ -244,6 +380,8 @@ namespace RayTrace
                 _mainWindow.SelectedEntity.Add(hitResult.Entity);
 
                 _viewport3D.UpdateBoundingBox((Shape)hitResult.Entity);
+
+                _state = State.DragObject;
             }
             else
             {
@@ -376,7 +514,7 @@ namespace RayTrace
 
         private void HandleDragEntity(System.Windows.Point p)
         {
-            SVector vToClick = PointToVector(p);
+            //SVector vToClick = PointToVector(p);
 
             Point3D cam = _camera.Position;
 
@@ -385,16 +523,16 @@ namespace RayTrace
             // 0 = camy + t.j
             // t = -camy/j
 
-            if (vToClick.J != 0)
-            {
-                float t = (float)(-cam.Y/vToClick.J);
+            //if (vToClick.J != 0)
+            //{
+            //    float t = (float)(-cam.Y/vToClick.J);
 
-                float XZx = (float)cam.X + t*vToClick.I;
-                float XZz = (float)cam.Z + t*vToClick.K;
+            //    float XZx = (float)cam.X + t*vToClick.I;
+            //    float XZz = (float)cam.Z + t*vToClick.K;
 
-                SPoint pointOnPlane = new(XZx, 0.0f, XZz);
+            //    SPoint pointOnPlane = new(XZx, 0.0f, XZz);
 
-            }
+            //}
 
 
 
@@ -427,23 +565,53 @@ namespace RayTrace
                     {
 
 
-                        Vector offset = Vector.Null();
 
+                        //Vector offset = Vector.Null();
+
+                        PreviewHitResult hitResult = _viewport3D.HitTestPlaneXZ(p);
+
+                        Point newPos = new((float)hitResult.Point.X, (float)hitResult.Point.Y, (float)-hitResult.Point.Z);
 
                         switch (_state)
                         {
+                            case State.DragObject:
+                                if (hitResult.Type == PreviewHitResult.HitType.DragPlaneXZ)
+                                {
+                                    //Point newPos = new((float) hitResult.Point.X, shape.Pos.Y, (float) -hitResult.Point.Z);
+                                    //shape.Pos = newPos;
+                                    newPos.Y = shape.Pos.Y;
+                                }
+                                break;
                             case State.DragObjectX:
+                                newPos.Y = shape.Pos.Y;
+                                newPos.Z = shape.Pos.Z;
+
+                                break;
+                            case State.DragObjectY:
+                                newPos.X = shape.Pos.X;
+                                newPos.Z = shape.Pos.Z;
+
+                                break;
+                            case State.DragObjectZ:
+                                newPos.X = shape.Pos.X;
+                                newPos.Y = shape.Pos.Y;
+
                                 break;
                         }
+                        shape.Pos = newPos;
 
-                        switch (_state)
-                        {
-                            case State.DragObjectX: offset = new(1.0f, 0.0f, 0.0f); break;
-                            case State.DragObjectY: offset = new(0.0f, 1.0f, 0.0f); break;
-                            case State.DragObjectZ: offset = new(0.0f, 0.0f, 1.0f); break;
-                        }
+                        _viewport3D.UpdateBoundingBox(shape);
 
-                        shape.Pos += offset.Scale(0.1f);
+
+                        /*                        switch (_state)
+                                                {
+                                                    case State.DragObjectX: offset = new(1.0f, 0.0f, 0.0f); break;
+                                                    case State.DragObjectY: offset = new(0.0f, 1.0f, 0.0f); break;
+                                                    case State.DragObjectZ: offset = new(0.0f, 0.0f, 1.0f); break;
+                                                }
+
+                                                shape.Pos += offset.Scale(0.1f);
+                        */
                     }
                 }
             }
@@ -478,6 +646,9 @@ namespace RayTrace
 
             _mousePoint = p;
             _clickPoint = p;
+
+            //if (_mainWindow.SelectedEntity.
+            //_viewport3D.UpdatePreview(_scene);
         }
     }
 }

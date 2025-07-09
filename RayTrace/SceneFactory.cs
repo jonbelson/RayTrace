@@ -467,17 +467,18 @@ namespace RayTrace
 
             Material mat = new Material() { Name = "CookTorrence" };
             {
-                CookTorrence cookTorrence = new();
-                //cookTorrence.Colour = /*Palette.MetallicGold;*/ Palette.Copper;
-                cookTorrence.Shininess = 0.75f;
-                cookTorrence.Roughness = 0.1f;
-                cookTorrence.Absorption = 1.25f;
-                //cookTorrence.Specular = 0;
+                CookTorrence cookTorrence = new()
+                {
+                    Shininess = 0.9f,
+                    Roughness = 0.1f,
+                    Absorption = 1.25f
+                };
 
-//                mat.Texture = new TextureSolid(/*Palette.MetallicGold;*/ Palette.Copper);
+                // mat.Texture = new TextureSolid(/*Palette.MetallicGold;*/ Palette.Copper);
                 mat.Texture = new TextureSolid(Palette.MetallicGold);
-                mat.Brdf = cookTorrence;
                 mat.SetType(MaterialType.BRDF_CookTorrence);
+                mat.Brdf = cookTorrence;
+                mat.NormalMap = new(@"Data\pbr-low-poly-fox-character\source\LP_Firefox_1001_Normal.png");
 
                 scene.AddMaterial(mat);
 
@@ -486,20 +487,18 @@ namespace RayTrace
 
             Sphere sphere = new(scene, new Point(-2, 0, 0), 1);
             sphere.Material.SetType(MaterialType.Diffuse);
-        //    scene.AddShape(sphere);
 
             float floorHeight = model.MinY;
+
             Disc floor = new Disc(scene, new Point(0, floorHeight, 0), new Vector(0, 1, 0), 25);
             floor.Material.Texture = new TextureSolid(Palette.Grey);
+
             scene.AddMaterial(floor.Material);
             //floor.Material.Reflectivity = 0.1f;
-            //scene.AddShape(floor);
 
             Light light = new PointLight(scene, new Point(-50, 50, 10), 6000, Palette.White);
-            //scene.AddLight(light);
 
             light = new PointLight(scene, new Point(10, 30, -30), 3000, Palette.White);
-            //scene.AddLight(light);
 
             //scene.Skydome = new SkydomeBitmap("Data\\skydomes\\immenstadter_horn_2048.jpg");
 //            scene.Skydome = new Skybox("Data\\skyboxes\\Yokohama2");

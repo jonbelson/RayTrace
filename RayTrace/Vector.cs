@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.InteropServices;
 
 namespace RayTrace
 {
@@ -16,11 +17,16 @@ namespace RayTrace
         }
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     public readonly struct SVector
     {
-        public float I { get; }
-        public float J { get; }
-        public float K { get; }
+        //public float I { get; }
+        //public float J { get; }
+        //public float K { get; }
+        public readonly float I { get; }
+        public readonly float J { get; }
+        public readonly float K { get; }
+        private readonly float W = 0.0f;
 
         private bool IsNaN()
         {

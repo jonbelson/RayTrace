@@ -300,7 +300,10 @@ namespace RayTrace
             OutputCanvas.Clear();
 
             Scene.Camera.UpdateMatrix();    // XXX Needed?
+
+            Debug.WriteLine("Precalculating...");
             Scene.CreateCaches();
+            Debug.WriteLine("...done");
 
             ThreadPool.GetMaxThreads(out int workerThreads, out int completonPortThreads);
 

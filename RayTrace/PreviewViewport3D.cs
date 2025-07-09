@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Media.Media3D;
 using System.Windows.Media;
 using System.Numerics;
+using System.Windows;
 
 namespace RayTrace
 {
@@ -23,10 +24,56 @@ namespace RayTrace
         public HitType Type { get; set; }
         public ModelVisual3D Visual3D { get; set; }
         public GeometryModel3D GeometryModel3D { get; set; }
+        public Point3D Point { get; set; }
         public Entity Entity { get; set; }
 
         public double Distance { get; set; }
+
+        public bool IsHit() => Type != HitType.None;
     }
+
+    public class PlaneXZ : ModelVisual3D
+    {
+
+        public PlaneXZ()
+        {
+            GeometryModel3D plane = new();
+            //MeshGeometry3D mesh = GeometryModel3DFactory.MakePlane(new Vector(0, 1.0f, 0));
+            MeshGeometry3D mesh = new();
+
+            float Size = 100.0f;
+            mesh.Positions.Add(new Point3D(-Size, 0, Size));
+            mesh.Positions.Add(new Point3D(Size, 0, Size));
+            mesh.Positions.Add(new Point3D(Size, 0, -Size));
+            mesh.Positions.Add(new Point3D(-Size, 0, -Size));
+
+            mesh.TriangleIndices.Add(0);
+            mesh.TriangleIndices.Add(1);
+            mesh.TriangleIndices.Add(2);
+            mesh.TriangleIndices.Add(0);
+            mesh.TriangleIndices.Add(2);
+            mesh.TriangleIndices.Add(3);
+
+            plane.Geometry = mesh;
+
+            DiffuseMaterial material = new(new SolidColorBrush(Color.FromArgb(0, 255, 255, 0)));
+            plane.Material = material;
+
+            //plane.BackMaterial = material;
+
+            Transform3DGroup transformGroup = new();
+
+            // var transform = new MatrixTransform3D(lookAt);
+
+            var scale = new ScaleTransform3D(10, 10, 1);
+            transformGroup.Children.Add(scale);
+
+            plane.Transform = transformGroup;
+
+            Content = plane;
+            //this.Children.Add(plane);
+        }
+    };
 
     public class PreviewViewport3D : Viewport3D 
     {
@@ -55,31 +102,27 @@ namespace RayTrace
         public PreviewViewport3D()
         {
             //Children.Add(_groundPlane);
+
+            CreateDragPlaneXZ();
+
         }
 
         public void ClearDragPlaneXZ()
         {
             if (_dragXZPlane != null)
             {
-                Children.Remove(_preview3D);
+                Children.Remove(_dragXZPlane);
 
             }
         }
 
-        private void CreateDragPlaneXZ()
+        public /*private*/ void CreateDragPlaneXZ()
         {
             ClearDragPlaneXZ();
 
-            GeometryModel3D plane = new();
+            _dragXZPlane = new PlaneXZ();
 
-            MeshGeometry3D mesh = GeometryModel3DFactory.MakePlane(new Vector(0, 1.0f, 0));
-            plane.Geometry = mesh;
-
-            //Children.Add(plane);
-            //this.Content.Add(plane);
-
-            //_preview3D.Content.
-
+            Children.Add(_dragXZPlane);
         }
 
         public void ClearPreview()
@@ -209,6 +252,64 @@ namespace RayTrace
         public PreviewHitResult HitTest(System.Windows.Point mousePos)
         {
             return HitTestGeometry(mousePos);
+        }
+
+        public PreviewHitResult HitTestPlaneXZ(System.Windows.Point mousePos)
+        {
+            PreviewHitResult hitResult = new PreviewHitResult();
+
+            HitTestFilterBehavior FilterCallback(DependencyObject o)
+            {
+                if (o.GetType() == typeof(PlaneXZ))
+                {
+                    return HitTestFilterBehavior.Continue;
+                }
+
+//                return HitTestFilterBehavior.ContinueSkipSelfAndChildren;
+                return HitTestFilterBehavior.ContinueSkipSelf;
+
+            }
+
+            HitTestResultBehavior HitTestCallback(HitTestResult hitTestResult)
+            {
+                if (hitTestResult is RayHitTestResult rayHitResult)
+                {
+                    //PreviewHitResult result = new();
+
+                    if (rayHitResult is RayMeshGeometry3DHitTestResult meshHitResults)
+                    {
+                        hitResult.Distance = meshHitResults.DistanceToRayOrigin;
+
+                        Visual3D visual = meshHitResults.VisualHit;
+                        hitResult.Visual3D = (visual is ModelVisual3D modelVisual) ? modelVisual : null;
+
+                        GeometryModel3D hitGeometry = meshHitResults.ModelHit as GeometryModel3D;
+                        hitResult.GeometryModel3D = hitGeometry;
+
+                        if (_dragXZPlane != null)
+                        {
+                            if (visual == _dragXZPlane)
+                            {
+                                hitResult.Point = meshHitResults.PointHit;
+                                hitResult.Type = PreviewHitResult.HitType.DragPlaneXZ;
+                            }
+                        }
+
+                    }
+                }
+
+                return HitTestResultBehavior.Continue;
+
+            }
+
+            Point3D testPoint3D = new Point3D(mousePos.X, mousePos.Y, 0);
+            Vector3D testDirection3D = new Vector3D(mousePos.X, mousePos.Y, 10);
+            PointHitTestParameters hitTestParams = new(mousePos);
+            RayHitTestParameters rayParams = new RayHitTestParameters(testPoint3D, testDirection3D);
+
+            VisualTreeHelper.HitTest(this, null /*FilterCallback*/, HitTestCallback, hitTestParams);
+
+            return hitResult;
         }
 
         private PreviewHitResult HitTestGeometry(System.Windows.Point mousePos)
