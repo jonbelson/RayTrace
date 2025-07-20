@@ -1,14 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.Composition.Primitives;
+using System.Drawing;
 using System.Linq;
+using System.Numerics;
+using System.Runtime.CompilerServices;
+using System.Runtime.Versioning;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Controls;
-using System.Windows.Media.Media3D;
-using System.Windows.Media;
-using System.Numerics;
+using System.Transactions;
 using System.Windows;
+using System.Windows.Automation.Peers;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Media3D;
 
 namespace RayTrace
 {
@@ -32,6 +38,7 @@ namespace RayTrace
         public bool IsHit() => Type != HitType.None;
     }
 
+    /*
     public class PlaneXZ : ModelVisual3D
     {
 
@@ -56,7 +63,7 @@ namespace RayTrace
 
             plane.Geometry = mesh;
 
-            DiffuseMaterial material = new(new SolidColorBrush(Color.FromArgb(0, 255, 255, 0)));
+            DiffuseMaterial material = new(new SolidColorBrush(System.Windows.Media.Color.FromArgb(0, 255, 255, 0)));
             plane.Material = material;
 
             //plane.BackMaterial = material;
@@ -74,6 +81,43 @@ namespace RayTrace
             //this.Children.Add(plane);
         }
     };
+    */
+
+    public static class MyExtensions
+    {
+        public static void MultiplyVector(this Matrix3D m, ref Vector3D v)
+        {
+            double xx = v.X;
+            double yy = v.Y;
+            double zz = v.Z;
+
+            v.X = xx*m.M11 + yy*m.M21 + zz*m.M31;
+            v.Y = xx*m.M12 + yy*m.M22 + zz*m.M32;
+            v.Z = xx*m.M13 + yy*m.M23 + zz*m.M33;
+        }
+
+        public static void MultiplyPoint(this Matrix3D m, ref Point3D p)
+        {
+            double xx = p.X;
+            double yy = p.Y;
+            double zz = p.Z;
+
+            p.X = xx*m.M11 + yy*m.M21 + zz*m.M31 + m.OffsetX;
+            p.Y = xx*m.M12 + yy*m.M22 + zz*m.M32 + m.OffsetY;
+            p.Z = xx*m.M13 + yy*m.M23 + zz*m.M33 + m.OffsetZ;
+
+            if (!m.IsAffine)
+            {
+                double w = xx*m.M14 + yy*m.M24 + zz*m.M34 + m.M44;
+
+                p.X /= w;
+                p.Y /= w;
+                p.Z /= w;
+            }
+
+        }
+    }
+
 
     public class PreviewViewport3D : Viewport3D 
     {
@@ -89,8 +133,6 @@ namespace RayTrace
         private BoundingBox3D _boundingBox;
         private ModelAxis3D _modelAxis;
 
-        private ModelVisual3D _dragXZPlane;
-
         public bool UseAmbient { get; set; } = false;
 
         private static Point3DCollection CreateLine(Point3D p1, Point3D p2)
@@ -101,28 +143,7 @@ namespace RayTrace
 
         public PreviewViewport3D()
         {
-            //Children.Add(_groundPlane);
 
-            CreateDragPlaneXZ();
-
-        }
-
-        public void ClearDragPlaneXZ()
-        {
-            if (_dragXZPlane != null)
-            {
-                Children.Remove(_dragXZPlane);
-
-            }
-        }
-
-        public /*private*/ void CreateDragPlaneXZ()
-        {
-            ClearDragPlaneXZ();
-
-            _dragXZPlane = new PlaneXZ();
-
-            Children.Add(_dragXZPlane);
         }
 
         public void ClearPreview()
@@ -254,71 +275,94 @@ namespace RayTrace
             return HitTestGeometry(mousePos);
         }
 
-        public PreviewHitResult HitTestPlaneXZ(System.Windows.Point mousePos)
+
+        private struct Ray3D(Point3D origin, Vector3D direction)
         {
+            public Point3D Origin = origin;
+            public Vector3D Direction = direction;
+        }
+
+
+        private static Matrix3D CreateViewMatrix(PerspectiveCamera camera)
+        {
+            Vector3D zAxis = camera.LookDirection;
+            zAxis.Normalize();
+
+            Vector3D yAxis = camera.UpDirection;
+            yAxis.Normalize();
+
+            Vector3D xAxis = Vector3D.CrossProduct(zAxis, yAxis);
+            xAxis.Normalize();
+
+            yAxis = Vector3D.CrossProduct(xAxis, zAxis);
+
+            Vector3D positionVec = (Vector3D)camera.Position;
+
+            double cx = -Vector3D.DotProduct(xAxis, positionVec);
+            double cy = -Vector3D.DotProduct(yAxis, positionVec);
+            double cz = Vector3D.DotProduct(zAxis, positionVec);
+
+            Matrix3D viewMatrix = new Matrix3D(
+                xAxis.X, yAxis.X, -zAxis.X, 0,
+                xAxis.Y, yAxis.Y, -zAxis.Y, 0,
+                xAxis.Z, yAxis.Z, -zAxis.Z, 0,
+                cx, cy, cz, 1
+                );
+
+            // Prepend camera.Transform ?
+
+            return viewMatrix;
+        }
+
+        private static Ray3D GetRayFromPerspectiveCamera(System.Windows.Point mousePosition, Viewport3D viewport, PerspectiveCamera camera)
+        {
+            double width = viewport.ActualWidth;
+            double height = viewport.ActualHeight;
+
+            var x = (2.0*mousePosition.X/width) - 1.0;
+            var y = 1.0 - (2.0*mousePosition.Y/height);
+
+            double aspect = width/height;
+            double fov = camera.FieldOfView/180.0*Math.PI;
+            double halfTanFov = Math.Tan(fov/2.0);
+
+            Vector3D directionCameraSpece = new Vector3D(x*halfTanFov, y*halfTanFov/aspect, -1.0);
+
+            Matrix3D viewMatrix = CreateViewMatrix(camera);
+            Matrix3D inverseViewMatrix = viewMatrix;
+
+            inverseViewMatrix.Invert();
+
+            Vector3D directionWorldSpace = inverseViewMatrix.Transform(directionCameraSpece);
+            directionWorldSpace.Normalize();
+
+            return new Ray3D(camera.Position, directionWorldSpace);
+        }
+
+        public PreviewHitResult HitTestPlaneXZ5(System.Windows.Point screenPoint)
+        {
+            PerspectiveCamera camera = Camera as PerspectiveCamera;
+
+            var ray = GetRayFromPerspectiveCamera(screenPoint, this, camera);
+
             PreviewHitResult hitResult = new PreviewHitResult();
 
-            HitTestFilterBehavior FilterCallback(DependencyObject o)
+            if (Math.Abs(ray.Direction.Y) > 1e-6)
             {
-                if (o.GetType() == typeof(PlaneXZ))
-                {
-                    return HitTestFilterBehavior.Continue;
-                }
+                var t = -ray.Origin.Y/ray.Direction.Y;
+                var intersection = ray.Origin + ray.Direction*t;
 
-//                return HitTestFilterBehavior.ContinueSkipSelfAndChildren;
-                return HitTestFilterBehavior.ContinueSkipSelf;
 
+                hitResult.Type = PreviewHitResult.HitType.DragPlaneXZ;
+                hitResult.Point = intersection;
             }
-
-            HitTestResultBehavior HitTestCallback(HitTestResult hitTestResult)
-            {
-                if (hitTestResult is RayHitTestResult rayHitResult)
-                {
-                    //PreviewHitResult result = new();
-
-                    if (rayHitResult is RayMeshGeometry3DHitTestResult meshHitResults)
-                    {
-                        hitResult.Distance = meshHitResults.DistanceToRayOrigin;
-
-                        Visual3D visual = meshHitResults.VisualHit;
-                        hitResult.Visual3D = (visual is ModelVisual3D modelVisual) ? modelVisual : null;
-
-                        GeometryModel3D hitGeometry = meshHitResults.ModelHit as GeometryModel3D;
-                        hitResult.GeometryModel3D = hitGeometry;
-
-                        if (_dragXZPlane != null)
-                        {
-                            if (visual == _dragXZPlane)
-                            {
-                                hitResult.Point = meshHitResults.PointHit;
-                                hitResult.Type = PreviewHitResult.HitType.DragPlaneXZ;
-                            }
-                        }
-
-                    }
-                }
-
-                return HitTestResultBehavior.Continue;
-
-            }
-
-            Point3D testPoint3D = new Point3D(mousePos.X, mousePos.Y, 0);
-            Vector3D testDirection3D = new Vector3D(mousePos.X, mousePos.Y, 10);
-            PointHitTestParameters hitTestParams = new(mousePos);
-            RayHitTestParameters rayParams = new RayHitTestParameters(testPoint3D, testDirection3D);
-
-            VisualTreeHelper.HitTest(this, null /*FilterCallback*/, HitTestCallback, hitTestParams);
 
             return hitResult;
         }
 
         private PreviewHitResult HitTestGeometry(System.Windows.Point mousePos)
         {
-            //List<GeometryModel3D> hitResults = new();
             List<PreviewHitResult> hitResults = new();
-
-
-            //GeometryModel3D model;
 
             HitTestResultBehavior HitTestCallback(HitTestResult hitTestResult)
             {

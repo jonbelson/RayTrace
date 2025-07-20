@@ -747,8 +747,6 @@ namespace RayTrace
 
             //Func<Point3D, Point3D, Point3DCollection> CreateLine = delegate (Point3D p1, Point3D p2) { return new Point3DCollection(new List<Point3D>() { p1, p2 }); };
 
-            viewport3D.CreateDragPlaneXZ();
-
             // Add ground plane to preview.
             if (PreviewGroundPlane)
             {
@@ -1594,6 +1592,9 @@ namespace RayTrace
                             camera3D.LookDirection = new Vector3D(cameraView.I, cameraView.J, -cameraView.K);
                             camera3D.UpDirection = new Vector3D(0.0, 1.0, 0.0);
                             camera3D.FieldOfView = scene.Camera.FovH;
+
+                            //camera3D.NearPlaneDistance = 0;
+                            camera3D.FarPlaneDistance = 1000;
 
                             viewport3D.Camera = camera3D;   // new PerspectiveCamera(new Point3D(0, 0, 6), new Vector3D(0, 0, -1), up, 45);
 

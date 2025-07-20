@@ -12,6 +12,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
+using System.Windows.Shapes;
 using static System.Formats.Asn1.AsnWriter;
 
 namespace RayTrace
@@ -33,6 +34,8 @@ namespace RayTrace
 
         private System.Windows.Point _clickPoint;
         private System.Windows.Point _mousePoint;
+
+        private Point3D _XZOffset; // Offset from XZ click point to position of hit Entity.
 
         private PreviewHitResult _hitResult;
 
@@ -300,16 +303,16 @@ namespace RayTrace
 
         public override void DoLButtonDown(System.Windows.Point p)
         {
-/*
-            PreviewHitResult hitResult2 = _viewport3D.HitTestPlaneXZ(p);
+            /*
+                        PreviewHitResult hitResult2 = _viewport3D.HitTestPlaneXZ(p);
 
-            if (hitResult2.Type == PreviewHitResult.HitType.DragPlaneXZ)
-            {
-                Point3D point = hitResult2.Point;
-                new Sphere(_scene, new Point((float)point.X, (float)point.Y, (float)-point.Z), 1);
-                _viewport3D.UpdatePreview(_scene);
-            }
-*/
+                        if (hitResult2.Type == PreviewHitResult.HitType.DragPlaneXZ)
+                        {
+                            Point3D point = hitResult2.Point;
+                            new Sphere(_scene, new Point((float)point.X, (float)point.Y, (float)-point.Z), 1);
+                            _viewport3D.UpdatePreview(_scene);
+                        }
+            */
             /*
             SVector vToClick = PointToVector(p);
 
@@ -320,7 +323,7 @@ namespace RayTrace
             }
             */
 
-            Point3D cam = _camera.Position;
+            //Point3D cam = _camera.Position;
 
             // Vector intersects the XZ place at Y = 0.
             // y = camy + t.j
@@ -356,9 +359,13 @@ namespace RayTrace
 
 
 
+            //var hr = _viewport3D.HitTestPlaneXZ5(p);
 
+            //if (hr.IsHit())
+            //{
+            //    Debug.WriteLine($"HitTestPlaneXZ: {hr.Point.X}, {hr.Point.Y}, {hr.Point.Z}");
+            //}
 
-            
 
 
             _mousePoint = p;
@@ -369,6 +376,8 @@ namespace RayTrace
             PreviewHitResult.HitType hitType = hitResult.Type;
 
             Debug.WriteLine(hitType.ToString());
+
+            PreviewHitResult hitResultXZ = _viewport3D.HitTestPlaneXZ5(p);
 
             if (hitType == PreviewHitResult.HitType.None)
             {
@@ -382,6 +391,14 @@ namespace RayTrace
                 _viewport3D.UpdateBoundingBox((Shape)hitResult.Entity);
 
                 _state = State.DragObject;
+
+                if (hitResult.Entity is Shape shape)
+                {
+                    _XZOffset = new((double)shape.Pos.X - hitResultXZ.Point.X, (double)shape.Pos.Y - hitResultXZ.Point.Y, (double)shape.Pos.Z + hitResultXZ.Point.Z);
+                    Debug.WriteLine($"shape.Pos = {shape.Pos.X}, {shape.Pos.Y}, {shape.Pos.Z}");
+                    Debug.WriteLine($"hitResultXZ.Point = {hitResultXZ.Point.X}, {hitResultXZ.Point.Y}, {hitResultXZ.Point.Z}");
+                    Debug.WriteLine($"_XZOffset = {_XZOffset.X}, {_XZOffset.Y}, {_XZOffset.Z}");
+                }
             }
             else
             {
@@ -390,6 +407,10 @@ namespace RayTrace
                     case PreviewHitResult.HitType.ModelAxisX: { _state = State.DragObjectX; break; }
                     case PreviewHitResult.HitType.ModelAxisY: { _state = State.DragObjectY; break; }
                     case PreviewHitResult.HitType.ModelAxisZ: { _state = State.DragObjectZ; break; }
+                }
+                if (hitResult.Entity is Shape shape)
+                {
+                    _XZOffset = new((double)shape.Pos.X - hitResult.Point.X, (double)shape.Pos.Y - hitResult.Point.Y, (double)shape.Pos.Z + hitResult.Point.Z);
                 }
             }
 
@@ -535,84 +556,60 @@ namespace RayTrace
             //}
 
 
-
-
-            float xDiff = (float)(p.X - _clickPoint.X);
-            float yDiff = (float)(p.Y - _clickPoint.Y);
-
             if (_mainWindow.SelectedEntity.Count > 0)
             {
                 Entity entity = _mainWindow.SelectedEntity[0];
 
                 if (entity is Shape shape)
                 {
-                    if (false)
+
+//                  PreviewHitResult hitResult = _viewport3D.HitTestPlaneXZ(p);
+                    PreviewHitResult hitResult = _viewport3D.HitTestPlaneXZ5(p);
+
+                    Point newPos = new((float)hitResult.Point.X, (float)hitResult.Point.Y, (float)-hitResult.Point.Z);
+
+                    switch (_state)
                     {
-                        MakeYPlane();
-
-
-                        PreviewHitResult hitResult = _viewport3D.HitTest(p);
-
-                        PreviewHitResult.HitType hitType = hitResult.Type;
-
-                        //if (hitType == PreviewHitResult.HitType.Geometry)
-                        //{
-                        //}
-
-
-                    }
-                    else
-                    {
-
-
-
-                        //Vector offset = Vector.Null();
-
-                        PreviewHitResult hitResult = _viewport3D.HitTestPlaneXZ(p);
-
-                        Point newPos = new((float)hitResult.Point.X, (float)hitResult.Point.Y, (float)-hitResult.Point.Z);
-
-                        switch (_state)
-                        {
-                            case State.DragObject:
-                                if (hitResult.Type == PreviewHitResult.HitType.DragPlaneXZ)
-                                {
-                                    //Point newPos = new((float) hitResult.Point.X, shape.Pos.Y, (float) -hitResult.Point.Z);
-                                    //shape.Pos = newPos;
-                                    newPos.Y = shape.Pos.Y;
-                                }
-                                break;
-                            case State.DragObjectX:
-                                newPos.Y = shape.Pos.Y;
-                                newPos.Z = shape.Pos.Z;
-
-                                break;
-                            case State.DragObjectY:
-                                newPos.X = shape.Pos.X;
-                                newPos.Z = shape.Pos.Z;
-
-                                break;
-                            case State.DragObjectZ:
-                                newPos.X = shape.Pos.X;
+                        case State.DragObject:
+                            if (hitResult.Type == PreviewHitResult.HitType.DragPlaneXZ)
+                            {
+                                //Point newPos = new((float) hitResult.Point.X, shape.Pos.Y, (float) -hitResult.Point.Z);
+                                //shape.Pos = newPos;
                                 newPos.Y = shape.Pos.Y;
 
-                                break;
-                        }
-                        shape.Pos = newPos;
+                                newPos.X += (float)_XZOffset.X;
+                                //newPos.Y += (float)_XZOffset.Y;
+                                newPos.Z += (float)_XZOffset.Z;
+                            }
+                            break;
+                        case State.DragObjectX:
+                            if (hitResult.Type == PreviewHitResult.HitType.DragPlaneXZ)
+                            {
+                                newPos.Y = shape.Pos.Y;
+                                newPos.Z = shape.Pos.Z;
+                            }
 
-                        _viewport3D.UpdateBoundingBox(shape);
+                            break;
+                        case State.DragObjectY:
+                            newPos.X = shape.Pos.X;
+                            newPos.Z = shape.Pos.Z;
 
+                            break;
+                        case State.DragObjectZ:
+                            if (hitResult.Type == PreviewHitResult.HitType.DragPlaneXZ)
+                            {
+                                newPos.X = shape.Pos.X;
+                                newPos.Y = shape.Pos.Y;
+                            }
 
-                        /*                        switch (_state)
-                                                {
-                                                    case State.DragObjectX: offset = new(1.0f, 0.0f, 0.0f); break;
-                                                    case State.DragObjectY: offset = new(0.0f, 1.0f, 0.0f); break;
-                                                    case State.DragObjectZ: offset = new(0.0f, 0.0f, 1.0f); break;
-                                                }
-
-                                                shape.Pos += offset.Scale(0.1f);
-                        */
+                            break;
                     }
+
+
+                    shape.Pos = newPos;
+
+                    _viewport3D.UpdateBoundingBox(shape);
+
                 }
             }
         }
