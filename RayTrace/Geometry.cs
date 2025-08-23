@@ -47,9 +47,9 @@ namespace RayTrace
 
             if (segmentOnly)
             {
-            // Check if segment actually intersects us.
-            if (mu1 > 1.0 - THRESH) mu1Valid = false;
-            if (mu2 > 1.0 - THRESH) mu2Valid = false;
+                // Check if segment actually intersects us.
+                if (mu1 > 1.0 - THRESH) mu1Valid = false;
+                if (mu2 > 1.0 - THRESH) mu2Valid = false;
             }
 
             return mu1Valid || mu2Valid;

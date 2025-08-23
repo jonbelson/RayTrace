@@ -339,7 +339,7 @@ namespace RayTrace
             return new Ray3D(camera.Position, directionWorldSpace);
         }
 
-        public PreviewHitResult HitTestPlaneXZ5(System.Windows.Point screenPoint)
+        public PreviewHitResult HitTestPlaneXZ5(System.Windows.Point screenPoint, HitPlane hitPlane)
         {
             PerspectiveCamera camera = Camera as PerspectiveCamera;
 
@@ -349,12 +349,33 @@ namespace RayTrace
 
             if (Math.Abs(ray.Direction.Y) > 1e-6)
             {
+                Point3D P1 = ray.Origin;
+                Point3D P2 = ray.Origin + ray.Direction;
+
+                Point3D P3 = hitPlane.Origin;
+                Vector3D N = hitPlane.Normal;
+
+                Vector3D P3P1 = P3 - P1;
+                double denom = Vector3D.DotProduct(N, (P2 - P1));
+                if (Math.Abs(denom) > 1e-6)
+                {
+                    double num = Vector3D.DotProduct(N, P3P1);
+                    double u = num/denom;
+
+                    var intersection2 = ray.Origin + ray.Direction*u;
+
+                    hitResult.Type = PreviewHitResult.HitType.DragPlaneXZ;
+                    hitResult.Point = intersection2;
+                }
+
+                /*
                 var t = -ray.Origin.Y/ray.Direction.Y;
                 var intersection = ray.Origin + ray.Direction*t;
 
 
                 hitResult.Type = PreviewHitResult.HitType.DragPlaneXZ;
                 hitResult.Point = intersection;
+                */
             }
 
             return hitResult;

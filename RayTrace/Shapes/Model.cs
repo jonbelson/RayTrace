@@ -539,7 +539,7 @@ namespace RayTrace
             }
 
             // Does ray passes through us?
-            if (node.Box.Intersects(p1, p2))
+            if (node.Box.Intersects(p1, p2, out float distance))
             {
                 HitResult hr = new HitResult(this);
 
@@ -593,8 +593,22 @@ namespace RayTrace
             }
 
             // Does ray passes through us?
-            if (node.Box.Intersects(p1, p2))
+            //if (node.Box.Intersects(p1, p2))
+            //if (node.GeometryBox.Intersects(p1, p2))
+            if (node.GeometryBox.Intersects(p1, p2, out float distance))
             {
+                foreach (HitResult result in hitResults)
+                {
+                    if (result.HasEntry())
+                    {
+                        double d = result.t;
+
+                        // If BoundingBox is further away than the current closest hit, don't bother testing it.
+                        if (distance > d) return;
+                    }
+                }
+
+
                 HitResult hr = new HitResult(this);
 
                 SVector ray = p2 - p1;
@@ -1057,7 +1071,7 @@ namespace RayTrace
             //BoundingBox bb2 = bb.Transform(ObjectToView);
 
             //if (!bb2.Intersects(p1, p2))
-            if (!_viewBoundingBox.Intersects(p1, p2))
+            if (!_viewBoundingBox.Intersects(p1, p2, out float distance))
             {
                 return false;
             }

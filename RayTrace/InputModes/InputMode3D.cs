@@ -25,12 +25,24 @@ namespace RayTrace
         public virtual void DoLButtonUp(System.Windows.Point p) { }
     }
 
+    // Represent a plane to be hit tested against.
+    public readonly struct HitPlane
+    {
+        public readonly Point3D Origin;
+        public readonly Vector3D Normal;
+
+        public HitPlane(Point3D origin, Vector3D normal) => (Origin, Normal) = ( origin, normal);
+    }
+
     internal class InputMode3D : InputMode
     {
         private MainWindow _mainWindow; // XXX Required to update selected Entity :(
         private PreviewViewport3D _viewport3D;
         private readonly PerspectiveCamera _camera;
         private readonly Scene _scene;
+
+        // XZ plane for hit testing against.
+        private readonly HitPlane _XZPlane = new HitPlane(new Point3D(0, 0, 0), new Vector3D(0, 1, 0));
 
         private System.Windows.Point _clickPoint;
         private System.Windows.Point _mousePoint;
@@ -50,14 +62,6 @@ namespace RayTrace
 
         private Entity _entity = null;
 
-        private void MakeYPlane()
-        {
-            GeometryModel3D model = new();
-
-            MeshGeometry3D mesh = GeometryModel3DFactory.MakePlane(new Vector(0, 1.0f, 0));
-
-            _yPlane = model;
-        }
 
         public InputMode3D(MainWindow mainWindow, PreviewViewport3D viewport3D, PerspectiveCamera camera, Scene scene)
         {
@@ -377,7 +381,7 @@ namespace RayTrace
 
             Debug.WriteLine(hitType.ToString());
 
-            PreviewHitResult hitResultXZ = _viewport3D.HitTestPlaneXZ5(p);
+            PreviewHitResult hitResultXZ = _viewport3D.HitTestPlaneXZ5(p, _XZPlane);
 
             if (hitType == PreviewHitResult.HitType.None)
             {
@@ -564,7 +568,7 @@ namespace RayTrace
                 {
 
 //                  PreviewHitResult hitResult = _viewport3D.HitTestPlaneXZ(p);
-                    PreviewHitResult hitResult = _viewport3D.HitTestPlaneXZ5(p);
+                    PreviewHitResult hitResult = _viewport3D.HitTestPlaneXZ5(p, _XZPlane);
 
                     Point newPos = new((float)hitResult.Point.X, (float)hitResult.Point.Y, (float)-hitResult.Point.Z);
 

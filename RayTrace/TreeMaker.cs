@@ -22,6 +22,8 @@ namespace RayTrace
 
         public BoundingBox Box { get; set; }
 
+        public BoundingBox GeometryBox { get; set; }
+
         public Node() { }
     }
 
@@ -168,19 +170,25 @@ namespace RayTrace
         }
 
         // Recursively build tree by dividing the bounding box along an axis and splitting the triangles between the two halves.
+        // First we create the new Node, then decide if we need to recursively create left/right child Nodes.
+        // If a Node has children, it doesn't need to have triangles - only leaf Nodes get their triangles checked.
         private Node MakeNode(ModelData modelData, List<int> triangles, BoundingBox bb, int depth, Node parentNode = null)
         {
             Node node = new()
             {
                 Box = bb,
+                GeometryBox = bb,
                 Depth = depth,
                 Parent = parentNode
             };
+
 
             // Don't bother subdividing further if there are too few triangles.
             if (triangles.Count < MinTrianglesPerNode)
             {
                 node.Triangles = triangles;
+                node.GeometryBox = GetBoundingBox(modelData, node.Triangles);
+
                 return node;
             }
 
@@ -229,14 +237,29 @@ namespace RayTrace
             }
 
             // Check that left and right triangle lists aren't just repeating their parent's.
-            if (parentNode != null)
+            //if (parentNode != null)
+            //{
+            //    if (CheckEquality(parentNode.Triangles, left))
+            //    {
+            //        return node;
+            //    }
+            //    if (CheckEquality(parentNode.Triangles, right))
+            //    {
+            //        return node;
+            //    }
+            //}
+            //if (node != null)
             {
-                if (CheckEquality(parentNode.Triangles, left))
+                if (CheckEquality(node.Triangles, left))
                 {
+                    node.Triangles = triangles;
+                    node.GeometryBox = GetBoundingBox(modelData, triangles /*node.Triangles*/);
                     return node;
                 }
-                if (CheckEquality(parentNode.Triangles, right))
+                if (CheckEquality(node.Triangles, right))
                 {
+                    node.Triangles = triangles;
+                    node.GeometryBox = GetBoundingBox(modelData, triangles /*node.Triangles*/);
                     return node;
                 }
             }
@@ -247,6 +270,8 @@ namespace RayTrace
             {
                 //Debug.WriteLine("Left and right share more than half the triangles.");
                 node.Triangles = triangles;
+                node.GeometryBox = GetBoundingBox(modelData, node.Triangles);
+
                 return node;
             }
 
@@ -268,19 +293,13 @@ namespace RayTrace
                     Task task1 = Task.Factory.StartNew(() =>
                     {
                         node.Left = CreateNode(modelData, left, minor, depth, node);
-                        //if (left.Count > 0)
-                        //{
-                        //    node.Left = MakeNode(modelData, left, minor, depth, node);
-                        //}
+
                     });
 
                     Task task2 = Task.Factory.StartNew(() =>
                     {
                         node.Right = CreateNode(modelData, right, major, depth, node);
-                        //if (right.Count > 0)
-                        //{
-                        //    node.Right = MakeNode(modelData, right, major, depth, node);
-                        //}
+
                     });
 
                     Task.WaitAll(task1, task2);
@@ -290,17 +309,6 @@ namespace RayTrace
                     // Create left/right child Nodes if they would have any triangles.
                     node.Left = CreateNode(modelData, left, minor, depth, node);
                     node.Right = CreateNode(modelData, right, major, depth, node);
-
-                    /*
-                    if (left.Count > 0)
-                    {
-                        node.Left = MakeNode(modelData, left, minor, depth, node);
-                    }
-                    if (right.Count > 0)
-                    {
-                        node.Right = MakeNode(modelData, right, major, depth, node);
-                    }
-                    */
                 }
             }
             else
@@ -312,6 +320,7 @@ namespace RayTrace
             if (node.Left == null && node.Right == null)
             {
                 node.Triangles = triangles;
+                node.GeometryBox = GetBoundingBox(modelData, node.Triangles);
             }
 
             return node;
