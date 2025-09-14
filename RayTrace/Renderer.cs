@@ -504,7 +504,7 @@ namespace RayTrace
             Material material = shape.GetMaterial(hr);
             MaterialType materialType = material.Type;
 
-            if (!UseBRDF && (materialType == MaterialType.BRDF_Lambertian || materialType == MaterialType.BRDF_CookTorrence))
+            if (!UseBRDF && (materialType == MaterialType.BRDF_Lambertian || materialType == MaterialType.BRDF_CookTorrence || materialType == MaterialType.BRDF_Gltf))
             {
                 materialType = MaterialType.Diffuse;
             }

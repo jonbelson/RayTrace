@@ -258,11 +258,11 @@ namespace RayTrace
         public override string ToString()
         {
             //return Name;
-            if (Name.Length > 12)
+            if (Name is not null && Name.Length > 12)
             {
                 return string.Concat(Name.AsSpan(0, 10), "...");
             }
-            return Name;
+            return Name ?? "Unnamed";
         }
     }
 }

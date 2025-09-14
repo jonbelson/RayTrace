@@ -409,6 +409,8 @@ namespace RayTrace
 
         public static Scene ObjScene()
         {
+            //string baseDir = 
+
             Scene scene = new Scene();
 
             ObjImporter importer = new ObjImporter();

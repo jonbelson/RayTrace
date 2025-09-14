@@ -757,12 +757,14 @@ namespace RayTrace
                     //modelData.triangles = triangles.ToArray();
                     //group.triangles = triangles.ToArray();
                     modelData.triangles = triangles.ToArray();
-                    modelData.SubGroups = groups.ToArray();
+                    //modelData.SubGroups = groups.ToArray();
+                    modelData.Node = new();
+                    modelData.Node.Children = groups;
 
                     Debug.WriteLine($"Number triangles : {triangles.Count}");
 
                     string groupInfo = "Groups :";
-                    foreach (ModelData.SubGroup g in modelData.SubGroups)
+                    foreach (ModelData.SubGroup g in modelData.Node.Children)
                     {
                         groupInfo += " '" + g.Name + "'";
                     }

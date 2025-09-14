@@ -465,6 +465,32 @@ namespace RayTrace
             return model;
         }
 
+        private static void MakeModelRecurse(ModelData.SubGroup group, ModelData modelData, MeshGeometry3D mesh)
+        {
+            if (group.Enabled)
+            {
+                for (int i = 0; i < group.Triangles.Count; i++)
+                {
+                    int iIndex = group.Triangles[i];
+                    ModelData.Triangle triangle = modelData.triangles[iIndex];
+
+                    int v0 = triangle.v0;
+                    int v1 = triangle.v1;
+                    int v2 = triangle.v2;
+
+                    mesh.TriangleIndices.Add(v2);
+                    mesh.TriangleIndices.Add(v1);
+                    mesh.TriangleIndices.Add(v0);
+                }
+
+                foreach (var childgroup in group.Children)
+                {
+                    MakeModelRecurse(childgroup, modelData, mesh);
+                }
+            }
+
+        }
+
         public static GeometryModel3D MakeModel(Model model)
         {
             GeometryModel3D geometryModel = new();
@@ -536,6 +562,12 @@ namespace RayTrace
                     mesh.Normals.Add(v3d);
                 }
 
+                if (modelData.Node is not null)
+                {
+                    MakeModelRecurse(modelData.Node, modelData, mesh);
+                }
+
+/*
                 if (modelData.SubGroups.Length > 0)
                 {
                     foreach (var group in modelData.SubGroups)
@@ -573,6 +605,7 @@ namespace RayTrace
                         mesh.TriangleIndices.Add(v0);
                     }
                 }
+*/
             }
 
             geometryModel.Geometry = mesh;

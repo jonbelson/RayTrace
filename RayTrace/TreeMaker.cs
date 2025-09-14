@@ -326,6 +326,24 @@ namespace RayTrace
             return node;
         }
 
+        private void AddTriangles(ModelData.SubGroup group, List<int> triangles)
+        {
+            if (group.Enabled)
+            {
+                triangles.AddRange(group.Triangles);
+
+                foreach (var child in group.Children)
+                {
+                    AddTriangles(child, triangles);
+
+                    //if (group.Enabled)
+                    //{
+                    //    triangles.AddRange(group.Triangles);
+                    //}
+                }
+            }
+        }
+
         //
         // Build a BSP tree from the specified ModelData, transformed according to the passed-in Matrix.
         //
@@ -335,10 +353,12 @@ namespace RayTrace
 
             List<int> triangles = new();
 
+            AddTriangles(modelData.Node, triangles);
+/*
             // Generate initial indices.
-            if (modelData.SubGroups.Length > 0)
+            if (modelData.Node.Children.Count > 0)
             {
-                foreach (var group in modelData.SubGroups)
+                foreach (var group in modelData.Node.Children)
                 {
                     if (group.Enabled)
                     {
@@ -346,14 +366,15 @@ namespace RayTrace
                     }
                 }
             }
-            else
+*/
+/*            else
             {
                 for (int i = 0; i < modelData.triangles.Length; i++)
                 {
                     triangles.Add(i);
                 }
             }
-
+*/
             BoundingBox bb = modelData.GetBoundingBox();
             bb = bb.Transform(objectToView);
             Node root = MakeNode(modelData, triangles, bb, 0);

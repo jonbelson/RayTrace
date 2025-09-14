@@ -13,6 +13,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Automation;
 using System.Windows.Media.Media3D;
+using static RayTrace.ModelData;
 
 namespace RayTrace
 {
@@ -66,9 +67,13 @@ namespace RayTrace
 
             public int Material { get; set; } = -1;
             public List<int> Triangles { get; set; } = new();
+
+            public List<SubGroup> Children { get; set; } = [];
         }
 
-        public SubGroup[] SubGroups { get; set; }
+        //public SubGroup[] SubGroups { get; set; }
+        //public List<SubGroup> Children { get; set; }
+        public SubGroup Node { get; set; } = new();
 
         public float minX = 0.0f;
         public float minY = 0.0f;
@@ -168,39 +173,62 @@ namespace RayTrace
             //public int n;           // Index into normal array for triangle normal.
         }
 
+        // Updated by CreateCache() 
         private FatTriangle[] _fatTriangles;
-
         private ModelSubGroup[] _subGroupArray;
 
+        // All ModelSubGroups created, indexed by name.
         Dictionary<string, ModelSubGroup> _subGroups = new();
 
+        private ModelSubGroup _modelSubGroup;
+
+        // Recurse through SubGroup tree, creating matching ModelSubGroups.
+        private void UpdateSubGroupRecurse(ModelData.SubGroup group, ModelSubGroup parentSubGroup)
+        {
+            string groupName = group.Name ?? "Untitled";
+
+            // Make sure we're not adding a group with a duplicate name.
+            if (_subGroups.ContainsKey(groupName))
+            {
+                int i = 1;
+                do
+                {
+                    i++;
+                    groupName = group.Name + i;
+                }
+                while (_subGroups.ContainsKey(groupName));
+            }
+
+            parentSubGroup.Name = groupName;
+            try
+            {
+                _subGroups.Add(groupName, parentSubGroup);
+            }
+            catch (Exception e)
+            {
+                int i = 0;
+            }
+
+            foreach (ModelData.SubGroup child in group.Children)
+            {
+                ModelSubGroup childSubGroup = new(this, child) { Material = Scene.GetDefaultMaterial() };    // XXX Until subgroup Material GUIDs are saved.
+                parentSubGroup.Children.Add(childSubGroup);
+
+                UpdateSubGroupRecurse(child, childSubGroup);
+            }
+        }
+
+        // Starting with ModelData.Node, create a matching ModelSubGroup tree.
         private void UpdateSubGroups()
         {
-            if (_modelData != null && _modelData.SubGroups != null)
+            if (_modelData != null && _modelData.Node != null)
             {
                 _subGroups.Clear();
 
-                foreach (ModelData.SubGroup group in _modelData.SubGroups)
-                {
-//                    ModelSubGroup subGroup = new(this, group) { Material = this.Material };
-                    ModelSubGroup subGroup = new(this, group) { Material = Scene.GetDefaultMaterial() };    // XXX Until subgroup Material GUIDs are saved.
+                ModelSubGroup parentGroup = new(this, _modelData.Node) { Material = Scene.GetDefaultMaterial() };    // XXX Until subgroup Material GUIDs are saved.
+                _modelSubGroup = parentGroup;
 
-                    string groupName = group.Name ?? "Untitled";
-
-                    // Make sure we're not adding a group with a duplicate name.
-                    if (_subGroups.ContainsKey(groupName))
-                    {
-                        //string name;
-                        int i = 1;
-                        do
-                        {
-                            i++;
-                            groupName = group.Name + i;
-                        } while (_subGroups.ContainsKey(groupName));
-                    }
-
-                    _subGroups.Add(groupName, subGroup);
-                }
+                UpdateSubGroupRecurse(_modelData.Node, _modelSubGroup);
             }
         }
 
@@ -465,7 +493,8 @@ namespace RayTrace
                 }
 #endif
 
-                _subGroupArray = new ModelSubGroup[_modelData.SubGroups.Length];
+//                _subGroupArray = new ModelSubGroup[_modelData.Children.Count];
+                _subGroupArray = new ModelSubGroup[_subGroups.Count];
                 int idx = 0;
                 foreach (var group in _subGroups)
                 {
@@ -1323,16 +1352,31 @@ namespace RayTrace
             return "";
         }
 
+        private void ToTreeModelRecurse(ModelSubGroup subGroup, TreeViewEntityModel entityModel)
+        {
+            var child = new TreeViewEntityModel() { Name = subGroup.Name, Instance = subGroup };
+
+            entityModel.Children.Add(child);
+
+            foreach (var childGroup in subGroup.Children)
+            {
+                ToTreeModelRecurse(childGroup, child);
+            }
+        }
+
         public override TreeViewEntityModel ToTreeModel()
         {
             TreeViewEntityModel modelModel = new TreeViewEntityModel() { Name = Name, Instance = this };
+
+            ToTreeModelRecurse(_modelSubGroup, modelModel);
+/*
             //foreach (ModelData.Group group in _modelData.groups)
             foreach (var subGroup in _subGroups.Values)
             {
 //                modelModel.Children.Add(new TreeViewEntityModel() { Category = group.name, Instance = this } );
                 modelModel.Children.Add(new TreeViewEntityModel() { Name = subGroup.Name, Instance = subGroup });
             }
-
+*/
             return modelModel;
         }
 

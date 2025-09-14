@@ -248,7 +248,7 @@ namespace RayTrace
 
         class JsonNode
         {
-            public int mesh { get; set; }
+            public int mesh { get; set; } = -1;
             public string name { get; set; }
             public List<int> children { get; set; }
 
@@ -692,103 +692,115 @@ namespace RayTrace
         // matrix   Current transform matrix, which is the product of all parent Node matrixes.
         private void CreateGroupFromNode(ModelData.SubGroup group, GltfNode node, Matrix4x4 matrix)
         {
-            GltfMesh mesh = node.mesh;
 //            Matrix4x4 m = matrix*node.matrix;
             Matrix4x4 m = node.matrix*matrix;
 
             foreach (var child in node.children)
             {
-//                Matrix4x4 m2 = m*matrix;
-//                CreateGroupFromNode(group, child, m /*matrix*/ /*m2*/);
-                CreateGroupFromNode(group, child, m /*matrix*/ /*m2*/);
+                //                Matrix4x4 m2 = m*matrix;
+                //                CreateGroupFromNode(group, child, m /*matrix*/ /*m2*/);
+
+                ModelData.SubGroup childGroup = new() { Name = child.name };
+                group.Children.Add(childGroup);
+
+                CreateGroupFromNode(childGroup, child, m /*matrix*/ /*m2*/);
             }
 
-            foreach (GltfPrimitive primitive in mesh.primitives)
+            GltfMesh mesh = node.mesh;
+
+            if (mesh is not null)
             {
-                // Current offsets.
-                int pointOffset = points.Count;
-                int normalOffset = normals.Count;
-                int colourOffset = colours.Count;
-                int texelOffset = texels.Count;
 
-                foreach (var position in primitive.positions)
+                foreach (GltfPrimitive primitive in mesh.primitives)
                 {
-                    Vector3 v = new(position.x, position.y, position.z);
-//                    v = Vector3.Transform(v, node.matrix);
-                    v = Vector3.Transform(v, m /*matrix*/);
-                    points.Add(new SPoint(v.X, v.Y, -v.Z));
-                }
+                    // Current offsets.
+                    int pointOffset = points.Count;
+                    int normalOffset = normals.Count;
+                    int colourOffset = colours.Count;
+                    int texelOffset = texels.Count;
 
-                if (primitive.texCoords != null)
-                {
-                    foreach (var texCoord in primitive.texCoords)
+                    foreach (var position in primitive.positions)
                     {
-                        var texel = new ModelData.Texel()
+                        Vector3 v = new(position.x, position.y, position.z);
+                        //                    v = Vector3.Transform(v, node.matrix);
+                        v = Vector3.Transform(v, m /*matrix*/);
+                        points.Add(new SPoint(v.X, v.Y, -v.Z));
+                    }
+
+                    if (primitive.texCoords != null)
+                    {
+                        foreach (var texCoord in primitive.texCoords)
                         {
-                            u = texCoord.x,
-                            v = 1.0f - texCoord.y
-                        };
-                        texels.Add(texel);
+                            var texel = new ModelData.Texel()
+                            {
+                                u = texCoord.x,
+                                v = 1.0f - texCoord.y
+                            };
+                            texels.Add(texel);
+                        }
                     }
-                }
 
-                if (primitive.colours != null)
-                {
-                    foreach (var colour in primitive.colours)
+                    if (primitive.colours != null)
                     {
-                        colours.Add(new Colour(colour.x, colour.y, colour.z));
+                        foreach (var colour in primitive.colours)
+                        {
+                            colours.Add(new Colour(colour.x, colour.y, colour.z));
+                        }
                     }
-                }
 
-                foreach (var normal in primitive.normals)
-                {
-                    normals.Add(new SVector(normal.x, normal.y, -normal.z));
-                }
-
-                //int numTriangles = 0;
-                for (uint i = 0; i<=primitive.indices.Length - 3; i+=3)
-                {
-                    if (i + 3 > primitive.indices.Length) break;
-
-                    try
+                    if (primitive.normals is not null)
                     {
-                        ModelData.Triangle triangle = new();
-                        triangle.v0 = pointOffset + (int)primitive.indices[i];
-                        triangle.v1 = pointOffset + (int)primitive.indices[i + 1];
-                        triangle.v2 = pointOffset + (int)primitive.indices[i + 2];
-
-                        triangle.n0 = normalOffset + (int)primitive.indices[i];
-                        triangle.n1 = normalOffset + (int)primitive.indices[i + 1];
-                        triangle.n2 = normalOffset + (int)primitive.indices[i + 2];
-
-                        triangle.c0 = colourOffset + (int)primitive.indices[i];
-                        triangle.c1 = colourOffset + (int)primitive.indices[i + 1];
-                        triangle.c2 = colourOffset + (int)primitive.indices[i + 2];
-
-                        triangle.t0 = texelOffset + (int)primitive.indices[i];
-                        triangle.t1 = texelOffset + (int)primitive.indices[i + 1];
-                        triangle.t2 = texelOffset + (int)primitive.indices[i + 2];
-
-
-                        triangles.Add(triangle);
-                        //points.Add(new SPoint(position.x, position.y, position.z));
-
-                        group.Triangles.Add(triangles.Count - 1);
-
+                        foreach (var normal in primitive.normals)
+                        {
+                            normals.Add(new SVector(normal.x, normal.y, -normal.z));
+                        }
                     }
-                    catch (Exception e)
+
+                    //int numTriangles = 0;
+                    for (uint i = 0; i<=primitive.indices.Length - 3; i+=3)
                     {
-                        int iiii = 0;
-                        break;
+                        if (i + 3 > primitive.indices.Length) break;
+
+                        try
+                        {
+                            ModelData.Triangle triangle = new();
+                            triangle.v0 = pointOffset + (int)primitive.indices[i];
+                            triangle.v1 = pointOffset + (int)primitive.indices[i + 1];
+                            triangle.v2 = pointOffset + (int)primitive.indices[i + 2];
+
+                            triangle.n0 = normalOffset + (int)primitive.indices[i];
+                            triangle.n1 = normalOffset + (int)primitive.indices[i + 1];
+                            triangle.n2 = normalOffset + (int)primitive.indices[i + 2];
+
+                            triangle.c0 = colourOffset + (int)primitive.indices[i];
+                            triangle.c1 = colourOffset + (int)primitive.indices[i + 1];
+                            triangle.c2 = colourOffset + (int)primitive.indices[i + 2];
+
+                            triangle.t0 = texelOffset + (int)primitive.indices[i];
+                            triangle.t1 = texelOffset + (int)primitive.indices[i + 1];
+                            triangle.t2 = texelOffset + (int)primitive.indices[i + 2];
+
+
+                            triangles.Add(triangle);
+                            //points.Add(new SPoint(position.x, position.y, position.z));
+
+                            group.Triangles.Add(triangles.Count - 1);
+
+                        }
+                        catch (Exception e)
+                        {
+                            int iiii = 0;
+                            break;
+                        }
                     }
+                    //points.Clear();
+                    //normals.Clear();
+
+                    // XXX Material should be per-primitive, not per-mesh (though most models seem to have a single primitive per mesh?)
+                    int material = primitive.material;
+                    group.Material = material;
+
                 }
-                //points.Clear();
-                //normals.Clear();
-
-                // XXX Material should be per-primitive, not per-mesh (though most models seem to have a single primitive per mesh?)
-                int material = primitive.material;
-                group.Material = material;
-
             }
 
         }
@@ -822,102 +834,12 @@ namespace RayTrace
                 GltfScene gltfScene = _gltfAsset.scenes[0];
 
                 // For each of the top-level Nodes in the Scene...
-                foreach (var node in gltfScene.nodes)
+                foreach (GltfNode node in gltfScene.nodes)
                 {
                     ModelData.SubGroup group = new() { Name = node.name };
 
                     CreateGroupFromNode(group, node, /*node.matrix*/ Matrix4x4.Identity);
 
-#if false
-                    GltfMesh mesh = node.mesh;
-
-                    foreach (GltfPrimitive primitive in mesh.primitives)
-                    {
-                        // Current offsets.
-                        int pointOffset = points.Count;
-                        int normalOffset = normals.Count;
-                        int colourOffset = colours.Count;
-                        int texelOffset = texels.Count;
-
-                        foreach (var position in primitive.positions)
-                        {
-                            Vector3 v = new(position.x, position.y, position.z);
-                            v = Vector3.Transform(v, node.matrix);
-                            points.Add(new SPoint(v.X, v.Y, -v.Z));
-                        }
-
-                        if (primitive.texCoords != null)
-                        {
-                            foreach (var texCoord in primitive.texCoords)
-                            {
-                                var texel = new ModelData.Texel()
-                                {
-                                    u = texCoord.x,
-                                    v = 1.0f - texCoord.y
-                                };
-                                texels.Add(texel);
-                            }
-                        }
-
-                        if (primitive.colours != null)
-                        {
-                            foreach (var colour in primitive.colours)
-                            {
-                                colours.Add(new Colour(colour.x, colour.y, colour.z));
-                            }
-                        }
-
-                        foreach (var normal in primitive.normals)
-                        {
-                            normals.Add(new SVector(normal.x, normal.y, -normal.z));
-                        }
-
-                        //int numTriangles = 0;
-                        for (uint i = 0; i<=primitive.indices.Length - 3; i+=3)
-                        {
-                            if (i + 3 > primitive.indices.Length) break;
-
-                            try
-                            {
-                                ModelData.Triangle triangle = new();
-                                triangle.v0 = pointOffset + (int)primitive.indices[i];
-                                triangle.v1 = pointOffset + (int)primitive.indices[i + 1];
-                                triangle.v2 = pointOffset + (int)primitive.indices[i + 2];
-
-                                triangle.n0 = normalOffset + (int)primitive.indices[i];
-                                triangle.n1 = normalOffset + (int)primitive.indices[i + 1];
-                                triangle.n2 = normalOffset + (int)primitive.indices[i + 2];
-
-                                triangle.c0 = colourOffset + (int)primitive.indices[i];
-                                triangle.c1 = colourOffset + (int)primitive.indices[i + 1];
-                                triangle.c2 = colourOffset + (int)primitive.indices[i + 2];
-
-                                triangle.t0 = texelOffset + (int)primitive.indices[i];
-                                triangle.t1 = texelOffset + (int)primitive.indices[i + 1];
-                                triangle.t2 = texelOffset + (int)primitive.indices[i + 2];
-
-
-                                triangles.Add(triangle);
-                                //points.Add(new SPoint(position.x, position.y, position.z));
-
-                                group.Triangles.Add(triangles.Count - 1);
-
-                            }
-                            catch (Exception e)
-                            {
-                                int iiii = 0;
-                                break;
-                            }
-                        }
-                        //points.Clear();
-                        //normals.Clear();
-
-                        // XXX Material should be per-primitive, not per-mesh (though most models seem to have a single primitive per mesh?)
-                        int material = primitive.material;
-                        group.Material = material;
-
-                    }
-#endif
                     groups.Add(group);
                 }
             }
@@ -939,7 +861,8 @@ namespace RayTrace
             modelData.colours = colours.ToArray();
             modelData.normals = normals.ToArray();
             modelData.triangles = triangles.ToArray();
-            modelData.SubGroups = groups.ToArray();
+            //modelData.Node = new();
+            modelData.Node.Children = groups;
             modelData.texels = texels.ToArray();
 
             modelData.minX = modelData.minY = modelData.minZ = float.MaxValue;
@@ -966,11 +889,14 @@ namespace RayTrace
             Debug.WriteLine($"Number triangles : {triangles.Count}");
 
             string groupInfo = "Groups :";
-            foreach (ModelData.SubGroup g in modelData.SubGroups)
+            if (modelData.Node is not null)
             {
-                groupInfo += " '" + g.Name + "'";
+                foreach (ModelData.SubGroup g in modelData.Node.Children)
+                {
+                    groupInfo += " '" + g.Name + "'";
+                }
+                Debug.WriteLine(groupInfo);
             }
-            Debug.WriteLine(groupInfo);
 
 
             return modelData;
@@ -1196,7 +1122,11 @@ namespace RayTrace
                 //    }
                 //}
 
-                gltfNode.mesh = _gltfAsset.meshes[node.mesh];
+                // Not all Nodes have a mesh.
+                if (node.mesh >= 0)
+                {
+                    gltfNode.mesh = _gltfAsset.meshes[node.mesh];
+                }
 
                 if (node.scale is not null && node.scale.Length == 3)
                 {

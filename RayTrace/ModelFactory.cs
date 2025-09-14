@@ -339,7 +339,7 @@ namespace RayTrace
             modelData.texels = texels.ToArray();
             modelData.triangles = triangles.ToArray();
 
-            modelData.SubGroups = new ModelData.SubGroup[0];
+            //modelData.SubGroups = new ModelData.SubGroup[0];
 
             modelData.HasVertexNormals = true;
 

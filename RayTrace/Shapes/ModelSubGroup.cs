@@ -10,12 +10,14 @@ namespace RayTrace
     //  where it has a different Material.
     public class ModelSubGroup : Entity
     {
-        private Model _model;
-        private ModelData _modelData;
+        private readonly Model _model;
+        private readonly ModelData _modelData;
 
         private ModelData.SubGroup _group;
 
         public ModelData.SubGroup Group { get => _group; }
+
+        public List<ModelSubGroup> Children { get; } = [];
 
         public bool HasMaterial() => Material != null;
         public bool HasRoughness() => HasMaterial() && Material.HasRoughness();
