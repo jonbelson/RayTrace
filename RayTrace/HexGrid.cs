@@ -14,7 +14,7 @@ namespace RayTrace
         private static readonly float jitter = (unitCircle / numHexagons) / 2.0f;   // Maximum jitter to ensure points stay within their hexagon's minimal circle.
         private static readonly float d = (unitCircle - jitter - jitter) / numHexagons;    // minimal diameter.
         private static readonly float r = d / 2;               // minimal radius.
-        private static readonly float root3 = (float) Math.Sqrt(3.0);  // square root of 3.
+        private static readonly float root3 = MathF.Sqrt(3.0f);  // square root of 3.
         private static readonly float D = (2 * d) / root3;     // maximal diameter.       
         private static readonly float R = D / 2.0f;             // maximal radius.
         private static readonly float t = R;                   // side length.

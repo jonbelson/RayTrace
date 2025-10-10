@@ -109,14 +109,14 @@ namespace RayTrace
         // Return a random Point within a unit disc.
         private Point GetPointOnDisc(Random rand)
         {
-            double x, y;
+            float x, y;
             do
             {
-                x = -1.0 + 2.0 * rand.NextDouble();
-                y = -1.0 + 2.0 * rand.NextDouble();
-            } while (x * x + y * y > 1.0);
+                x = -1.0f + 2.0f * rand.NextSingle();
+                y = -1.0f + 2.0f * rand.NextSingle();
+            } while (x * x + y * y > 1.0f);
 
-            return new Point((float) x, (float)y, 0.0f);
+            return new Point(x, y, 0.0f);
         }
 
         // Return a random Vector within a unit disc.
@@ -130,14 +130,14 @@ namespace RayTrace
         // Return a random SPoint within a unit disc.
         private SPoint GetSPointOnDisc(Random rand)
         {
-            double x, y;
+            float x, y;
             do
             {
-                x = -1.0 + 2.0 * rand.NextDouble();
-                y = -1.0 + 2.0 * rand.NextDouble();
-            } while (x * x + y * y > 1.0);
+                x = -1.0f + 2.0f * rand.NextSingle();
+                y = -1.0f + 2.0f * rand.NextSingle();
+            } while (x * x + y * y > 1.0f);
 
-            return new SPoint((float)x, (float)y, 0.0f);
+            return new SPoint(x, y, 0.0f);
         }
 
         // Return a random SVector within a unit disc.
@@ -151,28 +151,28 @@ namespace RayTrace
         // Return a random Point within a unit sphere.
         private Point GetPointInSphere(Random rand)
         {
-            double x, y, z;
+            float x, y, z;
             do
             {
-                x = -1.0 + 2.0 * rand.NextDouble();
-                y = -1.0 + 2.0 * rand.NextDouble();
-                z = -1.0 + 2.0 * rand.NextDouble();
-            } while (x * x + y * y + z * z > 1.0);
+                x = -1.0f + 2.0f * rand.NextSingle();
+                y = -1.0f + 2.0f * rand.NextSingle();
+                z = -1.0f + 2.0f * rand.NextSingle();
+            } while (x * x + y * y + z * z > 1.0f);
 
-            return new Point((float)x, (float)y, (float)z);
+            return new Point(x, y, z);
         }
 
         private SPoint GetSPointInSphere(Random rand)
         {
-            double x, y, z;
+            float x, y, z;
             do
             {
-                x = -1.0 + 2.0 * rand.NextDouble();
-                y = -1.0 + 2.0 * rand.NextDouble();
-                z = -1.0 + 2.0 * rand.NextDouble();
-            } while (x * x + y * y + z * z > 1.0);
+                x = -1.0f + 2.0f * rand.NextSingle();
+                y = -1.0f + 2.0f * rand.NextSingle();
+                z = -1.0f + 2.0f * rand.NextSingle();
+            } while (x * x + y * y + z * z > 1.0f);
 
-            return new SPoint((float)x, (float)y, (float)z);
+            return new SPoint(x, y, z);
         }
 
         // Return a random Vector within a unit sphere.
@@ -191,19 +191,19 @@ namespace RayTrace
         // Based on 'AimZ()' function from 'RenderMan Companion' page 143.
         private Vector Aim(Vector vecToLight)
         {
-            double yrot;
-            double xzlen = Math.Sqrt(vecToLight.I * vecToLight.I + vecToLight.K * vecToLight.K);
-            if (xzlen == 0.0)
+            float yrot;
+            float xzlen = MathF.Sqrt(vecToLight.I * vecToLight.I + vecToLight.K * vecToLight.K);
+            if (xzlen == 0.0f)
             {
-                yrot = (vecToLight.J < 0.0) ? Math.PI : 0.0;
+                yrot = (vecToLight.J < 0.0f) ? MathF.PI : 0.0f;
             }
             else
             {
-                yrot = Math.Acos(vecToLight.K / xzlen);
+                yrot = MathF.Acos(vecToLight.K / xzlen);
             }
 
-            double yzlen = Math.Sqrt(vecToLight.J * vecToLight.J + xzlen * xzlen);
-            double xrot = Math.Acos(xzlen / yzlen);
+            float yzlen = MathF.Sqrt(vecToLight.J * vecToLight.J + xzlen * xzlen);
+            float xrot = MathF.Acos(xzlen / yzlen);
 
             // Set direcion of rotation appropriately.
             if (vecToLight.J <= 0.0) xrot = -xrot;
@@ -260,12 +260,12 @@ namespace RayTrace
             float radiusOverDist = lightRadius / distToLight;
             if (radiusOverDist > 1.0f) radiusOverDist = 1.0f;
 
-            float theta = (float)Math.Asin(radiusOverDist);
-            float circleRadius = (float)(lightRadius * Math.Cos(theta));
-            float circleDistance = (float)(distToLight - lightRadius * Math.Sin(theta));
+            float theta = MathF.Asin(radiusOverDist);
+            float circleRadius = lightRadius * MathF.Cos(theta);
+            float circleDistance = distToLight - lightRadius * MathF.Sin(theta);
 
-            float deltaX = (float)(jitterOffset * (-1.0 + 2 * rand.NextDouble()));
-            float deltaY = (float)(jitterOffset * (-1.0 + 2 * rand.NextDouble()));
+            float deltaX = jitterOffset * (-1.0f + 2f * rand.NextSingle());
+            float deltaY = jitterOffset * (-1.0f + 2f * rand.NextSingle());
             //double deltaX = jitterOffset * rand.NextDouble();
             //double deltaY = jitterOffset * rand.NextDouble();
 
@@ -278,9 +278,9 @@ namespace RayTrace
                 circleDistance
             );
 
-            Debug.Assert(!Double.IsNaN(ray.I));
-            Debug.Assert(!Double.IsNaN(ray.J));
-            Debug.Assert(!Double.IsNaN(ray.K));
+            Debug.Assert(!Single.IsNaN(ray.I));
+            Debug.Assert(!Single.IsNaN(ray.J));
+            Debug.Assert(!Single.IsNaN(ray.K));
 
 
             /*
@@ -757,8 +757,8 @@ namespace RayTrace
                                 scattered = scattered.Normalise();
 
                                 // Check scattered Vector is in the corect hemishere
-                                double dpSN = scattered.DotProduct(hr.EntryNormal);
-                                if (dpSN < 0.0)
+                                float dpSN = scattered.DotProduct(hr.EntryNormal);
+                                if (dpSN < 0.0f)
                                 {
                                     // Reverse the direction on the Vector.
                                     scattered = -scattered;
@@ -766,13 +766,13 @@ namespace RayTrace
                                 }
 
                                 Debug.Assert(scattered.DotProduct(hr.EntryNormal) >= 0);
-                                Debug.Assert(dpSN >= 0.0);
+                                Debug.Assert(dpSN >= 0.0f);
 
                                 HitResult hr2 = scene.HitTest(camera, new Ray(hr.Entry + hr.EntryNormal.Scale(0.01f), scattered));
                                 if (hr2.HasEntry())
                                 {
                                     //Debug.Assert(hr.shape != hr2.shape);
-                                    indirectLight += CalculateColour(camera, scene, scattered, rand, hr2, depth) * dpSN / Math.PI;
+                                    indirectLight += CalculateColour(camera, scene, scattered, rand, hr2, depth) * dpSN / MathF.PI;
                                 }
                             }
                             indirectLight /= NumGIRays;
@@ -814,13 +814,13 @@ namespace RayTrace
                                 SVector vecToViewer = ray.Scale(-1.0f).Normalise();
 
                                 //double Il = light.Intensity;// 1.0;    // Intensity of light source.
-                                double dpVR = vecToViewer.DotProduct(vecReflect);
+                                float dpVR = vecToViewer.DotProduct(vecReflect);
 
                                 // Ignore negative dp as it means the vectors are pointing away from each other.
-                                if (dpVR > 0.0)
+                                if (dpVR > 0.0f)
                                 {
-                                    double d = Math.Pow(dpVR, material.PhongShininess);
-                                    if (d < 0.0) d = 0.0;
+                                    float d = MathF.Pow(dpVR, (float)material.PhongShininess);
+                                    if (d < 0.0f) d = 0.0f;
 
                                     Colour specularColour = lightIntensity * d;
 

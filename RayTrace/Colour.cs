@@ -118,9 +118,9 @@ namespace RayTrace
         public Colour Exposure(float exp)
         {
             Colour c = new Colour();
-            c.Red = 1.0f - (float) Math.Exp((float) (-Red*exp));
-            c.Green = 1.0f - (float)Math.Exp((float)(-Green * exp));
-            c.Blue = 1.0f - (float)Math.Exp((float)(-Blue * exp));
+            c.Red = 1.0f - MathF.Exp(-Red*exp);
+            c.Green = 1.0f - MathF.Exp(-Green * exp);
+            c.Blue = 1.0f - MathF.Exp(-Blue * exp);
 
             return c;
         }
@@ -168,24 +168,24 @@ namespace RayTrace
         // Return gamma-corrected version of this Colour.
         public Colour ApplyGamma(float gamma)
         {
-            double gammaRed = Math.Pow(Red, gamma);
-            double gammaGreen = Math.Pow(Green, gamma);
-            double gammaBlue = Math.Pow(Blue, gamma);
+            float gammaRed = MathF.Pow(Red, gamma);
+            float gammaGreen = MathF.Pow(Green, gamma);
+            float gammaBlue = MathF.Pow(Blue, gamma);
 
-            return new Colour((float)gammaRed, (float)gammaGreen, (float)gammaBlue);
+            return new Colour(gammaRed, gammaGreen, gammaBlue);
         }
 
-        public uint ToRGB(float gamma=1/2.2f)
+        public uint ToRGB(float gamma=1f/2.2f)
         {
-            double gammaRed = Math.Pow(Red, gamma);
-            double gammaGreen = Math.Pow(Green, gamma);
-            double gammaBlue = Math.Pow(Blue, gamma);
+            float gammaRed = MathF.Pow(Red, gamma);
+            float gammaGreen = MathF.Pow(Green, gamma);
+            float gammaBlue = MathF.Pow(Blue, gamma);
 
            // Debug.Assert(gammaRed <= 1.0 && gammaGreen <= 1.0 && gammaBlue <= 1.0);
 
-            gammaRed = Math.Max(0.0, Math.Min(1.0, gammaRed));
-            gammaGreen = Math.Max(0.0, Math.Min(1.0, gammaGreen));
-            gammaBlue = Math.Max(0.0, Math.Min(1.0, gammaBlue));
+            gammaRed = Math.Max(0.0f, Math.Min(1.0f, gammaRed));
+            gammaGreen = Math.Max(0.0f, Math.Min(1.0f, gammaGreen));
+            gammaBlue = Math.Max(0.0f, Math.Min(1.0f, gammaBlue));
 
             byte r = (byte)(gammaRed * 255);
             byte g = (byte)(gammaGreen * 255);

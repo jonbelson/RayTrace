@@ -81,16 +81,16 @@ namespace RayTrace
             // Centre point
             mesh.Positions.Add(new Point3D(0.0, 0.0, 0.0));
 
-            double step = 1.0 / slices;
+            float step = 1.0f / slices;
             int numSteps = slices + 1;
 
-            double angle = 0.0;
+            float angle = 0.0f;
             for (int i = 0; i<numSteps; i++)
             {
-                angle = i*step*2.0*Math.PI;
+                angle = i*step*2.0f*MathF.PI;
 
-                float x = (float) Math.Cos(angle);
-                float y = (float) Math.Sin(angle);
+                float x = MathF.Cos(angle);
+                float y = MathF.Sin(angle);
 
                 Vector x2 = new(x * vec1.I, x * vec1.J, x * vec1.K);
                 Vector y2 = new(y * vec2.I, y * vec2.J, y * vec2.K);
@@ -122,10 +122,10 @@ namespace RayTrace
             Vector up = new Vector(0, 0, -1);
             Vector axis = up.VectorProduct(disc.Normal);
 
-            double cosangle = up.DotProduct(disc.Normal);
-            double angle = Math.Acos(cosangle);
+            float cosangle = up.DotProduct(disc.Normal);
+            float angle = MathF.Acos(cosangle);
 
-            var axisRotation = new AxisAngleRotation3D(new Vector3D(axis.I, axis.J, axis.K), angle / (2 * Math.PI) * 360);
+            var axisRotation = new AxisAngleRotation3D(new Vector3D(axis.I, axis.J, axis.K), angle / (2f * MathF.PI) * 360f);
             var rotate = new RotateTransform3D(axisRotation);
 
 
@@ -221,19 +221,19 @@ namespace RayTrace
             public float y;
         }
 
-        private static void MakeCircle(Vertex2D[] vertices, double radius)
+        private static void MakeCircle(Vertex2D[] vertices, float radius)
         {
             int size = vertices.Length;
             for (int sample = 0; sample < size; sample++)
             {
                 // Angles around this slice.
-                double sliceAngle = Math.PI * 2.0 * sample / size;
+                float sliceAngle = MathF.PI * 2.0f * sample / size;
 
-                double s = Math.Sin(sliceAngle);
-                double c = Math.Cos(sliceAngle);
+                float s = MathF.Sin(sliceAngle);
+                float c = MathF.Cos(sliceAngle);
 
-                vertices[sample].x = (float) (s * radius);
-                vertices[sample].y = (float)(c * radius);
+                vertices[sample].x = (s * radius);
+                vertices[sample].y = (c * radius);
             }
         }
 
@@ -254,10 +254,10 @@ namespace RayTrace
             for (int slice = 1; slice < slices; slice++)
             {
                 // Angle to current slice elevation.
-                double ya = ((double)slice / slices) * Math.PI;
+                float ya = (slice / slices) * MathF.PI;
 
                 // How much to scale each slice to make it spherical.
-                double sliceScale = Math.Sin(ya);
+                float sliceScale = MathF.Sin(ya);
                 double y = Math.Cos(ya);
 
                 // Index of first point in this slice.

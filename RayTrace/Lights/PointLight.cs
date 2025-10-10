@@ -74,8 +74,8 @@ namespace RayTrace
         public override Colour GetIntensityAtPoint(Camera camera, SPoint p)
         {
             SVector vecToLight = GetDirection(camera, p);
-            double dDistanceSqr = vecToLight.MagnitudeSquared();
-            return Output / (4.0 * Math.PI * dDistanceSqr);
+            float dDistanceSqr = vecToLight.MagnitudeSquared();
+            return Output / (4.0f * MathF.PI * dDistanceSqr);
         }
 
         public override string ToString()

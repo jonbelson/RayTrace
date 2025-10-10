@@ -43,7 +43,7 @@ namespace RayTrace
             set
             {
                 _fovHDegrees = value;
-                _fovHRadians = (value / 180.0f) * (float)Math.PI;
+                _fovHRadians = (value / 180.0f) * MathF.PI;
                 Notify("FovH");
             }
         }
@@ -108,12 +108,12 @@ namespace RayTrace
 
         public float GetSceneWidth()
         {
-            return 2.0f * (float)Math.Tan(_fovHRadians / 2.0f);
+            return 2.0f * MathF.Tan(_fovHRadians / 2.0f);
         }
 
         public float GetSceneHeight()
         {
-            return 2.0f * (float)Math.Tan(_fovHRadians / 2.0f);
+            return 2.0f * MathF.Tan(_fovHRadians / 2.0f);
         }
 
         // Return Vector from camera position to viewed point.

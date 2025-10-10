@@ -53,21 +53,21 @@ namespace RayTrace
             */
 
             float nit = n1 / n2;
-            /*float*/ double Ci = N.DotProduct(I.Negate());   // cos(θi)
-            /*float*/ double v = (1.0f - nit * nit * (1.0f - Ci * Ci));
+            /*float*/ float Ci = N.DotProduct(I.Negate());   // cos(θi)
+            /*float*/ float v = (1.0f - nit * nit * (1.0f - Ci * Ci));
 
             Debug.Assert(!float.IsNaN(nit));
             //Debug.Assert(!float.IsNaN(Ci));
             //Debug.Assert(!float.IsNaN(v));
 
-            if (v < 0.0)
+            if (v < 0.0f)
             {
                 // Total internal reflection, so no light transmission occurs.
                 return SVector.Null();
             }
 
 //            SVector vT = I.Scale(nit) + N.Scale(nit * Ci - (float)Math.Sqrt(v));
-            SVector vT = I.Scale(nit) + N.Scale((float)(nit * Ci - Math.Sqrt(v)));
+            SVector vT = I.Scale(nit) + N.Scale(nit * Ci - MathF.Sqrt(v));
 
             Debug.Assert(!float.IsNaN(vT.I));
             Debug.Assert(!float.IsNaN(vT.J));

@@ -47,7 +47,7 @@ namespace RayTrace
 
         public override Colour GetIntensityAtPoint(Camera camera, SPoint p)
         {
-            return Output / Math.PI;
+            return Output / MathF.PI;
         }
 
         protected override void AsXMLImpl(XMLEntity xml)

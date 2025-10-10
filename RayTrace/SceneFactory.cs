@@ -10,7 +10,7 @@ using System.Windows.Media;
 
 namespace RayTrace
 {
-    class SceneFactory
+    public static class SceneFactory
     {
         public static Scene EmptyScene()
         {

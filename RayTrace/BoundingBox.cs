@@ -135,7 +135,7 @@ namespace RayTrace
 
         // https://tavianator.com/2011/ray_box.html
         //public bool Intersects2(SPoint p1, SPoint p2)
-        public ( float tmin, float tmax ) GetIntersections(SPoint p1, SPoint p2)
+        public ( float tmin, float tmax ) GetIntersections(ref SPoint p1, ref SPoint p2)
         {
             SVector D = p2 - p1;
 
@@ -168,18 +168,18 @@ namespace RayTrace
             return (tmin, tmax);
         }
 
-        public bool Intersects2(SPoint p1, SPoint p2)
+        public bool Intersects2(ref SPoint p1, SPoint p2)
         {
-            var t = GetIntersections(p1, p2);
+            var t = GetIntersections(ref p1, ref p2);
 
             return t.tmax >= t.tmin;
         }
 
-        public bool Intersects3(SPoint p1, SPoint p2, out float distance)
+        public bool Intersects3(ref SPoint p1, ref SPoint p2, out float distance)
         {
             SVector D = p2 - p1;
 
-            var (tmin, tmax) = GetIntersections(p1, p2);
+            var (tmin, tmax) = GetIntersections(ref p1, ref p2);
 
             if (tmax >= tmin)
             {
@@ -201,9 +201,9 @@ namespace RayTrace
         }
 
         // Get distance to closest intersection point between ray and bounding box.
-        public float GetClosestIntersection(SPoint p1, SPoint p2)
+        public float GetClosestIntersection(ref SPoint p1, ref SPoint p2)
         {
-            var (tmin, tmax)= GetIntersections(p1, p2);
+            var (tmin, tmax)= GetIntersections(ref p1, ref p2);
 
             SVector D = p2 - p1;
 
@@ -215,7 +215,7 @@ namespace RayTrace
             return tmax*D.Magnitude();
         }
 
-        public bool Intersects(SPoint p1, SPoint p2, out float distance)
+        public bool Intersects(ref SPoint p1, ref SPoint p2, out float distance)
         {
             distance = float.MaxValue;
 

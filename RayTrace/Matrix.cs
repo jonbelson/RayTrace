@@ -371,37 +371,37 @@ namespace RayTrace
         }
 
         // Rotation matrix around the x axis (clockwise);
-        public Matrix SetRotationX(double radians)
+        public Matrix SetRotationX(float radians)
         {
             SetIdentity();
-            M22 = (float) Math.Cos(radians);
-            M23 = (float) -Math.Sin(radians);
-            M32 = (float) Math.Sin(radians);
-            M33 = (float) Math.Cos(radians);
+            M22 = MathF.Cos(radians);
+            M23 = -MathF.Sin(radians);
+            M32 = MathF.Sin(radians);
+            M33 = MathF.Cos(radians);
 
             return this;
         }
 
         // Rotation matrix around the y axis (clockwise).
-        public Matrix SetRotationY(double radians)
+        public Matrix SetRotationY(float radians)
         {
             SetIdentity();
-            M11 = (float) Math.Cos(radians);
-            M13 = (float) Math.Sin(radians);
-            M31 = (float) -Math.Sin(radians);
-            M33 = (float) Math.Cos(radians);
+            M11 = MathF.Cos(radians);
+            M13 = MathF.Sin(radians);
+            M31 = -MathF.Sin(radians);
+            M33 = MathF.Cos(radians);
 
             return this;
         }
 
         // Rotation matrix around the z axis (anticlockwise).
-        public Matrix SetRotationZ(double radians)
+        public Matrix SetRotationZ(float radians)
         {
             SetIdentity();
-            M11 = (float) Math.Cos(radians);
-            M12 = (float) -Math.Sin(radians);
-            M21 = (float) Math.Sin(radians);
-            M22 = (float) Math.Cos(radians);
+            M11 = MathF.Cos(radians);
+            M12 = -MathF.Sin(radians);
+            M21 = MathF.Sin(radians);
+            M22 = MathF.Cos(radians);
 
             return this;
         }

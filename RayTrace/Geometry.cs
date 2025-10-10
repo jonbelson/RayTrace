@@ -33,8 +33,8 @@ namespace RayTrace
             return false;
             }
 
-            float mu1 = (float)((-b + Math.Sqrt(bb4ac)) / (2 * a));
-            float mu2 = (float)((-b - Math.Sqrt(bb4ac)) / (2 * a));
+            float mu1 = (-b + MathF.Sqrt(bb4ac)) / (2f * a);
+            float mu2 = (-b - MathF.Sqrt(bb4ac)) / (2f * a);
 
             bool mu1Valid = true;
             bool mu2Valid = true;

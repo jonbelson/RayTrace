@@ -665,7 +665,7 @@ namespace RayTrace
                     using (FileStream fs = File.OpenRead(uriPath))
                     {
                         byte[] temp = new byte[buffer.byteLength];
-                        fs.Read(temp, 0, temp.Length);
+                        fs.ReadExactly(temp);
 
                         _buffers[i] = temp;
                     }

@@ -568,7 +568,7 @@ namespace RayTrace
             }
 
             // Does ray passes through us?
-            if (node.Box.Intersects(p1, p2, out float distance))
+            if (node.Box.Intersects(ref p1, ref p2, out float distance))
             {
                 HitResult hr = new HitResult(this);
 
@@ -624,7 +624,7 @@ namespace RayTrace
             // Does ray passes through us?
             //if (node.Box.Intersects(p1, p2))
             //if (node.GeometryBox.Intersects(p1, p2))
-            if (node.GeometryBox.Intersects(p1, p2, out float distance))
+            if (node.GeometryBox.Intersects(ref p1, ref p2, out float distance))
             {
                 foreach (HitResult result in hitResults)
                 {
@@ -989,7 +989,7 @@ namespace RayTrace
             float C = vNormal.K;
 
             // Since Ax + By + Cz + D = 0...
-            float D = -(A*vPos.X + B*vPos.Y + C*vPos.Z);
+            float D = -(A*vPos.X + B * vPos.Y + C * vPos.Z);
 //            float D = -(A * tri.v0.X + B * tri.v0.Y + C * tri.v0.Z);
 
             float num = A*p1.X + B*p1.Y + C*p1.Z + D;
@@ -1100,7 +1100,7 @@ namespace RayTrace
             //BoundingBox bb2 = bb.Transform(ObjectToView);
 
             //if (!bb2.Intersects(p1, p2))
-            if (!_viewBoundingBox.Intersects(p1, p2, out float distance))
+            if (!_viewBoundingBox.Intersects(ref p1, ref p2, out float distance))
             {
                 return false;
             }

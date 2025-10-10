@@ -58,7 +58,7 @@ namespace RayTrace
             float coswi = up.DotProduct(source.Normalise().Negate());
             float wi = (float)Math.Acos(coswi);
 */
-            Colour Lo = (colour / Math.PI) * Li * hr.EntryNormal.DotProduct(source);
+            Colour Lo = (colour / MathF.PI) * Li * hr.EntryNormal.DotProduct(source);
 
             return Lo;
         }
@@ -97,7 +97,7 @@ namespace RayTrace
         private float _shininess = 0.5f;
         public float Shininess {
             get { return _shininess; }
-            set { _shininess = Math.Clamp(value, 0, 1); }
+            set { _shininess = Math.Clamp(value, 0f, 1f); }
         }
 
         public enum SurfaceType { Dielectric, Conductor };
@@ -122,7 +122,7 @@ namespace RayTrace
             float val = NdotM * NdotM * (alphaSqr - 1) + 1;
 
             float numerator = alphaSqr;
-            float denominator = (float) Math.PI * val * val;
+            float denominator = MathF.PI * val * val;
 
             return numerator / denominator;
         }
@@ -142,7 +142,7 @@ namespace RayTrace
 
             float val2 = alphaSqr + (1.0f - dpmnSqr) / dpmnSqr; // XXX Check extra divide of dpmnSqr
             float val = dpmnSqr * val2;
-            float denominator = (float)Math.PI * val * val;
+            float denominator = MathF.PI * val * val;
 
             float f = numerator / denominator;
 
@@ -158,9 +158,9 @@ namespace RayTrace
             // For dielectric.
             float f = (ior1 - Ior) / (ior1 + Ior);
             float F0 = f * f;
-            float v = 1 - (float)Math.Cos(theta);
+            float v = 1 - MathF.Cos(theta);
             float vPow5 = v * v * v * v * v;
-            float F = F0 + (1 - F0) * vPow5;
+            float F = F0 + (1f - F0) * vPow5;
 
             return F;
         }
@@ -171,10 +171,10 @@ namespace RayTrace
         // ior2     IOR of conductor.
         private float CalculateFConductor(float theta, float ior1, float ior2)
         {
-            float v2 = (ior2 - 1) * (ior2 - 1);
-            float v3 = (ior2 + 1) * (ior2 + 1);
+            float v2 = (ior2 - 1f) * (ior2 - 1f);
+            float v3 = (ior2 + 1f) * (ior2 + 1f);
 
-            float v = 1 - (float)Math.Cos(theta);
+            float v = 1.0f - MathF.Cos(theta);
             float vPow5 = v * v * v * v * v;
 
             float numerator = v2 + 4 * ior2 * vPow5 + Absorption * Absorption;
@@ -198,11 +198,11 @@ namespace RayTrace
         {
             float NdotV = n.DotProductSaturated(v);
 
-            float numerator = 2 * NdotV;
+            float numerator = 2f * NdotV;
 
             float alphaSqr = Roughness * Roughness;
-            float val = alphaSqr + (1 - alphaSqr) * NdotV * NdotV;
-            float denominator = NdotV + (float) Math.Sqrt(val);
+            float val = alphaSqr + (1f - alphaSqr) * NdotV * NdotV;
+            float denominator = NdotV + MathF.Sqrt(val);
 
             return numerator / denominator;
         }
@@ -216,16 +216,16 @@ namespace RayTrace
         //        private float CalculateG(SVector wi, SVector wo, SVector m, SVector n)
         private float CalculateG(SVector wi, SVector m, SVector n)
         {
-            float dpwm = Math.Clamp(wi.DotProduct(m), 0, 1);
-            float dpwn = Math.Clamp(wi.DotProduct(n), 0, 1);
+            float dpwm = Math.Clamp(wi.DotProduct(m), 0f, 1f);
+            float dpwn = Math.Clamp(wi.DotProduct(n), 0f, 1f);
 
             float chi = CalculateChi(dpwm/dpwn);
 
             float dpwmSqr = dpwm * dpwm;
 
-            float val = 1 + Roughness * Roughness * (1 - dpwmSqr) / dpwmSqr;
-            float denominator = 1 + (float)Math.Sqrt(val);
-            float numerator = chi * 2;
+            float val = 1f + Roughness * Roughness * (1f - dpwmSqr) / dpwmSqr;
+            float denominator = 1f + MathF.Sqrt(val);
+            float numerator = chi * 2f;
 
             return numerator / denominator;
         }
@@ -292,14 +292,14 @@ namespace RayTrace
 
 //            float denominator = 4 * (normal.DotProductSaturated(viewDirection) * halfVector.DotProductSaturated(normal));
             float denominator = 4 * (normal.DotProductSaturated(viewDirection) * normal.DotProductSaturated(source));
-            denominator = Math.Clamp(denominator, 0.001f, 1);
+            denominator = Math.Clamp(denominator, 0.001f, 1f);
 
-            Debug.Assert(denominator > 0);
+            Debug.Assert(denominator > 0f);
 
             //float dp = normal.DotProductSaturated(viewDirection);
             float dp = normal.DotProductSaturated(source);  // ??
 //            Colour diffuse = Li * Colour * (1 - Shininess) * dp / Math.PI;
-            Colour diffuse = colour * (1 - Shininess) / Math.PI;
+            Colour diffuse = colour * (1f - Shininess) / MathF.PI;
 
             //float DFG = distribution * fresnel * geometry;
             Colour DFG = Fc * distribution * geometry;
@@ -351,7 +351,7 @@ namespace RayTrace
         private float _roughness = 0.5f;
         public float Roughness {
             get => _roughness;
-            set { _roughness = Math.Clamp(value, 0, 1); }
+            set { _roughness = Math.Clamp(value, 0f, 1f); }
         }
 
         private float Alpha { get => _roughness*_roughness; }
@@ -431,11 +431,11 @@ namespace RayTrace
             float alphaSql = alpha*alpha;
 
             float val = NdotH*NdotH*(alphaSql - 1.0f) + 1.0f;
-            float denominator = (float)Math.PI*val*val;
+            float denominator = MathF.PI*val*val;
 
             //float NdotH = N.DotProductSaturated(H);
 
-            if (denominator != 0)
+            if (denominator != 0f)
             {
                 float numerator = alphaSql;// *Heaviside(NdotH);
 
@@ -450,7 +450,7 @@ namespace RayTrace
 
             float val = (NdotH*alphaSqr - NdotH)*NdotH + 1.0f;
 
-            return alphaSqr*((float)Math.PI*val*val);
+            return alphaSqr*(MathF.PI*val*val);
         }
 
 /*
@@ -495,18 +495,18 @@ namespace RayTrace
 
             float alphaSqr = Alpha*Alpha;
 
-            double denom1 = NdotL*Math.Sqrt(NdotV*NdotV*(1.0f - alphaSqr) + alphaSqr);
-            double denom2 = NdotV*Math.Sqrt(NdotL*NdotL*(1.0f - alphaSqr) + alphaSqr);
+            float denom1 = NdotL*MathF.Sqrt(NdotV*NdotV*(1.0f - alphaSqr) + alphaSqr);
+            float denom2 = NdotV*MathF.Sqrt(NdotL*NdotL*(1.0f - alphaSqr) + alphaSqr);
 
-            Debug.Assert(!Double.IsNaN(denom1));
-            Debug.Assert(!Double.IsNaN(denom2));
+            Debug.Assert(!Single.IsNaN(denom1));
+            Debug.Assert(!Single.IsNaN(denom2));
 
-            float denominator = (float)(denom1 + denom2);
-            if (denominator > 0)
+            float denominator = (denom1 + denom2);
+            if (denominator > 0f)
             {
                 return 0.5f/denominator;
             }
-            return 0;
+            return 0f;
         }
 
         private float CalculateG_Ref2(float NdotL, float NdotV)
@@ -516,14 +516,14 @@ namespace RayTrace
 
             float alphaSqr = Alpha*Alpha;
 
-            double attenuationL = 2.0f*NdotL/(NdotL + Math.Sqrt(alphaSqr + (1.0f - alphaSqr)*NdotL*NdotL));
-            double attenuationV = 2.0f*NdotV/(NdotV + Math.Sqrt(alphaSqr + (1.0f - alphaSqr)*NdotV*NdotV));
+            float attenuationL = 2.0f*NdotL/(NdotL + MathF.Sqrt(alphaSqr + (1.0f - alphaSqr)*NdotL*NdotL));
+            float attenuationV = 2.0f*NdotV/(NdotV + MathF.Sqrt(alphaSqr + (1.0f - alphaSqr)*NdotV*NdotV));
 
 
-            Debug.Assert(!Double.IsNaN(attenuationL));
-            Debug.Assert(!Double.IsNaN(attenuationV));
+            Debug.Assert(!Single.IsNaN(attenuationL));
+            Debug.Assert(!Single.IsNaN(attenuationV));
 
-            return (float) (attenuationL*attenuationV);
+            return (attenuationL*attenuationV);
         }
 
 
@@ -559,18 +559,18 @@ namespace RayTrace
         private float CalculateV_Equ15(float NdotL, float NdotV)
         {
             float alphaSqr = Alpha*Alpha;
-            double denom1 = NdotL*Math.Sqrt(NdotV*NdotV*(1.0f - alphaSqr) + alphaSqr);
-            double denom2 = NdotV*Math.Sqrt(NdotL*NdotL*(1.0f - alphaSqr) + alphaSqr);
+            float denom1 = NdotL*MathF.Sqrt(NdotV*NdotV*(1.0f - alphaSqr) + alphaSqr);
+            float denom2 = NdotV*MathF.Sqrt(NdotL*NdotL*(1.0f - alphaSqr) + alphaSqr);
 
-            Debug.Assert(!Double.IsNaN(denom1));
-            Debug.Assert(!Double.IsNaN(denom2));
+            Debug.Assert(!Single.IsNaN(denom1));
+            Debug.Assert(!Single.IsNaN(denom2));
 
-            float denominator = (float) (denom1 + denom2);
-            if (denominator > 0)
+            float denominator = (denom1 + denom2);
+            if (denominator > 0f)
             {
                 return 0.5f/denominator;
             }
-            return 0;
+            return 0f;
         }
 
         // Equation 16
@@ -595,7 +595,7 @@ namespace RayTrace
         // https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#diffuse-brdf
         private static Colour DiffuseBrdf(Colour c)
         {
-            return c*((float)(1.0/Math.PI));
+            return c*(1.0f/MathF.PI);
         }
 
         private Colour SpecularBrdf(float NdotL, float NdotV, float NdotH)

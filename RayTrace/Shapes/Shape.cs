@@ -14,7 +14,7 @@ namespace RayTrace
         private SPoint _entry;
         private bool _hasEntry;// = false;
 
-        public bool HasEntry () => _hasEntry;
+        public readonly bool HasEntry() => _hasEntry;
 
         public SPoint Entry { get => _entry; set { _entry = value; _hasEntry = true; } }
         public SVector EntryNormal;  // Normal vector at intersetion point.
