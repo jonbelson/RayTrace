@@ -1242,32 +1242,35 @@ namespace RayTrace
                     GltfMaterial gltfMaterial = new()
                     {
                         name = material.name,
-                        metallicFactor = material.pbrMetallicRoughness.metallicFactor,
-                        roughnessFactor = material.pbrMetallicRoughness.roughnessFactor,
+                        metallicFactor = material.pbrMetallicRoughness?.metallicFactor ?? 1f,
+                        roughnessFactor = material.pbrMetallicRoughness?.roughnessFactor ?? 1f,
                     };
 
-                    if (material.pbrMetallicRoughness.baseColorFactor != null)
+                    if (material.pbrMetallicRoughness is not null)
                     {
-                        var bcf = material.pbrMetallicRoughness.baseColorFactor;
-                        gltfMaterial.baseColorFactor = new Vec4T<float>(bcf[0], bcf[1], bcf[2], bcf[3]);
-                    }
+                        if (material.pbrMetallicRoughness.baseColorFactor != null)
+                        {
+                            var bcf = material.pbrMetallicRoughness.baseColorFactor;
+                            gltfMaterial.baseColorFactor = new Vec4T<float>(bcf[0], bcf[1], bcf[2], bcf[3]);
+                        }
 
-                    if (material.pbrMetallicRoughness.baseColorTexture != null)
-                    {
-                        int textureIndex = material.pbrMetallicRoughness.baseColorTexture.index;
-                        int imageIndex = asset.textures[textureIndex].source;
+                        if (material.pbrMetallicRoughness.baseColorTexture != null)
+                        {
+                            int textureIndex = material.pbrMetallicRoughness.baseColorTexture.index;
+                            int imageIndex = asset.textures[textureIndex].source;
 
-                        string baseColor = GetImage(asset, imageIndex);
-                        if (baseColor is not null) gltfMaterial.baseColorTexture = baseColor;
-                    }
+                            string baseColor = GetImage(asset, imageIndex);
+                            if (baseColor is not null) gltfMaterial.baseColorTexture = baseColor;
+                        }
 
-                    if (material.pbrMetallicRoughness.metallicRoughnessTexture != null)
-                    {
-                        int textureIndex = material.pbrMetallicRoughness.metallicRoughnessTexture.index;
-                        int imageIndex = asset.textures[textureIndex].source;
+                        if (material.pbrMetallicRoughness.metallicRoughnessTexture != null)
+                        {
+                            int textureIndex = material.pbrMetallicRoughness.metallicRoughnessTexture.index;
+                            int imageIndex = asset.textures[textureIndex].source;
 
-                        string metallicRoughnessTexture = GetImage(asset, imageIndex);
-                        if (metallicRoughnessTexture is not null) gltfMaterial.metallicRoughnessTexture = metallicRoughnessTexture;
+                            string metallicRoughnessTexture = GetImage(asset, imageIndex);
+                            if (metallicRoughnessTexture is not null) gltfMaterial.metallicRoughnessTexture = metallicRoughnessTexture;
+                        }
                     }
 
                     if (material.normalTexture != null)

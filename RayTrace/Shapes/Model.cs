@@ -568,7 +568,7 @@ namespace RayTrace
             }
 
             // Does ray passes through us?
-            if (node.Box.Intersects(ref p1, ref p2, out float distance))
+            if (node.Box.Intersects(in p1, in p2, out float distance))
             {
                 HitResult hr = new HitResult(this);
 
@@ -614,7 +614,7 @@ namespace RayTrace
         }
 
         // Recurse through partition tree, checking for intersections in boxes that that ray passees through.
-        private void HitTestRecurse(Camera camera, List<HitResult> hitResults, Node node, ref SPoint p1, ref SPoint p2, bool segmentOnly, bool firstHitOnly)
+        private void HitTestRecurse(Camera camera, List<HitResult> hitResults, Node node, in SPoint p1, in SPoint p2, bool segmentOnly, bool firstHitOnly)
         {
             if (firstHitOnly && hitResults.Count > 0)
             {
@@ -624,13 +624,13 @@ namespace RayTrace
             // Does ray passes through us?
             //if (node.Box.Intersects(p1, p2))
             //if (node.GeometryBox.Intersects(p1, p2))
-            if (node.GeometryBox.Intersects(ref p1, ref p2, out float distance))
+            if (node.GeometryBox.Intersects(in p1, in p2, out float distance))
             {
                 foreach (HitResult result in hitResults)
                 {
                     if (result.HasEntry())
                     {
-                        double d = result.t;
+                        float d = result.t;
 
                         // If BoundingBox is further away than the current closest hit, don't bother testing it.
                         if (distance > d) return;
@@ -647,7 +647,6 @@ namespace RayTrace
                     // We're a leaf node, so test our triangles.
                     foreach (int i in node.Triangles)
                     {
-                        hr.Reset();
                         HitTestTriangle(camera, ref hr, i, p1, p2, ray, segmentOnly);
                         if (hr.HasEntry())
                         {
@@ -662,11 +661,11 @@ namespace RayTrace
 
                 if (node.Left != null)
                 {
-                    HitTestRecurse(camera, hitResults, node.Left, ref p1, ref p2, segmentOnly, firstHitOnly);
+                    HitTestRecurse(camera, hitResults, node.Left, in p1, in p2, segmentOnly, firstHitOnly);
                 }
                 if (node.Right != null)
                 {
-                    HitTestRecurse(camera, hitResults, node.Right, ref p1, ref p2, segmentOnly, firstHitOnly);
+                    HitTestRecurse(camera, hitResults, node.Right, in p1, in p2, segmentOnly, firstHitOnly);
                 }
             }
             else
@@ -675,8 +674,110 @@ namespace RayTrace
             }
         }
 
-        private HitResult HitTestImpl(Camera camera, SPoint p1, SPoint p2, bool segmentOnly, bool firstHitOnly)
+        private HitResult HitTestIterative(Camera camera, in SPoint p1, in SPoint p2, bool segmentOnly, bool firstHitOnly)
         {
+            if (_root is null) return new HitResult(this);
+
+            Stack<Node> stack = new();
+            stack.Push(_root);
+
+            HitResult bestHit = new(this);
+            float closestT = Single.MaxValue;
+
+            SVector ray = p2 - p1;
+
+            HitResult tmp = new(this);
+
+            while (stack.Count > 0)
+            {
+                Node node = stack.Pop();
+
+                // Skip this Node if we don't intersect it.
+                if (!node.GeometryBox.Intersects(in p1, in p2, out float nodeDist))
+                {
+                    continue;
+                }
+
+                // SKip this node if it's further away than our closest hit.
+                if (nodeDist >= closestT) continue;
+
+                // Is this a leaf Node? If so, check its triangles.
+                if (node.Left == null && node.Right == null)
+                {
+                    // We're a leaf node, so test our triangles.
+                    foreach (int i in node.Triangles)
+                    {
+                        HitTestTriangle(camera, ref tmp, i, p1, p2, ray, segmentOnly);
+                        if (tmp.HasEntry())
+                        {
+                            float t = tmp.t;
+                            if (t < closestT)
+                            {
+                                bestHit = tmp;
+                                closestT = t;
+                                if (firstHitOnly) return bestHit;
+                            }
+                        }
+
+                    }
+                }
+                else
+                {
+                    // Push the further Node first so the nearer will be processed first.
+                    Node left = node.Left;
+                    Node right = node.Right;
+
+                    if (left is not null && right is not null)
+                    {
+                        bool leftHit = left.GeometryBox.Intersects(in p1, in p2, out float leftDist);
+                        bool rightHit = right.GeometryBox.Intersects(in p1, in p2, out float rightDist);
+
+                        if (leftHit && rightHit)
+                        {
+                            if (leftDist < rightDist)
+                            {
+                                stack.Push(right);
+                                stack.Push(left);
+                            }
+                            else
+                            {
+                                stack.Push(left);
+                                stack.Push(right);
+                            }
+                        }
+                        else if (leftHit)
+                        {
+                            stack.Push(left);
+                        }
+                        else if (rightHit)
+                        {
+                            stack.Push(right);
+                        }
+                    }
+
+                    else
+                    {
+                        if (left is not null) stack.Push(left);
+                        if (right is not null) stack.Push(right);
+                    }
+
+                }
+            }
+
+            if (bestHit.HasEntry())
+            {
+               CalculateTexelAndNormal(camera, ref bestHit);
+            }
+
+            return bestHit;
+        }
+
+
+        private HitResult HitTestImpl(Camera camera, in SPoint p1, in SPoint p2, bool segmentOnly, bool firstHitOnly)
+        {
+            HitResult hitResult2 = HitTestIterative(camera, in p1, in p2, segmentOnly, firstHitOnly);
+            return hitResult2;
+
             HitResult hitResult = new(null);
 
             Node node = _root;
@@ -685,18 +786,18 @@ namespace RayTrace
             {
                 List<HitResult> hitResults = new List<HitResult>();
 
-                HitTestRecurse(camera, hitResults, node, ref p1, ref p2, segmentOnly, firstHitOnly);
+                HitTestRecurse(camera, hitResults, node, in p1, in p2, segmentOnly, firstHitOnly);
 //                HitTestRecurseFast(camera, hitResults, node, ref p1, ref p2, segmentOnly, firstHitOnly);
 
                 if (hitResults.Count > 0)
                 {
-                    double closest2 = Double.MaxValue;
+                    float closest2 = Single.MaxValue;
 
                     foreach (HitResult hr in hitResults)
                     {
                         if (hr.HasEntry())
                         {
-                            double d = hr.t;
+                            float d = hr.t;
                             if (d < closest2)
                             {
                                 closest2 = d;
@@ -712,49 +813,6 @@ namespace RayTrace
             }
 
             return new HitResult(this);
-
-
-
-
-
-/*
-            Matrix ObjectToView = camera.WorldToView * ObjectToWorld;
-
-//            BoundingBox bb = _modelData.GetBoundingBox();
-//            BoundingBox bb2 = bb.Transform(ObjectToView);
-
-            if (!_viewBoundingBox.Intersects(p1, p2))
-            {
-                return hitResult;
-            }
-
-            Matrix ObjectToViewNormal = camera.NormalMatrix * ObjectToWorldNormal;
-
-            double closest = Double.MaxValue;
-
-            for (int i=0; i<_modelData.triangles.Length; i++)
-            {
-                try
-                {
-                    HitResult hr = HitTestTriangle(ObjectToView, ObjectToViewNormal, i, p1, p2, segmentOnly);
-                    if (hr.HasEntry())
-                    {
-                        double d = p1.Distance(hr.Entry);
-                        if (d < closest)
-                        {
-                            closest = d;
-                            hitResult = hr;
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e.Message);
-                }
-            }
-
-            return hitResult;
-*/
         }
 
         private bool CalculateTexelAndNormal(Camera camera, ref HitResult hr)
@@ -946,9 +1004,9 @@ namespace RayTrace
             //float dp2 = Vector4.Dot(normal, vp1);
             //float dp3 = Vector4.Dot(normal, vp2);
 
-            if (Vector4.Dot(normal, edge0.VectorProduct(C0)) <= 0.0 &&
-                Vector4.Dot(normal, edge1.VectorProduct(C1)) <= 0.0 &&
-                Vector4.Dot(normal, edge2.VectorProduct(C2)) <= 0.0)
+            if (Vector4.Dot(normal, edge0.VectorProduct(C0)) <= 0.0f &&
+                Vector4.Dot(normal, edge1.VectorProduct(C1)) <= 0.0f &&
+                Vector4.Dot(normal, edge2.VectorProduct(C2)) <= 0.0f)
             {
                 hr.Entry = new SPoint(Intersection.X, Intersection.Y, Intersection.Z);
                 hr.EntryNormal = tri.n; // vNormal;
@@ -973,6 +1031,8 @@ namespace RayTrace
                         if (_modelData.normals.Length <= _modelData.triangles[index].n) return hr;
             */
 
+            hr.Reset();
+
             FatTriangle tri = _fatTriangles[index];
 
             SPoint vPos = tri.v0;
@@ -989,7 +1049,7 @@ namespace RayTrace
             float C = vNormal.K;
 
             // Since Ax + By + Cz + D = 0...
-            float D = -(A*vPos.X + B * vPos.Y + C * vPos.Z);
+            float D = -(A*vPos.X + B*vPos.Y + C*vPos.Z);
 //            float D = -(A * tri.v0.X + B * tri.v0.Y + C * tri.v0.Z);
 
             float num = A*p1.X + B*p1.Y + C*p1.Z + D;
@@ -1057,9 +1117,9 @@ namespace RayTrace
             //float dp2 = vNormal.DotProduct(vp1);
             //float dp3 = vNormal.DotProduct(vp2);
 
-            if (vNormal.DotProduct(edge0.VectorProduct(C0)) <= 0.0 &&
-                vNormal.DotProduct(edge1.VectorProduct(C1)) <= 0.0 &&
-                vNormal.DotProduct(edge2.VectorProduct(C2)) <= 0.0)
+            if (vNormal.DotProduct(edge0.VectorProduct(C0)) <= 0.0f &&
+                vNormal.DotProduct(edge1.VectorProduct(C1)) <= 0.0f &&
+                vNormal.DotProduct(edge2.VectorProduct(C2)) <= 0.0f)
             {
                 hr.Entry = Intersection;
                 hr.EntryNormal = vNormal;
@@ -1079,6 +1139,7 @@ namespace RayTrace
             return HitTestImpl(camera, ray.Origin, p2, segmentOnly, false);
         }
 
+        // Check that at least one triangle is hit by the ray.
         public override bool HitTestQuick(Camera camera, Ray ray)
         {
             bool segmentOnly = (ray.TMax == 1.0);
@@ -1100,7 +1161,7 @@ namespace RayTrace
             //BoundingBox bb2 = bb.Transform(ObjectToView);
 
             //if (!bb2.Intersects(p1, p2))
-            if (!_viewBoundingBox.Intersects(ref p1, ref p2, out float distance))
+            if (!_viewBoundingBox.Intersects(in p1, in p2, out float distance))
             {
                 return false;
             }
@@ -1154,7 +1215,7 @@ namespace RayTrace
                 if (segmentOnly)
                 {
                     // Check if segment actually intersects us.
-                    if (mu < THRESH || mu > 1.0 - THRESH)
+                    if (mu < THRESH || mu > 1.0f - THRESH)
                     {
                         //return hr;
                         continue;
@@ -1180,9 +1241,9 @@ namespace RayTrace
                 SVector C1 = Intersection - V1;
                 SVector C2 = Intersection - V2;
 
-                if (vNormal.DotProduct(edge0.VectorProduct(C0)) < 0.0 &&
-                    vNormal.DotProduct(edge1.VectorProduct(C1)) < 0.0 &&
-                    vNormal.DotProduct(edge2.VectorProduct(C2)) < 0.0)
+                if (vNormal.DotProduct(edge0.VectorProduct(C0)) < 0.0f &&
+                    vNormal.DotProduct(edge1.VectorProduct(C1)) < 0.0f &&
+                    vNormal.DotProduct(edge2.VectorProduct(C2)) < 0.0f)
                 {
                     return true;
                 }

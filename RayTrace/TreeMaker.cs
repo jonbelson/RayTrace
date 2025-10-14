@@ -32,7 +32,7 @@ namespace RayTrace
     //
     public class TreeMaker
     {
-        public int MaxDepth { get; set; } = 10;//40;
+        public int MaxDepth { get; set; } = 10;//10;//40;
         public int MinTrianglesPerNode { get; set; } = 50;//10;
 
         private Matrix _objectToView = new Matrix();
@@ -285,7 +285,11 @@ namespace RayTrace
 
                 Node CreateNode(ModelData modelData, List<int> triangles, BoundingBox bbox, int depth, Node parentNode)
                 {
-                    return (triangles.Count > 0) ? MakeNode(modelData, triangles, bbox, depth, parentNode) : null;
+                    BoundingBox geometryBox = GetBoundingBox(modelData, triangles);
+                    BoundingBox intersect = bbox.Intersection(geometryBox);
+
+                    return (triangles.Count > 0) ? MakeNode(modelData, triangles, intersect /*bbox*/, depth, parentNode) : null;
+//                    return (triangles.Count > 0) ? MakeNode(modelData, triangles, /*intersect*/ bbox, depth, parentNode) : null;
                 }
 
                 if (depth < 2)
