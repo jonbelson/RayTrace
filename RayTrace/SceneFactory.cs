@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RayTrace.Importers;
+using System;
 using System.Collections.Generic;
 using System.IO;
 //using System.Drawing;
@@ -10,7 +11,7 @@ using System.Windows.Media;
 
 namespace RayTrace
 {
-    public static class SceneFactory
+    class SceneFactory
     {
         public static Scene EmptyScene()
         {
