@@ -48,7 +48,4 @@
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
   </ItemGroup>
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="xcopy &quot;$(OutDir)&quot; &quot;$(SolutionDir)\bin\&quot; /Y /S&#xD;&#xA;cd &quot;$(SolutionDir)\&quot;&#xD;&#xA;&#xD;&#xA;echo SolutionDir: $(SolutionDir)&#xD;&#xA;echo ProjectDir: $(ProjectDir)&#xD;&#xA;echo TargetDir: $(TargetDir)&#xD;&#xA;echo OutDir: $(OutDir)&#xD;&#xA;echo TargetPath: $(TargetPath)&#xD;&#xA;echo TargetName: $(TargetName)&#xD;&#xA;echo ConfigurationName: $(ConfigurationName)&#xD;&#xA;echo PlatformName: $(PlatformName)&#xD;&#xA;" />
-  </Target>
 </Project>
