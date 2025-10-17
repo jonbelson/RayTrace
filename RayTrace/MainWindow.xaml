@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:primitives="clr-namespace:System.Windows.Controls.Ribbon.Primitives;assembly=System.Windows.Controls.Ribbon" 
         xmlns:local="clr-namespace:RayTrace"
+        xmlns:preview="clr-namespace:RayTrace.Preview"
         mc:Ignorable="d"
         Title="RayTrace" Height="1024" Width="1280" IsVisibleChanged="window_IsVisibleChanged">
 
@@ -653,7 +654,7 @@
                 </TabControl>
                 
                 <Border Grid.Row="1" Background="Gray" MouseDown="Border_MouseDown" MouseUp="Border_MouseUp" MouseMove="Border_MouseMove" MouseWheel="Border_MouseWheel">
-                    <local:PreviewViewport3D x:Name="viewport3D" MinWidth="200" MinHeight="200" Panel.ZIndex="2" MouseLeftButtonDown="viewport3D_MouseLeftButtonDown">
+                    <preview:PreviewViewport3D x:Name="viewport3D" MinWidth="200" MinHeight="200" Panel.ZIndex="2" MouseLeftButtonDown="viewport3D_MouseLeftButtonDown">
  <!--                       <PreviewViewport3D.Camera>
                             <PerspectiveCamera Position="0, 0, 6" LookDirection="0, 0, -1" UpDirection="0, 1, 0" FieldOfView="45" />
                         </PreviewViewport3D.Camera>
@@ -663,7 +664,7 @@
                                 </Model3DGroup>
                             </ModelVisual3D.Content>
                         </ModelVisual3D> -->
-                    </local:PreviewViewport3D>
+                    </preview:PreviewViewport3D>
                 </Border>
             </Grid>
         </DockPanel>

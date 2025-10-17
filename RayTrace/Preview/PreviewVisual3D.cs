@@ -9,8 +9,9 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Converters;
 using System.Windows.Media.Media3D;
+using System.Windows.Shapes;
 
-namespace RayTrace
+namespace RayTrace.Preview
 {
     //
     // Represent an XYZ axis.
@@ -347,10 +348,32 @@ namespace RayTrace
             //Func<Vector, Vector3D> VectorToVector3D = (v) => new Vector3D(v.I, v.J, v.K);
             //Func<Colour, System.Windows.Media.Color> ColourToColor = (c) => new System.Windows.Media.Color() { ScR = c.Red, ScG = c.Green, ScB = c.Blue };
 
+            // Get rid of the old geometry.
+            if (models.ContainsKey(light))
+            {
+                var oldGeometry = models.Lookup(light);
+                if (oldGeometry != null)
+                {
+                    group.Children.Remove(oldGeometry);
+                }
+            }
+
+            models.Remove(light);
+
+            GeometryModel3D geometryModel = null;
+
             if (light.Enabled)
             {
                 if (light is PointLight pointLight)
                 {
+                    //Sphere sphere = new Sphere(scene, new Point(1, 1, 1), 2);
+                    //geometryModel = GeometryModel3DFactory.MakeSphere(sphere);
+                    geometryModel = GeometryModel3DFactory.MakePointLight(pointLight);
+                    //Colour c = sphere.Material.GetBaseColour();
+                    //geometryModel.Material = new DiffuseMaterial(new SolidColorBrush(Color.FromScRgb(1, c.Red, c.Green, c.Blue)));
+
+                    group.Children.Add(geometryModel);
+
                     System.Windows.Media.Media3D.PointLight pl = new(ColourToColor(pointLight.Output), PointToPoint3D(pointLight.Pos));
 
                     // Attenuation formula based on distance (D):
@@ -366,6 +389,19 @@ namespace RayTrace
 
                     group.Children.Add(dl);
                 }
+            }
+
+            if (geometryModel != null)
+            {
+                Colour c = light.Colour;
+                //geometryModel.Material = new DiffuseMaterial(new SolidColorBrush(Color.FromScRgb(1, c.Red, c.Green, c.Blue)));
+
+                MaterialGroup materialGroup = new();
+                materialGroup.Children.Add(new DiffuseMaterial(new SolidColorBrush(Color.FromScRgb(1, c.Red, c.Green, c.Blue))));
+                materialGroup.Children.Add(new EmissiveMaterial(new SolidColorBrush(Color.FromScRgb(1, c.Red, c.Green, c.Blue))));
+
+                geometryModel.Material = materialGroup;
+                models.Add(geometryModel, light);
             }
         }
 

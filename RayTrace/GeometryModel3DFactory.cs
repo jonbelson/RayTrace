@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 
+using RayTrace.Preview;
+
 namespace RayTrace
 {
     static class GeometryModel3DFactory
@@ -221,6 +223,7 @@ namespace RayTrace
             public float y;
         }
 
+        // Fill vertices[] with points of a circle of specified radius.
         private static void MakeCircle(Vertex2D[] vertices, float radius)
         {
             int size = vertices.Length;
@@ -251,10 +254,10 @@ namespace RayTrace
             int pointIndex = 1;
 
             // For each slice, from top to bottom.
-            for (int slice = 1; slice < slices; slice++)
+            for (int slice = 1; slice <= slices; slice++)
             {
                 // Angle to current slice elevation.
-                float ya = (slice / slices) * MathF.PI;
+                float ya = MathF.PI * slice / slices;
 
                 // How much to scale each slice to make it spherical.
                 float sliceScale = MathF.Sin(ya);
@@ -265,16 +268,9 @@ namespace RayTrace
 
                 MakeCircle(vertices, sliceScale);
 
+                // TODO Double check the creation of the top and bottom slices.
                 for (int sample = 0; sample < samplesPerSlice; sample++)
                 {
-                    // Angles around this slice.
-                    double sliceAngle = Math.PI * 2.0 * sample / samplesPerSlice;
-
-                    //double s = Math.Sin(sliceAngle);
-                    //double c = Math.Cos(sliceAngle);
-
-                    //mesh.Positions.Add(new Point3D(s * sliceScale, y, c * sliceScale));
-
                     mesh.Positions.Add(new Point3D(vertices[sample].x, y, vertices[sample].y));
 
                     // Start making triangles after the first slice
@@ -340,6 +336,31 @@ namespace RayTrace
             return mesh;
         }
 
+        public static GeometryModel3D MakePointLight(PointLight light)
+        {
+            MeshGeometry3D mesh = MakeSphere();
+
+            GeometryModel3D model = new();
+            model.Geometry = mesh;
+
+            Colour c = light.Colour;
+            model.Material = new DiffuseMaterial(new SolidColorBrush(Color.FromScRgb(1, c.Red, c.Green, c.Blue)));
+
+            model.BackMaterial = model.Material;
+
+            var scale = new ScaleTransform3D(light.Radius, light.Radius, light.Radius);
+            var translate = new TranslateTransform3D(light.Pos.X, light.Pos.Y, light.Pos.Z);
+
+            Transform3DGroup transformGroup = new();
+
+            transformGroup.Children.Add(scale);
+            transformGroup.Children.Add(translate);
+
+            model.Transform = transformGroup;
+
+            return model;
+        }
+
         public static GeometryModel3D MakeSphere(Sphere sphere)
         {
             MeshGeometry3D mesh = MakeSphere();
@@ -371,65 +392,6 @@ namespace RayTrace
 
 //            model.Material = new DiffuseMaterial(new SolidColorBrush(System.Windows.Media.Colors.Purple));
             model.Material = new DiffuseMaterial(new SolidColorBrush(DefaultColour));
-
-            if (false)
-            {
-                /////////////////////////////////////////////////////////////
-                // Rotate to match specified normal vector.
-                Matrix3D lookAt = new Matrix3D();
-                lookAt.SetIdentity();
-
-                //Point cameraTarget = to;
-                //Point cameraPosition = from;
-                //Vector zaxis = cameraTarget - cameraPosition;
-                //            Vector zaxis = cameraPosition - cameraTarget;
-
-                Vector3D zaxis = new(plane.Normal.I, plane.Normal.J, plane.Normal.K);
-                //            Vector3D zaxis = new(0, 1, 0);
-                zaxis.Normalize();
-
-                //zaxis = zaxis.Normalise();
-                //Vector cameraUpVector = new Vector(0, 1, 0);
-
-                Vector3D cameraUpVector = new(0, 1, 0);
-
-                if (Vector3D.DotProduct(zaxis, cameraUpVector) < 0.01)
-                {
-
-                }
-
-                Vector3D xaxis = Vector3D.CrossProduct(cameraUpVector, zaxis);
-                xaxis.Normalize();
-
-                //                        Vector xaxis = cameraUpVector.VectorProduct(zaxis);
-                //xaxis = zaxis.VectorProduct(cameraUpVector);
-                //                        xaxis = xaxis.Normalise();
-
-                Vector3D yaxis = Vector3D.CrossProduct(zaxis, xaxis);
-
-                //                        Vector yaxis = zaxis.VectorProduct(xaxis);
-                //yaxis = xaxis.VectorProduct(zaxis);
-
-                Vector3D vecPosition = new(0, 0, 0);
-
-                //                        Vector vecPosition = new Vector(cameraPosition.X, cameraPosition.Y, cameraPosition.Z);
-
-                lookAt.M11 = xaxis.X;
-                lookAt.M21 = xaxis.Y;
-                lookAt.M31 = xaxis.Z;
-
-                lookAt.M12 = yaxis.X;
-                lookAt.M22 = yaxis.Y;
-                lookAt.M32 = yaxis.Z;
-
-                lookAt.M13 = zaxis.X;
-                lookAt.M23 = zaxis.Y;
-                lookAt.M33 = zaxis.Z;
-
-                lookAt.OffsetX = Vector3D.DotProduct(xaxis, -vecPosition);
-                lookAt.OffsetY = Vector3D.DotProduct(yaxis, -vecPosition);
-                lookAt.OffsetZ = Vector3D.DotProduct(zaxis, -vecPosition);
-            }
 
             Vector up = new Vector(0, 0, -1);
             Vector axis = up.VectorProduct(plane.Normal);

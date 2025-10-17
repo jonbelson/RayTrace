@@ -1,5 +1,4 @@
-﻿using RayTrace.Importers;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 //using System.Drawing;
@@ -8,6 +7,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
+
+using RayTrace.Brdfs;
+using RayTrace.Importers;
 
 namespace RayTrace
 {
@@ -654,7 +656,7 @@ namespace RayTrace
                         string name = String.Format("BRDF s{0:F2} r{1:F2} a{2:F2}", shininess, roughness, absorption);
                         Material mat = new Material() { Name = name };
                         {
-                            CookTorrence cookTorrence = new();
+                            Brdfs.CookTorrence cookTorrence = new();
                             //cookTorrence.Colour = /*Palette.MetallicGold;*/ Palette.Copper;
                             cookTorrence.Shininess = shininess;
                             cookTorrence.Roughness = roughness;

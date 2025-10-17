@@ -11,7 +11,7 @@ using System.Xml.Linq;
 //using System.Windows.Shapes;
 //using System.Windows.Shapes;
 
-namespace RayTrace
+namespace RayTrace.Importers
 {
     public class ObjImporter
     {

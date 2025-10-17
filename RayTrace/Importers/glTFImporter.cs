@@ -12,15 +12,17 @@ using System.Reflection;
 using System.Xml.Linq;
 using System.Windows;
 using System.Runtime.InteropServices;
-using static RayTrace.ObjImporter;
 using System.Windows.Media.Media3D;
 using Microsoft.Windows.Themes;
 using System.Security.Policy;
 using System.Numerics;
-using static RayTrace.ModelData;
 using System.Drawing;
 
-namespace RayTrace
+using RayTrace.Brdfs;
+using static RayTrace.Importers.ObjImporter;
+using static RayTrace.ModelData;
+
+namespace RayTrace.Importers
 {
     //
     // Importer for glTF format.
@@ -789,7 +791,7 @@ namespace RayTrace
                         }
                         catch (Exception e)
                         {
-                            int iiii = 0;
+                            _ = 0;
                             break;
                         }
                     }
@@ -1363,7 +1365,7 @@ namespace RayTrace
                 //TextureBitmap texture = new();
                 //Texture texture = new TextureBitmap();
 
-                GltfBRDF brdf = new();
+                GltfBrdf brdf = new();
                 brdf.Metallic = material.metallicFactor;
                 brdf.Roughness = material.roughnessFactor;
 

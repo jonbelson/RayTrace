@@ -45,29 +45,51 @@ namespace RayTrace
             return true;
         }
 
+        private struct Tile
+        {
+            public int X;
+            public int Y;
+            public int Width;
+            public int Height;
+        }
+
         private Task<bool> DoRender(Renderer renderer, Canvas canvas)
         {
             CancellationTokenSource cancellation = new();
             CancellationToken token = cancellation.Token;
 
-            Task task1 = Task.Factory.StartNew(() =>
-            {
-                renderer.Render(scene, canvas, 0, 0, Size/2, Size/2, token);
-            });
-            Task task2 = Task.Factory.StartNew(() =>
-            {
-                renderer.Render(scene, canvas, Size/2, 0, Size / 2, Size / 2, token);
-            });
-            Task task3 = Task.Factory.StartNew(() =>
-            {
-                renderer.Render(scene, canvas, 0, Size/2, Size / 2, Size / 2, token);
-            });
-            Task task4 = Task.Factory.StartNew(() =>
-            {
-                renderer.Render(scene, canvas, Size/2, Size/2, Size / 2, Size / 2, token);
-            });
+            List<Tile> tiles = [];
 
-            Task[] tasks = new Task[4] { task1, task2, task3, task4 };
+            int[] steps = [4, 8, 8, 8, 8, 4];
+
+            int yOffset = 0;
+            for (int y = 0; y<steps.Length; y++)
+            {
+                int xOffset = 0;
+                for (int x = 0; x<steps.Length; x++)
+                {
+                    tiles.Add(new Tile { X = xOffset, Y = yOffset, Width = Size/steps[x], Height = Size/steps[y] });
+
+                    xOffset += Size/steps[x];
+                }
+                yOffset += Size/steps[y];
+            }
+
+            List<Task> tasks = [];
+            foreach (Tile tile in tiles)
+            {
+                Task task = Task.Factory.StartNew(() => { renderer.Render(scene, canvas, tile.X, tile.Y, tile.Width, tile.Height, token); });
+                tasks.Add(task);
+            }
+
+            //var tiles = new {  };
+
+            //Task task1 = Task.Factory.StartNew(() => { renderer.Render(scene, canvas, 0, 0, Size/2, Size/2, token); });
+            //Task task2 = Task.Factory.StartNew(() => { renderer.Render(scene, canvas, Size/2, 0, Size / 2, Size / 2, token); });
+            //Task task3 = Task.Factory.StartNew(() => { renderer.Render(scene, canvas, 0, Size/2, Size / 2, Size / 2, token); });
+            //Task task4 = Task.Factory.StartNew(() => { renderer.Render(scene, canvas, Size/2, Size/2, Size / 2, Size / 2, token); });
+
+//            Task[] tasks = new Task[4] { task1, task2, task3, task4 };
 
             Task.WaitAll(tasks);
 
@@ -127,12 +149,13 @@ namespace RayTrace
 
             bool b = DoRender(renderer, canvas).Result;
 
-            MaterialTile materialTile = new();
-
-            materialTile.Name = material.ToString();// material.Name;
-            materialTile.Guid = material.Guid;
-            materialTile.Bitmap = canvas.GetAsBitmap();
-            materialTile.Material = material;
+            MaterialTile materialTile = new()
+            {
+                Name = material.ToString(),// material.Name;
+                Guid = material.Guid,
+                Bitmap = canvas.GetAsBitmap(),
+                Material = material
+            };
 
             //string documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             //canvas.Save(documents + "/" + material.Guid.ToString());

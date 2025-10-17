@@ -6,10 +6,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RayTrace
+namespace RayTrace.Brdfs
 {
     // Base class of Bidirectional Reflectance Distribution Functions.
-    public abstract class BRDF
+    public abstract class Brdf
     {
         public string Name { get; set; }
 

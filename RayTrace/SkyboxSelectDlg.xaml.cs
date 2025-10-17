@@ -56,7 +56,7 @@ namespace RayTrace
             }
             catch (Exception e)
             {
-                int i = 0;
+                _ = 0;
             }
 
             try
@@ -68,7 +68,7 @@ namespace RayTrace
             }
             catch (Exception e)
             {
-                int i = 0;
+                _ = 0;
             }
         }
 
@@ -141,9 +141,9 @@ namespace RayTrace
                 _tempDir = Path.Combine(Storage.TempDir, Guid.NewGuid().ToString());
                 Directory.CreateDirectory(_tempDir);
             }
-            catch (Exception e)
+            catch (Exception /*e*/)
             {
-                int i = 0;
+                _ = 0;
             }
 
             //ScanSkyboxes();

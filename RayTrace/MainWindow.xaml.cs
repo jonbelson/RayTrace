@@ -1,5 +1,4 @@
 ﻿using Microsoft.Win32;
-using RayTrace.Importers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -29,6 +28,9 @@ using System.Windows.Navigation;
 //using System.Windows.Shapes;
 using System.Windows.Threading;
 using static System.Formats.Asn1.AsnWriter;
+
+using RayTrace.Importers;
+using RayTrace.Preview;
 
 namespace RayTrace
 {
@@ -127,9 +129,13 @@ namespace RayTrace
 
         private InputMode _inputMode;
 
-        private BoundingBox3D boundingBox;
-        private ModelAxis3D modelAxis;
+       // private BoundingBox3D boundingBox;
+       // private ModelAxis3D modelAxis;
 
+        // Site of Material tile bitmaps. SHould be divisible by 8.
+        private const int MaterialTileSize = 152;
+
+        // Number of render blocks in x and y directions.
         public int NumRenderBlocks { get; set; } = 16;
 
         public enum RenderDirection
@@ -145,8 +151,6 @@ namespace RayTrace
 
         public ObservableCollection<Entity> Entities { get; set; } = new ObservableCollection<Entity>();
         public ObservableCollection<Entity> SelectedEntity { get; set; } = new ObservableCollection<Entity>();
-
-        //public Entity SelectedEntity2 { get; set; }
 
         public ObservableCollection<MaterialTile> MaterialTiles { get; set; } = new ObservableCollection<MaterialTile>();
         public List<Material> Materials { get; set; } = new();
@@ -281,7 +285,7 @@ namespace RayTrace
             Materials = scene.Materials;
 
             MaterialTiles.Clear();
-            MaterialTileMaker materialTileMaker = new() { Size = 150 };
+            MaterialTileMaker materialTileMaker = new() { Size = MaterialTileSize };
             foreach (Material mat in scene.Materials)
             {
                 MaterialTile materialTile = materialTileMaker.MakeTile(mat);
@@ -370,9 +374,9 @@ namespace RayTrace
                 Matrix m2 = Matrix.GetTranslation(1, 2, 3);
                 Matrix4x4 m3 = m2.ToMatrix4x4();
 
-                Vector3 vv = new();
+                //Vector3 vv = new();
 
-                int i = 0;
+                //int i = 0;
             }
 
             {
@@ -726,6 +730,12 @@ namespace RayTrace
                 return;
             }
 
+            if (sender is Light light && (propName == "Pos"))
+            {
+                viewport3D.Update(light);
+                return;
+            }
+
             if (sender is Shape shape && (propName == "Pos"))
             {
                 viewport3D.Update(shape);
@@ -763,9 +773,9 @@ namespace RayTrace
             viewport3D.Visibility = Visibility.Visible;
         }
 
-        private void buttonRender_Click(object sender, RoutedEventArgs e)
+        private async void buttonRender_Click(object sender, RoutedEventArgs e)
         {
-            Render();
+            await Render();
 
             //bool success = await Render();
 
@@ -857,7 +867,7 @@ namespace RayTrace
             bool? result = dlg.ShowDialog();
             if (result == true)
             {
-                MaterialTileMaker materialTileMaker = new() { Size = 150 };
+                MaterialTileMaker materialTileMaker = new() { Size = MaterialTileSize };
 
                 MaterialTile newTile = materialTileMaker.MakeTile(material);
                 newTile.WriteableBitmap = BitmapToWriteableBitmap(newTile.Bitmap);
@@ -881,7 +891,7 @@ namespace RayTrace
             bool? result = dlg.ShowDialog();
             if (result == true)
             {
-                MaterialTileMaker materialTileMaker = new() { Size = 150 };
+                MaterialTileMaker materialTileMaker = new() { Size = MaterialTileSize };
 
                 MaterialTile newTile = materialTileMaker.MakeTile(materialTile.Material);
 
@@ -945,24 +955,19 @@ namespace RayTrace
             UpdateViewport3D();
         }
 
-        bool dragging = false;
-        private System.Windows.Point clickPoint = new();
+        //bool dragging = false;
+        //private System.Windows.Point clickPoint = new();
 
         private void Border_MouseDown(object sender, MouseButtonEventArgs e)
         {
+            Mouse.Capture(viewport3D, CaptureMode.SubTree);
+
             _inputMode.DoLButtonDown(e.GetPosition(viewport3D));
-
-            // We got the click and not the Viewport3D, so presumably no geometry was clicked on.
-            //ClearBoundingBox();
-
-//            clickPoint = e.GetPosition(viewport3D);
-
-//            dragging = true;
         }
 
         private void Border_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            //            dragging = false;
+            Mouse.Capture(null);
 
             _inputMode.DoLButtonUp(e.GetPosition(viewport3D));
         }
@@ -973,134 +978,6 @@ namespace RayTrace
         private void Border_MouseMove(object sender, MouseEventArgs e)
         {
             _inputMode.DoMouseMove(e.GetPosition(viewport3D));
-            return;
-
-            bool ctrlPressed = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
-            bool shiftPressed = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
-
-            if (!dragging)
-            {
-                clickPoint = e.GetPosition(viewport3D);
-                dragging = true;
-                return;
-            }
-
-            if (e.LeftButton == MouseButtonState.Pressed)
-            {
-                System.Windows.Point p = e.GetPosition(viewport3D);
-
-                float xDiff = (float)(p.X - clickPoint.X);
-                float yDiff = (float)(p.Y - clickPoint.Y);
-
-                Action<string, SVector> WriteSVector = delegate (string name, SVector v) { Debug.WriteLine(name + ":" + v.I + ", " + v.J + ", " + v.K); };
-
-                if (!ctrlPressed && !shiftPressed)
-                {
-                    // Move camera Target
-
-                    SVector viewVector = new(scene.Camera.GetViewVector());
-                    float magnitude = viewVector.Magnitude();
-                    SVector view = viewVector.Normalise();
-                    SVector left = view.VectorProduct(new SVector(0, 1, 0));
-                    //SVector right = view.VectorProduct(new SVector(0, 1, 0));
-                    SVector up = view.VectorProduct(left);
-
-                    //WriteSVector("viewVector", viewVector);
-                    //WriteSVector("left", left);
-
-                    const float factor = 200.0f;
-
-                    // Yaw.
-                    Quaternion q = new(new SVector(0, 1, 0), xDiff / factor);
-                    SVector rotY = q.Rotate(view);
-
-                    //WriteSVector("rotY", rotY);
-
-                    // Pitch.
-                    Quaternion qPitch = new(-left, yDiff / factor);
-                    SVector rotLeft = qPitch.Rotate(view);
-
-                    //WriteSVector("rotLeft", rotLeft);
-
-                    SVector total = ((rotY + rotLeft).Normalise()) * magnitude;
-                    if (Double.IsNaN(total.I) || Double.IsInfinity(total.I))
-                    {
-                        int i = 0;
-                    }
-
-                    //WriteSVector("total", total);
-
-                    //Debug.WriteLine("");
-
-                    scene.Camera.Target = scene.Camera.Pos + new Vector(total); // new Vector(rotY) + new Vector(rotLeft);
-
-                    //Vector offset = new Vector(-xDiff/20, 0, 0 /*yDiff*/);
-                    //scene.Camera.Target += offset;
-
-                    //Vector offset2 = new Vector(/*-xDiff*/ 0, yDiff/20, 0);
-                    //scene.Camera.Target += offset2;
-                }
-                else if (ctrlPressed && !shiftPressed)
-                {
-                    // Move camera in its plane.
-
-                    Vector view = scene.Camera.GetViewVector().Normalise();
-
-                    Vector left = view.VectorProduct(new Vector(0, 1, 0));
-
-                    Vector up = view.VectorProduct(left);
-
-                    Vector offset = left * xDiff - up * yDiff;
-
-                    const float factor = 0.15f;
-                    offset *= factor;
-
-                    scene.Camera.Pos += offset;
-                    scene.Camera.Target += offset;
-                }
-                else if (!ctrlPressed && shiftPressed)
-                {
-                    // Move camera in XZ plane
-
-                    Vector view = scene.Camera.GetViewVector().Normalise();
-
-                    Vector left = view.VectorProduct(new Vector(0, 1, 0));
-
-                    left.J = 0.0f;
-
-                    view.J = 0.0f;
-
-                    Vector offset = left * xDiff + view * yDiff;
-
-                    const float factor = 0.15f;
-                    offset *= factor;
-
-                    scene.Camera.Pos += offset;
-                    scene.Camera.Target += offset;
-                }
-                else if (ctrlPressed && shiftPressed)
-                {
-                    // Rotate camera around target.
-
-                    Vector view = scene.Camera.GetViewVector();
-
-                    Vector targetToCamera = -view;
-
-                    Point target = scene.Camera.Target;
-
-                    Matrix toOrigin = Matrix.GetTranslation(-target.X, -target.Y, -target.Z);
-                    Matrix rotation = Matrix.GetRotationY((float)(xDiff / 10.0));
-                    Matrix fromOrigin = Matrix.GetTranslation(target.X, target.Y, target.Z);
-
-                    // targetToCamera = toOrigin * targetToCamera;
-                    targetToCamera = rotation * targetToCamera;
-                    //targetToCamera = fromOrigin * targetToCamera;
-
-                    scene.Camera.Pos = scene.Camera.Target + targetToCamera;
-                }
-
-                clickPoint = p;
-            }
         }
 
         private void Border_MouseWheel(object sender, MouseWheelEventArgs e)
@@ -1108,12 +985,6 @@ namespace RayTrace
             int delta = e.Delta;
 
             _inputMode?.DoMouseWheel(delta);
-
-            //Vector v = scene.Camera.GetViewVector().Normalise();
-
-            //if (delta < 0) v = -v;
-
-            //scene.Camera.Pos += v;
 
             e.Handled = true;
         }
@@ -1203,7 +1074,7 @@ namespace RayTrace
 
                                     if (materials.Count > 0)
                                     {
-                                        MaterialTileMaker materialTileMaker = new() { Size = 150 };
+                                        MaterialTileMaker materialTileMaker = new() { Size = MaterialTileSize };
                                         foreach (var material in materials)
                                         //for (int i=0; i<materials.Count; i++)
                                         {
@@ -1462,7 +1333,7 @@ namespace RayTrace
         {
             List<GeometryModel3D> hitResults = new();
 
-            GeometryModel3D model;
+            //GeometryModel3D model;
 
             HitTestResultBehavior HitTestCallback(HitTestResult hitTestResult)
             {

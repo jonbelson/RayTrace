@@ -451,56 +451,7 @@ namespace RayTrace
             //M24 = -vecPosition.J;
             //M34 = -vecPosition.K;
 
-
-
             return;
-
-//            xaxis.x yaxis.x zaxis.x          0
-// xaxis.y yaxis.y zaxis.y          0
-// xaxis.z yaxis.z zaxis.z          0
-//- dot(xaxis, cameraPosition) - dot(yaxis, cameraPosition) - dot(zaxis, cameraPosition)  1
-
-
-
-
-
-//            Vector forward = from - to;
-            Vector forward = to - from;
-            forward = forward.Normalise();
-
-            Vector temp = new Vector(0.0f, 1.0f, 0.0f);
-            Vector right = temp.VectorProduct(forward);
-            Vector up = forward.VectorProduct(right);
-
-            //M11 = right.I;
-            //M21 = right.J;
-            //M31 = right.K;
-
-            //M12 = up.I;
-            //M22 = up.J;
-            //M32 = up.K;
-
-            //M13 = forward.I;
-            //M23 = forward.J;
-            //M33 = forward.K;
-
-            M11 = right.I;
-            M12 = right.J;
-            M13 = right.K;
-
-            M21 = up.I;
-            M22 = up.J;
-            M23 = up.K;
-
-            M31 = forward.I;
-            M32 = forward.J;
-            M33 = forward.K;
-
-            M14 = -from.X;
-            M24 = -from.Y;
-            M34 = -from.Z;
-
-            // XXX Probably need to take the transpose of this.
         }
 
         public override string ToString()

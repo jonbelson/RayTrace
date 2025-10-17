@@ -4,6 +4,8 @@ using System.Dynamic;
 using System.Windows.Media.Media3D;
 using System.Windows.Shapes;
 
+using RayTrace.Preview;
+
 namespace RayTrace
 {
     // Result of an intersection test.

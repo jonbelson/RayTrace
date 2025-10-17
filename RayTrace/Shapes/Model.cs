@@ -1,6 +1,5 @@
 ﻿#define USE_SIMD
 
-using RayTrace.Importers;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -14,7 +13,10 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Automation;
 using System.Windows.Media.Media3D;
+
 using static RayTrace.ModelData;
+using RayTrace.Importers;
+using RayTrace.Preview;
 
 namespace RayTrace
 {
@@ -207,7 +209,7 @@ namespace RayTrace
             }
             catch (Exception e)
             {
-                int i = 0;
+                _ = 0;
             }
 
             foreach (ModelData.SubGroup child in group.Children)
@@ -610,7 +612,7 @@ namespace RayTrace
             }
             else
             {
-                int i = 0;
+                _ = 0;
             }
         }
 
@@ -671,7 +673,7 @@ namespace RayTrace
             }
             else
             {
-                int i = 0;
+                _ = 0;
             }
         }
 
@@ -779,6 +781,7 @@ namespace RayTrace
             HitResult hitResult2 = HitTestIterative(camera, in p1, in p2, segmentOnly, firstHitOnly);
             return hitResult2;
 
+#if false
             HitResult hitResult = new(null);
 
             Node node = _root;
@@ -814,6 +817,7 @@ namespace RayTrace
             }
 
             return new HitResult(this);
+#endif
         }
 
         private bool CalculateTexelAndNormal(Camera camera, ref HitResult hr)
@@ -1151,6 +1155,7 @@ namespace RayTrace
             HitResult hr = HitTestImpl(camera, ray.Origin, p2, segmentOnly, true);
             return hr.HasEntry();
 
+#if false
             //bool segmentOnly = (ray.TMax == 1.0);
 
             SPoint p1 = ray.Origin;
@@ -1251,6 +1256,7 @@ namespace RayTrace
             }
 
             return false;
+#endif
         }
 
         public override Colour GetColour(HitResult hr)

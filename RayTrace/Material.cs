@@ -5,6 +5,8 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Drawing;
 
+using RayTrace.Brdfs;
+
 namespace RayTrace
 {
     public enum MaterialType
@@ -92,7 +94,7 @@ namespace RayTrace
 
         public float RefractiveIndex { get; set; } = RayTrace.RefractiveIndex.WindowGlass;
 
-        public BRDF Brdf { get; set; }
+        public Brdfs.Brdf Brdf { get; set; }
         public Texture Texture { get; set; }
 
         //
@@ -174,7 +176,7 @@ namespace RayTrace
                         Brdf = new CookTorrence();
                         break;
                     case MaterialType.BRDF_Gltf:
-                        Brdf = new GltfBRDF();
+                        Brdf = new GltfBrdf();
                         break;
                     default:
                         throw new NotImplementedException();

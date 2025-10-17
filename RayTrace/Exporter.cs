@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RayTrace.Brdfs;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -36,13 +37,13 @@ namespace RayTrace
     {
         public string Name;
 
-        public virtual BRDF Create() { return null; }
+        public virtual Brdf Create() { return null; }
     }
 
     [Serializable]
     public class XMLLambertian : XMLBrdf
     {
-        public override BRDF Create() => new Lambertian(this);
+        public override Brdf Create() => new Lambertian(this);
 
     }
 
@@ -55,7 +56,7 @@ namespace RayTrace
         public CookTorrence.SurfaceType Type;
         public float Ior;
 
-        public override BRDF Create() => new CookTorrence(this);
+        public override Brdf Create() => new CookTorrence(this);
     }
 
     [Serializable]
@@ -65,7 +66,7 @@ namespace RayTrace
         public float Ior;
         public float Roughness;
 
-        public override BRDF Create() => new GltfBRDF(this);
+        public override Brdf Create() => new GltfBrdf(this);
     }
 
 

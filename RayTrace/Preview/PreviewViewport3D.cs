@@ -16,7 +16,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 
-namespace RayTrace
+namespace RayTrace.Preview
 {
     public class PreviewHitResult
     {
@@ -38,50 +38,6 @@ namespace RayTrace
         public bool IsHit() => Type != HitType.None;
     }
 
-    /*
-    public class PlaneXZ : ModelVisual3D
-    {
-
-        public PlaneXZ()
-        {
-            GeometryModel3D plane = new();
-            //MeshGeometry3D mesh = GeometryModel3DFactory.MakePlane(new Vector(0, 1.0f, 0));
-            MeshGeometry3D mesh = new();
-
-            float Size = 100.0f;
-            mesh.Positions.Add(new Point3D(-Size, 0, Size));
-            mesh.Positions.Add(new Point3D(Size, 0, Size));
-            mesh.Positions.Add(new Point3D(Size, 0, -Size));
-            mesh.Positions.Add(new Point3D(-Size, 0, -Size));
-
-            mesh.TriangleIndices.Add(0);
-            mesh.TriangleIndices.Add(1);
-            mesh.TriangleIndices.Add(2);
-            mesh.TriangleIndices.Add(0);
-            mesh.TriangleIndices.Add(2);
-            mesh.TriangleIndices.Add(3);
-
-            plane.Geometry = mesh;
-
-            DiffuseMaterial material = new(new SolidColorBrush(System.Windows.Media.Color.FromArgb(0, 255, 255, 0)));
-            plane.Material = material;
-
-            //plane.BackMaterial = material;
-
-            Transform3DGroup transformGroup = new();
-
-            // var transform = new MatrixTransform3D(lookAt);
-
-            var scale = new ScaleTransform3D(10, 10, 1);
-            transformGroup.Children.Add(scale);
-
-            plane.Transform = transformGroup;
-
-            Content = plane;
-            //this.Children.Add(plane);
-        }
-    };
-    */
 
     public static class MyExtensions
     {
@@ -169,6 +125,11 @@ namespace RayTrace
         public void Update(Shape shape)
         {
             _preview3D?.Update(shape);
+        }
+
+        public void Update(Light light)
+        {
+            _preview3D?.Update(light);
         }
 
         public void ClearBoundingBox()

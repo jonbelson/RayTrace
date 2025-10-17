@@ -15,6 +15,8 @@ using System.Windows.Media.Media3D;
 using System.Windows.Shapes;
 using static System.Formats.Asn1.AsnWriter;
 
+using RayTrace.Preview;
+
 namespace RayTrace
 {
     internal class InputMode
@@ -60,7 +62,7 @@ namespace RayTrace
 
         private State _state = State.Normal;
 
-        private Entity _entity = null;
+        //private Entity _entity = null;
 
 
         public InputMode3D(MainWindow mainWindow, PreviewViewport3D viewport3D, PerspectiveCamera camera, Scene scene)
@@ -392,12 +394,12 @@ namespace RayTrace
                 _mainWindow.SelectedEntity.Clear();
                 _mainWindow.SelectedEntity.Add(hitResult.Entity);
 
-                _viewport3D.UpdateBoundingBox((Shape)hitResult.Entity);
-
                 _state = State.DragObject;
 
                 if (hitResult.Entity is Shape shape)
                 {
+                    _viewport3D.UpdateBoundingBox(shape);
+
                     _XZOffset = new((double)shape.Pos.X - hitResultXZ.Point.X, (double)shape.Pos.Y - hitResultXZ.Point.Y, (double)shape.Pos.Z + hitResultXZ.Point.Z);
                     Debug.WriteLine($"shape.Pos = {shape.Pos.X}, {shape.Pos.Y}, {shape.Pos.Z}");
                     Debug.WriteLine($"hitResultXZ.Point = {hitResultXZ.Point.X}, {hitResultXZ.Point.Y}, {hitResultXZ.Point.Z}");
@@ -462,7 +464,7 @@ namespace RayTrace
                 SVector total = ((rotY + rotLeft).Normalise()) * magnitude;
                 if (Double.IsNaN(total.I) || Double.IsInfinity(total.I))
                 {
-                    int i = 0;
+                    _ = 0;
                 }
 
                 //WriteSVector("total", total);
