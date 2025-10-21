@@ -1,15 +1,15 @@
-﻿using System;
+﻿using RayTrace.Brdfs;
+using RayTrace.Importers;
+using System;
 using System.Collections.Generic;
 using System.IO;
 //using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
-
-using RayTrace.Brdfs;
-using RayTrace.Importers;
 
 namespace RayTrace
 {
@@ -380,6 +380,10 @@ namespace RayTrace
             scene.Camera.Pos = new Point(-5.994f, 4.712f, -9.275f);
             scene.Camera.Target = new Point(0, 3, 1);
 
+            Model model = scene.ImportModel(@"Data\Models\AntiqueCamera\glTF\AntiqueCamera.gltf");
+
+
+/*
             glTFImporter importer = new();
 //            ModelData modelData = importer.ImportModel("C:\\Users\\Jon\\Downloads\\thunderjaw_from_horizon_zero_dawn\\scene.gltf");
             ModelData modelData = importer.ImportModel(@"Data\thunderjaw_from_horizon_zero_dawn\scene.gltf");
@@ -389,6 +393,7 @@ namespace RayTrace
 
                 scene.AddShape(model);
             }
+*/
 
             Light light = new PointLight(scene, new Point(-50, 50, 10), 6000, Palette.White);
             //scene.AddLight(light);
@@ -416,19 +421,48 @@ namespace RayTrace
 
             Scene scene = new Scene();
 
-            ObjImporter importer = new ObjImporter();
+            scene.Camera.Pos = new Point(-5.994f, 4.712f, -9.275f);
+            scene.Camera.Target = new Point(0, 3, 1);
 
-            //Matrix objectToWorld = new Matrix();
+            //MainWindow mainWindow = (MainWindow) Application.Current.MainWindow;
 
-//            ModelData modelData = importer.ImportObj(@"Data\Firefox_IdaFabere\LP_Firefox.obj");
-            ModelData modelData = importer.ImportObj(@"Data\pbr-low-poly-fox-character\source\LP_Firefox.obj");
+
+            Model model = scene.ImportModel(@"Data\pbr-low-poly-fox-character\source\LP_Firefox.obj");
 
             TextureBitmap objTexture = new(@"Data\pbr-low-poly-fox-character\source\LP_Firefox_1001_BaseColor.png");
 
             NormalMap normalMap = new(@"Data\pbr-low-poly-fox-character\source\LP_Firefox_1001_Normal.png");
 
-            scene.Camera.Pos = new Point(-5.994f, 4.712f, -9.275f);
-            scene.Camera.Target = new Point(0, 3, 1);
+            Material firefoxMaterial = new()
+            {
+                Name = "LP_FireFox",
+                Texture = objTexture,
+                NormalMap = normalMap
+
+            };
+
+            scene.AddMaterial(firefoxMaterial);
+
+#if false
+//            ModelData modelData = importer.ImportObj(@"Data\Firefox_IdaFabere\LP_Firefox.obj");
+            ModelData modelData = importer.ImportObj(@"Data\pbr-low-poly-fox-character\source\LP_Firefox.obj");
+            List<Material> materials = importer.CreateMaterials();
+
+                MaterialTileMaker materialTileMaker = new() { Size = MaterialTileSize };
+            foreach (Material material in materials)
+            {
+                {
+                    MaterialTile newTile = materialTileMaker.MakeTile(material);
+                    newTile.WriteableBitmap = BitmapToWriteableBitmap(newTile.Bitmap);
+                    MaterialTiles.Add(newTile);
+
+                    scene.AddMaterial(material);
+                }
+                materialListBox.Items.Refresh();
+                scene.AddMaterial(material);
+            }
+
+
 
 
             /*
@@ -444,7 +478,7 @@ namespace RayTrace
             //ModelData modelData = importer.ImportObj(@"C:\Users\Jon\Documents\Projects\RayTrace\RayTrace\Data\day-18-office-rat");
 
 
-            Model model = new Model(scene, new Point(0, 0, 0), modelData, true);
+            Model model = new Model(scene, new Point(0, 0, 0), modelData, materials, true);
             //model.ObjectToWorld = objectToWorld;
 
             //BoundingBox bb = modelData.GetBoundingBox();
@@ -469,6 +503,7 @@ namespace RayTrace
             // model = ModelFactory.Cube();
             //model = ModelFactory.Tetahedron();
             scene.AddShape(model);
+#endif
 
             Material mat = new Material() { Name = "CookTorrence" };
             {
@@ -487,7 +522,7 @@ namespace RayTrace
 
                 scene.AddMaterial(mat);
 
-                model.Material = mat;
+                //model.Material = mat;
             }
 
             Sphere sphere = new(scene, new Point(-2, 0, 0), 1);

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RayTrace.Importers;
+using System;
 
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -343,6 +344,47 @@ namespace RayTrace
             }
 
             return xml;
+        }
+
+        public Model ImportModel(string fileName)
+        {
+            ModelData modelData = null;
+            List<Material> materials = [];
+
+            Model model = null;
+
+            string ext = System.IO.Path.GetExtension(fileName);
+
+            if (ext.Equals(".obj", StringComparison.OrdinalIgnoreCase))
+            {
+                ObjImporter importer = new();
+
+                modelData = importer.ImportModel(fileName);
+                materials = importer.CreateMaterials();
+            }
+            else if (ext.Equals(".gltf", StringComparison.OrdinalIgnoreCase))
+            {
+                glTFImporter importer = new();
+
+                modelData = importer.ImportModel(fileName);
+                materials = importer.CreateMaterials();
+            }
+
+            if (modelData != null)
+            {
+                model = new(this, new Point(0, 0, 0), modelData, materials, true);
+
+                model.Name = System.IO.Path.GetFileNameWithoutExtension(modelData.fileName);
+
+                //shape = model;
+
+                foreach (var material in materials)
+                {
+                    AddMaterial(material);
+                }
+            }
+
+            return model;
         }
 
     }

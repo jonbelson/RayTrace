@@ -1,4 +1,6 @@
 ﻿using Microsoft.Win32;
+using RayTrace.Importers;
+using RayTrace.Preview;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -25,12 +27,10 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Media.Media3D;
 using System.Windows.Navigation;
+using System.Windows.Shapes;
 //using System.Windows.Shapes;
 using System.Windows.Threading;
 using static System.Formats.Asn1.AsnWriter;
-
-using RayTrace.Importers;
-using RayTrace.Preview;
 
 namespace RayTrace
 {
@@ -48,7 +48,7 @@ namespace RayTrace
                 {
                     string appDataDir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
 
-                    _appDataDir = Path.Combine(appDataDir, AppDomain.CurrentDomain.FriendlyName);
+                    _appDataDir = System.IO.Path.Combine(appDataDir, AppDomain.CurrentDomain.FriendlyName);
 
                     if (!Directory.Exists(_appDataDir))
                     {
@@ -66,7 +66,7 @@ namespace RayTrace
                 if (_appTempDir == null)
                 {
                     string tempPath = System.IO.Path.GetTempPath();
-                    _appTempDir = Path.Combine(tempPath, AppDomain.CurrentDomain.FriendlyName);
+                    _appTempDir = System.IO.Path.Combine(tempPath, AppDomain.CurrentDomain.FriendlyName);
 
                     if (!Directory.Exists(_appTempDir))
                     {
@@ -390,7 +390,7 @@ namespace RayTrace
                 vr = q.Rotate(v);
             }
 
-            string assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            string assemblyPath = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             //MessageBox.Show(assemblyPath);
             var cwd = Directory.GetCurrentDirectory();
             //MessageBox.Show(cwd);
@@ -429,8 +429,8 @@ namespace RayTrace
 
             //scene = SceneFactory.GIDemoScene();
             //scene = SceneFactory.SphereDemoScene();
-            scene = SceneFactory.ObjScene();
-            //scene = SceneFactory.GltfScene();
+            //scene = SceneFactory.ObjScene();
+            scene = SceneFactory.GltfScene();
             //scene = SceneFactory.NormalMapScene();
 
             //scene = SceneFactory.EmptyScene();
@@ -1015,6 +1015,29 @@ namespace RayTrace
             }
         }
 
+        private void UpdateMaterialListBox(Model model)
+        {
+            UpdateMaterials();  // TODO For now.
+
+            materialListBox.Items.Refresh();
+
+            /*
+                        List<Material> materials = model.GetMaterials();
+
+                        MaterialTileMaker materialTileMaker = new() { Size = MaterialTileSize };
+
+                        foreach (Material material in materials)
+                        {
+                            MaterialTile newTile = materialTileMaker.MakeTile(material);
+                            newTile.WriteableBitmap = BitmapToWriteableBitmap(newTile.Bitmap);
+
+                            MaterialTiles.Add(newTile);
+                        }
+
+                        materialListBox.Items.Refresh();
+            */
+        }
+
         private void galleryModel_SelectionChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
             RibbonGallery gallery = (RibbonGallery)sender;
@@ -1042,52 +1065,13 @@ namespace RayTrace
                             if (result == true)
                             {
                                 // Open document
-                                string filename = dialog.FileName;
+                                string fileName = dialog.FileName;
 
-                                ModelData modelData = null;
-                                List<Material> materials = new();
+                                shape = scene.ImportModel(fileName);
 
-                                string ext = Path.GetExtension(filename);
-
-                                if (ext.Equals(".obj", StringComparison.OrdinalIgnoreCase))
-                                {
-                                    ObjImporter importer = new();
-
-                                    modelData = importer.ImportObj(filename);
-                                    materials = importer.CreateMaterials();
-                                }
-                                else if (ext.Equals(".gltf", StringComparison.OrdinalIgnoreCase))
-                                {
-                                    glTFImporter importer = new();
-
-                                    modelData = importer.ImportModel(filename);
-                                    materials = importer.CreateMaterials();
-                                }
-
-                                if (modelData != null)
-                                {
-                                    Model model = new(scene, new Point(0, 0, 0), modelData, materials, true);
-
-                                    model.Name = System.IO.Path.GetFileNameWithoutExtension(modelData.fileName);
-
-                                    shape = model;
-
-                                    if (materials.Count > 0)
-                                    {
-                                        MaterialTileMaker materialTileMaker = new() { Size = MaterialTileSize };
-                                        foreach (var material in materials)
-                                        //for (int i=0; i<materials.Count; i++)
-                                        {
-                                            MaterialTile newTile = materialTileMaker.MakeTile(material);
-                                            newTile.WriteableBitmap = BitmapToWriteableBitmap(newTile.Bitmap);
-                                            MaterialTiles.Add(newTile);
-
-                                            scene.AddMaterial(material);
-                                        }
-                                        materialListBox.Items.Refresh();
-                                    }
-                                }
+                                UpdateMaterials();
                             }
+
                         }
                         break;
                 }

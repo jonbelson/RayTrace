@@ -41,7 +41,9 @@ namespace RayTrace
         public string directoryName;
 
 //        public TextureBitmap texture = null;
-        public Texture texture = null;
+        /// <summary>
+        /// /public Texture texture = null;
+        /// </summary>
 
         public struct Texel
         {
@@ -215,6 +217,13 @@ namespace RayTrace
             foreach (ModelData.SubGroup child in group.Children)
             {
                 ModelSubGroup childSubGroup = new(this, child) { Material = Scene.GetDefaultMaterial() };    // XXX Until subgroup Material GUIDs are saved.
+
+                //int materialId = child.Material;
+                //if (materialId != -1)
+                //{
+                //    childSubGroup.Material = Scene.Materials.;
+                //}
+
                 parentSubGroup.Children.Add(childSubGroup);
 
                 UpdateSubGroupRecurse(child, childSubGroup);
@@ -447,7 +456,7 @@ namespace RayTrace
             else
             {
                 ObjImporter importer = new();
-                ModelData modelData = importer.ImportObj(Path.Join(xmlModel.DirectoryName, xmlModel.FileName));
+                ModelData modelData = importer.ImportModel(Path.Join(xmlModel.DirectoryName, xmlModel.FileName));
 
                 _modelData = modelData;
                 //Material.Texture = objData.Item2;
@@ -1309,6 +1318,21 @@ namespace RayTrace
             return Palette.Grey;
         }
 
+        // Retrieve a list of Material instances used by this Model.
+        public List<Material> GetMaterials()
+        {
+            List<Material> materials = [];
+
+            foreach (var subGroup in _subGroups.Values)
+            {
+                if (subGroup.Material != null)
+                {
+                    materials.Add(subGroup.Material);
+                }
+            }
+            return materials;
+        }
+
         protected override void AsXMLImpl(XMLEntity xml)
         {
             base.AsXMLImpl(xml);
@@ -1355,11 +1379,13 @@ namespace RayTrace
                     }
                 }
 
+                /*
                 if (_modelData.texture != null)
                 {
                     //    xmlModel.Texure = _modelData.texture.ToXML();
                     xmlModel.MaterialGuid = Material.Guid;// _modelData.texture.;
                 }
+                */
             }
         }
 
@@ -1436,7 +1462,13 @@ namespace RayTrace
         {
             TreeViewEntityModel modelModel = new TreeViewEntityModel() { Name = Name, Instance = this };
 
-            ToTreeModelRecurse(_modelSubGroup, modelModel);
+            foreach (var childGroup in _modelSubGroup.Children)
+            {
+                ToTreeModelRecurse(childGroup, modelModel);
+            }
+
+            ///ToTreeModelRecurse(_modelSubGroup, modelModel);
+
 /*
             //foreach (ModelData.Group group in _modelData.groups)
             foreach (var subGroup in _subGroups.Values)

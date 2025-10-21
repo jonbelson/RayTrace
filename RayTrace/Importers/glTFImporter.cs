@@ -28,7 +28,7 @@ namespace RayTrace.Importers
     // Importer for glTF format.
     // https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/Specification.adoc
     //
-    internal class glTFImporter
+    internal class glTFImporter : IImporter
     {
 
         class GltfPrimitive

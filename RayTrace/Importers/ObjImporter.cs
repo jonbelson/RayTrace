@@ -13,7 +13,7 @@ using System.Xml.Linq;
 
 namespace RayTrace.Importers
 {
-    public class ObjImporter
+    public class ObjImporter : IImporter
     {
         public static SVector GetNormal(List<SPoint> points, ModelData.Triangle triangle)
         {
@@ -546,7 +546,7 @@ namespace RayTrace.Importers
         //
         // Attempt to load a .OBJ file.
         // XXX Rewrite using Span<> for performance.
-        public ModelData ImportObj(string path)
+        public ModelData ImportModel(string path)
         {
             ModelData modelData = null;
 
