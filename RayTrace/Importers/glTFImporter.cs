@@ -54,15 +54,22 @@ namespace RayTrace.Importers
 
         class GltfMaterial
         {
+            public string name;
+
+            // NormalTexureInfo
+            public string normalTexture;    // +X right, +Y up, +Z towards viewer.
+
+            // textureInfo
+            public string emissiveTexture;  // sRGB
+
+            // pbrMetallicRoughness
+            public Vec4T<float> baseColorFactor = new( 1.0f, 1.0f, 1.0f, 1.0f );
+            public string baseColorTexture;     // sRGB
             public float metallicFactor = 1.0f;
             public float roughnessFactor = 1.0f;
-            public Vec4T<float> baseColorFactor = new( 1.0f, 1.0f, 1.0f, 1.0f );
-
-            public string baseColorTexture;
             public string metallicRoughnessTexture;
-            public string normalTexture;
 
-            public string name;
+            public bool doubleSided = false;
         }
 
         // Provides mapping from textures to images.
@@ -173,24 +180,6 @@ namespace RayTrace.Importers
         // JsonBufferView.Target
         private const Int32 ARRAY_BUFFER = 34962;
         private const Int32 ELEMENT_ARRAY_BUFFER = 34963;
-
-        //struct Vec2
-        //{
-        //    public Vec2(float x, float y) { this.x = x; this.y = y; }
-        //    public float x; public float y;
-        //}
-
-        //struct Vec3
-        //{
-        //    public Vec3(float x, float y, float z) { this.x = x; this.y = y; this.z = z; }
-        //    public float x; public float y; public float z;
-        //}
-
-        //struct Vec4
-        //{
-        //    public Vec4(float x, float y, float z, float w) { this.x = x; this.y = y; this.z = z; this.w = w; }
-        //    public float x; public float y; public float z; public float w;
-        //}
 
         struct Vec2T<T>
         {
@@ -305,8 +294,35 @@ namespace RayTrace.Importers
             public List<JsonPrimitive> primitives { get; set; }
         }
 
+        class JsonMaterialExtension { };
+
+        class JsonMaterialKHR_materials_pbrSpecularGlossiness
+        {
+            public float[] diffuseFactor { get; set; }
+
+            public class DiffuseTexture { public int index { get; set; } }
+            public DiffuseTexture diffuseTexture { get; set; }
+
+            public float glossinessFactor { get; set; } = 1.0f;
+
+            public float[] specularFactor { get; set; }
+
+            public class SpecularGlossinessTexture { public int index { get; set; } }
+            public SpecularGlossinessTexture specularGlossinessTexture { get; set; }
+        };
+
         class JsonMaterial
         {
+            public string name { get; set; }
+
+            public class Extensions
+            {
+                //public List<JsonMaterialExtension> extensions { get; set; }
+                public JsonMaterialKHR_materials_pbrSpecularGlossiness KHR_materials_pbrSpecularGlossiness { get; set; }
+            }
+
+            public Extensions extensions { get; set; }
+
             public class PbrMetallicRoughness
             {
                 public class BaseColorTexture
@@ -337,7 +353,11 @@ namespace RayTrace.Importers
 
             public NormalTexture normalTexture { get; set; }
 
-            public string name { get; set; }
+            public class EmissiveTexture { public int index { get; set; } }
+            public EmissiveTexture emissiveTexture { get; set; }
+
+            public float[] emissiveFactor { get; set; }
+
         }
 
         class JsonScene
@@ -813,6 +833,7 @@ namespace RayTrace.Importers
             ModelData modelData = new();
 
             modelData.fileName = _gltfAsset.fileName;
+            modelData.directoryName = _gltfAsset.directory;
 
             points.Clear();
             normals.Clear();
@@ -1248,6 +1269,24 @@ namespace RayTrace.Importers
                         roughnessFactor = material.pbrMetallicRoughness?.roughnessFactor ?? 1f,
                     };
 
+                    if (material.extensions is not null)
+                    {
+                        if (material.extensions.KHR_materials_pbrSpecularGlossiness is not null)
+                        {
+                            int textureIndex = material.extensions.KHR_materials_pbrSpecularGlossiness.diffuseTexture?.index ?? -1;
+                            if (textureIndex != -1 && textureIndex < asset.textures.Count)
+                            {
+                                int imageIndex = asset.textures[textureIndex].source;
+
+                                string baseColor = GetImage(asset, imageIndex);
+                                if (baseColor is not null) gltfMaterial.baseColorTexture = baseColor;
+                            }
+
+                        }
+
+                    }
+
+
                     if (material.pbrMetallicRoughness is not null)
                     {
                         if (material.pbrMetallicRoughness.baseColorFactor != null)
@@ -1282,6 +1321,17 @@ namespace RayTrace.Importers
 
                         string normalTexture = GetImage(asset, imageIndex);
                         if (normalTexture is not null) gltfMaterial.normalTexture = normalTexture;
+                    }
+
+                    if (material.emissiveTexture is not null)
+                    {
+                        int textureIndex = material.emissiveTexture.index;
+                        if (textureIndex >= 0 && textureIndex < asset.textures.Count)
+                        {
+                            int imageIndex = asset.textures[textureIndex].source;
+                            string emissiveTexture = GetImage(asset, imageIndex);
+                            if (emissiveTexture is not null) gltfMaterial.emissiveTexture = emissiveTexture;
+                        }
                     }
 
                     _gltfAsset.materials.Add(gltfMaterial);
@@ -1356,6 +1406,9 @@ namespace RayTrace.Importers
             return modelData;
         }
 
+        //
+        // Create a List of Materials based on the materials imported from the glTF file
+        //
         public List<RayTrace.Material> CreateMaterials()
         {
             List<RayTrace.Material> materials = new();
@@ -1409,6 +1462,21 @@ namespace RayTrace.Importers
                     else
                     {
                         Debug.WriteLine($"Failed to find image {material.normalTexture}");
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(material.emissiveTexture))
+                {
+                    string path = FindImage(_gltfAsset.directory, material.emissiveTexture);
+                    if (!String.IsNullOrEmpty(path))
+                    {
+                        TextureBitmap emissiveTexture = new() { FileName = path };
+
+                        mat.EmissiveTexture = emissiveTexture;
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"Failed to find image {material.emissiveTexture}");
                     }
                 }
 

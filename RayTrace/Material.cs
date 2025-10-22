@@ -72,6 +72,8 @@ namespace RayTrace
 
         public NormalMap NormalMap { get; set; }
 
+        public TextureBitmap EmissiveTexture { get; set; }
+
         public bool HasRoughness()
         {
             return Roughness > 0.0f;
@@ -204,7 +206,15 @@ namespace RayTrace
         {
             if (Brdf != null)
             {
-                return Brdf.GetColour(hr, GetColour(hr), source, Li);
+                Colour c = Brdf.GetColour(hr, GetColour(hr), source, Li);
+
+                if (EmissiveTexture != null)
+                {
+                    Colour e = EmissiveTexture.GetColour(hr);
+                    c += e;
+                }
+
+                return c;
             }
 
             return Palette.Black;

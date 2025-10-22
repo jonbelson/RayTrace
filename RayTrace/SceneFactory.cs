@@ -1,6 +1,4 @@
-﻿using RayTrace.Brdfs;
-using RayTrace.Importers;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 //using System.Drawing;
@@ -10,6 +8,9 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
+
+using RayTrace.Brdfs;
+using RayTrace.Skydomes;
 
 namespace RayTrace
 {
@@ -380,22 +381,23 @@ namespace RayTrace
             scene.Camera.Pos = new Point(-5.994f, 4.712f, -9.275f);
             scene.Camera.Target = new Point(0, 3, 1);
 
-            Model model = scene.ImportModel(@"Data\Models\AntiqueCamera\glTF\AntiqueCamera.gltf");
+//            Model model = scene.ImportModel(@"Data\Models\AntiqueCamera\glTF\AntiqueCamera.gltf");
+            Model model = scene.ImportModel(@"Data\redeye_watcher_rig__horizon_zero_dawn__update\scene.gltf");
 
 
-/*
-            glTFImporter importer = new();
-//            ModelData modelData = importer.ImportModel("C:\\Users\\Jon\\Downloads\\thunderjaw_from_horizon_zero_dawn\\scene.gltf");
-            ModelData modelData = importer.ImportModel(@"Data\thunderjaw_from_horizon_zero_dawn\scene.gltf");
-            if (modelData != null)
-            {
-                Model model = new Model(scene, new Point(0, 0, 0), modelData, true);
+        /*
+                    glTFImporter importer = new();
+        //            ModelData modelData = importer.ImportModel("C:\\Users\\Jon\\Downloads\\thunderjaw_from_horizon_zero_dawn\\scene.gltf");
+                    ModelData modelData = importer.ImportModel(@"Data\thunderjaw_from_horizon_zero_dawn\scene.gltf");
+                    if (modelData != null)
+                    {
+                        Model model = new Model(scene, new Point(0, 0, 0), modelData, true);
 
-                scene.AddShape(model);
-            }
-*/
+                        scene.AddShape(model);
+                    }
+        */
 
-            Light light = new PointLight(scene, new Point(-50, 50, 10), 6000, Palette.White);
+        Light light = new PointLight(scene, new Point(-50, 50, 10), 6000, Palette.White);
             //scene.AddLight(light);
 
             light = new PointLight(scene, new Point(10, 30, -30), 3000, Palette.White);

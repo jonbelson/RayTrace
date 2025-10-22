@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 
+using RayTrace.Skydomes;
+
 namespace RayTrace
 {
     public class EntityTemplateSelector : DataTemplateSelector

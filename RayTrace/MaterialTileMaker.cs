@@ -8,6 +8,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
 
+using RayTrace.Skydomes;
+
 namespace RayTrace
 {
     public class MaterialTile
@@ -60,6 +62,7 @@ namespace RayTrace
 
             List<Tile> tiles = [];
 
+            // Define chunk sizes for rendering, expressed as 1/n.
             int[] steps = [4, 8, 8, 8, 8, 4];
 
             int yOffset = 0;
@@ -82,20 +85,14 @@ namespace RayTrace
                 tasks.Add(task);
             }
 
-            //var tiles = new {  };
-
-            //Task task1 = Task.Factory.StartNew(() => { renderer.Render(scene, canvas, 0, 0, Size/2, Size/2, token); });
-            //Task task2 = Task.Factory.StartNew(() => { renderer.Render(scene, canvas, Size/2, 0, Size / 2, Size / 2, token); });
-            //Task task3 = Task.Factory.StartNew(() => { renderer.Render(scene, canvas, 0, Size/2, Size / 2, Size / 2, token); });
-            //Task task4 = Task.Factory.StartNew(() => { renderer.Render(scene, canvas, Size/2, Size/2, Size / 2, Size / 2, token); });
-
-//            Task[] tasks = new Task[4] { task1, task2, task3, task4 };
-
             Task.WaitAll(tasks);
 
             return Task.FromResult(true);
         }
 
+        //
+        // Constructor
+        //
         public MaterialTileMaker()
         {
             scene = new Scene();

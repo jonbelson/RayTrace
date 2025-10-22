@@ -1,6 +1,4 @@
 ﻿using Microsoft.Win32;
-using RayTrace.Importers;
-using RayTrace.Preview;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -31,6 +29,10 @@ using System.Windows.Shapes;
 //using System.Windows.Shapes;
 using System.Windows.Threading;
 using static System.Formats.Asn1.AsnWriter;
+
+using RayTrace.Importers;
+using RayTrace.Preview;
+using RayTrace.Skydomes;
 
 namespace RayTrace
 {

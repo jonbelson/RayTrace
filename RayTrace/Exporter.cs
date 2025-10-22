@@ -1,11 +1,13 @@
-﻿using RayTrace.Brdfs;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
+
+using RayTrace.Brdfs;
+using RayTrace.Skydomes;
 
 namespace RayTrace
 {
@@ -33,6 +35,7 @@ namespace RayTrace
     [Serializable]
     [XmlInclude(typeof(XMLLambertian))]
     [XmlInclude(typeof(XMLCookTorrence))]
+    [XmlInclude(typeof(XMLGltfBrdf))]
     public class XMLBrdf
     {
         public string Name;
@@ -271,7 +274,17 @@ namespace RayTrace
 //        public XMLTexture Texure;
         //public Guid MaterialGuid;
 
-        public override Shape Create(Scene scene) { return new Model(scene, this); }
+        public override Shape Create(Scene scene)
+        {
+            if (string.IsNullOrEmpty(FileName))
+            {
+                return new Model(scene, this);
+            }
+            else
+            {
+                return scene.ImportModel(Path.Join(DirectoryName, FileName));
+            }
+        }
     }
 
     [Serializable]

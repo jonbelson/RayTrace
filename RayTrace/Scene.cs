@@ -1,8 +1,10 @@
-﻿using RayTrace.Importers;
-using System;
+﻿using System;
 
 using System.Collections.Generic;
 using System.ComponentModel;
+
+using RayTrace.Importers;
+using RayTrace.Skydomes;
 
 namespace RayTrace
 {

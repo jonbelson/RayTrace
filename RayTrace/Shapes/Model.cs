@@ -455,11 +455,14 @@ namespace RayTrace
             }
             else
             {
+                // XXX Doesn't work for imported Models.
+                /*
                 ObjImporter importer = new();
                 ModelData modelData = importer.ImportModel(Path.Join(xmlModel.DirectoryName, xmlModel.FileName));
 
                 _modelData = modelData;
                 //Material.Texture = objData.Item2;
+                */
             }
 
             UpdateSubGroups();

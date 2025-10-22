@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RayTrace
+namespace RayTrace.Skydomes
 {
     // Represent the environment via a cube map.
     // Sky bitmap can either be a single texture or six separate textures.
