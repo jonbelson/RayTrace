@@ -14,24 +14,44 @@ namespace RayTrace.Brdfs
     // H    Normalised half vector |L + V|
     public class GltfBrdf : Brdf
     {
-        public float _metallic { get; set; }
+        public float _metallicFactor { get; set; }
 
-        public float Metallic
+        public float MetallicFactor
         {
-            get => _metallic;
-            set { Math.Clamp(_metallic, 0.0f, 1.0f); _metallic = value; }
+            get => _metallicFactor;
+            set { _metallicFactor = Math.Clamp(value, 0.0f, 1.0f); }
         }
 
         public float Ior { get; set; } = 1.5f;
 
-        private float _roughness = 0.5f;
-        public float Roughness
+        // Multiplier for Roughness.
+        private float _roughnessFactor = 1f;
+        public float RoughnessFactor
         {
-            get => _roughness;
-            set { _roughness = Math.Clamp(value, 0f, 1f); }
+            get => _roughnessFactor;
+            set { _roughnessFactor = Math.Clamp(value, 0f, 1f); }
         }
 
-        private float Alpha { get => _roughness*_roughness; }
+        // Texture to read Roughness from.
+        public TextureBitmap MetallicRoughnessTexture { get; set; }
+
+        // Default Roughness if no texture is present.
+        private static readonly Colour _defaultRoughness = new(0f, 1f, 1f);
+
+        // Read Roughness from teh texture, else return default.
+        private Colour GetRoughness(in HitResult hr)
+        {
+            if (MetallicRoughnessTexture is not null && MetallicRoughnessTexture.IsValid())
+            {
+                Colour texColour = MetallicRoughnessTexture.GetColour(hr.u, hr.v);
+                return texColour;
+                //float roughness = texColour.Green*RoughnessFactor;
+                //return new Colour(roughness, roughness, roughness);
+            }
+            return _defaultRoughness;
+        }
+
+        //private float Alpha { get => _roughness*_roughness; }
 
         private Colour _f0 = new(0.04f, 0.04f, 0.04f);
         private Colour _f90 = new(1.0f, 1.0f, 1.0f);
@@ -104,9 +124,11 @@ namespace RayTrace.Brdfs
 
         // Calculate GGX microfactet distribution, or 'D'.
         // https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#specular-brdf
-        private float CalculateD_GGX(float NdotH)
+        // https://cdn2.unrealengine.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf
+        // [Equation 3]
+        private static float CalculateD_GGX(float NdotH, float roughness)
         {
-            float alpha = Alpha;
+            float alpha = roughness*roughness;
             float alphaSql = alpha*alpha;
 
             float val = NdotH*NdotH*(alphaSql - 1.0f) + 1.0f;
@@ -124,9 +146,10 @@ namespace RayTrace.Brdfs
             return 0.0f;
         }
 
-        private float CalculateD_Ref(float NdotH)
+        private static float CalculateD_Ref(float NdotH, float roughness)
         {
-            float alphaSqr = Alpha*Alpha;
+            float alpha = roughness*roughness;
+            float alphaSqr = alpha*alpha;
 
             float val = (NdotH*alphaSqr - NdotH)*NdotH + 1.0f;
 
@@ -154,9 +177,9 @@ namespace RayTrace.Brdfs
 
         // https://cdn2.unrealengine.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf
         // [Equation 4]
-        private float CalculateG_Eq4(float NdotL, float NdotV)
+        private static float CalculateG_Eq4(float NdotL, float NdotV, float roughness)
         {
-            float val = _roughness + 1;
+            float val = roughness + 1;
             float k = val*val/8.0f;
 
             float Gl = NdotL/(NdotL*(1.0f - k) + k);
@@ -169,12 +192,13 @@ namespace RayTrace.Brdfs
         }
 
 
-        private float CalculateG_Ref(float NdotL, float NdotV)
+        private static float CalculateG_Ref(float NdotL, float NdotV, float roughness)
         {
             //float val = _roughness + 1;
             //float k = val*val/8.0f;
 
-            float alphaSqr = Alpha*Alpha;
+            float alpha = roughness*roughness;
+            float alphaSqr = alpha*alpha;
 
             float denom1 = NdotL*MathF.Sqrt(NdotV*NdotV*(1.0f - alphaSqr) + alphaSqr);
             float denom2 = NdotV*MathF.Sqrt(NdotL*NdotL*(1.0f - alphaSqr) + alphaSqr);
@@ -190,12 +214,13 @@ namespace RayTrace.Brdfs
             return 0f;
         }
 
-        private float CalculateG_Ref2(float NdotL, float NdotV)
+        private static float CalculateG_Ref2(float NdotL, float NdotV, float roughness)
         {
             //float val = _roughness + 1;
             //float k = val*val/8.0f;
 
-            float alphaSqr = Alpha*Alpha;
+            float alpha = roughness*roughness;
+            float alphaSqr = alpha*alpha;
 
             float attenuationL = 2.0f*NdotL/(NdotL + MathF.Sqrt(alphaSqr + (1.0f - alphaSqr)*NdotL*NdotL));
             float attenuationV = 2.0f*NdotV/(NdotV + MathF.Sqrt(alphaSqr + (1.0f - alphaSqr)*NdotV*NdotV));
@@ -218,7 +243,7 @@ namespace RayTrace.Brdfs
         }
         */
 
-        private float CalculateV(float NdotL, float NdotV)
+        private static float CalculateV(float NdotL, float NdotV, float roughness)
         {
             //            float denominator = 4.0f*Math.Abs(NdotL)*Math.Abs(NdotV);
             float denominator = 4.0f*NdotL*NdotV;
@@ -228,7 +253,7 @@ namespace RayTrace.Brdfs
             if (denominator != 0.0f)
             {
                 //float G = CalculateG_Eq4(NdotL, NdotV);
-                float G = CalculateG_Ref(NdotL, NdotV);
+                float G = CalculateG_Ref(NdotL, NdotV, roughness);
 
                 return G/denominator;
             }
@@ -237,9 +262,10 @@ namespace RayTrace.Brdfs
         }
 
         // Equation 15
-        private float CalculateV_Equ15(float NdotL, float NdotV)
+        private static float CalculateV_Equ15(float NdotL, float NdotV, float roughness)
         {
-            float alphaSqr = Alpha*Alpha;
+            float alpha = roughness*roughness;
+            float alphaSqr = alpha*alpha;
             float denom1 = NdotL*MathF.Sqrt(NdotV*NdotV*(1.0f - alphaSqr) + alphaSqr);
             float denom2 = NdotV*MathF.Sqrt(NdotL*NdotL*(1.0f - alphaSqr) + alphaSqr);
 
@@ -256,10 +282,11 @@ namespace RayTrace.Brdfs
 
         // Equation 16
         // Faster but less accurate
-        private float CalculateV_Equ16(float NdotL, float NdotV)
+        private static float CalculateV_Equ16(float NdotL, float NdotV, float roughness)
         {
-            double denom1 = NdotL*(NdotV*(1.0f - Alpha) + Alpha);
-            double denom2 = NdotV*(NdotL*(1.0f - Alpha) + Alpha);
+            float alpha = roughness*roughness;
+            double denom1 = NdotL*(NdotV*(1.0f - alpha) + alpha);
+            double denom2 = NdotV*(NdotL*(1.0f - alpha) + alpha);
 
             Debug.Assert(!double.IsNaN(denom1));
             Debug.Assert(!double.IsNaN(denom2));
@@ -279,10 +306,10 @@ namespace RayTrace.Brdfs
             return c*(1.0f/MathF.PI);
         }
 
-        private Colour SpecularBrdf(float NdotL, float NdotV, float NdotH)
+        private static Colour SpecularBrdf(float NdotL, float NdotV, float NdotH, float roughness)
         {
-            float V = CalculateV(NdotL, NdotV);
-            float D = CalculateD_GGX(NdotH);
+            float V = CalculateV(NdotL, NdotV, roughness);
+            float D = CalculateD_GGX(NdotH, roughness);
 
             Debug.Assert(!float.IsNaN(V));
             Debug.Assert(!float.IsNaN(D));
@@ -298,20 +325,21 @@ namespace RayTrace.Brdfs
         //}
 
         // https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#dielectrics
-        private Colour DielectricBrdf(Colour baseColour, float NdotL, float NdotV, float NdotH, float VdotH)
+        private static Colour DielectricBrdf(Colour baseColour, float NdotL, float NdotV, float NdotH, float VdotH, float roughness)
         {
             Colour _base = DiffuseBrdf(baseColour);
-            Colour layer = SpecularBrdf(NdotL, NdotV, NdotH);
+            Colour layer = SpecularBrdf(NdotL, NdotV, NdotH, roughness);
 
             // Index of refraction hard coded to 1.5.
             return FresnelMix(1.5f, _base, layer, VdotH);
         }
 
-        private Colour MetalBrdf(Colour baseColour, float NdotL, float NdotV, float NdotH)
+        private static Colour MetalBrdf(Colour baseColour, float NdotL, float NdotV, float NdotH, float VdotH, float roughness)
         {
-            Colour bsdf = SpecularBrdf(NdotL, NdotV, NdotH);
+            Colour bsdf = SpecularBrdf(NdotL, NdotV, NdotH, roughness);
 
-            return ConductorFresnel(baseColour, bsdf, Alpha);
+            float alpha = roughness*roughness;
+            return ConductorFresnel(baseColour, bsdf, VdotH /*alpha*/);
 
             //return Palette.Black;
         }
@@ -325,8 +353,8 @@ namespace RayTrace.Brdfs
         {
             Name = xml.Name;
             Ior = xml.Ior;
-            Roughness = xml.Roughness;
-            Metallic = xml.Metallic;
+            RoughnessFactor = xml.Roughness;
+            MetallicFactor = xml.Metallic;
         }
 
         // Calculate Colour at point given in hr based on radiance (Li) coming from direction 'source'.
@@ -362,8 +390,12 @@ namespace RayTrace.Brdfs
             float VdotN = V.DotProductSaturated(N);
             float LdotN = L.DotProductSaturated(N);
 
+            Colour metallicRoughnessColour = GetRoughness(hr);
+            float metalness = metallicRoughnessColour.Blue*MetallicFactor;
+            float roughness = metallicRoughnessColour.Green*RoughnessFactor;
+
             Colour black = Palette.Black;
-            Colour c_diff = Colour.LinearBlend(colour, black, _metallic);
+            Colour c_diff = Colour.LinearBlend(colour, black, metalness);
 
             //Colour c = new Colour(0.04f, 0.04f, 0.04f);
             //Colour F0 = Colour.LinearBlend(c, colour, _metallic);
@@ -371,8 +403,8 @@ namespace RayTrace.Brdfs
             Colour tint = new(1.0f - _f0.Red, 1.0f - _f0.Green, 1.0f - _f0.Blue);
 
             Colour diffuseColour = colour*tint;
-            diffuseColour *= 1.0f - _metallic;
-            Colour specularColour = Colour.LinearBlend(_f0, colour, _metallic);
+            diffuseColour *= 1.0f - metalness;
+            Colour specularColour = Colour.LinearBlend(_f0, colour, metalness);
 
 
             //Colour F = new(f, f, f);
@@ -389,8 +421,8 @@ namespace RayTrace.Brdfs
 
             Colour F = ConductorFresnel(specularEnvironmentR0, specularEnvironmentR90, VdotH);
             //            float D = CalculateD_GGX(NdotH);
-            float D = CalculateD_Ref(NdotH);
-            float G = CalculateG_Ref(NdotL, NdotV);
+            float D = CalculateD_Ref(NdotH, roughness);
+            float G = CalculateG_Ref(NdotL, NdotV, roughness);
 
             Colour tint2 = new(1.0f - F.Red, 1.0f - F.Green, 1.0f - F.Blue);
             Colour diffuseContrib = tint2*DiffuseBrdf(diffuseColour);
@@ -429,8 +461,8 @@ namespace RayTrace.Brdfs
 
             xml.Name = Name;
             xml.Ior = Ior;
-            xml.Roughness = Roughness;
-            xml.Metallic = Metallic;
+            xml.Roughness = RoughnessFactor;
+            xml.Metallic = MetallicFactor;
 
             return xml;
         }

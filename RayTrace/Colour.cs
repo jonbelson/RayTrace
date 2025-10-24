@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Drawing;
 using System.Numerics;
 
 namespace RayTrace
@@ -275,6 +276,24 @@ namespace RayTrace
         public SColour ToVector4()
         {
             return new SColour(Red, Green, Blue, 0);
+        }
+
+        public Colour ToLinearRGB()
+        {
+            float r = Red <= 0.04045f ? Red / 12.92f : MathF.Pow((Red + 0.055f) / 1.055f, 2.4f);
+            float g = Green <= 0.04045f ? Green / 12.92f : MathF.Pow((Green + 0.055f) / 1.055f, 2.4f);
+            float b = Blue <= 0.04045f ? Blue / 12.92f : MathF.Pow((Blue + 0.055f) / 1.055f, 2.4f);
+
+            return new Colour(r, g, b);
+        }
+
+        public Colour FromLinearRGB()
+        {
+            float r = Red <= 0.0031308f ? Red * 12.92f : 1.055f * MathF.Pow(Red, 1.0f / 2.4f) - 0.055f;
+            float g = Green <= 0.0031308f ? Green * 12.92f : 1.055f * MathF.Pow(Green, 1.0f / 2.4f) - 0.055f;
+            float b = Blue <= 0.0031308f ? Blue * 12.92f : 1.055f * MathF.Pow(Blue, 1.0f / 2.4f) - 0.055f;
+
+            return new Colour(r, g, b);
         }
     }
 }

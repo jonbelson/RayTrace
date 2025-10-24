@@ -382,22 +382,23 @@ namespace RayTrace
             scene.Camera.Target = new Point(0, 3, 1);
 
 //            Model model = scene.ImportModel(@"Data\Models\AntiqueCamera\glTF\AntiqueCamera.gltf");
-            Model model = scene.ImportModel(@"Data\redeye_watcher_rig__horizon_zero_dawn__update\scene.gltf");
+//            Model model = scene.ImportModel(@"Data\redeye_watcher_rig__horizon_zero_dawn__update\scene.gltf");
+            Model model = scene.ImportModel(@"Data\Models\MetalRoughSpheres\glTF\MetalRoughSpheres.gltf");
 
 
-        /*
-                    glTFImporter importer = new();
-        //            ModelData modelData = importer.ImportModel("C:\\Users\\Jon\\Downloads\\thunderjaw_from_horizon_zero_dawn\\scene.gltf");
-                    ModelData modelData = importer.ImportModel(@"Data\thunderjaw_from_horizon_zero_dawn\scene.gltf");
-                    if (modelData != null)
-                    {
-                        Model model = new Model(scene, new Point(0, 0, 0), modelData, true);
+            /*#scene.gltf
+                        glTFImporter importer = new();
+            //            ModelData modelData = importer.ImportModel("C:\\Users\\Jon\\Downloads\\thunderjaw_from_horizon_zero_dawn\\scene.gltf");
+                        ModelData modelData = importer.ImportModel(@"Data\thunderjaw_from_horizon_zero_dawn\scene.gltf");
+                        if (modelData != null)
+                        {
+                            Model model = new Model(scene, new Point(0, 0, 0), modelData, true);
 
-                        scene.AddShape(model);
-                    }
-        */
+                            scene.AddShape(model);
+                        }
+            */
 
-        Light light = new PointLight(scene, new Point(-50, 50, 10), 6000, Palette.White);
+            Light light = new PointLight(scene, new Point(-50, 50, 10), 6000, Palette.White);
             //scene.AddLight(light);
 
             light = new PointLight(scene, new Point(10, 30, -30), 3000, Palette.White);

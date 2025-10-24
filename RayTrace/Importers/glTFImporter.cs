@@ -67,7 +67,7 @@ namespace RayTrace.Importers
             public string baseColorTexture;     // sRGB
             public float metallicFactor = 1.0f;
             public float roughnessFactor = 1.0f;
-            public string metallicRoughnessTexture;
+            public string metallicRoughnessTexture; // sRGB
 
             public bool doubleSided = false;
         }
@@ -335,13 +335,13 @@ namespace RayTrace.Importers
                     public int index { get; set; }
                 }
 
-                public float[] baseColorFactor { get; set; }
+                public float[] baseColorFactor { get; set; } = new float[] { 1f, 1f, 1f, 1f };
 
                 public BaseColorTexture baseColorTexture { get; set; }
                 public MetallicRoughnessTexture metallicRoughnessTexture { get; set; }
 
-                public float metallicFactor { get; set; }
-                public float roughnessFactor { get; set; }
+                public float metallicFactor { get; set; } = 1;
+                public float roughnessFactor { get; set; } = 1;
             }
 
             public PbrMetallicRoughness pbrMetallicRoughness { get; set; }
@@ -902,14 +902,14 @@ namespace RayTrace.Importers
                 modelData.maxZ = Math.Max(p.Z, modelData.maxZ);
             }
 
-            Debug.WriteLine($"X : [ {modelData.minX} {modelData.maxX} ]");
-            Debug.WriteLine($"Y : [ {modelData.minY} {modelData.maxY} ]");
-            Debug.WriteLine($"Z : [ {modelData.minZ} {modelData.maxZ} ]");
+            Logger.Instance.Info($"X : [ {modelData.minX} {modelData.maxX} ]");
+            Logger.Instance.Info($"Y : [ {modelData.minY} {modelData.maxY} ]");
+            Logger.Instance.Info($"Z : [ {modelData.minZ} {modelData.maxZ} ]");
 
-            Debug.WriteLine($"Number points : {points.Count}");
-            //Debug.WriteLine($"Number faces : {faces.Count}");
+            Logger.Instance.Info($"Number points : {points.Count}");
+            //Logger.Instance.Info($"Number faces : {faces.Count}");
 
-            Debug.WriteLine($"Number triangles : {triangles.Count}");
+            Logger.Instance.Info($"Number triangles : {triangles.Count}");
 
             string groupInfo = "Groups :";
             if (modelData.Node is not null)
@@ -918,7 +918,7 @@ namespace RayTrace.Importers
                 {
                     groupInfo += " '" + g.Name + "'";
                 }
-                Debug.WriteLine(groupInfo);
+                Logger.Instance.Info(groupInfo);
             }
 
 
@@ -990,7 +990,7 @@ namespace RayTrace.Importers
             // First of all, extract all the mesh data.
             foreach (JsonMesh mesh in asset.meshes)
             {
-                Debug.WriteLine($"Processing mesh {mesh.name}");
+                Logger.Instance.Info($"Processing mesh {mesh.name}");
 
                 GltfMesh gltfMesh = new()
                 {
@@ -1076,8 +1076,10 @@ namespace RayTrace.Importers
                             }
                         }
 
-                        Debug.Assert(!attributes.JOINTS_0.HasValue);
-                        Debug.Assert(!attributes.WEIGHTS_0.HasValue);
+                        //Debug.Assert(!attributes.JOINTS_0.HasValue);
+                        //Debug.Assert(!attributes.WEIGHTS_0.HasValue);
+                        if (attributes.JOINTS_0.HasValue) Logger.Instance.Warn("JOINTS_0 attribute ignored");
+                        if (attributes.WEIGHTS_0.HasValue) Logger.Instance.Warn("WEIGHTS_0 attribute ignored");
                     }
 
                     if (primitive.indices.HasValue)
@@ -1128,7 +1130,7 @@ namespace RayTrace.Importers
 
             foreach (JsonNode node in asset.nodes)
             {
-                Debug.WriteLine($"Processing Node {node.name}");
+                Logger.Instance.Info($"Processing Node {node.name}");
 
                 GltfNode gltfNode = new()
                 {
@@ -1221,7 +1223,7 @@ namespace RayTrace.Importers
             // XXX We can only handle a single Scene at the moment.
             foreach (JsonScene scene in asset.scenes)
             {
-                Debug.WriteLine($"Processing scene {scene.name}");
+                Logger.Instance.Info($"Processing scene {scene.name}");
 
                 GltfScene gltfScene = new()
                 {
@@ -1234,7 +1236,7 @@ namespace RayTrace.Importers
 
                     if (gltfNode is null)
                     {
-                        Debug.WriteLine($"Failed to retrieve GltfNode for {nodeIndex} in Scene {scene.name}");
+                        Logger.Instance.Info($"Failed to retrieve GltfNode for {nodeIndex} in Scene {scene.name}");
                         continue;
                     }
 
@@ -1260,7 +1262,7 @@ namespace RayTrace.Importers
             {
                 foreach (JsonMaterial material in asset.materials)
                 {
-                    Debug.WriteLine($"Processing material {material.name}");
+                    Logger.Instance.Info($"Processing material {material.name}");
 
                     GltfMaterial gltfMaterial = new()
                     {
@@ -1292,7 +1294,10 @@ namespace RayTrace.Importers
                         if (material.pbrMetallicRoughness.baseColorFactor != null)
                         {
                             var bcf = material.pbrMetallicRoughness.baseColorFactor;
-                            gltfMaterial.baseColorFactor = new Vec4T<float>(bcf[0], bcf[1], bcf[2], bcf[3]);
+                            if (bcf.Length == 4)
+                            {
+                                gltfMaterial.baseColorFactor = new Vec4T<float>(bcf[0], bcf[1], bcf[2], bcf[3]);
+                            }
                         }
 
                         if (material.pbrMetallicRoughness.baseColorTexture != null)
@@ -1375,6 +1380,8 @@ namespace RayTrace.Importers
         // 
         public ModelData ImportModel(string path)
         {
+            Logger.Instance.Info($"Importing model {path}");
+
             _gltfAsset = null;
 
             ModelData modelData = null;
@@ -1400,6 +1407,7 @@ namespace RayTrace.Importers
             }
             catch (Exception e)
             {
+                Logger.Instance.Warn($"Failed to parse file {path} : {e.Message}");
                 MessageBox.Show($"Failed to parse file {path} : {e.Message}");
             }
 
@@ -1413,14 +1421,17 @@ namespace RayTrace.Importers
         {
             List<RayTrace.Material> materials = new();
 
+            if (_gltfAsset.materials is null)
+                return materials;
+
             foreach (GltfMaterial material in _gltfAsset.materials)
             {
                 //TextureBitmap texture = new();
                 //Texture texture = new TextureBitmap();
 
                 GltfBrdf brdf = new();
-                brdf.Metallic = material.metallicFactor;
-                brdf.Roughness = material.roughnessFactor;
+                brdf.MetallicFactor = material.metallicFactor;
+                brdf.RoughnessFactor = material.roughnessFactor;
 
                 RayTrace.Material mat = new(MaterialType.BRDF_Gltf)
                 {
@@ -1440,7 +1451,7 @@ namespace RayTrace.Importers
                     }
                     else
                     {
-                        Debug.WriteLine($"Failed to find image {material.baseColorTexture}");
+                        Logger.Instance.Warn($"Failed to find image {material.baseColorTexture}");
                     }
                 }
                 else
@@ -1461,7 +1472,17 @@ namespace RayTrace.Importers
                     }
                     else
                     {
-                        Debug.WriteLine($"Failed to find image {material.normalTexture}");
+                        Logger.Instance.Warn($"Failed to find image {material.normalTexture}");
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(material.metallicRoughnessTexture))
+                {
+                    string path = FindImage(_gltfAsset.directory, material.metallicRoughnessTexture);
+                    if (!string.IsNullOrEmpty(path))
+                    {
+                        TextureBitmap texture = new(path);
+                        brdf.MetallicRoughnessTexture = texture;
                     }
                 }
 
@@ -1476,7 +1497,7 @@ namespace RayTrace.Importers
                     }
                     else
                     {
-                        Debug.WriteLine($"Failed to find image {material.emissiveTexture}");
+                        Logger.Instance.Warn($"Failed to find image {material.emissiveTexture}");
                     }
                 }
 

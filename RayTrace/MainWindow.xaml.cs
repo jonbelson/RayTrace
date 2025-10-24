@@ -1479,6 +1479,11 @@ namespace RayTrace
             }
         }
 
+        private void window_Closed(object sender, EventArgs e)
+        {
+            Logger.Instance.Dispose();
+        }
+
         // XXX Probably temporary, preview3d moving to PreviewVisual3D/
         //public Entity GetEntityFromGeometry(GeometryModel3D geometry)
         //{

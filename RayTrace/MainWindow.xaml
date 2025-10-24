@@ -7,7 +7,7 @@
         xmlns:local="clr-namespace:RayTrace"
         xmlns:preview="clr-namespace:RayTrace.Preview"
         mc:Ignorable="d"
-        Title="RayTrace" Height="1024" Width="1280" IsVisibleChanged="window_IsVisibleChanged">
+        Title="RayTrace" Height="1024" Width="1280" IsVisibleChanged="window_IsVisibleChanged" Closed="window_Closed">
 
     <RibbonWindow.InputBindings>
         <KeyBinding Key="R" Command="{Binding buttonRender}" />

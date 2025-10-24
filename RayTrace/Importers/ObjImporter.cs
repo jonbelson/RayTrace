@@ -536,7 +536,7 @@ namespace RayTrace.Importers
             }
             catch (Exception e)
             {
-                Debug.WriteLine($"Failed to load texture '{fileName}'");
+                Logger.Instance.Error($"Failed to load texture '{fileName}'");
                 return false;
             }
 
@@ -603,7 +603,7 @@ namespace RayTrace.Importers
                             points.Add(p);
                         }
                         else
-                            Debug.WriteLine($"v parse failed with {tokens}");
+                            Logger.Instance.Warn($"v parse failed with {tokens}");
 
                     }
                     else if (tokens[0] == "vn")
@@ -615,7 +615,7 @@ namespace RayTrace.Importers
                             normals.Add(v);
                         }
                         else
-                            Debug.WriteLine($"vn parse failed with {tokens}");
+                            Logger.Instance.Warn($"vn parse failed with {tokens}");
                     }
                     else if (tokens[0] == "vt")
                     {
@@ -635,7 +635,7 @@ namespace RayTrace.Importers
                             texels.Add(t);
                         }
                         else
-                            Debug.WriteLine($"vt parse failed with {tokens}");
+                            Logger.Instance.Warn($"vt parse failed with {tokens}");
                     }
                     else if (tokens[0] == "f")
                     {
@@ -645,7 +645,7 @@ namespace RayTrace.Importers
                             faces.Add(face);
                         }
                         else
-                            Debug.WriteLine($"f parse failed with {tokens}");
+                            Logger.Instance.Warn($"f parse failed with {tokens}");
                     }
                     else if (tokens[0] is "g" or "o")
                     {
@@ -677,7 +677,7 @@ namespace RayTrace.Importers
                             string materialPath = Path.Join(directoryName, tokens[i]);
                             if (!ParseMtlLib(materialPath))
                             {
-                                Debug.WriteLine("Failed to parse material file: " + tokens[i]);
+                                Logger.Instance.Warn("Failed to parse material file: " + tokens[i]);
                             }
                         }
                     }
@@ -691,18 +691,18 @@ namespace RayTrace.Importers
 
                             if (currentMaterial == -1)
                             {
-                                Debug.WriteLine($"Failed to find material '${materalName}");
+                                Logger.Instance.Warn($"Failed to find material '${materalName}");
                             }
                         }
                         else
                         {
-                            Debug.WriteLine("Skipping malformed 'usemtl' line");
+                            Logger.Instance.Warn("Skipping malformed 'usemtl' line");
                         }
 
                     }
                     else
                     {
-                        Debug.WriteLine("Ignored line: " + line);
+                        Logger.Instance.Warn("Ignored line: " + line);
                     }
 
                 }
@@ -742,12 +742,12 @@ namespace RayTrace.Importers
                         modelData.maxZ = Math.Max(p.Z, modelData.maxZ);
                     }
 
-                    Debug.WriteLine($"X : [ {modelData.minX} {modelData.maxX} ]");
-                    Debug.WriteLine($"Y : [ {modelData.minY} {modelData.maxY} ]");
-                    Debug.WriteLine($"Z : [ {modelData.minZ} {modelData.maxZ} ]");
+                    Logger.Instance.Info($"X : [ {modelData.minX} {modelData.maxX} ]");
+                    Logger.Instance.Info($"Y : [ {modelData.minY} {modelData.maxY} ]");
+                    Logger.Instance.Info($"Z : [ {modelData.minZ} {modelData.maxZ} ]");
 
-                    Debug.WriteLine($"Number points : {points.Count}");
-                    Debug.WriteLine($"Number faces : {faces.Count}");
+                    Logger.Instance.Info($"Number points : {points.Count}");
+                    Logger.Instance.Info($"Number faces : {faces.Count}");
 
                     modelData.HasVertexNormals = normals.Count > 1;
                     modelData.HasVertexTexels = texels.Count > 0;
@@ -761,21 +761,21 @@ namespace RayTrace.Importers
                     modelData.Node = new();
                     modelData.Node.Children = groups;
 
-                    Debug.WriteLine($"Number triangles : {triangles.Count}");
+                    Logger.Instance.Info($"Number triangles : {triangles.Count}");
 
                     string groupInfo = "Groups :";
                     foreach (ModelData.SubGroup g in modelData.Node.Children)
                     {
                         groupInfo += " '" + g.Name + "'";
                     }
-                    Debug.WriteLine(groupInfo);
+                    Logger.Instance.Info(groupInfo);
 
                     string materialsInfo = "Materials :";
                     foreach (var material in MaterialLibrary.Materials)
                     {
                         materialsInfo += " '" + material.Name + "'";
                     }
-                    Debug.WriteLine(materialsInfo);
+                    Logger.Instance.Info(materialsInfo);
 
 
                     //modelData.HasVertexNormals = normals.Count > 1;
@@ -803,7 +803,8 @@ namespace RayTrace.Importers
             return modelData;
         }
 
-        private string FindTexture(string directory, string relativeOrAbsolutePath)
+        // Try to find a valid based based on a filename and a directory name that is either relative or absolute.
+        private static string FindTexture(string directory, string relativeOrAbsolutePath)
         {
             if (File.Exists(relativeOrAbsolutePath))
             {
