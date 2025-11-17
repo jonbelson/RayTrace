@@ -56,7 +56,7 @@ namespace RayTrace
             }
             catch (Exception e)
             {
-                _ = 0;
+                Logger.Instance.Warn($"{e.Message}");
             }
 
             try
@@ -68,7 +68,7 @@ namespace RayTrace
             }
             catch (Exception e)
             {
-                _ = 0;
+                Logger.Instance.Warn($"{e.Message}");
             }
         }
 
