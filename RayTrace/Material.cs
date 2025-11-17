@@ -14,6 +14,7 @@ namespace RayTrace
         Diffuse, Reflective, RefractiveAndReflective, Phong, BRDF_Lambertian, BRDF_CookTorrence, BRDF_Gltf
     }
 
+    /*
     public class MaterialManager
     {
         private List<Material> _materials;
@@ -42,6 +43,7 @@ namespace RayTrace
         }
 
     }
+    */
 
     //
     // Characteristics of a Shape's physical form.
@@ -199,14 +201,15 @@ namespace RayTrace
         }
 
         // Calculate the colour of the hit point based on a light sample from the specified direction.
+        // lcs      A local coordinate system based around the 'hit' surface normal.
         // hr       The point hit on this Material.
         // source   A vector from hr towards the source of the incoming light.
         // Li       The colour of the incoming light.
-        public Colour GetBrdfColour(HitResult hr, SVector source, Colour Li)
+        public Colour GetBrdfColour(LocalCoordinateSystem lcs, HitResult hr, Random rand, SVector source, Colour Li)
         {
             if (Brdf != null)
             {
-                Colour c = Brdf.GetColour(hr, GetColour(hr), source, Li);
+                Colour c = Brdf.GetColour(hr, lcs, rand, GetColour(hr), source, Li);
 
                 if (EmissiveTexture != null)
                 {

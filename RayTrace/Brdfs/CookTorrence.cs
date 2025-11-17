@@ -34,6 +34,27 @@ namespace RayTrace.Brdfs
 
         public float Ior { get; set; } = 1.2f;
 
+        // Cosine-weighted random vector in local hemisphere.
+        public override SVector GetSample(HitResult hr, LocalCoordinateSystem lcs, Random rand, out float pdf)
+        {
+            float r1 = rand.NextSingle();
+            float r2 = rand.NextSingle();
+
+            float phi = 2f * MathF.PI * r1;
+            float sqrtR2 = MathF.Sqrt(r2);
+
+            float x = MathF.Cos(phi)*sqrtR2;
+            float z = MathF.Sin(phi)*sqrtR2;
+            float y = MathF.Sqrt(1f - r2);
+
+            pdf = y/MathF.PI;
+
+            return new SVector(x, y, z);
+        }
+
+        protected override float F(in SVector v) { return 1f; }
+        protected override float Pdf(in SVector v) { return 1f; }
+
         // Return 1 if x > 0, 0 if x <= 0
         private static float CalculateChi(float x)
         {
@@ -159,11 +180,17 @@ namespace RayTrace.Brdfs
             return numerator / denominator;
         }
 
+        //
+        // Constructor.
+        //
         public CookTorrence()
         {
             Name = "Cook-Torrence (BRDF)";
         }
 
+        //
+        // Constructor.
+        //
         public CookTorrence(XMLCookTorrence xml)
         {
             Name = xml.Name;
@@ -174,21 +201,11 @@ namespace RayTrace.Brdfs
             Ior = xml.Ior;
         }
 
-        //public CookTorrence(Colour colour) : base()
-        //{
-        //    Colour = colour;
-        //}
-
-        //public CookTorrence(Texture texture) : base()
-        //{
-        //    Texture = texture;
-        //}
-
         // Calculate Colour at point given in hr based on radiance (Li) coming from direction 'source'.
         // colour   Colour of surface at hit point.
         // source   A vector from hr towards the source of the incoming light.
         // Li       The colour of the incoming light.
-        public override Colour GetColour(HitResult hr, Colour colour, SVector source, Colour Li)
+        public override Colour GetColour(HitResult hr, LocalCoordinateSystem lcs, Random rand, Colour colour, SVector source, Colour Li)
         {
             Debug.Assert(!source.IsNull());
             Debug.Assert(!hr.Ray.IsNull());
@@ -226,8 +243,12 @@ namespace RayTrace.Brdfs
             Debug.Assert(denominator > 0f);
 
             //float dp = normal.DotProductSaturated(viewDirection);
-            float dp = normal.DotProductSaturated(source);  // ??
-                                                            //            Colour diffuse = Li * Colour * (1 - Shininess) * dp / Math.PI;
+//            float dp = normal.DotProductSaturated(source);  // ??
+            float dp = normal.DotProduct(source);  // ??
+
+            //Debug.Assert(dp >= 0f && dp <= 1f);
+
+            //Colour diffuse = Li * Colour * (1 - Shininess) * dp / Math.PI;
             Colour diffuse = colour * (1f - Shininess) / MathF.PI;
 
             //float DFG = distribution * fresnel * geometry;
@@ -237,7 +258,12 @@ namespace RayTrace.Brdfs
             Colour specular = DFG * Shininess / denominator;
             //Colour specular = new(specularf, specularf, specularf);
 
-            return (diffuse + specular) * Li * dp; ;
+            Colour Lo = (diffuse + specular) * Li * dp;
+
+            float pdf = dp/MathF.PI;
+            Lo /= pdf;
+
+            return Lo;
         }
 
         //public override Colour GetBaseColour()

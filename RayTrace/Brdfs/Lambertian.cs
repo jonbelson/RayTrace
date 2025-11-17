@@ -8,34 +8,58 @@ namespace RayTrace.Brdfs
 {
     public class Lambertian : Brdf
     {
-        //public Colour Colour { get; set; } = Palette.Copper;    // XXX Should use TextureSolid
-        //public Texture Texture { get; set; }
+        public float Albedo { get; set; } = 1f;
 
+        protected override float F(in SVector v)
+        {
+            return Albedo / MathF.PI;   
+        }
+
+        protected override float Pdf(in SVector v)
+        {
+            return v.K / MathF.PI;
+        }
+
+        //
+        // Constructor.
+        //
         public Lambertian()
         {
             Name = "Lambertian (BRDF)";
         }
 
+        //
+        // Constructor.
+        //
         public Lambertian(XMLBrdf xml)
         {
             Name = xml.Name;
         }
 
-        //public Lambertian(Colour colour) : base()
-        //{
-        //    Colour = colour;
-        //}
+        // Cosine-weighted random vector in local hemisphere.
+        public override SVector GetSample(HitResult hr, LocalCoordinateSystem lcs, Random rand, out float pdf)
+        {
+            float r1 = rand.NextSingle();
+            float r2 = rand.NextSingle();
 
-        //public Lambertian(Texture texture) : base()
-        //{
-        //    Texture = texture;
-        //}
+            float phi = 2f * MathF.PI * r1;
+            float sqrtR2 = MathF.Sqrt(r2);
+
+            float x = MathF.Cos(phi)*sqrtR2;
+            float z = MathF.Sin(phi)*sqrtR2;
+            float y = MathF.Sqrt(1f - r2);
+
+            pdf = y / MathF.PI;
+
+            return new SVector(x, y, z);
+        }
 
         // Calculate Colour at point given in hr based on radiance (L) coming from direction source.
         // colour   Colour of surface at bit point.
         // source   Vector pointing outwards from hit point.
         // Li       Colour received from hit point.
-        public override Colour GetColour(HitResult hr, Colour colour, SVector source, Colour Li)
+        //public override Colour GetColour(HitResult hr, Colour colour, SVector source, Colour Li)
+        public override Colour GetColour(HitResult hr, LocalCoordinateSystem lcs, Random rand, Colour colour, SVector source, Colour Li)
         {
             // Calculate wo (L towards viewer)
             /*            SVector up = new(0, 0, 1);
@@ -46,16 +70,16 @@ namespace RayTrace.Brdfs
                         float coswi = up.DotProduct(source.Normalise().Negate());
                         float wi = (float)Math.Acos(coswi);
             */
-            Colour Lo = colour / MathF.PI * Li * hr.EntryNormal.DotProduct(source);
+
+            float dp = hr.EntryNormal.DotProduct(source);
+
+            float pdf = dp/MathF.PI;
+            float diffuse = F(source)/pdf;// Pdf(source);
+
+            Colour Lo = colour * diffuse * Li * dp;
 
             return Lo;
         }
-
-        //public override Colour GetBaseColour()
-        //{
-        //    // XXX Texture
-        //    return Texture.GetColour(new HitResult(null) { u = 0.5f, v = 0.5f });
-        //}
 
         public override XMLBrdf ToXML()
         {
