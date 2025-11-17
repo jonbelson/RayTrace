@@ -811,7 +811,7 @@ namespace RayTrace.Importers
                         }
                         catch (Exception e)
                         {
-                            _ = 0;
+                            Logger.Instance.Error($"Failed to create group from node : {e.Message}");
                             break;
                         }
                     }

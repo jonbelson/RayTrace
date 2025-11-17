@@ -33,6 +33,7 @@ using static System.Formats.Asn1.AsnWriter;
 using RayTrace.Importers;
 using RayTrace.Preview;
 using RayTrace.Skydomes;
+using RayTrace.Brdfs;
 
 namespace RayTrace
 {
@@ -320,11 +321,12 @@ namespace RayTrace
 
             }
 
-            Console.WriteLine($"Launched from {Environment.CurrentDirectory}");
-            Console.WriteLine($"Physical location {AppDomain.CurrentDomain.BaseDirectory}");
-            Console.WriteLine($"AppContext.BaseDir {AppContext.BaseDirectory}");
-            Console.WriteLine($"Runtime Call {System.IO.Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName)}");
-
+            Logger.Instance.Info($"Launched from {Environment.CurrentDirectory}");
+            Logger.Instance.Info($"Physical location {AppDomain.CurrentDomain.BaseDirectory}");
+            Logger.Instance.Info($"AppContext.BaseDir {AppContext.BaseDirectory}");
+            Logger.Instance.Info($"Runtime Call {System.IO.Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName)}");
+            Logger.Instance.Info($"Assembly Path {System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)}");
+            Logger.Instance.Info($"CWD {Directory.GetCurrentDirectory()}");
 
             {
                 Matrix m2 = Matrix.GetTranslation(1.0f, 2.0f, 3.0f);
@@ -392,11 +394,130 @@ namespace RayTrace
                 vr = q.Rotate(v);
             }
 
-            string assemblyPath = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            //MessageBox.Show(assemblyPath);
-            var cwd = Directory.GetCurrentDirectory();
-            //MessageBox.Show(cwd);
+            {
+                Random rand = new();
+                SVector Y = Renderer.GetLocalVectorInHemisphere(rand);
+                SVector Up = new SVector(0f, 1f, 0f);
+                LocalCoordinateSystem lcs = new LocalCoordinateSystem(Y);
+                for (int i = 0; i<1000; i++)
+                {
+//                    SVector v = Renderer.GetLocalVectorInHemisphere(rand);
+                    SVector v = Renderer.GetLocalCosineVector(rand);
+                    SVector v2 = lcs.Reproject(v);
 
+                    float dp = v.DotProduct(Up);
+                    Debug.Assert(dp >= 0f);
+
+                    dp = lcs.N.DotProduct(v2);
+                    Debug.Assert(dp >= 0.0f && dp <= 1.0f);
+
+                }
+
+            }
+
+            {
+                // Test LCS forward and backward conversion.
+                Random rand = new();
+                SVector Y = Renderer.GetLocalVectorInHemisphere(rand);
+                SVector Up = new SVector(0f, 1f, 0f);
+                LocalCoordinateSystem lcs = new LocalCoordinateSystem(Y);
+                for (int i = 0; i<1000; i++)
+                {
+                    SVector v = Renderer.GetLocalVectorInHemisphere(rand);
+                    //SVector v = Renderer.GetLocalCosineVector(rand);
+                    SVector v2 = lcs.Reproject(v);
+
+                    float dp = v.DotProduct(Up);
+                    Debug.Assert(dp >= 0f);
+
+                    dp = lcs.N.DotProduct(v2);
+                    Debug.Assert(dp >= 0.0f && dp <= 1.0f);
+
+                    SVector v3 = lcs.FromWorld(v2);
+
+                    Debug.Assert(MathF.Abs(v.I - v3.I) < 0.0001f);
+                    Debug.Assert(MathF.Abs(v.J - v3.J) < 0.0001f);
+                    Debug.Assert(MathF.Abs(v.K - v3.K) < 0.0001f);
+                }
+
+            }
+
+/*            {
+                // Test glTF BRDF
+                Random rand = new();
+                SVector Y = Renderer.GetLocalVectorInHemisphere(rand);
+                SVector Up = new SVector(0f, 1f, 0f);
+                LocalCoordinateSystem lcs = new LocalCoordinateSystem(Y);
+                GltfBrdf brdf = new();
+                Material material = new(MaterialType.BRDF_Gltf);
+                material.Brdf = brdf;
+                HitResult hr = new() { Entry = new(0f, 0f, 0f), EntryNormal = new SVector(0f, 0f, -1f), Ray = new SVector(0f, 0f, 1f),  };
+                for (int i = 0; i<1000; i++)
+                {
+                    //SVector v = Renderer.GetLocalVectorInHemisphere(rand);
+                    //SVector v = Renderer.GetLocalCosineVector(rand);
+                    SVector v = material.Brdf.GetSample(hr, lcs, rand, out float pdf);
+
+                    float dp = v.DotProduct(hr.EntryNormal);
+                    Debug.Assert(dp >= 0f);
+
+                    SVector v2 = lcs.Reproject(v);
+                    dp = lcs.N.DotProduct(v2);
+                    Debug.Assert(dp >= 0.0f && dp <= 1.0f);
+
+                    SVector v3 = lcs.FromWorld(v2);
+
+                    Debug.Assert(MathF.Abs(v.I - v3.I) < 0.0001f);
+                    Debug.Assert(MathF.Abs(v.J - v3.J) < 0.0001f);
+                    Debug.Assert(MathF.Abs(v.K - v3.K) < 0.0001f);
+                }
+
+            }
+*/
+
+#if false
+            {
+                Random rand = new();
+//               LocalCoordinateSystem lcs = new LocalCoordinateSystem(new SVector(-0.512975156f, 0.49471274f, -0.6838266f).Normalise());
+                LocalCoordinateSystem lcs = new LocalCoordinateSystem(Renderer.GetLocalVectorInHemisphere(rand));
+                //                LocalCoordinateSystem lcs = new LocalCoordinateSystem(new SVector(0f, 0f, -1f));
+                //Debug.Write("[");
+                GltfBrdf brdf = new();
+
+                for (int i=0; i<1000; i++)
+                {
+                    if (i != 0) Debug.Write(", ");
+                    //                    SVector v = Renderer.GetLocalVectorInHemisphere(rand);
+                    //                    SVector v = brdf.GetSample(rand.NextSingle(), rand.NextSingle());
+//                    SVector v = GltfBrdf.ImportanceSampleGGX(rand, new SVector(0f, -1f, 1f).Normalise(), 0.5f, out float pdf);
+                    SVector v = GltfBrdf.ImportanceSampleGGX(rand, new SVector(0f, -1f, 1f).Normalise(), 0.15f, out float pdf);
+
+                    //float dp = v.DotProduct(lcs.N);
+                    //Debug.Assert(dp >= 0.0f && dp <= 1.0f);
+
+                    //v = lcs.Reproject(v);
+                    Debug.Write($"({v.I}, {v.J}, {v.K})");
+                }
+                //Debug.WriteLine("]");
+
+                Debug.WriteLine("");
+
+                for (int i = 0; i<250; i++)
+                {
+                    if (i != 0) Debug.Write(", ");
+                    //                    SVector v = Renderer.GetLocalVectorInHemisphere(rand);
+                    //                    SVector v = brdf.ImportanceSampleGGX(rand.NextSingle(), rand.NextSingle());
+                    SVector v = GltfBrdf.ImportanceSampleGGX(rand, new SVector(0f, -1f, 1f).Normalise(), 0.5f, out float pdf);
+                    //float dp = v.DotProduct(lcs.N);
+                    //Debug.Assert(dp >= 0.0f && dp <= 1.0f);
+
+                    v = lcs.Reproject(v);
+                    Debug.Write($"({v.I}, {v.J}, {v.K})");
+                }
+
+                int ii = 0;
+            }
+#endif
 
             checkBoxAmbient.IsChecked = renderer.UseAmbient;
             checkBoxLighting.IsChecked = renderer.UseDiffuse;
@@ -408,6 +529,7 @@ namespace RayTrace
             checkBoxGIEnable.IsChecked = renderer.UseGlobalIllumination;
             checkBoxDepthOfField.IsChecked = renderer.UseDepthOfField;
             checkBoxBRDF.IsChecked = renderer.UseBRDF;
+            checkBoxImportanceSampling.IsChecked = renderer.UseImportanceSampling;
 
             textBoxDepth.Text = renderer.RecursionDepth.ToString();
             textBoxAdaptiveSubSamplingDepth.Text = renderer.AdaptiveSuperSamplingDepth.ToString();
@@ -431,8 +553,8 @@ namespace RayTrace
 
             //scene = SceneFactory.GIDemoScene();
             //scene = SceneFactory.SphereDemoScene();
-            //scene = SceneFactory.ObjScene();
-            scene = SceneFactory.GltfScene();
+            scene = SceneFactory.ObjScene();
+            //scene = SceneFactory.GltfScene();
             //scene = SceneFactory.NormalMapScene();
 
             //scene = SceneFactory.EmptyScene();
@@ -548,6 +670,7 @@ namespace RayTrace
             renderer.UseGlobalIllumination = (bool)checkBoxGIEnable.IsChecked;
             renderer.UseDepthOfField = (bool)checkBoxDepthOfField.IsChecked;
             renderer.UseBRDF = (bool)checkBoxBRDF.IsChecked;
+            renderer.UseImportanceSampling = (bool)checkBoxImportanceSampling.IsChecked;
 
             if (!Int32.TryParse(textBoxDepth.Text, out int depth))
             {
@@ -1181,10 +1304,14 @@ namespace RayTrace
         {
             scene = new();
 
-            Disc disc = new(scene, new Point(0, 0, 0), new Vector(0, 1, 0), 25);
+//            Disc disc = new(scene, new Point(0, 0, 0), new Vector(0, 1, 0), 25);
+            Sphere sphere = new(scene, new Point(0, 0, 0), 1);
 
             PointLight pointLight = new(scene, new Point(0, 10, 0), 100, Palette.White);
             scene.AddLight(pointLight);
+
+            var skyBox = new SkydomeGradient(new Colour(0f, 0f, 1f), new Colour(0f, 1f, 0f));
+            scene.Skydome = skyBox;
 
             UpdateForScene();
             UpdateViewport3D();

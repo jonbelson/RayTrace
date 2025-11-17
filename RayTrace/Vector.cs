@@ -46,8 +46,8 @@ namespace RayTrace
         // Dot product clamped to range 0 - 1.
         public float DotProductSaturated(in SVector v)
         {
-//            return Math.Clamp(DotProduct(v), 0, 1);
-            return Math.Clamp(DotProduct(v), 0.0001f, 0.9999f);
+            return Math.Clamp(DotProduct(v), 0f, 1f);
+//            return Math.Clamp(DotProduct(v), 0.0001f, 0.9999f);
         }
 
         // Return angle between Vectors in radians.

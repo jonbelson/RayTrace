@@ -211,7 +211,7 @@ namespace RayTrace
             }
             catch (Exception e)
             {
-                _ = 0;
+                Logger.Instance.Warn($"{e.Message}");
             }
 
             foreach (ModelData.SubGroup child in group.Children)
@@ -1503,7 +1503,7 @@ namespace RayTrace
             return (min, max);
         }
 
-        public virtual BoundingBox3D GetBoundingBox2()
+        public override BoundingBox3D GetBoundingBox2()
         {
             BoundingBox3D bb = new();
 

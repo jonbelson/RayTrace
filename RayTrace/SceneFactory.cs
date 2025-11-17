@@ -381,9 +381,13 @@ namespace RayTrace
             scene.Camera.Pos = new Point(-5.994f, 4.712f, -9.275f);
             scene.Camera.Target = new Point(0, 3, 1);
 
-//            Model model = scene.ImportModel(@"Data\Models\AntiqueCamera\glTF\AntiqueCamera.gltf");
-//            Model model = scene.ImportModel(@"Data\redeye_watcher_rig__horizon_zero_dawn__update\scene.gltf");
-            Model model = scene.ImportModel(@"Data\Models\MetalRoughSpheres\glTF\MetalRoughSpheres.gltf");
+            scene.Camera.Pos = new Point(0f, 0f, -7f);
+            scene.Camera.Target = new Point(0, 0, 0);
+
+            //            Model model = scene.ImportModel(@"Data\Models\AntiqueCamera\glTF\AntiqueCamera.gltf");
+            //            Model model = scene.ImportModel(@"Data\redeye_watcher_rig__horizon_zero_dawn__update\scene.gltf");
+//            Model model = scene.ImportModel(@"Data\Models\MetalRoughSpheres\glTF\MetalRoughSpheres.gltf");
+            Model model = scene.ImportModel(@"Data\Models\MetalRoughSpheresNoTextures\glTF\MetalRoughSpheresNoTextures.gltf");
 
 
             /*#scene.gltf
@@ -408,11 +412,12 @@ namespace RayTrace
             //            scene.Skydome = new Skybox("Data\\skyboxes\\Yokohama2");
             try
             {
-                scene.Skydome = new Skybox("Data\\skyboxes\\Forest");
+//                scene.Skydome = new Skybox("Data\\skyboxes\\Forest");
+                scene.Skydome = new Skybox("Data\\skyboxes\\Citadella2");
             }
             catch (Exception ex)
             {
-
+                Logger.Instance.Warn($"{ex.Message}");
             }
 
             return scene;

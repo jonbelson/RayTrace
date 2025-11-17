@@ -536,7 +536,7 @@ namespace RayTrace.Importers
             }
             catch (Exception e)
             {
-                Logger.Instance.Error($"Failed to load texture '{fileName}'");
+                Logger.Instance.Error($"Failed to load texture '{fileName}' : {e.Message}");
                 return false;
             }
 

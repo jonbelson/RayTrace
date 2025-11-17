@@ -195,6 +195,8 @@ namespace RayTrace.Skydomes
                 }
                 catch (Exception e)
                 {
+                    Logger.Instance.Warn($"{e.Message}");
+
                     //MessageBox.Show(e.Message);
                 }
             }

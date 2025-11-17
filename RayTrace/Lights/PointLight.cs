@@ -21,7 +21,7 @@ namespace RayTrace
         public PointLight(Scene scene, Point p, float intensity, Colour c) : base(scene, intensity, c)
         {
             Pos = p;
-            Radius = 8;// 1;
+            Radius = 2;// 1;
 
             Pos.PropertyChanged += Pos_PropertyChanged;
         }

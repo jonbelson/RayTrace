@@ -570,6 +570,7 @@
                     <RibbonCheckBox x:Name="checkBoxSoftShadows" Label="Soft Shadows" IsEnabled="{Binding IsChecked, ElementName=checkBoxShadows}" ToolTip="Enable soft shadows"></RibbonCheckBox>
                     <!-- <RibbonCheckBox x:Name="checkBoxGlobalIllumination" Label="Global Illumination" ToolTip="Enable global illumination"></> -->
                     <RibbonCheckBox x:Name="checkBoxDepthOfField" Label="Depth of Field" ToolTip="Enable depth of field"></RibbonCheckBox>
+                    <RibbonCheckBox x:Name="checkBoxImportanceSampling" Label="Importance Sampling" ToolTip="Enable importance sampling"></RibbonCheckBox>
                     <RibbonSeparator MinWidth="2" MinHeight="55" IsEnabled="True" />
                     <RibbonCheckBox x:Name="checkBoxReflections" Label="Reflections" Click="checkBoxReflections_Click"></RibbonCheckBox>
                     <RibbonTextBox x:Name="textBoxDepth" Label="Depth" IsEnabled="{Binding IsEnabled, ElementName=checkBoxReflections}"></RibbonTextBox>

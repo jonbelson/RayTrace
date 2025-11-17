@@ -347,7 +347,7 @@ namespace RayTrace
                     }
                     catch (Exception e)
                     {
-                        //int i = 0;
+                        Logger.Instance.Warn($"{e.Message}");
                         throw;
                     }
                 });
