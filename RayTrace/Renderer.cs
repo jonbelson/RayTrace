@@ -633,13 +633,15 @@ namespace RayTrace
                             for (int i = 0; i < NumBRDFSamples; i++)
                             {
                                 SVector scattered;
-                                
+
+                                float pdf = 1;
+
                                 if (UseImportanceSampling)
                                 {
                                     float r1 = rand.NextSingle();
                                     float r2 = rand.NextSingle();
                                     //SVector v = GetLocalVectorInHemisphere(rand);
-                                    SVector v = material.Brdf.GetSample(hr, lcs, rand, out float pdf);
+                                    SVector v = material.Brdf.GetSample(hr, lcs, rand, out /*float*/ pdf);
                                     scattered = v;// lcs.Reproject(v);
 
                                     scattered = scattered.Normalise();
@@ -674,13 +676,13 @@ namespace RayTrace
                                     Colour incoming = CalculateColour(camera, scene, scattered, rand, hr2, depth, /*false*/ true);
                                     //Colour incoming = context.GetColour(scattered, hr2, /*false*/ true);
 
-                                    L += material.GetBrdfColour(lcs, hr, rand, scattered, incoming);
+                                    L += material.GetBrdfColour(lcs, hr, rand, scattered, incoming)/pdf;
                                 }
                                 else
                                 {
                                     Colour incoming = scene.GetSkydomeColour(camera, ray2.Direction);
 
-                                    L += material.GetBrdfColour(lcs, hr, rand, scattered, incoming);
+                                    L += material.GetBrdfColour(lcs, hr, rand, scattered, incoming)/pdf ;
                                 }
                             }
 

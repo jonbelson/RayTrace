@@ -19,6 +19,7 @@ namespace RayTrace
         public static Colour Copper { get { return new Colour(0.82f, 0.475f, 0.23f); } }
         public static Colour MetallicGold { get { return new Colour(212/255f, 175/255f, 55/255f); } }
         public static Colour MetallicSilver { get { return new Colour(170/255f, 169 / 255f, 173 / 255f); } }
+        public static Colour MetallicBlue { get { return new Colour(0f/255f, 169f / 255f, 170f / 255f); } }
         public static Colour Iron { get { return new Colour(161 / 255f, 157 / 255f, 148 / 255f); } }
     }
 

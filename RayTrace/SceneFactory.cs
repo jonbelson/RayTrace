@@ -374,6 +374,82 @@ namespace RayTrace
             return scene;
         }
 
+        public static Scene GltfMaterialScene()
+        {
+            Scene scene = new();
+
+            //scene.Camera.Pos = new Point(-5.994f, 4.712f, -9.275f);
+            //scene.Camera.Target = new Point(0, 3, 1);
+
+            scene.Camera.Pos = new Point(0f, 0f, -12f);
+            scene.Camera.Target = new Point(0, 0, 0);
+
+            Light light = new PointLight(scene, new Point(-50, 50, 10), 6000, Palette.White);
+            //scene.AddLight(light);
+
+            light = new PointLight(scene, new Point(10, 30, -30), 3000, Palette.White);
+            //scene.AddLight(light);
+
+            Material mat = new Material() { Name = "CookTorrence" };
+            {
+                CookTorrence cookTorrence = new()
+                {
+                    Shininess = 0.9f,
+                    Roughness = 0.1f,
+                    Absorption = 1.25f
+                };
+
+                // mat.Texture = new TextureSolid(/*Palette.MetallicGold;*/ Palette.Copper);
+                mat.Texture = new TextureSolid(Palette.MetallicGold);
+                mat.SetType(MaterialType.BRDF_CookTorrence);
+                mat.Brdf = cookTorrence;
+
+                scene.AddMaterial(mat);
+
+                //model.Material = mat;
+            }
+
+            Material mat2 = new Material() { Name = "glTF" };
+            {
+                GltfBrdf gltfBrdf = new()
+                {
+                    MetallicFactor = 1.0f,
+                    RoughnessFactor = 0.1f,
+                    Ior = 1.25f,
+                    MetallicRoughnessTexture = null,
+                };
+
+                // mat.Texture = new TextureSolid(/*Palette.MetallicGold;*/ Palette.Copper);
+                mat2.Texture = new TextureSolid(Palette.MetallicBlue);
+                mat2.SetType(MaterialType.BRDF_Gltf);
+                mat2.Brdf = gltfBrdf;
+
+                scene.AddMaterial(mat2);
+
+                //model.Material = mat;
+            }
+
+            Sphere sphere = new(scene, new Point(0f, 0f, 0f), 4);
+            sphere.Material = mat2;//.SetType(MaterialType.Diffuse);
+
+            scene.AddMaterial(mat);
+
+            //scene.Skydome = new SkydomeBitmap("Data\\skydomes\\immenstadter_horn_2048.jpg");
+            //            scene.Skydome = new Skybox("Data\\skyboxes\\Yokohama2");
+            try
+            {
+                //                scene.Skydome = new Skybox("Data\\skyboxes\\Forest");
+                scene.Skydome = new Skybox("Data\\skyboxes\\Citadella2");
+            }
+            catch (Exception ex)
+            {
+                Logger.Instance.Warn($"{ex.Message}");
+            }
+
+            return scene;
+
+        }
+
         public static Scene GltfScene()
         {
             Scene scene = new();

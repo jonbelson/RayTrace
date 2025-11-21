@@ -394,7 +394,7 @@ namespace RayTrace
                 vr = q.Rotate(v);
             }
 
-            {
+ /*           {
                 Random rand = new();
                 SVector Y = Renderer.GetLocalVectorInHemisphere(rand);
                 SVector Up = new SVector(0f, 1f, 0f);
@@ -414,8 +414,8 @@ namespace RayTrace
                 }
 
             }
-
-            {
+ */
+/*            {
                 // Test LCS forward and backward conversion.
                 Random rand = new();
                 SVector Y = Renderer.GetLocalVectorInHemisphere(rand);
@@ -441,7 +441,7 @@ namespace RayTrace
                 }
 
             }
-
+*/
 /*            {
                 // Test glTF BRDF
                 Random rand = new();
@@ -553,7 +553,8 @@ namespace RayTrace
 
             //scene = SceneFactory.GIDemoScene();
             //scene = SceneFactory.SphereDemoScene();
-            scene = SceneFactory.ObjScene();
+            //scene = SceneFactory.ObjScene();
+            scene = SceneFactory.GltfMaterialScene();
             //scene = SceneFactory.GltfScene();
             //scene = SceneFactory.NormalMapScene();
 

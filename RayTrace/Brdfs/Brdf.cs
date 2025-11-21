@@ -5,9 +5,18 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media.Animation;
 
 namespace RayTrace.Brdfs
 {
+    internal class BrdfSample
+    {
+        public SVector sample;             // Direction to sample from.
+        public bool isDiffuse = true;      // True for diffuse lobe, else specular lobe.
+        public float diffusePdf = 1.0f;    // PDF for diffuse direction.
+        public float specularPdf = 1.0f;   // PDF for specular sample.
+    }
+
     // Base class of Bidirectional Reflectance Distribution Functions.
     public abstract class Brdf
     {

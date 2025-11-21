@@ -40,8 +40,12 @@ namespace RayTrace.Brdfs
         // Default Roughness if no texture is present.
         private static readonly Colour _defaultRoughness = new(0f, 1f, 1f);
 
+        private float _specularWeight = 1.0f;
+
+        private bool _sampleDiffuse; // XXX nasty hack!!!
+
         // Read Roughness from the texture, else return default.
-        private Colour GetRoughness(in HitResult hr)
+        private Colour GetMetallicRoughness(in HitResult hr)
         {
             if (MetallicRoughnessTexture is not null && MetallicRoughnessTexture.IsValid())
             {
@@ -52,8 +56,6 @@ namespace RayTrace.Brdfs
             }
             return _defaultRoughness;
         }
-
-        //private float Alpha { get => _roughness*_roughness; }
 
         private readonly Colour _f0 = new(0.04f, 0.04f, 0.04f);
         private readonly Colour _f90 = new(1.0f, 1.0f, 1.0f);
@@ -102,7 +104,7 @@ namespace RayTrace.Brdfs
 
         private static Colour specularReflection(Colour f0, Colour f90, float VdotH)
         {
-            float v = Math.Clamp(1.0f - Math.Abs(VdotH), 0.0f, 1.0f);
+            float v = Math.Clamp(1.0f - VdotH /*Math.Abs(VdotH)*/, 0.0f, 1.0f);
             //float v = 1.0f - VdotH;
             float v5 = v*v*v*v*v;
 
@@ -140,29 +142,33 @@ namespace RayTrace.Brdfs
         }
 
         // Calculate GGX microfactet distribution, or 'D'.
+        // https://github.com/KhronosGroup/glTF-Sample-Viewer/blob/v1.0.10/source/Renderer/shaders/brdf.glsl
         // https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#specular-brdf
         // https://cdn2.unrealengine.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf
         // [Equation 3]
         private static float CalculateD_GGX(float NdotH, float roughness)
         {
             float alpha = roughness*roughness;
-            float alphaSql = alpha*alpha + 0.000001f;
+            float alphaSqr = alpha*alpha;// + 0.000001f;
 
-            float val = NdotH*NdotH*(alphaSql - 1.0f) + 1.0f;
+            alphaSqr = Math.Max(0.0001f, alphaSqr);
+
+            float val = NdotH*NdotH*(alphaSqr - 1.0f) + 1.0f;
+            val = Math.Max(val, 1E-7f);
+
             float denominator = MathF.PI*val*val;
 
-            //float NdotH = N.DotProductSaturated(H);
-
-            if (denominator != 0f)
+            //if (denominator != 0f)
             {
-                float numerator = alphaSql;// *Heaviside(NdotH);
+                float numerator = alphaSqr;
 
                 return numerator/denominator;
             }
 
-            return 0.0f;
+            //return 0.0f;
         }
 
+        /*
         private static float CalculateD_Ref(float NdotH, float roughness)
         {
             float alpha = roughness*roughness;
@@ -172,6 +178,7 @@ namespace RayTrace.Brdfs
 
             return alphaSqr/(MathF.PI*val*val);
         }
+        */
 
         /*
                 // Calculate GGX microfactet distribution, or 'D'.
@@ -249,6 +256,20 @@ namespace RayTrace.Brdfs
             return attenuationL*attenuationV;
         }
 
+        private static float GeometrySchlickGGX(float NdotV, float roughness)
+        {
+            float alpha = roughness*roughness;
+
+            float r = roughness + 1.0f;
+            float k = (r*r)/8.0f;
+
+            return NdotV/(NdotV*(1.0f - k) + k);
+        }
+
+        private static float CalculateG_Smith(float NdotV, float NdotL, float roughness)
+        {
+            return GeometrySchlickGGX(NdotV, roughness)*GeometrySchlickGGX(NdotL, roughness);
+        }
 
         /*
         private float CalculateG(float NdotL, float NdotV, float HdotL, float HdotV)
@@ -386,7 +407,8 @@ namespace RayTrace.Brdfs
         private float PdfGGX(in SVector N, in SVector H, in SVector V, float roughness)
         {
             float NdotH = MathF.Max(N.DotProduct(H), 0f);
-            float VdotH = MathF.Max(V.DotProduct(H), 0f);
+//            float VdotH = MathF.Max(V.DotProduct(H), 0f);
+            float VdotH = Math.Clamp(V.DotProduct(H), 0.0001f, 1f);
 
             float D = CalculateD_GGX(NdotH, roughness);
 
@@ -448,52 +470,109 @@ namespace RayTrace.Brdfs
             return new SVector(x, y, z);
         }
 
+        // Return 'metalness' component of MetallicRoughness colour.
+        private static float GetMetalness(Colour c)
+        {
+            return c.Blue;
+        }
+
+        // Return 'roughness' component of MetallicRoughness colour.
+        private static float GetRoughness(Colour c)
+        {
+            return c.Green;
+        }
+
         // Return a sample direction in world space.
         public override SVector GetSample(HitResult hr, LocalCoordinateSystem lcs, Random rand, out float pdf)
         {
             // Decide which lobe to sample (diffuse or specular).
-            Colour metallicRoughnessColour = GetRoughness(hr);
-            float metalness = metallicRoughnessColour.Blue*MetallicFactor;
-            float roughness = metallicRoughnessColour.Green*RoughnessFactor;
+            Colour metallicRoughnessColour = GetMetallicRoughness(hr);
+            float metalness = GetMetalness(metallicRoughnessColour)*MetallicFactor;
+            float roughness = GetRoughness(metallicRoughnessColour)*RoughnessFactor;
 
-            float diffuseWeight = (1f - metalness)*0.5f;
+            roughness = MathF.Max(roughness, 0.045f);
+
+            //float diffuseWeight = (1f - metalness)*0.5f;
+            //bool sampleDiffuse = rand.NextSingle() < diffuseWeight;
+
+
+
+            float specularWeight = metalness + (1.0f - metalness)*(1.0f - roughness);
+            float diffuseWeight = 1.0f - specularWeight;
+
             bool sampleDiffuse = rand.NextSingle() < diffuseWeight;
+
+            _sampleDiffuse = sampleDiffuse; // XXX nasty hack!!!
 
             SVector wi = hr.Ray.Normalise().Negate();
 
             // View direction in local coordinate system (towards viewpoint).
-            SVector Vlcs = lcs.FromWorld(wi);
+            SVector Vlcs = lcs.FromWorld(wi).Normalise();
 
             SVector sample = SVector.Null();
             SVector sample_lcs = SVector.Null();
 
+            //Vlcs = Vlcs.Normalise();
+
+            pdf = 1f;
+
             if (sampleDiffuse)
             {
-                /*SVector*/ sample_lcs = ImportanceSampleCosine(rand, out pdf);
+                sample_lcs = ImportanceSampleCosine(rand, out pdf);
             }
             else
             {
                 // Sampled half vector.
-                SVector HalfVeclcs = ImportanceSampleGGX(rand, Vlcs, roughness, out pdf);
+                float halfPdf;
+                SVector HalfVeclcs = ImportanceSampleGGX(rand, Vlcs, roughness, out halfPdf);
+                //float NdotH = Math.Max(HalfVeclcs.J, 0.001f);
+                //float D = CalculateD_GGX(NdotH, roughness);
+                //float lobePdf = D*NdotH;
+
+                HalfVeclcs = HalfVeclcs.Normalise();
 
                 // Reflect vector-to-viewpoint by the halfVector.
-                /*SVector*/ sample_lcs = (HalfVeclcs*(2f*Vlcs.DotProduct(HalfVeclcs)) - Vlcs).Normalise();
+                float VdotH = Math.Max(0.001f, Vlcs.DotProductSaturated(HalfVeclcs));
+                sample_lcs = (HalfVeclcs*(2f*VdotH) - Vlcs).Normalise();
+
+                if (sample_lcs.J <= 0.01f)
+                {
+                    pdf = 1e-10f;
+
+                    return SVector.Null();
+                }
+
+                //SVector Hlcs_check = (Vlcs + sample_lcs).Normalise();
+
+                pdf = halfPdf/(4f*VdotH);
             }
 
             if (sample_lcs.J <= 0f) return SVector.Null();
             
-            sample = lcs.Reproject(sample_lcs);  // convert back to world space.
+            sample = lcs.Reproject(sample_lcs).Normalise();  // convert back to world space.
 
-            SVector Hlcs = (Vlcs + lcs.FromWorld(sample)).Normalise();
+            float NdotL = hr.EntryNormal.DotProductSaturated(sample);
+            if (NdotL <= 0f) return SVector.Null();
 
-            float NdotL2 = hr.EntryNormal.DotProduct(sample);
-            float pdfDiffuse = GetCosinePdf(NdotL2);
-//            float pdfSpecular = PdfGGX(new SVector(0f, 1, 0f), Hlcs, Vlcs, roughness);
-            float pdfSpecular = PdfGGX(hr.EntryNormal, Hlcs, Vlcs, roughness);
+            //SVector Hlcs = (Vlcs + lcs.FromWorld(sample)).Normalise();
 
-            float misWeight = PowerHeuristic(pdfDiffuse, pdfSpecular);
+            float pdfDiffuse = GetCosinePdf(NdotL);
+            //            float pdfSpecular = PdfGGX(new SVector(0f, 1, 0f), Hlcs, Vlcs, roughness);
 
-            pdf = misWeight/(pdf*(sampleDiffuse ? diffuseWeight : (1f - diffuseWeight)));
+            SVector H = (wi + sample).Normalise();
+            float NdotH = Math.Max(hr.EntryNormal.DotProduct(H), 0f);
+            float D = CalculateD_GGX(NdotH, roughness);
+
+            float VdotH2 = Math.Max(wi.DotProductSaturated(H), 0.001f);
+
+           // float pdfSpecular = PdfGGX(hr.EntryNormal, H, wi, roughness);
+            float pdfSpecular = D*NdotH/(4f*VdotH2);// PdfGGX(hr.EntryNormal, H, wi, roughness);
+
+            //float misWeight = PowerHeuristic(pdfDiffuse, pdfSpecular);
+
+            //pdf = misWeight/(pdf*(sampleDiffuse ? diffuseWeight : (1f - diffuseWeight)));
+
+            pdf = diffuseWeight*pdfDiffuse + (1f - diffuseWeight)*pdfSpecular;
 
             return sample;
         }
@@ -534,15 +613,22 @@ namespace RayTrace.Brdfs
             SVector V = hr.Ray.Normalise().Negate();
 
             // Convert view direction to lcs.
-            SVector Vlcs = lcs.FromWorld(V);   
+            //SVector Vlcs = lcs.FromWorld(V);   
 
             // Decide which lobe to sample (diffuse or specular).
-            Colour metallicRoughnessColour = GetRoughness(hr);
-            float metalness = metallicRoughnessColour.Blue*MetallicFactor;
-            float roughness = metallicRoughnessColour.Green*RoughnessFactor;
+            Colour metallicRoughnessColour = GetMetallicRoughness(hr);
+            float metalness = GetMetalness(metallicRoughnessColour)*MetallicFactor;
+            float roughness = Math.Max(GetRoughness(metallicRoughnessColour)*RoughnessFactor, 0.0001f);
 
-            float diffuseWeight = (1f - metalness)*0.5f;
-            bool sampleDiffuse = rand.NextSingle() < diffuseWeight;
+            roughness = MathF.Max(roughness, 0.0001f);
+
+
+            //            float diffuseWeight = (1f - metalness)*0.5f;
+            float specularWeight = metalness + (1.0f - metalness)*(1.0f - roughness);
+            float diffuseWeight = 1.0f - specularWeight;
+
+
+            bool sampleDiffuse = _sampleDiffuse;// rand.NextSingle() < diffuseWeight;
 
 
             //float NdotL2 = Llcs.J;
@@ -557,64 +643,94 @@ namespace RayTrace.Brdfs
 
             float NdotL = N.DotProduct(L);
 
-            float pdfDiffuse = GetCosinePdf(NdotL);
-            float pdfSpecular = PdfGGX(N, H, V, roughness);
-
-            float pdf = (sampleDiffuse) ? pdfDiffuse : pdfSpecular;
-            float misWeight = PowerHeuristic(pdf, sampleDiffuse ? pdfSpecular : pdfDiffuse);
 
             //float NdotL = N.DotProduct(L);
             //float NdotV = Math.Clamp(MathF.Abs(N.DotProductSaturated(V)), 0.00f, 1f);
-            float NdotV = Math.Abs(N.DotProduct(V));
+
+            float NdotV = N.DotProductSaturated(V);
             float NdotH = N.DotProductSaturated(H);
+
             float VdotH = V.DotProductSaturated(H);
 
-            float VdotN = V.DotProductSaturated(N);
-            float LdotN = L.DotProductSaturated(N);
+            //float VdotN = Math.Max(V.DotProductSaturated(N), 0.001f);
+            //float LdotN = Math.Max(L.DotProductSaturated(N), 0.001f);
+
+            NdotH = Math.Max(NdotH, 0.001f);
+            VdotH = Math.Max(VdotH, 0.001f);
 
             NdotL = Math.Clamp(NdotL, 0.0001f, 1f);
             NdotV = Math.Clamp(NdotV, 0.0001f, 1f);
 
-            roughness = MathF.Max(roughness, 0.0001f);
-
-            //Colour black = Palette.Black;
-            //Colour c_diff = Colour.LinearBlend(colour, black, metalness);
+            //roughness = MathF.Max(roughness, 0.0001f);
 
             //Colour f0 = Colour.LinearBlend(_f0, colour, metalness);
+            Colour f0 = _f0*(1f - metalness) + colour*metalness;        // Grok
 
-            Colour specularColour = Colour.LinearBlend(_f0, colour, metalness);
-            Colour diffuseColour = colour*(Palette.White - specularColour /*_f0*/)*(1f - metalness);
- 
+            Colour specularColour = f0;// Colour.LinearBlend(f0 /*_f0*/, colour, metalness);
+
+//            Colour diffuseColour = colour*(Palette.White - specularColour /*_f0*/)*(1f - metalness);
+            Colour diffuseColour = colour*(1f - metalness);
+
             float reflectance = Math.Max(Math.Max(specularColour.Red, specularColour.Green), specularColour.Blue);
 
             float reflectance90 = Math.Clamp(reflectance*25.0f, 0.0f, 1.0f);
 
             // Reflectance0 (normal incidence angle).
-            Colour specularEnvironmentR0 = specularColour;
+            //            Colour specularEnvironmentR0 = specularColour;
+            Colour specularEnvironmentR0 = f0;// specularColour;        Grok
 
             // Reflectance at grazing angle.
-            Colour specularEnvironmentR90 = new(reflectance90, reflectance90, reflectance90);
+            //            Colour specularEnvironmentR90 = new(reflectance90, reflectance90, reflectance90);
+            Colour specularEnvironmentR90 = /*Palette.White;*/ new(reflectance90, reflectance90, reflectance90);
 
             Colour F = specularReflection(specularEnvironmentR0, specularEnvironmentR90, VdotH);
             //float D = CalculateD_GGX(NdotH);
 //            float D = CalculateD_Ref(NdotH, roughness);
             float D = CalculateD_GGX(NdotH, roughness);
-            float G = CalculateG_Ref2(NdotL, NdotV, roughness);
+            //float G = CalculateG_Ref2(NdotL, NdotV, roughness);
+            float G = CalculateG_Smith(NdotL, NdotV, roughness);
 
-            Colour diffuseContrib = (Palette.White - F)*diffuseColour/MathF.PI;
+//            Colour diffuseContrib = (Palette.White - F)*diffuseColour/MathF.PI;
+            Colour diffuseContrib = diffuseColour*(Palette.White - F)/MathF.PI;
 
-            Colour specularContrib = F*G*D/(4.0f*NdotL*NdotV);
+            float denom = (4.0f*NdotL*NdotV);
+            Colour specularContrib = new Colour(0f, 0f, 0f);
+            if (denom > 1e-6f)
+            {
+                specularContrib = F*G*D/denom;
+            }
+            //Colour specularContrib = F*D;///(4.0f*NdotL*NdotV);
 
-            float dp = hr.EntryNormal.DotProduct(source);
 
-            Debug.Assert(dp >= 0f /*&& dp <= 1f*/);
+//            float pdfDiffuse = GetCosinePdf(NdotL);
 
-            Colour Lo = (diffuseContrib + specularContrib)*Li*dp;
+            //float D = CalculateD_GGX(NdotH, roughness);
+ //           float pdfSpecular = D*NdotH;// PdfGGX(hr.EntryNormal, H, wi, roughness);
+
+            //float pdfSpecular = PdfGGX(N, H, V, roughness);
+
+//            float mixturePdf = diffuseWeight*pdfDiffuse + (1f - diffuseWeight)*pdfSpecular;
+
+ //           float pdf = (sampleDiffuse) ? pdfDiffuse : pdfSpecular;
+   //         float misWeight = PowerHeuristic(pdf, mixturePdf /*sampleDiffuse ? pdfSpecular : pdfDiffuse*/);
+
+//            Debug.Assert(pdfDiffuse >= 0.0f);
+//            Debug.Assert(pdfSpecular >= 0.0f);
+ //           Debug.Assert(mixturePdf >= 0.0f);
+
+            //float dp = NdotL;// hr.EntryNormal.DotProduct(source);
+
+            //Debug.Assert(dp >= 0f /*&& dp <= 1f*/);
+
+            Colour Lo = (diffuseContrib + specularContrib)*Li*NdotL;
 
             //float pdf = dp/MathF.PI;
             //Lo /= pdf;
 
-            Lo *= misWeight/(pdf*(sampleDiffuse ? diffuseWeight : (1f - diffuseWeight)));
+            //Lo *= misWeight/(pdf*(sampleDiffuse ? diffuseWeight : (1f - diffuseWeight)));
+
+//            Lo *= misWeight/mixturePdf;
+//            Lo /= mixturePdf;
 
             //Debug.Assert(material.IsNormal());
 

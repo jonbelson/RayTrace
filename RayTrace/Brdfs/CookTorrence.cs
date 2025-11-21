@@ -260,8 +260,8 @@ namespace RayTrace.Brdfs
 
             Colour Lo = (diffuse + specular) * Li * dp;
 
-            float pdf = dp/MathF.PI;
-            Lo /= pdf;
+            //float pdf = dp/MathF.PI;
+            //Lo /= pdf;
 
             return Lo;
         }
