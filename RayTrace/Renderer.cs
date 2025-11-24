@@ -677,12 +677,14 @@ namespace RayTrace
                                     //Colour incoming = context.GetColour(scattered, hr2, /*false*/ true);
 
                                     L += material.GetBrdfColour(lcs, hr, rand, scattered, incoming)/pdf;
+                                    L += material.GetEmissiveColour(hr2);
                                 }
                                 else
                                 {
                                     Colour incoming = scene.GetSkydomeColour(camera, ray2.Direction);
 
-                                    L += material.GetBrdfColour(lcs, hr, rand, scattered, incoming)/pdf ;
+                                    L += material.GetBrdfColour(lcs, hr, rand, scattered, incoming)/pdf;
+                                    //L += material.GetEmissiveColour(hr);
                                 }
                             }
 

@@ -6,7 +6,12 @@ using System.Numerics;
 
 namespace RayTrace
 {
-    using SColour = Vector4;
+    using SColour = Vector3;
+
+    //public struct SColour
+    //{
+    
+    //}
 
     public class Palette
     {
@@ -274,9 +279,9 @@ namespace RayTrace
             return new XMLColour() { Red = Red, Green = Green, Blue = Blue };
         }
 
-        public SColour ToVector4()
+        public SColour ToVector3()
         {
-            return new SColour(Red, Green, Blue, 0);
+            return new SColour(Red, Green, Blue);
         }
 
         public Colour ToLinearRGB()

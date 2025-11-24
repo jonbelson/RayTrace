@@ -211,16 +211,23 @@ namespace RayTrace
             {
                 Colour c = Brdf.GetColour(hr, lcs, rand, GetColour(hr), source, Li);
 
-                if (EmissiveTexture != null)
-                {
-                    Colour e = EmissiveTexture.GetColour(hr);
-                    c += e;
-                }
+                //if (EmissiveTexture != null)
+                //{
+                //    Colour e = EmissiveTexture.GetColour(hr);
+                //    c += e;
+                //}
 
                 return c;
             }
 
             return Palette.Black;
+        }
+
+        public Colour GetEmissiveColour(HitResult hr)
+        {
+            Colour c = EmissiveTexture?.GetColour(hr) ?? Palette.Black;
+
+            return c;
         }
 
         public virtual Colour GetBaseColour()

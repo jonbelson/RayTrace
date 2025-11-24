@@ -265,7 +265,6 @@ namespace RayTrace.Skydomes
                         float U = ((v.K / iAbs) + 1) / 2;
                     float V = ((v.J / iAbs) + 1) / 2;
                     return GetColour(faces[Left], U, V);
-                    //return Palette.Red;
                 }
                 else
                 {
@@ -273,7 +272,6 @@ namespace RayTrace.Skydomes
                     float U = ((-v.K / iAbs) + 1) / 2;
                     float V = ((v.J / iAbs) + 1) / 2;
                     return GetColour(faces[Right], U, V);
-                    //return Palette.Blue;
                 }
             }
 
@@ -285,7 +283,6 @@ namespace RayTrace.Skydomes
                     float U = ((v.I / jAbs) + 1) / 2;
                     float V = ((-v.K / jAbs) + 1) / 2;
                     return GetColour(faces[Bottom], U, 1.0f - V);
-                    //return Palette.White;
                 }
                 else
                 {
@@ -293,7 +290,6 @@ namespace RayTrace.Skydomes
                     float U = ((v.I / jAbs) + 1) / 2;
                     float V = ((v.K / jAbs) + 1) / 2;
                     return GetColour(faces[Top], U, 1.0f - V);
-                    //return Palette.Green;
                 }
             }
 
@@ -304,8 +300,7 @@ namespace RayTrace.Skydomes
                     // Back face.
                     float U = ((v.I / kAbs) + 1) / 2;
                     float V = ((v.J / kAbs) + 1) / 2;
-                    return GetColour(faces[Back], U, V);
-                    //return Palette.Grey;
+                    return GetColour(faces[Back], 1.0f - U, V);
                 }
                 else
                 {
@@ -313,7 +308,6 @@ namespace RayTrace.Skydomes
                     float U = ((v.I / kAbs) + 1) / 2;
                     float V = ((v.J / kAbs) + 1) / 2;
                     return GetColour(faces[Front], U, V);
-                    //return Palette.Black;
                 }
             }
 
