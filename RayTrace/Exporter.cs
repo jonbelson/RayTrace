@@ -1,13 +1,13 @@
-﻿using System;
+﻿using RayTrace.Brdfs;
+using RayTrace.Skydomes;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 using System.Xml.Serialization;
-
-using RayTrace.Brdfs;
-using RayTrace.Skydomes;
 
 namespace RayTrace
 {
@@ -282,7 +282,16 @@ namespace RayTrace
             }
             else
             {
-                return scene.ImportModel(Path.Join(DirectoryName, FileName));
+                Shape shape = scene.ImportModel(Path.Join(DirectoryName, FileName));
+                if (shape is not null)
+                {
+                    shape.Pos = new Point(Pos);
+                    shape.Scale = Scale;
+                    shape.RotateX = RotateX;
+                    shape.RotateY = RotateY;
+                    shape.RotateZ = RotateZ;
+                }
+                return shape;
             }
         }
     }

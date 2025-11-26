@@ -216,7 +216,7 @@ namespace RayTrace
 
 				Matrix m = new(xaxis, yaxis, -zaxis);
 
-				m.Transpose();
+				//m.Transpose();
 
 				hr.EntryNormal = m * normalMap;
 			}

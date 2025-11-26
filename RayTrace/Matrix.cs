@@ -87,7 +87,7 @@ namespace RayTrace
         {
             SetIdentity();
 
-            ///*
+            /*
             M11 = xaxis.I;
             M12 = xaxis.J;
             M13 = xaxis.K;
@@ -99,9 +99,8 @@ namespace RayTrace
             M31 = zaxis.I;
             M32 = zaxis.J;
             M33 = zaxis.K;
-            //*/
+            */
 
-            /*
             M11 = xaxis.I;
             M21 = xaxis.J;
             M31 = xaxis.K;
@@ -113,8 +112,6 @@ namespace RayTrace
             M13 = zaxis.I;
             M23 = zaxis.J;
             M33 = zaxis.K;
-            */
-
         }
 
         private static Matrix NewMatrix { get { return new Matrix(); } }

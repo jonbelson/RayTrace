@@ -158,7 +158,7 @@ namespace RayTrace
 
                 Matrix m = new(xaxis, yaxis, -zaxis);
 
-                m.Transpose();
+                //m.Transpose();
 
                 hr.EntryNormal = m * normalMap;
 //                hr.EntryNormal = camera.NormalMatrix * normalMap;

@@ -205,11 +205,11 @@ namespace RayTrace
         // hr       The point hit on this Material.
         // source   A vector from hr towards the source of the incoming light.
         // Li       The colour of the incoming light.
-        public Colour GetBrdfColour(LocalCoordinateSystem lcs, HitResult hr, Random rand, SVector source, Colour Li)
+        public SColour GetBrdfColour(LocalCoordinateSystem lcs, HitResult hr, Random rand, SVector source, SColour Li)
         {
             if (Brdf != null)
             {
-                Colour c = Brdf.GetColour(hr, lcs, rand, GetColour(hr), source, Li);
+                SColour c = Brdf.GetColour(hr, lcs, rand, GetColour(hr).ToSColour(), source, Li);
 
                 //if (EmissiveTexture != null)
                 //{
@@ -220,14 +220,14 @@ namespace RayTrace
                 return c;
             }
 
-            return Palette.Black;
+            return SPalette.Black;
         }
 
-        public Colour GetEmissiveColour(HitResult hr)
+        public SColour GetEmissiveColour(HitResult hr)
         {
             Colour c = EmissiveTexture?.GetColour(hr) ?? Palette.Black;
 
-            return c;
+            return c.ToSColour();
         }
 
         public virtual Colour GetBaseColour()

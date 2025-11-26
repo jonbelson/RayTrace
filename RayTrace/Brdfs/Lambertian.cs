@@ -59,7 +59,7 @@ namespace RayTrace.Brdfs
         // source   Vector pointing outwards from hit point.
         // Li       Colour received from hit point.
         //public override Colour GetColour(HitResult hr, Colour colour, SVector source, Colour Li)
-        public override Colour GetColour(HitResult hr, LocalCoordinateSystem lcs, Random rand, Colour colour, SVector source, Colour Li)
+        public override SColour GetColour(HitResult hr, LocalCoordinateSystem lcs, Random rand, SColour colour, SVector source, SColour Li)
         {
             // Calculate wo (L towards viewer)
             /*            SVector up = new(0, 0, 1);
@@ -76,7 +76,7 @@ namespace RayTrace.Brdfs
             float pdf = dp/MathF.PI;
             float diffuse = F(source)/pdf;// Pdf(source);
 
-            Colour Lo = colour * diffuse * Li * dp;
+            SColour Lo = colour * diffuse * Li * dp;
 
             return Lo;
         }

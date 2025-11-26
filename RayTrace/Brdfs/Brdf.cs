@@ -32,7 +32,7 @@ namespace RayTrace.Brdfs
         public abstract SVector GetSample(HitResult hr, LocalCoordinateSystem lcs, Random rand, out float pdf);
 
         // Calculate the colour of the hit point based on a light sample from the specified direction.
-        public abstract Colour GetColour(HitResult hr, LocalCoordinateSystem lcs, Random rand, Colour colour, SVector source, Colour Li);
+        public abstract SColour GetColour(HitResult hr, LocalCoordinateSystem lcs, Random rand, SColour colour, SVector source, SColour Li);
 
         public abstract XMLBrdf ToXML();
     }

@@ -414,6 +414,8 @@ namespace RayTrace
         //
         // Constructor.
         //
+        // Recreates a Model from its XML form. Do not use for Models to be loaded from disk (see XMLModel.Create()).
+        //
         public Model(Scene scene, XMLModel xmlModel) : base(scene, xmlModel)
         {
             _modelData = new ModelData();

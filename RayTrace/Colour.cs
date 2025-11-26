@@ -4,14 +4,43 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Numerics;
 
+
 namespace RayTrace
 {
     using SColour = Vector3;
 
-    //public struct SColour
-    //{
-    
-    //}
+    public static class SColourExtensions
+    {
+        public static float Red(this SColour c) => c.X;
+        public static float Green(this SColour c) => c.Y;
+        public static float Blue(this SColour c) => c.Z;
+
+        public static SColour ToLinearRGB(this SColour c)
+        {
+            float r = c.X <= 0.04045f ? c.X / 12.92f : MathF.Pow((c.X + 0.055f) / 1.055f, 2.4f);
+            float g = c.Y <= 0.04045f ? c.Y / 12.92f : MathF.Pow((c.Y + 0.055f) / 1.055f, 2.4f);
+            float b = c.Z <= 0.04045f ? c.Z / 12.92f : MathF.Pow((c.Z + 0.055f) / 1.055f, 2.4f);
+
+            return new SColour(r, g, b);
+        }
+
+        public static SColour FromLinearRGB(this SColour c)
+        {
+            float r = c.X <= 0.0031308f ? c.X * 12.92f : 1.055f * MathF.Pow(c.X, 1.0f / 2.4f) - 0.055f;
+            float g = c.Y <= 0.0031308f ? c.Y * 12.92f : 1.055f * MathF.Pow(c.Y, 1.0f / 2.4f) - 0.055f;
+            float b = c.Z <= 0.0031308f ? c.Z * 12.92f : 1.055f * MathF.Pow(c.Z, 1.0f / 2.4f) - 0.055f;
+
+            return new SColour(r, g, b);
+        }
+
+    }
+
+    public class SPalette
+    {
+        public static readonly SColour Black = new SColour(0.0f, 0.0f, 0.0f);
+        public static readonly SColour White = new SColour(0.0f, 0.0f, 0.0f);
+        public static readonly SColour Grey = new SColour(0.7f, 0.7f, 0.7f);
+    }
 
     public class Palette
     {
@@ -66,6 +95,8 @@ namespace RayTrace
             Green = g / 255.0f;
             Blue = b / 255.0f;
         }
+
+        public Colour(SColour colour) => (Red, Green, Blue) = (colour.X, colour.Y, colour.Z);
 
         public Colour(XMLColour xmlColour) => (Red, Green, Blue) = (xmlColour.Red, xmlColour.Green, xmlColour.Blue);
 
@@ -280,6 +311,11 @@ namespace RayTrace
         }
 
         public SColour ToVector3()
+        {
+            return new SColour(Red, Green, Blue);
+        }
+
+        public SColour ToSColour()
         {
             return new SColour(Red, Green, Blue);
         }

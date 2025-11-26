@@ -606,7 +606,7 @@ namespace RayTrace
                 case MaterialType.BRDF_CookTorrence:
                 case MaterialType.BRDF_Gltf:
                     {
-                        Colour L = new();
+                        SColour L = new();
 
                         LocalCoordinateSystem lcs = new LocalCoordinateSystem(hr.EntryNormal);
 
@@ -619,13 +619,13 @@ namespace RayTrace
                             {
                                 // Calculate light arriving from the random direction.
                                 Colour incoming = CalculateColour(camera, scene, hr.EntryNormal, rand, hr2, depth, true);
-                                L += material.GetBrdfColour(lcs, hr, rand, hr.EntryNormal, incoming);
+                                L += material.GetBrdfColour(lcs, hr, rand, hr.EntryNormal, incoming.ToSColour());
                             }
                             else
                             {
                                 Colour incoming = scene.GetSkydomeColour(camera, ray2.Direction);
 
-                                L += material.GetBrdfColour(lcs, hr, rand, hr.EntryNormal, incoming);
+                                L += material.GetBrdfColour(lcs, hr, rand, hr.EntryNormal, incoming.ToSColour());
                             }
                         }
                         else
@@ -638,8 +638,8 @@ namespace RayTrace
 
                                 if (UseImportanceSampling)
                                 {
-                                    float r1 = rand.NextSingle();
-                                    float r2 = rand.NextSingle();
+                                    //float r1 = rand.NextSingle();
+                                    //float r2 = rand.NextSingle();
                                     //SVector v = GetLocalVectorInHemisphere(rand);
                                     SVector v = material.Brdf.GetSample(hr, lcs, rand, out /*float*/ pdf);
                                     scattered = v;// lcs.Reproject(v);
@@ -676,14 +676,14 @@ namespace RayTrace
                                     Colour incoming = CalculateColour(camera, scene, scattered, rand, hr2, depth, /*false*/ true);
                                     //Colour incoming = context.GetColour(scattered, hr2, /*false*/ true);
 
-                                    L += material.GetBrdfColour(lcs, hr, rand, scattered, incoming)/pdf;
+                                    L += material.GetBrdfColour(lcs, hr, rand, scattered, incoming.ToSColour())/pdf;
                                     L += material.GetEmissiveColour(hr2);
                                 }
                                 else
                                 {
                                     Colour incoming = scene.GetSkydomeColour(camera, ray2.Direction);
 
-                                    L += material.GetBrdfColour(lcs, hr, rand, scattered, incoming)/pdf;
+                                    L += material.GetBrdfColour(lcs, hr, rand, scattered, incoming.ToSColour())/pdf;
                                     //L += material.GetEmissiveColour(hr);
                                 }
                             }
@@ -712,7 +712,7 @@ namespace RayTrace
                                     if (dpLN > 0)
                                     {
                                         Colour incoming = pointLight.GetIntensityAtPoint(camera, hr.Entry) * dpLN;
-                                        L += hr.shape.Material.GetBrdfColour(lcs, hr, rand, toLight, incoming);
+                                        L += hr.shape.Material.GetBrdfColour(lcs, hr, rand, toLight, incoming.ToSColour());
                                         //L += hr.shape.Material.Brdf.GetColour(hr, toLight, incoming) / (4 * Math.PI * pointLight.Radius * pointLight.Radius);
                                         //L += c;
                                     }
@@ -722,7 +722,7 @@ namespace RayTrace
 
                         }
 
-                        diffuse = L;
+                        diffuse = new Colour(L);
                     }
                     break;
 

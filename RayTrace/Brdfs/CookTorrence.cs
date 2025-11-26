@@ -205,7 +205,7 @@ namespace RayTrace.Brdfs
         // colour   Colour of surface at hit point.
         // source   A vector from hr towards the source of the incoming light.
         // Li       The colour of the incoming light.
-        public override Colour GetColour(HitResult hr, LocalCoordinateSystem lcs, Random rand, Colour colour, SVector source, Colour Li)
+        public override SColour GetColour(HitResult hr, LocalCoordinateSystem lcs, Random rand, SColour colour, SVector source, SColour Li)
         {
             Debug.Assert(!source.IsNull());
             Debug.Assert(!hr.Ray.IsNull());
@@ -215,7 +215,7 @@ namespace RayTrace.Brdfs
             SVector halfVector = (viewDirection + source).Normalise();
 
             //float fresnel = 1.0f;
-            Colour Fc;
+            SColour Fc;
             if (Type == SurfaceType.Conductor)
             {
                 float fresnel = CalculateFConductor(halfVector.DotProductSaturated(viewDirection), 1.0f, Ior);
@@ -225,7 +225,7 @@ namespace RayTrace.Brdfs
             else
             {
                 float fresnel = CalculateFDielectric(halfVector.DotProductSaturated(viewDirection), 1.0f);
-                Fc = new Colour(fresnel, fresnel, fresnel);
+                Fc = new SColour(fresnel, fresnel, fresnel);
             }
 
             //float geometry = CalculateG(viewDirection, normal, halfVector)* CalculateG(source, normal, halfVector);
@@ -249,16 +249,16 @@ namespace RayTrace.Brdfs
             //Debug.Assert(dp >= 0f && dp <= 1f);
 
             //Colour diffuse = Li * Colour * (1 - Shininess) * dp / Math.PI;
-            Colour diffuse = colour * (1f - Shininess) / MathF.PI;
+            SColour diffuse = colour * (1f - Shininess) / MathF.PI;
 
             //float DFG = distribution * fresnel * geometry;
-            Colour DFG = Fc * distribution * geometry;
+            SColour DFG = Fc * distribution * geometry;
             //Colour specular = colour * Li * Shininess * DFG / denominator * dp;
             //float specularf = Shininess * DFG / denominator;
-            Colour specular = DFG * Shininess / denominator;
+            SColour specular = DFG * Shininess / denominator;
             //Colour specular = new(specularf, specularf, specularf);
 
-            Colour Lo = (diffuse + specular) * Li * dp;
+            SColour Lo = (diffuse + specular) * Li * dp;
 
             //float pdf = dp/MathF.PI;
             //Lo /= pdf;

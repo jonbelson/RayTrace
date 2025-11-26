@@ -55,8 +55,9 @@ namespace RayTrace.Brdfs
             return _defaultRoughness;
         }
 
-        private readonly Colour _f0 = new(0.04f, 0.04f, 0.04f);
-        private readonly Colour _f90 = new(1.0f, 1.0f, 1.0f);
+        private readonly SColour _f0 = new(0.04f, 0.04f, 0.04f);
+        private readonly SColour _f90 = new(1.0f, 1.0f, 1.0f);
+        private readonly SColour White = new(1.0f, 1.0f, 1.0f);
 
         // https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#fresnel
         // f0   Reflection colour at 0 degree/normal incidence.
@@ -100,7 +101,7 @@ namespace RayTrace.Brdfs
                 }
         */
 
-        private static Colour specularReflection(Colour f0, Colour f90, float VdotH)
+        private static SColour specularReflection(SColour f0, SColour f90, float VdotH)
         {
             float v = Math.Clamp(1.0f - VdotH /*Math.Abs(VdotH)*/, 0.0f, 1.0f);
             //float v = 1.0f - VdotH;
@@ -583,12 +584,14 @@ namespace RayTrace.Brdfs
         // colour   Colour of surface at hit point.
         // source   A vector from hr towards the source of the incoming light.
         // Li       The colour of the incoming light.
-        public override Colour GetColour(HitResult hr, LocalCoordinateSystem lcs, Random rand, Colour colour2, SVector source, Colour Li)
+        public override SColour GetColour(HitResult hr, LocalCoordinateSystem lcs, Random rand, SColour colour, SVector source, SColour Li)
         {
             Debug.Assert(!source.IsNull());
             Debug.Assert(!hr.Ray.IsNull());
 
-            Colour colour = colour2.ToLinearRGB();
+            //Colour colour = colour2.ToLinearRGB();
+
+            colour = colour.ToLinearRGB();
 
             //source = source.Normalise();
 
@@ -596,7 +599,7 @@ namespace RayTrace.Brdfs
             SVector V = hr.Ray.Normalise().Negate();
 
             // Decide which lobe to sample (diffuse or specular).
-            Colour metallicRoughnessColour = GetMetallicRoughness(hr);
+            Colour metallicRoughnessColour = GetMetallicRoughness(hr).ToLinearRGB();
             float metalness = GetMetalness(metallicRoughnessColour)*MetallicFactor;
             float roughness = Math.Max(GetRoughness(metallicRoughnessColour)*RoughnessFactor, 0.0001f);
 
@@ -624,26 +627,26 @@ namespace RayTrace.Brdfs
             NdotV = Math.Clamp(NdotV, 0.0001f, 1f);
 
             //Colour f0 = Colour.LinearBlend(_f0, colour, metalness);
-            Colour f0 = _f0*(1f - metalness) + colour*metalness;
+            SColour f0 = _f0*(1f - metalness) + colour*metalness;
 
-            Colour specularColour = f0;// Colour.LinearBlend(f0 /*_f0*/, colour, metalness);
+            SColour specularColour = f0;// Colour.LinearBlend(f0 /*_f0*/, colour, metalness);
 
 //            Colour diffuseColour = colour*(Palette.White - specularColour /*_f0*/)*(1f - metalness);
-            Colour diffuseColour = colour*(1f - metalness);
+            SColour diffuseColour = colour*(1f - metalness);
 
-            float reflectance = Math.Max(Math.Max(specularColour.Red, specularColour.Green), specularColour.Blue);
+            float reflectance = Math.Max(Math.Max(specularColour.Red(), specularColour.Green()), specularColour.Blue());
 
             float reflectance90 = Math.Clamp(reflectance*25.0f, 0.0f, 1.0f);
 
             // Reflectance0 (normal incidence angle).
             //Colour specularEnvironmentR0 = specularColour;
-            Colour specularEnvironmentR0 = f0;// specularColour;        Grok
+            SColour specularEnvironmentR0 = f0;// specularColour;        Grok
 
             // Reflectance at grazing angle.
             //Colour specularEnvironmentR90 = new(reflectance90, reflectance90, reflectance90);
-            Colour specularEnvironmentR90 = /*Palette.White;*/ new(reflectance90, reflectance90, reflectance90);
+            SColour specularEnvironmentR90 = /*Palette.White;*/ new(reflectance90, reflectance90, reflectance90);
 
-            Colour F = specularReflection(specularEnvironmentR0, specularEnvironmentR90, VdotH);
+            SColour F = specularReflection(specularEnvironmentR0, specularEnvironmentR90, VdotH);
             //float D = CalculateD_GGX(NdotH);
 //            float D = CalculateD_Ref(NdotH, roughness);
             float D = CalculateD_GGX(NdotH, roughness);
@@ -651,16 +654,16 @@ namespace RayTrace.Brdfs
             float G = CalculateG_Smith(NdotL, NdotV, roughness);
 
 //            Colour diffuseContrib = (Palette.White - F)*diffuseColour/MathF.PI;
-            Colour diffuseContrib = diffuseColour*(Palette.White - F)/MathF.PI;
+            SColour diffuseContrib = diffuseColour*(White - F)/MathF.PI;
 
             float denom = (4.0f*NdotL*NdotV);
-            Colour specularContrib = new Colour(0f, 0f, 0f);
+            SColour specularContrib = new SColour(0f, 0f, 0f);
             if (denom > 1e-6f)
             {
                 specularContrib = F*G*D/denom;
             }
 
-            Colour Lo = (diffuseContrib + specularContrib)*Li*NdotL;
+            SColour Lo = (diffuseContrib + specularContrib)*Li*NdotL;
 
             return Lo.FromLinearRGB();
         }

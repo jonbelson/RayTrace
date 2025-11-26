@@ -100,6 +100,20 @@ namespace RayTrace
 
         public static bool operator==(in SVector v1, in SVector v2) => v1.I == v2.I && v1.J == v2.J && v1.K == v2.K;
         public static bool operator!=(in SVector v1, in SVector v2) => !(v1 == v2); //v1.I == v2.I && v1.J == v2.J && v1.K == v2.K;
+
+        public override bool Equals(object obj)
+        {
+            if (obj is SVector other)
+            {
+                return this == other;
+            }
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(I, J, K);
+        }
     }
 
     public class Vector : INotifyPropertyChanged
