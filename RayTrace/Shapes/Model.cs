@@ -575,7 +575,7 @@ namespace RayTrace
                 Debug.Assert(idx == _modelData.triangles.Length);
             }
         }
-
+#if false
         // Recurse through partition tree, checking for intersections in boxes that that ray passees through.
         private void HitTestRecurseFast(Camera camera, List<HitResult> hitResults, Node node, ref SPoint p1, ref SPoint p2, bool segmentOnly, bool firstHitOnly)
         {
@@ -629,7 +629,7 @@ namespace RayTrace
                 _ = 0;
             }
         }
-
+#endif
         // Recurse through partition tree, checking for intersections in boxes that that ray passees through.
         private void HitTestRecurse(Camera camera, List<HitResult> hitResults, Node node, in SPoint p1, in SPoint p2, bool segmentOnly, bool firstHitOnly)
         {
@@ -926,6 +926,7 @@ namespace RayTrace
             return true;
         }
 
+#if false
         private HitResult HitTestTriangleFast(Camera camera, ref HitResult hr, int index, in Vector4 vvP1, in Vector4 vvP2, in Vector4 vvRay, bool segmentOnly)
         {
             FatTriangle tri = _fatTriangles[index];
@@ -1036,7 +1037,7 @@ namespace RayTrace
 
             return hr;
         }
-
+#endif
 
 
         private HitResult HitTestTriangle(Camera camera, ref HitResult hr, int index, in SPoint p1, in SPoint p2, in SVector ray, bool segmentOnly)

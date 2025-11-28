@@ -2,11 +2,52 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+
+
 
 namespace RayTrace
 {
-    using SVector2 = Vector4;
+    public static class SVector2ExtensionMethods
+    {
+        extension(SVector2 v)
+        {
+            public float I => v.X;
+            public float J => v.Y;
+            public float K => v.Z;
+
+            public SVector ToSVector()
+            {
+                return new SVector(v.X, v.Y, v.Z);
+            }
+
+            public float DotProduct(SVector2 v2) => Vector4.Dot(v, v2);
+
+            public SVector2 VectorProduct(SVector2 v2) => Vector4.Cross(v, v2);
+
+            public SVector2 Scale(float scale) => v*scale;
+
+            public SVector2 Negate() => v.Negate();
+
+            public float DotProductSaturated(SVector2 v2)
+            {
+                float dp = Vector4.Dot(v, v2);
+                return Math.Clamp(dp, 0f, 1f);
+            }
+
+            public float Magnitude() => v.Length();
+            public float MagnitudeSquared() => v.LengthSquared();
+
+            public bool IsNull() => v == Vector4.Zero;
+
+            public SVector2 Normalise() => Vector4.Normalize(v);
+
+            public static SVector2 Null() => Vector4.Zero;
+
+        }
+
+    }
 
     public static class ExtensionMethods
     {
@@ -34,7 +75,10 @@ namespace RayTrace
 
         public SVector(Vector v) => (I, J, K) = (v.I, v.J, v.K);
 
-        public SVector(float i, float j, float k) => (I, J, K) = (i, j, k);
+        // Temporary, until SVector2 replaces SVector.
+        public SVector(SVector2 v) => (I, J, K, W) = (v.I, v.J, v.K, v.Z);
+
+        public SVector(float i, float j, float k) => (I, J, K, W) = (i, j, k, 0f);
 
         public float DotProduct(in SVector v) => I * v.I + J * v.J + K * v.K;
         public SVector VectorProduct(in SVector v) => new(J * v.K - K * v.J, K * v.I - I * v.K, I * v.J - J * v.I);

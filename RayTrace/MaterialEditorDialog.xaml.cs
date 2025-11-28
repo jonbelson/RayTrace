@@ -291,12 +291,18 @@ namespace RayTrace
 
                 if (material != null)
                 {
-                    if (material.NormalMap != null)
+                    //if (material.NormalMap is null)
                     {
-                        material.NormalMap.FileName = fileName;
-
+                        material.NormalMap = new(fileName);
                         UpdatePreview();
                     }
+
+                    //if (material.NormalMap != null)
+                    //{
+                    //    material.NormalMap.FileName = fileName;
+
+                    //    UpdatePreview();
+                    //}
                 }
             }
         }

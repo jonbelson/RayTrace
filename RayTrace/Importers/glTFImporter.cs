@@ -62,6 +62,9 @@ namespace RayTrace.Importers
             // textureInfo
             public string emissiveTexture;  // sRGB
 
+            public Vec3T<float> emissiveFactor = new( 0.0f, 0.0f, 0.0f );
+            public float emissiveStrength = 1.0f;
+
             // pbrMetallicRoughness
             public Vec4T<float> baseColorFactor = new( 1.0f, 1.0f, 1.0f, 1.0f );
             public string baseColorTexture;     // sRGB
@@ -70,6 +73,16 @@ namespace RayTrace.Importers
             public string metallicRoughnessTexture; // sRGB
 
             public bool doubleSided = false;
+        }
+
+        class GltfSampler
+        {
+            public MagFilter magFilter { get; set; }
+            public MinFilter minFilter { get; set; }
+            public SamplerWrap wrapS { get; set; } = SamplerWrap.REPEAT;
+            public SamplerWrap wrapT { get; set; } = SamplerWrap.REPEAT;
+            public string name { get; set; }
+
         }
 
         // Provides mapping from textures to images.
@@ -112,7 +125,7 @@ namespace RayTrace.Importers
             public List<GltfMesh> meshes = new();
             public List<GltfMaterial> materials = new();
             public List<GltfTexture> textures { get; set; } = new();
-
+            public List<GltfSampler> samplers = new();
             public List<GltfScene> scenes = new();
         }
 
@@ -141,18 +154,27 @@ namespace RayTrace.Importers
             TRIANGLE_FAN = 6
         }
 
-        enum SamplerWrapS
+        enum MagFilter
+        {
+            NEAREST,
+            LINEAR
+        }
+
+        enum MinFilter
+        {
+            NEAREST,
+            LINEAR,
+            NEAREST_MIPMAP_NEAREST,
+            LINEAR_MIPMAP_NEAREST,
+            NEAREST_MIPMAP_LINEAR,
+            LINEAR_MIPMAP_LINEAR
+        }
+
+        enum SamplerWrap
         {
             CLAMP_TO_EDGE = 33071,
             MIRRORED_REPEAT = 33648,
             REPEAT = 10497 
-        }
-
-        enum SamplerWrapT
-        {
-            CLAMP_TO_EDGE = 33071,
-            MIRRORED_REPEAT = 33648,
-            REPEAT = 10497
         }
 
         /*
@@ -294,6 +316,16 @@ namespace RayTrace.Importers
             public List<JsonPrimitive> primitives { get; set; }
         }
 
+        // https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#reference-sampler
+        class JsonSampler
+        {
+            public MagFilter magFilter { get; set; }
+            public MinFilter minFilter { get; set; }
+            public SamplerWrap wrapS { get; set; } = SamplerWrap.REPEAT;
+            public SamplerWrap wrapT { get; set; } = SamplerWrap.REPEAT;
+            public string name { get; set; }
+        }
+
         class JsonMaterialExtension { };
 
         class JsonMaterialKHR_materials_pbrSpecularGlossiness
@@ -309,7 +341,13 @@ namespace RayTrace.Importers
 
             public class SpecularGlossinessTexture { public int index { get; set; } }
             public SpecularGlossinessTexture specularGlossinessTexture { get; set; }
-        };
+        }
+
+        // https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_emissive_strength/README.md
+        class JsonMaterialKHR_materials_emissive_strength
+        {
+            public float emissiveStrength { get; set; } = 1.0f;
+        }
 
         class JsonMaterial
         {
@@ -319,6 +357,7 @@ namespace RayTrace.Importers
             {
                 //public List<JsonMaterialExtension> extensions { get; set; }
                 public JsonMaterialKHR_materials_pbrSpecularGlossiness KHR_materials_pbrSpecularGlossiness { get; set; }
+                public JsonMaterialKHR_materials_emissive_strength KHR_materials_emissive_strength { get; set; }
             }
 
             public Extensions extensions { get; set; }
@@ -385,6 +424,8 @@ namespace RayTrace.Importers
             public List<JsonMaterial> materials { get; set; }
 
             public List<JsonNode> nodes { get; set; }
+
+            public List<JsonSampler> samplers { get; set; }
 
             public List<JsonScene> scenes { get; set; }
             public Int32? scene { get; set; }
@@ -1271,6 +1312,11 @@ namespace RayTrace.Importers
                         roughnessFactor = material.pbrMetallicRoughness?.roughnessFactor ?? 1f,
                     };
 
+                    if (material.emissiveFactor is not null && material.emissiveFactor.Length == 3)
+                    {
+                        gltfMaterial.emissiveFactor = new(material.emissiveFactor[0], material.emissiveFactor[1], material.emissiveFactor[2]);
+                    }
+
                     if (material.extensions is not null)
                     {
                         if (material.extensions.KHR_materials_pbrSpecularGlossiness is not null)
@@ -1284,6 +1330,12 @@ namespace RayTrace.Importers
                                 if (baseColor is not null) gltfMaterial.baseColorTexture = baseColor;
                             }
 
+                        }
+
+                        // https://github.com/KhronosGroup/glTF/tree/main/extensions/2.0/Khronos/KHR_materials_emissive_strength
+                        if (material.extensions.KHR_materials_emissive_strength is not null)
+                        {
+                            gltfMaterial.emissiveStrength = material.extensions.KHR_materials_emissive_strength.emissiveStrength;
                         }
 
                     }
@@ -1340,6 +1392,25 @@ namespace RayTrace.Importers
                     }
 
                     _gltfAsset.materials.Add(gltfMaterial);
+                }
+            }
+
+            if (asset.samplers is not null)
+            {
+                foreach (JsonSampler sampler in asset.samplers)
+                {
+                    Logger.Instance.Info($"Processing sampler {sampler?.name ?? "<unnamed>"}");
+
+                    GltfSampler gltfSampler = new()
+                    {
+                        name = sampler?.name,
+                        magFilter = sampler.magFilter,
+                        minFilter = sampler.minFilter,
+                        wrapS = sampler.wrapS,
+                        wrapT = sampler.wrapT
+                    };
+
+                    _gltfAsset.samplers.Add(gltfSampler);
                 }
             }
 
@@ -1426,8 +1497,6 @@ namespace RayTrace.Importers
 
             foreach (GltfMaterial material in _gltfAsset.materials)
             {
-                //TextureBitmap texture = new();
-                //Texture texture = new TextureBitmap();
 
                 GltfBrdf brdf = new();
                 brdf.MetallicFactor = material.metallicFactor;
@@ -1435,9 +1504,10 @@ namespace RayTrace.Importers
 
                 RayTrace.Material mat = new(MaterialType.BRDF_Gltf)
                 {
-                    //Texture = texture,
                     Name = material.name,
-                    Brdf = brdf
+                    Brdf = brdf,
+                    EmissiveFactor = new SColour(material.emissiveFactor.x, material.emissiveFactor.y, material.emissiveFactor.z),
+                    EmissiveStrength = material.emissiveStrength
                 };
 
                 if (!string.IsNullOrEmpty(material.baseColorTexture))

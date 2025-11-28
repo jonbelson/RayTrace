@@ -14,6 +14,13 @@ namespace RayTrace
         Diffuse, Reflective, RefractiveAndReflective, Phong, BRDF_Lambertian, BRDF_CookTorrence, BRDF_Gltf
     }
 
+    public enum SamplerWrapMode
+    {
+        Repeat,
+        Clamp,
+        Mirror
+    }
+
     /*
     public class MaterialManager
     {
@@ -56,6 +63,9 @@ namespace RayTrace
         private MaterialType _type = MaterialType.Diffuse;
         public MaterialType Type { get { return _type; } }
 
+        public SamplerWrapMode SamplerWrapModeU { get; set; } = SamplerWrapMode.Repeat;
+        public SamplerWrapMode SamplerWrapModeV { get; set; } = SamplerWrapMode.Repeat;
+
         // Ratio of reflected light to incident light (Pd), i.e. how much light is reflected.
         //public Colour Albedo { get; set; } = new Colour(0.18f, 0.18f, 0.18f);
 
@@ -75,6 +85,9 @@ namespace RayTrace
         public NormalMap NormalMap { get; set; }
 
         public TextureBitmap EmissiveTexture { get; set; }
+
+        public float EmissiveStrength { get; set; } = 1;
+        public SColour EmissiveFactor { get; set; } = new(1f, 1f, 1f);
 
         public bool HasRoughness()
         {
@@ -225,9 +238,12 @@ namespace RayTrace
 
         public SColour GetEmissiveColour(HitResult hr)
         {
-            Colour c = EmissiveTexture?.GetColour(hr) ?? Palette.Black;
+            Colour c = EmissiveTexture?.GetColour(hr.u, hr.v) ?? Palette.Black;
+            
+            SColour sc = c.ToSColour();
+            sc = sc * EmissiveStrength * EmissiveFactor;
 
-            return c.ToSColour();
+            return sc;
         }
 
         public virtual Colour GetBaseColour()

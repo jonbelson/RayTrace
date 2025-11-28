@@ -339,7 +339,7 @@ namespace RayTrace
                     Debug.WriteLine($"Done Task {idx}...");
 
                     // Run on UI thread.
-                    Dispatcher.Invoke(DispatcherPriority.Normal, () =>
+                    Dispatcher.BeginInvoke(DispatcherPriority.Normal, () =>
                             {
                                 Update(rb.StartX, rb.StartY, rb.Width, rb.Height);
                             }

@@ -591,6 +591,7 @@ namespace RayTrace
             Colour reflected = Palette.Black;
             Colour diffuse = Palette.Black;
             Colour specular = Palette.Black;
+            Colour emissive = Palette.Black;
 
             Material material = shape.GetMaterial(hr);
             MaterialType materialType = material.Type;
@@ -638,8 +639,6 @@ namespace RayTrace
 
                                 if (UseImportanceSampling)
                                 {
-                                    //float r1 = rand.NextSingle();
-                                    //float r2 = rand.NextSingle();
                                     //SVector v = GetLocalVectorInHemisphere(rand);
                                     SVector v = material.Brdf.GetSample(hr, lcs, rand, out /*float*/ pdf);
                                     scattered = v;// lcs.Reproject(v);
@@ -649,7 +648,7 @@ namespace RayTrace
                                 else
                                 {
                                     SPoint p = hr.Entry + hr.EntryNormal + GetSVectorInSphere(rand);
-                                    /*SVector*/ scattered = p - hr.Entry;
+                                    scattered = p - hr.Entry;
                                     scattered = scattered.Normalise();
 
                                     // Check scattered Vector is in the corect hemishere
@@ -665,7 +664,7 @@ namespace RayTrace
                                 if (scattered.IsNull()) continue;
 
                                 //Debug.Assert(scattered.DotProduct(hr.EntryNormal) >= 0);
-                                double dp = scattered.DotProduct(hr.EntryNormal);
+                                //double dp = scattered.DotProduct(hr.EntryNormal);
                                 ///Debug.Assert(dp >= 0.0);
 
                                 Ray ray2 = new Ray(hr.Entry + hr.EntryNormal.Scale(0.01f), scattered);
@@ -677,7 +676,7 @@ namespace RayTrace
                                     //Colour incoming = context.GetColour(scattered, hr2, /*false*/ true);
 
                                     L += material.GetBrdfColour(lcs, hr, rand, scattered, incoming.ToSColour())/pdf;
-                                    L += material.GetEmissiveColour(hr2);
+                                    //L += material.GetEmissiveColour(hr2);
                                 }
                                 else
                                 {
@@ -910,7 +909,9 @@ namespace RayTrace
                 ambient = shape.GetColour(hr).Multiply(scene.Ambient);
             }
 
-            Colour finalColour = ambient + diffuse + reflected + refracted + specular;
+            emissive = new(material?.GetEmissiveColour(hr) ?? SPalette.Black);
+
+            Colour finalColour = ambient + emissive + diffuse + reflected + refracted + specular;
 
             return finalColour;
         }
