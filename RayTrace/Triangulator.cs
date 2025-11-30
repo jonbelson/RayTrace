@@ -271,9 +271,9 @@ namespace RayTrace
                 SVector normal = v1.VectorProduct(v2).Normalise();
 
                 // Compare the normal against each of X/Y/Z.
-                float dpX = Math.Abs(new SVector(1, 0, 0).DotProduct(normal));
-                float dpY = Math.Abs(new SVector(0, 1, 0).DotProduct(normal));
-                float dpZ = Math.Abs(new SVector(0, 0, 1).DotProduct(normal));
+                float dpX = Math.Abs(new SVector(1, 0, 0, 0).DotProduct(normal));
+                float dpY = Math.Abs(new SVector(0, 1, 0, 0).DotProduct(normal));
+                float dpZ = Math.Abs(new SVector(0, 0, 1, 0).DotProduct(normal));
 
                 if (dpX > dpY)
                 {

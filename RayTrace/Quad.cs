@@ -25,8 +25,8 @@ namespace RayTrace
         public override void CreateCache(Camera camera)
         {
             _pos = new(Pos);
-            _up = new SVector(Up);
-            _right = new(Right);
+            _up = Up.ToSVector();
+            _right = Right.ToSVector();
         }
 
         private HitResult HitTestImpl(Camera camera, SPoint p1, SPoint p2, bool segmentOnly)

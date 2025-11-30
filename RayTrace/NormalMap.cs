@@ -132,7 +132,7 @@ namespace RayTrace
                 float k = (b - 128) / 128.0f;
 
 //                SVector n = new SVector(-i, -j, -k);
-                SVector n = new SVector(i, -j, -k);
+                SVector n = new SVector(i, -j, -k, 0);
                 return n.Normalise();
             }
 

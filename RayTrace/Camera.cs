@@ -15,6 +15,9 @@ namespace RayTrace
         private float _fovHRadians;
         private float _fovHDegrees;
 
+        private Matrix _normalMatrix = new();
+        private Matrix _normalMatrixT = new();
+
         public Point Pos {
             get { return _pos; }
             set {
@@ -52,16 +55,22 @@ namespace RayTrace
         public Matrix WorldToView { get; set; } = new Matrix();
 
         // Matrix for transforming World normals to View.
-        public Matrix NormalMatrix { get; set; } = new Matrix();
+        public Matrix NormalMatrix { get { return _normalMatrix; } /*set { _normalMatrix = value; }*/ }
 
-        /*private*/ public void UpdateMatrix()
+        public Matrix NormalMatrixT { get { return _normalMatrixT; } /*set { _normalMatrix = value; }*/ }
+
+
+        /*private*/
+        public void UpdateMatrix()
         {
             WorldToView.SetLookAt(_pos, _target);
 
-            NormalMatrix = new Matrix(WorldToView);
-            NormalMatrix.M14 = 0.0f;
-            NormalMatrix.M24 = 0.0f;
-            NormalMatrix.M34 = 0.0f;
+            _normalMatrix = new Matrix(WorldToView);
+            _normalMatrix.M14 = 0.0f;
+            _normalMatrix.M24 = 0.0f;
+            _normalMatrix.M34 = 0.0f;
+
+            _normalMatrixT = _normalMatrix.GetTranspose();
 
             // XXX For transforming surface normals, we need to use the transverse of the inverse of the WorldToView matrix.
         }

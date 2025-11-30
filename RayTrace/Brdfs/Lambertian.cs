@@ -51,7 +51,7 @@ namespace RayTrace.Brdfs
 
             pdf = y / MathF.PI;
 
-            return new SVector(x, y, z);
+            return new SVector(x, y, z, 0f);
         }
 
         // Calculate Colour at point given in hr based on radiance (L) coming from direction source.

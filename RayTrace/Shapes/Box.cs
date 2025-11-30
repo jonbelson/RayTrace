@@ -47,17 +47,17 @@ namespace RayTrace
             SPoint Intersection = hr.Entry;
 
             // https://gamedev.stackexchange.com/questions/172352/finding-texture-coordinates-for-plane
-            SVector e1 = normal.VectorProduct(new SVector(1.0f, 0.0f, 0.0f));
+            SVector e1 = normal.VectorProduct(new SVector(1.0f, 0.0f, 0.0f, 0.0f));
             e1 = e1.Normalise();
             if (e1.I == 0.0 && e1.J == 0.0 && e1.K == 0.0)
             {
-                e1 = normal.VectorProduct(new SVector(0.0f, 0.0f, 1.0f));
+                e1 = normal.VectorProduct(new SVector(0.0f, 0.0f, 1.0f, 0f));
                 e1 = e1.Normalise();
             }
             SVector e2 = normal.VectorProduct(e1);
             e2 = e2.Normalise();
 
-            SVector vecIntersection = new SVector(Intersection.X, Intersection.Y, Intersection.Z);
+            SVector vecIntersection = new SVector(Intersection.X, Intersection.Y, Intersection.Z, 0f);
             double mag = vecIntersection.Magnitude();
             vecIntersection = vecIntersection.Normalise();
 
@@ -154,7 +154,8 @@ namespace RayTrace
             P2I = new SVector(
                 P2I.I / (Width / 2),
                 P2I.J / (Height / 2),
-                P2I.K / (Depth / 2)
+                P2I.K / (Depth / 2),
+                0f
             );
 
             //P2I.I /= (Width / 2);
@@ -202,7 +203,7 @@ namespace RayTrace
                 }
             }
 
-            SVector normal = new SVector(nI, nJ, nK);
+            SVector normal = new SVector(nI, nJ, nK, 0.0f);
 
             hr.EntryNormal = normal;
 

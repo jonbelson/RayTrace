@@ -384,13 +384,13 @@ namespace RayTrace
             }
 
             {
-                Quaternion q = new Quaternion(new SVector(0, 1, 0), (float)Math.PI / 2);
-                SVector v = new(0, 0, 1);
+                Quaternion q = new Quaternion(new SVector(0, 1, 0, 0), (float)Math.PI / 2);
+                SVector v = new(0, 0, 1, 0f);
                 SVector vr = q.Rotate(v);
 
 
-                q = new Quaternion(new SVector(1, 0, 0), (float)Math.PI / 2);
-                v = new(0, 1, 0);
+                q = new Quaternion(new SVector(1, 0, 0, 0f), (float)Math.PI / 2);
+                v = new(0, 1, 0, 0f);
                 vr = q.Rotate(v);
             }
 
@@ -583,6 +583,37 @@ namespace RayTrace
 
             }
 
+            {
+                Random rand = new Random();
+                float u1 = rand.NextSingle();
+                float u2 = rand.NextSingle();
+                float u3 = rand.NextSingle();
+
+                float u4 = rand.NextSingle();
+                float u5 = rand.NextSingle();
+                float u6 = rand.NextSingle();
+
+
+                {
+                    SVector v = new SVector(u1, u2, u3, 0f);
+                    SVector v2 = new(u4, u5, u6, 0f);
+
+                    SVector v3 = v.VectorProduct(v2);
+
+                    Logger.Instance.Trace(v3.X.ToString());
+                    Logger.Instance.Trace(v3.ToString());
+                }
+                {
+                    Vector4 v = new Vector4(u1, u2, u3, 0f);
+                    Vector4 v2 = new Vector4(u4, u5, u6, 0f);
+
+                    Vector4 v3 = Vector4.Cross(v, v2);
+
+                    Logger.Instance.Trace(v3.X.ToString());
+                    Logger.Instance.Trace(v3.ToString());
+                }
+
+            }
 
             Vector3D up = new(0.0, 1.0, 0.0);
 

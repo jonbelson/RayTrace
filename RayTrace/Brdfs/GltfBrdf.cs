@@ -438,7 +438,7 @@ namespace RayTrace.Brdfs
             float D = CalculateD_GGX(cosTheta, roughness);
             pdf = D*cosTheta;
 
-            return new SVector(x, y, z);
+            return new SVector(x, y, z, 0f);
         }
 
         // Returns a cosine-weighted vector in local space.
@@ -456,7 +456,7 @@ namespace RayTrace.Brdfs
 
             pdf = y/MathF.PI;
 
-            return new SVector(x, y, z);
+            return new SVector(x, y, z, 0f);
         }
 
         // Return 'metalness' component of MetallicRoughness colour.
@@ -634,7 +634,7 @@ namespace RayTrace.Brdfs
 //            Colour diffuseColour = colour*(Palette.White - specularColour /*_f0*/)*(1f - metalness);
             SColour diffuseColour = colour*(1f - metalness);
 
-            float reflectance = Math.Max(Math.Max(specularColour.Red(), specularColour.Green()), specularColour.Blue());
+            float reflectance = Math.Max(Math.Max(specularColour.Red, specularColour.Green), specularColour.Blue);
 
             float reflectance90 = Math.Clamp(reflectance*25.0f, 0.0f, 1.0f);
 

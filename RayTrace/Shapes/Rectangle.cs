@@ -34,8 +34,8 @@ namespace RayTrace
         public override void CreateCache(Camera camera)
         {
             pos = new(Pos.X, Pos.Y, Pos.Z);
-            normal = new(Normal.I, Normal.J, Normal.K);
-            up = new(Up.I, Up.J, Up.K);
+            normal = new(Normal.I, Normal.J, Normal.K, 0.0f);
+            up = new(Up.I, Up.J, Up.K, 0.0f);
         }
 
         private HitResult HitTestImpl(Camera camera, SPoint p1, SPoint p2, bool segmentOnly)

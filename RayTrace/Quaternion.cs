@@ -41,7 +41,7 @@ namespace RayTrace
             Quaternion pq = p * this;
             Quaternion qipq = qi * pq;
 
-            return new SVector(qipq.X, qipq.Y, qipq.Z);
+            return new SVector(qipq.X, qipq.Y, qipq.Z, 0);
         }
 
         public static Quaternion operator*(Quaternion q1, Quaternion q2)

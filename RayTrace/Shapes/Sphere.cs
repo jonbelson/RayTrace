@@ -15,12 +15,14 @@ namespace RayTrace
 
 		public void CalculateUV(Camera camera, ref HitResult hr)
         {
-            // Sn   Normal vector at point of interest.
-            // Sp   Vector of north pole.
-            // Se   Vector to reference point on equator.
+			// Sn   Normal vector at point of interest.
+			// Sp   Vector of north pole.
+			// Se   Vector to reference point on equator.
+
+			Debug.Assert(!float.IsNaN(hr.EntryNormal.I));
 
 			SVector Sn = hr.EntryNormal;
-			SVector Sp = new SVector(0.0f, 1.0f, 0.0f);
+			SVector Sp = new SVector(0.0f, 1.0f, 0.0f, 0.0f);
 			Sp = _viewUp;
 			Sp = camera.NormalMatrix*Sp;
 			double dp = Sn.DotProduct(Sp);
@@ -30,7 +32,7 @@ namespace RayTrace
 
 			double v = phi / Math.PI;
 
-			SVector Se = new SVector(0.0f, 0.0f, 1.0f);
+			SVector Se = new SVector(0.0f, 0.0f, 1.0f, 0.0f);
 			Se = _viewAway;
 			Se = camera.NormalMatrix * Se;
 			dp = Se.DotProduct(Sn);
@@ -100,9 +102,9 @@ namespace RayTrace
 			_viewRadius = Scale;
 
 			Vector up = new(0, 1, 0);
-			_viewUp = new(ObjectToWorldNormal*up);
+			_viewUp = (ObjectToWorldNormal*up).ToSVector();
 			Vector away = new(0, 0, 1);
-			_viewAway = new(ObjectToWorldNormal*away);
+			_viewAway = (ObjectToWorldNormal*away).ToSVector();
 
 			_viewUp = _viewUp.Normalise();
 			_viewAway = _viewAway.Normalise();
@@ -205,7 +207,7 @@ namespace RayTrace
 			{
 				SVector normalMap = Material.NormalMap.GetNormal(hr.u, hr.v);
 
-				SVector up = new(0, 1, 0);
+				SVector up = new(0, 1, 0, 0);
 				SVector vUp = camera.NormalMatrix*up;
 				SVector vNormal = hr.EntryNormal;
 				SVector vRight = vNormal.VectorProduct(vUp);
@@ -232,7 +234,7 @@ namespace RayTrace
 
 				//val = (val + noiseRange) / (2.0 * noiseRange);
 
-				normal = normal.Add(new SVector(val, val, val));
+				normal = normal.Add(new SVector(val, val, val, 0.0f));
 				normal = normal.Normalise();
 
 				hr.EntryNormal = normal;

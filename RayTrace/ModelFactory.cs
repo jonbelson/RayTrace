@@ -267,7 +267,7 @@ namespace RayTrace
             List<ModelData.Triangle> triangles = new();
 
             points.Add(new SPoint(0, 0, 0)); // Dummy point.
-            normals.Add(new SVector(0, 0, 0));
+            normals.Add(SVector.Null());
             texels.Add(new ModelData.Texel());
 
             float startY = -height/2.0f;
@@ -283,7 +283,7 @@ namespace RayTrace
                 {
 //                    points.Add(new SPoint(x, 0, y));
                     points.Add(new SPoint(x, y, 0));
-                    normals.Add(new SVector(0, 0, -1));
+                    normals.Add(new SVector(0, 0, -1, 0));
 
                     ModelData.Texel texel = new() { u = w/(widthPoints - 1.0f), v = h/(heightPoints - 1.0f) };
                     texels.Add(texel);

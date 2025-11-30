@@ -32,7 +32,7 @@ namespace RayTrace
         // Allow Shape to pre-transform data using the Camera's WorldToView Matrix.
         public override void CreateCache(Camera camera)
         {
-            _direction = new SVector(Normal);
+            _direction = Normal.ToSVector();
         }
 
         public override SVector GetDirection(Camera camera, SPoint p)

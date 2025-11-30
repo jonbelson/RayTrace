@@ -566,7 +566,7 @@ namespace RayTrace.Importers
 
             // Indexes start at '1' so add a dummy entry to each list.
             points.Add(new SPoint(0.0f, 0.0f, 0.0f));
-            normals.Add(new SVector(0.0f, 0.0f, 0.0f));
+            normals.Add(SVector.Null());
 
             texels.Add(new ModelData.Texel());
 
@@ -610,7 +610,7 @@ namespace RayTrace.Importers
                     {
                         if (tokens.Length == 4 && Parse(tokens, out f1, out f2, out f3) == 3)
                         {
-                            SVector v = new SVector(f1, f2, -f3);
+                            SVector v = new SVector(f1, f2, -f3, 0f);
                             v = v.Normalise();
                             normals.Add(v);
                         }

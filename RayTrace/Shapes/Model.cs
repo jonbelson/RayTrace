@@ -20,14 +20,14 @@ using RayTrace.Preview;
 
 namespace RayTrace
 {
-    public static class Ext
-    {
-        public static Vector4 VectorProduct(this Vector4 vv, Vector4 v)
-        {
-            return new(vv.Y*v.Z - vv.Z*v.Y, vv.Z*v.X - vv.X*v.Z, vv.X*v.Y - vv.Y*v.X, 0);
-        }
+    //public static class Ext
+    //{
+    //    public static Vector4 VectorProduct(this Vector4 vv, Vector4 v)
+    //    {
+    //        return new(vv.Y*v.Z - vv.Z*v.Y, vv.Z*v.X - vv.X*v.Z, vv.X*v.Y - vv.Y*v.X, 0);
+    //    }
 
-    }
+    //}
 
     //
     // Class containing the geometry and textures that comprise a 3D model.
@@ -442,7 +442,7 @@ namespace RayTrace
                 List<SVector> Normals = new List<SVector>();
                 foreach (XMLVector n in xmlModel.Normals)
                 {
-                    Normals.Add(new SVector(n.I, n.J, n.K));
+                    Normals.Add(new SVector(n.I, n.J, n.K, 0.0f));
                 }
                 _modelData.normals = Normals.ToArray();
 
@@ -887,14 +887,14 @@ namespace RayTrace
 
                     // Transform normal map vector to the triangle's normal.
 
-                    SVector up = new(0, 1, 0);
+                    SVector up = new(0, 1, 0, 0);
                     SVector vUp = camera.NormalMatrix*up;
 
                     SVector vNorm = vTriNormal;
 
                     if (vUp == vNorm)
                     {
-                        SVector nearlyUp = new(1, 100, 0);
+                        SVector nearlyUp = new(1, 100, 0, 0.0f);
                         nearlyUp = nearlyUp.Normalise();
                         vUp = camera.NormalMatrix*nearlyUp;
 

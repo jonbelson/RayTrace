@@ -9,28 +9,30 @@ using System.Runtime.InteropServices;
 
 namespace RayTrace
 {
-    public static class SVector2ExtensionMethods
+    // Extension methods to make SVector act more like Vector.
+    public static class SVectorExtensionMethods
     {
-        extension(SVector2 v)
+        extension(SVector v)
         {
             public float I => v.X;
             public float J => v.Y;
             public float K => v.Z;
+            public float W => v.W;
 
-            public SVector ToSVector()
-            {
-                return new SVector(v.X, v.Y, v.Z);
-            }
+            public static SVector Create(float i, float j, float k) => new Vector4(i, j, k, 1f);
 
-            public float DotProduct(SVector2 v2) => Vector4.Dot(v, v2);
+            public float DotProduct(SVector v2) => Vector4.Dot(v, v2);
 
-            public SVector2 VectorProduct(SVector2 v2) => Vector4.Cross(v, v2);
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public SVector VectorProduct(SVector v2) => Vector4.Cross(v, v2);
 
-            public SVector2 Scale(float scale) => v*scale;
+            public SVector Add(SVector v2) => v+v2;// Vector4.Cross(v, v2);
 
-            public SVector2 Negate() => v.Negate();
+            public SVector Scale(float scale) => v*scale;
 
-            public float DotProductSaturated(SVector2 v2)
+            public SVector Negate() => Vector4.Negate(v);
+
+            public float DotProductSaturated(SVector v2)
             {
                 float dp = Vector4.Dot(v, v2);
                 return Math.Clamp(dp, 0f, 1f);
@@ -41,9 +43,11 @@ namespace RayTrace
 
             public bool IsNull() => v == Vector4.Zero;
 
-            public SVector2 Normalise() => Vector4.Normalize(v);
+            public SVector Normalise() => Vector4.Normalize(v);
 
-            public static SVector2 Null() => Vector4.Zero;
+            public static SVector Null() => Vector4.Zero;
+
+            public SPoint AsPoint() => new SPoint(v.I, v.J, v.K);
 
         }
 
@@ -58,6 +62,8 @@ namespace RayTrace
         }
     }
 
+
+#if false
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct SVector
     {
@@ -159,6 +165,8 @@ namespace RayTrace
             return HashCode.Combine(I, J, K);
         }
     }
+#endif
+
 
     public class Vector : INotifyPropertyChanged
     {
@@ -261,10 +269,15 @@ namespace RayTrace
             return new XMLVector() { I = this.I, J = this.J, K = this.K };
         }
 
+        public SVector ToSVector()
+        {
+            return new Vector4(I, J, K, 0.0f);
+        }
+
         // Convert to SIMD-capable Vector4 format.
         public Vector4 ToVector4()
         {
-            return new Vector4(I, J, K, 1.0f);
+            return new Vector4(I, J, K, 0.0f);
         }
     }
 }

@@ -122,7 +122,8 @@ namespace RayTrace
             (
                 m.M11 * v.I + m.M12 * v.J + m.M13 * v.K + m.M14 * 1.0f,
                 m.M21 * v.I + m.M22 * v.J + m.M23 * v.K + m.M24 * 1.0f,
-                m.M31 * v.I + m.M32 * v.J + m.M33 * v.K + m.M34 * 1.0f
+                m.M31 * v.I + m.M32 * v.J + m.M33 * v.K + m.M34 * 1.0f,
+                0f
             );
 
             return vv;

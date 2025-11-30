@@ -7,32 +7,42 @@ using System.Numerics;
 
 namespace RayTrace
 {
-    using SColour = Vector3;
-
+    // Extension methods to make Vector3 act more like Colour.
     public static class SColourExtensions
     {
-        public static float Red(this SColour c) => c.X;
-        public static float Green(this SColour c) => c.Y;
-        public static float Blue(this SColour c) => c.Z;
-
-        public static SColour ToLinearRGB(this SColour c)
+        extension(SColour c)
         {
-            float r = c.X <= 0.04045f ? c.X / 12.92f : MathF.Pow((c.X + 0.055f) / 1.055f, 2.4f);
-            float g = c.Y <= 0.04045f ? c.Y / 12.92f : MathF.Pow((c.Y + 0.055f) / 1.055f, 2.4f);
-            float b = c.Z <= 0.04045f ? c.Z / 12.92f : MathF.Pow((c.Z + 0.055f) / 1.055f, 2.4f);
+            public float Red => c.X;
+            public float Green => c.Y;
+            public float Blue => c.Z;
 
-            return new SColour(r, g, b);
+            public static SColour FromRGB(uint rgb)
+            {
+                byte r = (byte)(rgb >> 16);
+                byte g = (byte)(rgb >> 8);
+                byte b = (byte)rgb;
+
+                return new SColour(r / 255.0f, g / 255.0f, b / 255.0f);
+            }
+
+            public SColour ToLinearRGB()
+            {
+                float r = c.X <= 0.04045f ? c.X / 12.92f : MathF.Pow((c.X + 0.055f) / 1.055f, 2.4f);
+                float g = c.Y <= 0.04045f ? c.Y / 12.92f : MathF.Pow((c.Y + 0.055f) / 1.055f, 2.4f);
+                float b = c.Z <= 0.04045f ? c.Z / 12.92f : MathF.Pow((c.Z + 0.055f) / 1.055f, 2.4f);
+
+                return new SColour(r, g, b);
+            }
+
+            public SColour FromLinearRGB()
+            {
+                float r = c.X <= 0.0031308f ? c.X * 12.92f : 1.055f * MathF.Pow(c.X, 1.0f / 2.4f) - 0.055f;
+                float g = c.Y <= 0.0031308f ? c.Y * 12.92f : 1.055f * MathF.Pow(c.Y, 1.0f / 2.4f) - 0.055f;
+                float b = c.Z <= 0.0031308f ? c.Z * 12.92f : 1.055f * MathF.Pow(c.Z, 1.0f / 2.4f) - 0.055f;
+
+                return new SColour(r, g, b);
+            }
         }
-
-        public static SColour FromLinearRGB(this SColour c)
-        {
-            float r = c.X <= 0.0031308f ? c.X * 12.92f : 1.055f * MathF.Pow(c.X, 1.0f / 2.4f) - 0.055f;
-            float g = c.Y <= 0.0031308f ? c.Y * 12.92f : 1.055f * MathF.Pow(c.Y, 1.0f / 2.4f) - 0.055f;
-            float b = c.Z <= 0.0031308f ? c.Z * 12.92f : 1.055f * MathF.Pow(c.Z, 1.0f / 2.4f) - 0.055f;
-
-            return new SColour(r, g, b);
-        }
-
     }
 
     public class SPalette

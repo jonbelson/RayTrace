@@ -115,7 +115,7 @@ namespace RayTrace.Skydomes
             // Se   Vector to reference point on equator.
 
             SVector Sn = ray;// hr.EntryNormal;
-            SVector Sp = new SVector(0.0f, 1.0f, 0.0f);
+            SVector Sp = new SVector(0.0f, 1.0f, 0.0f, 0.0f);
             Sp = camera.NormalMatrix * Sp;
             double dp = Sn.DotProduct(Sp);
             double phi = Math.Acos(-dp);
@@ -124,7 +124,7 @@ namespace RayTrace.Skydomes
 
             double v = phi / Math.PI;
 
-            SVector Se = new SVector(0, 0, 1);
+            SVector Se = new SVector(0, 0, 1, 0);
             Se = camera.NormalMatrix * Se;
             dp = Se.DotProduct(Sn);
 

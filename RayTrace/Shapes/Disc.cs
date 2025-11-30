@@ -22,7 +22,7 @@ namespace RayTrace
             radiusSquared = radius * radius;
 
             pos = new(Pos.X, Pos.Y, Pos.Z);
-            normal = new(Normal.I, Normal.J, Normal.K);
+            normal = new(Normal.I, Normal.J, Normal.K, 0f);
         }
 
         private HitResult HitTestImpl(Camera camera, SPoint p1, SPoint p2, bool segmentOnly)
@@ -104,11 +104,11 @@ namespace RayTrace
             //            hr.v = (float) v.J;
 
             // https://gamedev.stackexchange.com/questions/172352/finding-texture-coordinates-for-plane
-            SVector e1 = vNormal.VectorProduct(new SVector(1.0f, 0.0f, 0.0f));
+            SVector e1 = vNormal.VectorProduct(new SVector(1.0f, 0.0f, 0.0f, 0.0f));
             e1 = e1.Normalise();
             if (e1.I == 0.0 && e1.J == 0.0 && e1.K == 0.0)
             {
-                e1 = vNormal.VectorProduct(new SVector(0.0f, 0.0f, 1.0f));
+                e1 = vNormal.VectorProduct(new SVector(0.0f, 0.0f, 1.0f, 0.0f));
                 e1 = e1.Normalise();
             }
 
@@ -119,7 +119,7 @@ namespace RayTrace
             SVector e2 = vNormal.VectorProduct(e1);
             e2 = e2.Normalise();
 
-            SVector vecIntersection = new(Intersection.X, Intersection.Y, Intersection.Z);
+            SVector vecIntersection = new(Intersection.X, Intersection.Y, Intersection.Z, 0.0f);
             double mag = vecIntersection.Magnitude();
             vecIntersection = vecIntersection.Normalise();
 

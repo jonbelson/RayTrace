@@ -26,12 +26,12 @@ namespace RayTrace
             if (MathF.Abs(N.I) > MathF.Abs(N.J))
             {
                 float invMagnitude = 1.0f / MathF.Sqrt(N.I * N.I + N.K * N.K);
-                Nt = new SVector(N.K*invMagnitude, 0.0f, -N.I*invMagnitude);
+                Nt = new SVector(N.K*invMagnitude, 0.0f, -N.I*invMagnitude, 0);
             }
             else
             {
                 float invMagnitude = 1.0f / MathF.Sqrt(N.J * N.J + N.K * N.K);
-                Nt = new SVector(0.0f, -N.K*invMagnitude, N.J*invMagnitude);
+                Nt = new SVector(0.0f, -N.K*invMagnitude, N.J*invMagnitude, 0);
             }
 
             Nb = N.VectorProduct(Nt);   // Possible the order of this shoudl be reversed.
@@ -44,7 +44,7 @@ namespace RayTrace
             float j = normal.I*Nb.J + normal.J*N.J + normal.K*Nt.J;
             float k = normal.I*Nb.K + normal.J*N.K + normal.K*Nt.K;
 
-            return new(i, j, k);
+            return new(i, j, k, 0.0f);
         }
 
         // Reproject a vector from world space to lcs.
@@ -54,7 +54,7 @@ namespace RayTrace
             float y = v.DotProduct(N);
             float z = v.DotProduct(Nt);
 
-            return new SVector(x, y, z);
+            return new SVector(x, y, z, 0);
         }
     }
 
@@ -155,7 +155,7 @@ namespace RayTrace
         }
 
         // Return a random Point within a unit disc.
-        private Point GetPointOnDisc(Random rand)
+        private static Point GetPointOnDisc(Random rand)
         {
             float x, y;
             do
@@ -176,7 +176,7 @@ namespace RayTrace
         }
 
         // Return a random SPoint within a unit disc.
-        private SPoint GetSPointOnDisc(Random rand)
+        private static SPoint GetSPointOnDisc(Random rand)
         {
             float x, y;
             do
@@ -189,15 +189,15 @@ namespace RayTrace
         }
 
         // Return a random SVector within a unit disc.
-        private SVector GetSVectorOnDisc(Random rand)
+        private static SVector GetSVectorOnDisc(Random rand)
         {
             SPoint p = GetSPointOnDisc(rand);
 
-            return new SVector(p.X, p.Y, 0.0f);
+            return new SVector(p.X, p.Y, 0.0f, 0.0f);
         }
 
         // Return a random Point within a unit sphere.
-        private Point GetPointInSphere(Random rand)
+        private static Point GetPointInSphere(Random rand)
         {
             float x, y, z;
             do
@@ -210,7 +210,7 @@ namespace RayTrace
             return new Point(x, y, z);
         }
 
-        private SPoint GetSPointInSphere(Random rand)
+        private static SPoint GetSPointInSphere(Random rand)
         {
             float x, y, z;
             do
@@ -230,10 +230,10 @@ namespace RayTrace
             return new Vector(p.X, p.Y, p.Z);
         }
 
-        private SVector GetSVectorInSphere(Random rand)
+        private static SVector GetSVectorInSphere(Random rand)
         {
             SPoint p = GetSPointInSphere(rand);
-            return new SVector(p.X, p.Y, p.Z);
+            return new SVector(p.X, p.Y, p.Z, 0);
         }
 
         // Get random vector within hemisphere aligned with Y axis.
@@ -256,7 +256,7 @@ namespace RayTrace
             float y = MathF.Cos(theta);
             float z = MathF.Sin(theta)*MathF.Sin(phi);
 */
-            return new SVector(x, y, z);
+            return new SVector(x, y, z, 0.0f);
         }
 
         public static SVector GetLocalCosineVector(Random rand)
@@ -271,12 +271,7 @@ namespace RayTrace
             float z = MathF.Sin(phi)*sqrtR2;
             float y = MathF.Sqrt(1f - r2);
 
-            return new SVector(x, y, z);
-        }
-
-        private static float CosinePdf(SVector v)
-        {
-            return v.K/MathF.PI;
+            return new SVector(x, y, z, 0);
         }
 
         // Based on 'AimZ()' function from 'RenderMan Companion' page 143.
@@ -366,7 +361,8 @@ namespace RayTrace
             SVector ray = new SVector(
                 circleRadius * (hexArray[index, 0] + deltaX),
                 circleRadius * (hexArray[index, 1] + deltaY),
-                circleDistance
+                circleDistance,
+                0.0f
             );
 
             Debug.Assert(!Single.IsNaN(ray.I));
@@ -631,6 +627,8 @@ namespace RayTrace
                         }
                         else
                         {
+                            SPoint origin = hr.Entry + hr.EntryNormal.Scale(0.01f);
+
                             for (int i = 0; i < NumBRDFSamples; i++)
                             {
                                 SVector scattered;
@@ -641,9 +639,19 @@ namespace RayTrace
                                 {
                                     //SVector v = GetLocalVectorInHemisphere(rand);
                                     SVector v = material.Brdf.GetSample(hr, lcs, rand, out /*float*/ pdf);
+
                                     scattered = v;// lcs.Reproject(v);
 
-                                    scattered = scattered.Normalise();
+                                    if (scattered != System.Numerics.Vector4.Null())
+                                    {
+                                        Debug.Assert(!float.IsNaN(v.I));
+
+                                        //Debug.Assert(System.Numerics.Vector4.IsNaN(v) != System.Numerics.Vector4.Zero);
+
+                                        scattered = scattered.Normalise();
+
+                                        Debug.Assert(!float.IsNaN(scattered.I));
+                                    }
                                 }
                                 else
                                 {
@@ -667,7 +675,7 @@ namespace RayTrace
                                 //double dp = scattered.DotProduct(hr.EntryNormal);
                                 ///Debug.Assert(dp >= 0.0);
 
-                                Ray ray2 = new Ray(hr.Entry + hr.EntryNormal.Scale(0.01f), scattered);
+                                Ray ray2 = new Ray(origin /*hr.Entry + hr.EntryNormal.Scale(0.01f)*/, scattered);
                                 HitResult hr2 = scene.HitTest(camera, ray2);
                                 if (hr2.HasEntry())
                                 {
@@ -1079,9 +1087,9 @@ namespace RayTrace
 
             if (UseDepthOfField)
             {
-                SVector viewVector = new(camera.GetViewVector());
+                SVector viewVector = camera.GetViewVector().ToSVector();
                 float d = 1.0f;
-                SVector viewToPixel = new SVector(x, y, 1);
+                SVector viewToPixel = new SVector(x, y, 1, 0);
                 float dtick = viewToPixel.Magnitude();
                 SVector v = viewToPixel.Normalise();
                 float f = camera.DepthOfField; // camera.GetViewVector().Magnitude();
@@ -1119,7 +1127,7 @@ namespace RayTrace
             else
             {
                 SPoint origin = new SPoint(0.0f, 0.0f, 0f);
-                SVector dir = new SVector(x, y, 1);
+                SVector dir = new SVector(x, y, 1, 0);
                 Ray ray = new Ray(origin, dir.Normalise());
 
                 HitResult hr = scene.HitTest(camera, ray);

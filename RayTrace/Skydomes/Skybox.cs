@@ -207,9 +207,12 @@ namespace RayTrace.Skydomes
         public override Colour GetColour(Camera camera, SVector ray)
         {
             ray = ray.Normalise();
+
             //ray = ray.Negate();
             //Matrix m = camera.NormalMatrix.GetInverse();
-            Matrix m = camera.NormalMatrix.GetTranspose();
+//            Matrix m = camera.NormalMatrix.GetTranspose();
+            Matrix m = camera.NormalMatrixT;
+
             //            SVector v = camera.NormalMatrix * ray;
             SVector v = m * ray;
             //v = v.Negate();

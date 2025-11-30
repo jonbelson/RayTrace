@@ -35,7 +35,7 @@ namespace RayTrace
         public override void CreateCache(Camera camera)
         {
             base.CreateCache(camera);
-            _direction = new SVector(Normal);
+            _direction = Normal.ToSVector();
         }
 
         public override SVector GetDirection(Camera camera, SPoint p)

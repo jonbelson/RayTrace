@@ -197,11 +197,11 @@ namespace RayTrace
 
 
             SPoint origin = new(0, 0, 0);
-            SVector dir = new(x, y, 1.0f);
+            SVector dir = new(x, y, 1.0f, 0f);
             Ray ray = new(origin, dir.Normalise());
 
             SPoint planePos = new(0, 0, 0);
-            SVector planeNormal = new(0, 1, 0);
+            SVector planeNormal = new(0, 1, 0, 0);
 
             SPoint vPos = _scene.Camera.WorldToView*planePos;
             SVector vNormal = _scene.Camera.NormalMatrix*planeNormal;
@@ -221,7 +221,7 @@ namespace RayTrace
 
             if (denom == 0)
             {
-                return new(0, 0, 0);
+                return SVector.Null();// new(0, 0, 0);
             }
 
             float mu = num / denom;
@@ -231,7 +231,7 @@ namespace RayTrace
             if (mu < THRESH)
             {
                 // Not interested in intersections that happen behind us.
-                return new(0, 0, 0);
+                return SVector.Null();
             }
 
             SVector vecP2P1 = p2 - p1;
@@ -242,7 +242,7 @@ namespace RayTrace
             //hr.Entry = Intersection;
 
 
-            return new(Intersection.X, Intersection.Y, Intersection.Z);
+            return new(Intersection.X, Intersection.Y, Intersection.Z, 0f);
 
 
 
@@ -437,10 +437,10 @@ namespace RayTrace
             {
                 // Move camera Target
 
-                SVector viewVector = new(_scene.Camera.GetViewVector());
+                SVector viewVector = _scene.Camera.GetViewVector().ToSVector();
                 float magnitude = viewVector.Magnitude();
                 SVector view = viewVector.Normalise();
-                SVector left = view.VectorProduct(new SVector(0, 1, 0));
+                SVector left = view.VectorProduct(new SVector(0, 1, 0, 0));
                 //SVector right = view.VectorProduct(new SVector(0, 1, 0));
                 SVector up = view.VectorProduct(left);
 
@@ -450,7 +450,7 @@ namespace RayTrace
                 const float factor = 200.0f;
 
                 // Yaw.
-                Quaternion q = new(new SVector(0, 1, 0), xDiff / factor);
+                Quaternion q = new(new SVector(0, 1, 0, 0f), xDiff / factor);
                 SVector rotY = q.Rotate(view);
 
                 //WriteSVector("rotY", rotY);

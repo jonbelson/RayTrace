@@ -34,7 +34,7 @@ namespace RayTrace.Skydomes
 
         public override Colour GetColour(Camera camera, SVector ray)
         {
-            double dp = ray.DotProduct(new(Up));
+            double dp = ray.DotProduct(Up.ToSVector());
 
             if (dp < 0)
             {

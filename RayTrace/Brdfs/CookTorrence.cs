@@ -49,7 +49,7 @@ namespace RayTrace.Brdfs
 
             pdf = y/MathF.PI;
 
-            return new SVector(x, y, z);
+            return new SVector(x, y, z, 0f);
         }
 
         protected override float F(in SVector v) { return 1f; }

@@ -815,7 +815,7 @@ namespace RayTrace.Importers
                     {
                         foreach (var normal in primitive.normals)
                         {
-                            normals.Add(new SVector(normal.x, normal.y, -normal.z));
+                            normals.Add(new SVector(normal.x, normal.y, -normal.z, 0f));
                         }
                     }
 
