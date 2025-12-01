@@ -74,7 +74,7 @@ namespace RayTrace.Brdfs
             float dp = hr.EntryNormal.DotProduct(source);
 
             float pdf = dp/MathF.PI;
-            float diffuse = F(source)/pdf;// Pdf(source);
+            float diffuse = F(source);///pdf;// Pdf(source);
 
             SColour Lo = colour * diffuse * Li * dp;
 

@@ -306,5 +306,21 @@ namespace RayTrace
                 }
             }
         }
+
+        private void ButtonEmissiveMap_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog dialog = new OpenFileDialog() { Filter = "Image Files | *.bmp;*.jpg;*.jpeg;*.png;*.tiff", FileName = "" };
+            if (dialog.ShowDialog() == true)
+            {
+                string fileName = dialog.FileName;
+
+                if (material != null)
+                {
+                    material.EmissiveTexture = new(fileName);
+
+                    UpdatePreview();
+                }
+            }
+        }
     }
 }

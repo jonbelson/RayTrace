@@ -38,12 +38,23 @@ namespace RayTrace
                 return Math.Clamp(dp, 0f, 1f);
             }
 
+            public SVector Normalise()
+            {
+                float magnitude = Magnitude(v);
+                if (magnitude == 0.0f)
+                {
+                    magnitude = 1.0f;
+                }
+
+                return new SVector(v.X/magnitude, v.Y/magnitude, v.Z/magnitude, 0f);
+            }
+
             public float Magnitude() => v.Length();
             public float MagnitudeSquared() => v.LengthSquared();
 
             public bool IsNull() => v == Vector4.Zero;
 
-            public SVector Normalise() => Vector4.Normalize(v);
+            //public SVector Normalise() => Vector4.Normalize(v);
 
             public static SVector Null() => Vector4.Zero;
 

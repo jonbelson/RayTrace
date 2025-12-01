@@ -8,15 +8,21 @@
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
         x:Name="dialog"
-        Title="Material Editor" Height="400" Width="300"  ResizeMode="NoResize" SizeToContent="WidthAndHeight">
+        Title="Material Editor" Height="400" Width="300" ResizeMode="NoResize" SizeToContent="WidthAndHeight">
 
     <Window.Resources>
 
+        <!--
+            Some layout constants.
+        -->
+        <GridLength x:Key="Column0Width">150</GridLength>
+        
         <!--
             Layout hints for controls
         -->
         <Style TargetType="TextBlock">
             <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="Margin" Value="0, 3" />
         </Style>
 
@@ -26,8 +32,13 @@
 
         <Style TargetType="TextBox">
             <Setter Property="Margin" Value="0, 3" />
+            <Setter Property="Width" Value="200"></Setter>
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
         </Style>
 
+        <Style x:Key="FileBrowseButton" TargetType="Button">
+            <Setter Property="Margin" Value="0,2,0,2"></Setter>
+        </Style>
 
         <ObjectDataProvider x:Key="dataFromColourFunctionEnum" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
             <ObjectDataProvider.MethodParameters>
@@ -66,7 +77,7 @@
             <StackPanel>
                 <Grid Margin="5,5,5,0">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="{StaticResource Column0Width}"/>
                         <ColumnDefinition Width="8" />
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="8" />
@@ -89,7 +100,7 @@
                     <TextBlock Grid.Row="3" Text="Bitmap:" HorizontalAlignment="Right"></TextBlock>
                     <TextBox Grid.Column="2" Grid.Row="3" Text="{Binding ElementName=dialog, Path=material.Texture.FileName, Mode=TwoWay, NotifyOnSourceUpdated=True}" MinWidth="50" SourceUpdated="TextBox_SourceUpdated"></TextBox>
 
-                    <Button Grid.Column="4" Grid.Row="0" Click="ButtonNormalMap_Click" Content="..."></Button>
+                    <Button Grid.Column="4" Grid.Row="0" Style="{StaticResource FileBrowseButton}" Click="ButtonNormalMap_Click" Content="..."></Button>
 
                 </Grid>
             </StackPanel>
@@ -104,7 +115,7 @@
             <StackPanel>
                 <Grid Margin="5,5,5,0">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="{StaticResource Column0Width}"/>
                         <ColumnDefinition Width="8" />
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
@@ -144,7 +155,7 @@
             <StackPanel>
                 <Grid Margin="5,5,5,0">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="{StaticResource Column0Width}"/>
                         <ColumnDefinition Width="8" />
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
@@ -184,7 +195,7 @@
             <StackPanel>
                 <Grid Margin="5,5,5,0">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="{StaticResource Column0Width}"/>
                         <ColumnDefinition Width="8" />
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
@@ -222,10 +233,9 @@
         -->
         <DataTemplate x:Key="TextureSolidTemplate">
 
-            <StackPanel>
                 <Grid Margin="5">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="{StaticResource Column0Width}"/>
                         <ColumnDefinition Width="8" />
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
@@ -236,7 +246,6 @@
                     <ContentPresenter Grid.Row="0" Grid.ColumnSpan="3" Content="{StaticResource ColourContent}"></ContentPresenter>
 
                 </Grid>
-            </StackPanel>
         </DataTemplate>
 
 
@@ -246,10 +255,9 @@
         -->
         <DataTemplate x:Key="TextureBitmapTemplate">
 
-            <StackPanel>
                 <Grid Margin="5">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="{StaticResource Column0Width}"/>
                         <ColumnDefinition Width="8" />
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="8" />
@@ -259,12 +267,11 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Text="Bitmap:" HorizontalAlignment="Right"></TextBlock>
+                    <TextBlock Grid.Column="0" Grid.Row="0" Text="Bitmap:" HorizontalAlignment="Right"></TextBlock>
                     <TextBox Grid.Column="2" Grid.Row="0" Text="{Binding ElementName=dialog, Path=material.Texture.FileName, Mode=TwoWay, NotifyOnSourceUpdated=True}" MinWidth="50" SourceUpdated="TextBox_SourceUpdated"></TextBox>
 
-                    <Button Grid.Column="4" Grid.Row="0" Click="Button_Click" Content="..."></Button>
+                    <Button Grid.Column="4" Grid.Row="0" Style="{StaticResource FileBrowseButton}" Click="Button_Click" Content="..."></Button>
                 </Grid>
-            </StackPanel>
         </DataTemplate>
 
 
@@ -274,10 +281,9 @@
         -->
         <DataTemplate x:Key="TextureSquaresTemplate">
 
-            <StackPanel>
                 <Grid Margin="5">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="{StaticResource Column0Width}"/>
                         <ColumnDefinition Width="8" />
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
@@ -295,7 +301,6 @@
                     <TextBox Grid.Column="2" Grid.Row="2" Text="{Binding  ElementName=dialog, Path=material.Texture.Scale, Mode=TwoWay, NotifyOnSourceUpdated=True}" MinWidth="50" SourceUpdated="Control_SourceUpdated"></TextBox>
 
                 </Grid>
-            </StackPanel>
         </DataTemplate>
 
 
@@ -305,10 +310,9 @@
         -->
         <DataTemplate x:Key="TextureNoiseTemplate">
 
-            <StackPanel>
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="{StaticResource Column0Width}"/>
                         <ColumnDefinition Width="8" />
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
@@ -330,7 +334,6 @@
 
 
                 </Grid>
-            </StackPanel>
         </DataTemplate>
 
         
@@ -338,10 +341,9 @@
             Gradient Texture template.
         -->
         <DataTemplate x:Key="TextureGradientTemplate">
-            <StackPanel>
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="{StaticResource Column0Width}"/>
                         <ColumnDefinition Width="8" />
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
@@ -362,7 +364,6 @@
                     <ComboBox Grid.Row="3" Grid.Column="3" Name="comboBoxBlendType" ItemsSource="{Binding Source={StaticResource dataFromBlendTypeEnum}, NotifyOnSourceUpdated=True}" SelectedItem="{Binding ElementName=dialog, Path=material.Texture.Blend}"  SourceUpdated="Control_SourceUpdated" HorizontalAlignment="Left" MinWidth="200" SelectionChanged="comboBoxGradientBlendType_SelectionChanged"></ComboBox>
 
                 </Grid>
-            </StackPanel>
         </DataTemplate>
 
 
@@ -374,10 +375,9 @@
             <DataTemplate.Resources>
                 <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}" />
             </DataTemplate.Resources>
-            <StackPanel>
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="{StaticResource Column0Width}"/>
                         <ColumnDefinition Width="8" />
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
@@ -422,7 +422,6 @@
 
                     
                 </Grid>
-            </StackPanel>
         </DataTemplate>
 
         <!--
@@ -433,10 +432,9 @@
             <DataTemplate.Resources>
                 <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}" />
             </DataTemplate.Resources>
-            <StackPanel>
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="{StaticResource Column0Width}"/>
                         <ColumnDefinition Width="8" />
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
@@ -492,21 +490,17 @@
                     <TextBox Text="{Binding ElementName=dialog, Path=material.PhongSpecular, Mode=TwoWay, NotifyOnSourceUpdated=True}" Grid.Column="2" Grid.Row="3" MinWidth="50" SourceUpdated="Control_SourceUpdated"></TextBox>
                     <TextBox Text="{Binding ElementName=dialog, Path=material.PhongShininess, Mode=TwoWay, NotifyOnSourceUpdated=True}" Grid.Column="2" Grid.Row="4" MinWidth="50" SourceUpdated="Control_SourceUpdated"></TextBox>
                 </Grid>
-            </StackPanel>
         </DataTemplate>
 
         <!--
             Reflective Material template.
         -->
         <DataTemplate x:Key="ReflectiveTemplate">
-            <StackPanel>
-
                 <!--        
                 <TextBlock FontWeight="Bold" Background="LightGray" Text="{Binding Path=Name}" ></TextBlock>
                 <ContentPresenter Content="{StaticResource PositionContent}"></ContentPresenter>
                 <ContentPresenter Content="{StaticResource TargetContent}"></ContentPresenter>
 -->
-            </StackPanel>
         </DataTemplate>
 
         <!--
@@ -517,10 +511,9 @@
             <DataTemplate.Resources>
                 <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}" />
             </DataTemplate.Resources>
-                <StackPanel>
                     <Grid Margin="5">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="{StaticResource Column0Width}"/>
                             <ColumnDefinition Width="8" />
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
@@ -533,7 +526,6 @@
                     <TextBox Text="{Binding ElementName=dialog, Path=material.RefractiveIndex, Mode=TwoWay, NotifyOnSourceUpdated=True}" Grid.Column="2" Grid.Row="0" MinWidth="50" SourceUpdated="Control_SourceUpdated"></TextBox>
 
                     </Grid>
-                </StackPanel>
         </DataTemplate>
 
 
@@ -545,10 +537,9 @@
             <DataTemplate.Resources>
                 <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}" />
             </DataTemplate.Resources>
-            <StackPanel>
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="{StaticResource Column0Width}"/>
                         <ColumnDefinition Width="8" />
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
@@ -601,7 +592,6 @@
                 <ContentPresenter Content="{StaticResource PositionContent}"></ContentPresenter>
                 <ContentPresenter Content="{StaticResource TargetContent}"></ContentPresenter>
 -->
-            </StackPanel>
         </DataTemplate>
 
 
@@ -612,10 +602,9 @@
             <DataTemplate.Resources>
                 <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}" />
             </DataTemplate.Resources>
-            <StackPanel DataContext="dialog">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="{StaticResource Column0Width}"/>
                         <ColumnDefinition Width="8" />
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
@@ -674,7 +663,6 @@
 
 
                 </Grid>
-            </StackPanel>
         </DataTemplate>
 
 
@@ -686,12 +674,13 @@
             <DataTemplate.Resources>
                 <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}" />
             </DataTemplate.Resources>
-            <StackPanel DataContext="dialog">
-                <Grid>
+                <Grid ShowGridLines="False">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="{StaticResource Column0Width}"/>
                         <ColumnDefinition Width="8" />
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="8" />
+                        <ColumnDefinition Width="16" />
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -703,10 +692,10 @@
                         <RowDefinition />
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Text="Texture:" HorizontalAlignment="Right"></TextBlock>
+                    <TextBlock Grid.Column="0" Grid.Row="0" Text="Texture:" HorizontalAlignment="Right"></TextBlock>
                     <ComboBox Grid.Column="2" Name="comboBoxTexture" ItemsSource="{Binding  ElementName=dialog, Path=Textures}" SelectedItem="{Binding ElementName=dialog, Path=textureType, Mode=TwoWay}" SelectionChanged="comboBoxTexture_SelectionChanged"></ComboBox>
 
-                    <ContentControl Grid.Row="1" Grid.ColumnSpan="3" Content="{Binding  Path=Texture, Mode=Twoway}">
+                    <ContentControl Grid.Row="1" Grid.ColumnSpan="5" Content="{Binding ElementName=material, Path=Texture, Mode=Twoway}">
                         <ContentControl.Style>
                             <Style TargetType="{x:Type ContentControl}">
 
@@ -750,7 +739,6 @@
 
 
                 </Grid>
-            </StackPanel>
         </DataTemplate>
 
 
@@ -763,7 +751,7 @@
     
     <Grid Margin="8,8,8,0" ShowGridLines="False">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="100"></ColumnDefinition>
+            <ColumnDefinition Width="{StaticResource Column0Width}"></ColumnDefinition>
             <ColumnDefinition Width="8"></ColumnDefinition>
             <ColumnDefinition Width="*"></ColumnDefinition>
             <ColumnDefinition Width="8" />
@@ -775,60 +763,39 @@
             <RowDefinition Height="Auto"></RowDefinition>
             <RowDefinition Height="Auto"></RowDefinition>
             <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition Height="Auto"></RowDefinition>
             <RowDefinition />
         </Grid.RowDefinitions>
         
         <Image Grid.ColumnSpan="3" Name="preview" Width="200" Height="200"></Image>
         
+        <!-- Name -->
         <TextBlock Grid.Row="1" Text="Name:" HorizontalAlignment="Right"></TextBlock>
-<!--        <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding ElementName=dialog, Path=Test, Mode=Twoway, UpdateSourceTrigger=PropertyChanged}"></TextBox>-->
-<!--        <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding ElementName=dialog, Path=Test, Mode=Twoway}"></TextBox>-->
-<!--        <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding ElementName=dialog, Path=Name, Mode=Twoway}"></TextBox>-->
         <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding ElementName=dialog, Path=material.Name, Mode=Twoway}"></TextBox>
 
+        <!-- Normal Map -->
         <TextBlock Grid.Row="2" Text="Normal Map:" HorizontalAlignment="Right"></TextBlock>
         <TextBox Grid.Column="2" Grid.Row="2" Text="{Binding ElementName=dialog, Path=material.NormalMap.FileName, Mode=TwoWay, NotifyOnSourceUpdated=True}" MinWidth="50" SourceUpdated="TextBox_SourceUpdated"></TextBox>
 
-        <Button x:Name="buttonNormalMap" Grid.Column="4" Grid.Row="2" Click="ButtonNormalMap_Click" Content="..."></Button>
+        <Button x:Name="buttonNormalMap" Style="{StaticResource FileBrowseButton}" Grid.Column="4" Grid.Row="2" Click="ButtonNormalMap_Click" Content="..."></Button>
 
+        <!-- Emissive Map -->
+        <TextBlock Grid.Row="3" Text="Emissive Map:" HorizontalAlignment="Right"></TextBlock>
+        <TextBox Grid.Column="2" Grid.Row="3" Text="{Binding ElementName=dialog, Path=material.EmissiveTexture.FileName, Mode=TwoWay, NotifyOnSourceUpdated=True}" MinWidth="50" SourceUpdated="TextBox_SourceUpdated"></TextBox>
 
-        <TextBlock Text="Type:" Grid.Row="3" HorizontalAlignment="Right"></TextBlock>
-        <ComboBox Grid.Row="3" Grid.Column="2" x:Name="comboBoxMaterialType" SelectionChanged="comboBoxMaterialType_SelectionChanged" HorizontalAlignment="Left" MinWidth="200"></ComboBox>
+        <Button x:Name="buttonEmissiveMap" Style="{StaticResource FileBrowseButton}" Grid.Column="4" Grid.Row="3" Click="ButtonEmissiveMap_Click" Content="..."></Button>
 
-        <!--
-            <ContentControl  Grid.Row="3" Grid.ColumnSpan="3" Name="contentControl" Content="{Binding  ElementName=dialog, Path=material, Mode=Twoway}">
-                <ContentControl.ContentTemplateSelector>
-                    <local:MaterialTypeTemplateSelector DiffuseTemplate="{StaticResource DiffuseTemplate}" PhongTemplate="{StaticResource PhongTemplate}" ReflectiveTemplate="{StaticResource ReflectiveTemplate}" RefractiveAndReflectiveTemplate="{StaticResource RefractiveAndReflectiveTemplate}">
-                    </local:MaterialTypeTemplateSelector>
-                </ContentControl.ContentTemplateSelector>
-            </ContentControl>
--->
+        <!-- Emissive Strength -->
+        <TextBlock Grid.Column="0" Grid.Row="4" Text="Emissive Strength:"></TextBlock>
 
-<!--
-        <ContentControl Grid.Row="3" Grid.ColumnSpan="3" Background="Red" Content="{Binding  ElementName=dialog, Path=material, Mode=Twoway}">
-            <ContentControl.Style>
-                <Style TargetType="{x:Type ContentControl}">
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding Path=material.Texture}" Value="{x:Static local:MaterialType.Diffuse}">
-                            <Setter Property="ContentTemplate" Value="{StaticResource DiffuseTemplate}"></Setter>
-                        </DataTrigger>
-                        <DataTrigger Binding="{Binding Path=material.Texture}" Value="{x:Static local:MaterialType.Phong}">
-                            <Setter Property="ContentTemplate" Value="{StaticResource PhongTemplate}"></Setter>
-                        </DataTrigger>
-                        <DataTrigger Binding="{Binding Path=material.Texture}" Value="{x:Static local:MaterialType.Reflective}">
-                            <Setter Property="ContentTemplate" Value="{StaticResource ReflectiveTemplate}"></Setter>
-                            <Setter Property="Background" Value="Blue"></Setter>
-                        </DataTrigger>
-                        <DataTrigger Binding="{Binding Path=material.Texture}" Value="{x:Static local:MaterialType.RefractiveAndReflective}">
-                            <Setter Property="ContentTemplate" Value="{StaticResource RefractiveAndReflectiveTemplate}"></Setter>
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </ContentControl.Style>
-        </ContentControl>
--->
+        <TextBox Grid.Column="2" Grid.Row="4" Text="{Binding ElementName=dialog, Path=material.EmissiveStrength, Mode=TwoWay, NotifyOnSourceUpdated=True}" MinWidth="50" SourceUpdated="TextBox_SourceUpdated"></TextBox>
 
-        <ContentControl Grid.Row="4" Grid.ColumnSpan="3">
+        <!-- Material Type -->
+        <TextBlock Text="Type:" Grid.Row="5" HorizontalAlignment="Right"></TextBlock>
+        <ComboBox Grid.Row="5" Grid.Column="2" x:Name="comboBoxMaterialType" SelectionChanged="comboBoxMaterialType_SelectionChanged" HorizontalAlignment="Left" MinWidth="200"></ComboBox>
+
+        <ContentControl Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="5">
             <ContentControl.Style>
                 <Style TargetType="{x:Type ContentControl}">
                     <!--<Setter Property="ContentTemplate" Value="{StaticResource PhongTemplate}"></Setter>-->
@@ -859,7 +826,7 @@
             </ContentControl.Style>
         </ContentControl>
 
-        <StackPanel Grid.Row="5" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,8">
+        <StackPanel Grid.Row="7" Grid.ColumnSpan="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,8">
             <Button Name="okButton" Margin="0,0,7,0" Click="okButton_Click" MinWidth="60">OK</Button>
             <Button Name="cancelButton" Click="cancelButton_Click" MinWidth="60">Cancel</Button>
         </StackPanel>
