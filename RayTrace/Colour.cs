@@ -16,6 +16,8 @@ namespace RayTrace
             public float Green => c.Y;
             public float Blue => c.Z;
 
+            public SColour Scale(float f) => c*f;
+
             public static SColour FromRGB(uint rgb)
             {
                 byte r = (byte)(rgb >> 16);
@@ -23,6 +25,63 @@ namespace RayTrace
                 byte b = (byte)rgb;
 
                 return new SColour(r / 255.0f, g / 255.0f, b / 255.0f);
+            }
+
+            // Return the blend of two Colours.
+            public static SColour LinearBlend(SColour col1, SColour col2, float ratio) => Vector3.Lerp(col1, col2, ratio);
+
+            // Return the average of two Colours.
+            public static SColour Average(SColour col1, SColour col2)
+            {
+                return (col1 + col2).Scale(0.5f);
+            }
+
+            // Return true if Colours are 'similar'.
+            public bool IsSimilar(SColour c2)
+            {
+                const float MinDiff = 0.1f;
+
+                float diffRed = c2.Red - c.Red;
+                float diffGreen = c2.Green - c.Green;
+                float diffBlue = c2.Blue - c.Blue;
+
+                float diffSquared = diffRed * diffRed + diffGreen * diffGreen + diffBlue * diffBlue;
+
+                return diffSquared < MinDiff * MinDiff;
+            }
+
+            public uint ToRGB(float gamma = 1f/2.2f)
+            {
+                float gammaRed = MathF.Pow(c.Red, gamma);
+                float gammaGreen = MathF.Pow(c.Green, gamma);
+                float gammaBlue = MathF.Pow(c.Blue, gamma);
+
+                // Debug.Assert(gammaRed <= 1.0 && gammaGreen <= 1.0 && gammaBlue <= 1.0);
+
+                gammaRed = Math.Max(0.0f, Math.Min(1.0f, gammaRed));
+                gammaGreen = Math.Max(0.0f, Math.Min(1.0f, gammaGreen));
+                gammaBlue = Math.Max(0.0f, Math.Min(1.0f, gammaBlue));
+
+                byte r = (byte)(gammaRed * 255);
+                byte g = (byte)(gammaGreen * 255);
+                byte b = (byte)(gammaBlue * 255);
+
+                return (uint)(r << 16 | g << 8 | b);
+            }
+
+            public static SColour FromColour(Colour colour)
+            {
+                return new SColour(colour.Red, colour.Green, colour.Blue);
+            }
+
+            // Return gamma-corrected version of this Colour.
+            public SColour ApplyGamma(float gamma)
+            {
+                float gammaRed = MathF.Pow(c.Red, gamma);
+                float gammaGreen = MathF.Pow(c.Green, gamma);
+                float gammaBlue = MathF.Pow(c.Blue, gamma);
+
+                return new SColour(gammaRed, gammaGreen, gammaBlue);
             }
 
             public SColour ToLinearRGB()

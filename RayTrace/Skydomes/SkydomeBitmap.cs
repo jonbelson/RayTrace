@@ -16,7 +16,7 @@ namespace RayTrace.Skydomes
         private int height;
         private string fileName;
 
-        private Colour[] texture = null;
+        private SColour[] texture = null;
 
         public Bitmap GetAsBitmap()
         {
@@ -70,7 +70,7 @@ namespace RayTrace.Skydomes
                     height = bitmap.Height;
                     BitmapData bitmapData = bitmap.LockBits(new System.Drawing.Rectangle(0, 0, width, height), ImageLockMode.ReadOnly, PixelFormat.Format32bppRgb);
 
-                    texture = new Colour[width * height];
+                    texture = new SColour[width * height];
 
                     int[] row = new int[width];
 
@@ -86,7 +86,7 @@ namespace RayTrace.Skydomes
                             uint rgb = (uint)row[i];
 
                             // Need to 'ungamma' the image since we apply gamma when saving.
-                            Colour c = new Colour(rgb);
+                            SColour c = SColour.FromRGB(rgb);
                             texture[y * width + i] = c.ApplyGamma(2.2f);
                         }
                     }
@@ -167,7 +167,7 @@ namespace RayTrace.Skydomes
         {
         }
 
-        public override Colour GetColour(Camera camera, SVector ray)
+        public override SColour GetColour(Camera camera, SVector ray)
         {
             if (texture != null)
             {
@@ -188,7 +188,7 @@ namespace RayTrace.Skydomes
 
                 try
                 {
-                    Colour c = texture[y * width + x];
+                    SColour c = texture[y * width + x];
                     return c;
                 }
                 catch (Exception e)
@@ -198,7 +198,7 @@ namespace RayTrace.Skydomes
                 }
             }
 
-            return Palette.Black;
+            return SPalette.Black;
         }
 
         public override XMLSkydome ToXML()

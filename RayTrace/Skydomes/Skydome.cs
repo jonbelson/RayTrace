@@ -10,7 +10,7 @@ namespace RayTrace.Skydomes
     {
         public Skydome() { }
 
-        public abstract Colour GetColour(Camera camera, SVector ray);
+        public abstract SColour GetColour(Camera camera, SVector ray);
 
         public new abstract XMLSkydome ToXML();
     }

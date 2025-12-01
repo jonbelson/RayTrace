@@ -32,18 +32,18 @@ namespace RayTrace.Skydomes
             Bottom = new(xmlSkydomeGradient.Bottom);
         }
 
-        public override Colour GetColour(Camera camera, SVector ray)
+        public override SColour GetColour(Camera camera, SVector ray)
         {
             double dp = ray.DotProduct(Up.ToSVector());
 
             if (dp < 0)
             {
                 double ratio = 1.0 - Math.Abs(dp);
-                return Colour.LinearBlend(Bottom, Middle, (float) ratio);
+                return SColour.LinearBlend(Bottom.ToSColour(), Middle.ToSColour(), (float) ratio);
             }
             else
             {
-                return Colour.LinearBlend(Middle, Top, (float) dp);
+                return SColour.LinearBlend(Middle.ToSColour(), Top.ToSColour(), (float) dp);
             }
         }
 

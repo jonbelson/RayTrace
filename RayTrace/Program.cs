@@ -68,7 +68,7 @@ namespace RayTrace
                 {
 
                     Sphere sphere = new Sphere(scene, new Point(-50 + i * 20, -40+j*20, 80), 8, Palette.Green);
-                    sphere.Material.PhongSpecular = i / 5.0;
+                    sphere.Material.PhongSpecular = i / 5.0f;
                     sphere.Material.PhongShininess = (j + 1) * (j + 1);
                     scene.AddShape(sphere);
                 }

@@ -70,9 +70,9 @@ namespace RayTrace
         //public Colour Albedo { get; set; } = new Colour(0.18f, 0.18f, 0.18f);
 
         // Phong reflection constants.
-        public double PhongDiffuse { get; set; } = 0.75;      // Phong specular coefficient ('kd')
-        public double PhongSpecular { get; set; } = 0.5;      // Specular reflection coefficient/constant ('ks')
-        public double PhongShininess { get; set; } = 4.0;     // 'Shininess' of surface, 1.0 (matt) - 100 (shiny) ('ns'), 'specular exponent'
+        public float PhongDiffuse { get; set; } = 0.75f;      // Phong specular coefficient ('kd')
+        public float PhongSpecular { get; set; } = 0.5f;      // Specular reflection coefficient/constant ('ks')
+        public float PhongShininess { get; set; } = 4.0f;     // 'Shininess' of surface, 1.0 (matt) - 100 (shiny) ('ns'), 'specular exponent'
 
         private float roughness;
         private float transparency; // Transparency coefficient kt, range 0.0 to 1.0.

@@ -277,6 +277,13 @@ namespace RayTrace
             return Material.GetColour(hr);
         }
 
+        // Get colour at hit point.
+        // Default implementation just returns the Material's colour at that point.
+        public virtual SColour GetSColour(HitResult hr)
+        {
+            return GetColour(hr).ToSColour();
+        }
+
         // Optimisable version of HitTest() which just returns true or false.
         public virtual bool HitTestQuick(Camera camera, Ray ray)
         {

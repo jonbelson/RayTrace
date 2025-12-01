@@ -13,6 +13,8 @@ using System.Xaml;
 
 namespace RayTrace
 {
+    using SMatrix = System.Numerics.Matrix4x4;
+
     //
     // Column vector 4x4 Matrix stored in row major format.
     //

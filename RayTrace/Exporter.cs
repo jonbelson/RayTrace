@@ -116,9 +116,9 @@ namespace RayTrace
 
         public MaterialType Type;
 
-        public double PhongDiffuse;
-        public double PhongSpecular;
-        public double PhongShininess;
+        public float PhongDiffuse;
+        public float PhongSpecular;
+        public float PhongShininess;
 
         public float roughness;
         public float transparency;

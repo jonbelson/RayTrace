@@ -507,9 +507,9 @@ namespace RayTrace
             return fraction;
         }
 
-        private Colour GetReflectedColour(Camera camera, Scene scene, SVector ray, Random rand, HitResult hr, int depth)
+        private SColour GetReflectedColour(Camera camera, Scene scene, SVector ray, Random rand, HitResult hr, int depth)
         {
-            Colour c = Palette.Black;
+            SColour c = SPalette.Black;
 
             // Get reflection angle 'R'.
             SVector vecToViewer = ray.Scale(-1.0f);
@@ -538,9 +538,9 @@ namespace RayTrace
             return c;
         }
 
-        private Colour GetRefractedColour(Camera camera, Scene scene, SVector ray, Random rand, HitResult hr, int depth)
+        private SColour GetRefractedColour(Camera camera, Scene scene, SVector ray, Random rand, HitResult hr, int depth)
         {
-            Colour c = Palette.Black;
+            SColour c = SPalette.Black;
 
             Shape shape = hr.shape;
 
@@ -571,23 +571,23 @@ namespace RayTrace
         // scene    Scene we are rendering.
         // ray      Incoming ray that produced HitResult.
         // hr       HitResult that detected intersection.
-        /*private*/ internal Colour CalculateColour(Camera camera, Scene scene, SVector ray, Random rand, HitResult hr, int depth = 0, bool BrdfRay = false)
+        /*private*/ internal SColour CalculateColour(Camera camera, Scene scene, SVector ray, Random rand, HitResult hr, int depth = 0, bool BrdfRay = false)
         {
             ////////Debug.Assert(hr.HasEntry());
 
-            if (depth > RecursionDepth) return Palette.Black;
+            if (depth > RecursionDepth) return SPalette.Black;
             depth++;
 
             NumThreadRays++;
 
             Shape shape = hr.shape;
 
-            Colour ambient = Palette.Black;
-            Colour refracted = Palette.Black;
-            Colour reflected = Palette.Black;
-            Colour diffuse = Palette.Black;
-            Colour specular = Palette.Black;
-            Colour emissive = Palette.Black;
+            SColour ambient = SPalette.Black;
+            SColour refracted = SPalette.Black;
+            SColour reflected = SPalette.Black;
+            SColour diffuse = SPalette.Black;
+            SColour specular = SPalette.Black;
+            SColour emissive = SPalette.Black;
 
             Material material = shape.GetMaterial(hr);
             MaterialType materialType = material.Type;
@@ -615,14 +615,14 @@ namespace RayTrace
                             if (hr2.HasEntry())
                             {
                                 // Calculate light arriving from the random direction.
-                                Colour incoming = CalculateColour(camera, scene, hr.EntryNormal, rand, hr2, depth, true);
-                                L += material.GetBrdfColour(lcs, hr, rand, hr.EntryNormal, incoming.ToSColour());
+                                SColour incoming = CalculateColour(camera, scene, hr.EntryNormal, rand, hr2, depth, true);
+                                L += material.GetBrdfColour(lcs, hr, rand, hr.EntryNormal, incoming);
                             }
                             else
                             {
-                                Colour incoming = scene.GetSkydomeColour(camera, ray2.Direction);
+                                SColour incoming = scene.GetSkydomeColour(camera, ray2.Direction);
 
-                                L += material.GetBrdfColour(lcs, hr, rand, hr.EntryNormal, incoming.ToSColour());
+                                L += material.GetBrdfColour(lcs, hr, rand, hr.EntryNormal, incoming);
                             }
                         }
                         else
@@ -680,17 +680,17 @@ namespace RayTrace
                                 if (hr2.HasEntry())
                                 {
                                     // Calculate light arriving from the random direction.
-                                    Colour incoming = CalculateColour(camera, scene, scattered, rand, hr2, depth, /*false*/ true);
+                                    SColour incoming = CalculateColour(camera, scene, scattered, rand, hr2, depth, /*false*/ true);
                                     //Colour incoming = context.GetColour(scattered, hr2, /*false*/ true);
 
-                                    L += material.GetBrdfColour(lcs, hr, rand, scattered, incoming.ToSColour())/pdf;
+                                    L += material.GetBrdfColour(lcs, hr, rand, scattered, incoming)/pdf;
                                     //L += material.GetEmissiveColour(hr2);
                                 }
                                 else
                                 {
-                                    Colour incoming = scene.GetSkydomeColour(camera, ray2.Direction);
+                                    SColour incoming = scene.GetSkydomeColour(camera, ray2.Direction);
 
-                                    L += material.GetBrdfColour(lcs, hr, rand, scattered, incoming.ToSColour())/pdf;
+                                    L += material.GetBrdfColour(lcs, hr, rand, scattered, incoming)/pdf;
                                     //L += material.GetEmissiveColour(hr);
                                 }
                             }
@@ -713,13 +713,13 @@ namespace RayTrace
                                     toLight = toLight.Normalise();
                                     //SVector vecToLight = vecToLight.Normalise();
 //                                    double dpLN = 1.0;// toLight.DotProduct(hr.EntryNormal);
-                                    double dpLN = toLight.DotProductSaturated(hr.EntryNormal);
+                                    float dpLN = toLight.DotProductSaturated(hr.EntryNormal);
 
                                     ///Debug.Assert();
                                     if (dpLN > 0)
                                     {
-                                        Colour incoming = pointLight.GetIntensityAtPoint(camera, hr.Entry) * dpLN;
-                                        L += hr.shape.Material.GetBrdfColour(lcs, hr, rand, toLight, incoming.ToSColour());
+                                        SColour incoming = pointLight.GetIntensityAtPoint(camera, hr.Entry) * dpLN;
+                                        L += hr.shape.Material.GetBrdfColour(lcs, hr, rand, toLight, incoming);
                                         //L += hr.shape.Material.Brdf.GetColour(hr, toLight, incoming) / (4 * Math.PI * pointLight.Radius * pointLight.Radius);
                                         //L += c;
                                     }
@@ -729,13 +729,13 @@ namespace RayTrace
 
                         }
 
-                        diffuse = new Colour(L);
+                        diffuse = L;// new SColour(L);
                     }
                     break;
 
                 case MaterialType.Reflective:
                     {
-                        reflected = GetReflectedColour(camera, scene, ray, rand, hr, depth) * 0.8;
+                        reflected = GetReflectedColour(camera, scene, ray, rand, hr, depth) * 0.8f;
                     }
                     break;
 
@@ -766,8 +766,8 @@ namespace RayTrace
 
                         //ray = ray.Normalise();
 
-                        Colour fresnalReflect = GetReflectedColour(camera, scene, ray, rand, hr, depth);
-                        Colour fresnalRefract = GetRefractedColour(camera, scene, ray, rand, hr, depth);
+                        SColour fresnalReflect = GetReflectedColour(camera, scene, ray, rand, hr, depth);
+                        SColour fresnalRefract = GetRefractedColour(camera, scene, ray, rand, hr, depth);
 
                         //                    refracted = fresnalReflect * fresnalFactor + fresnalRefract*(1.0f - fresnalFactor);
                         refracted = fresnalRefract * fresnalFactor + fresnalReflect * (1.0f - fresnalFactor);
@@ -775,8 +775,8 @@ namespace RayTrace
                     break;
                 case MaterialType.Diffuse:
                     {
-                        Colour directLight = Palette.Black;
-                        Colour indirectLight = Palette.Black;
+                        SColour directLight = SPalette.Black;
+                        SColour indirectLight = SPalette.Black;
 
                         // Direct illumination from each of the lights.
                         foreach (Light light in scene.Lights)
@@ -810,7 +810,7 @@ namespace RayTrace
                             }
 
                             vecToLight = vecToLight.Normalise();
-                            double dpLN = vecToLight.DotProduct(hr.EntryNormal);
+                            float dpLN = vecToLight.DotProduct(hr.EntryNormal);
                             if (dpLN > 0.0)
                             {
                                 //diffuse += light.GetIntensityAtPoint(camera, hr.Entry) * dpLN * shape.Material.Albedo;
@@ -857,9 +857,10 @@ namespace RayTrace
                             indirectLight /= NumGIRays;
                         }
 
-                        diffuse += (directLight + indirectLight) * shape/*.Material*/.GetColour(hr);
+                        diffuse += directLight + indirectLight * shape.GetSColour(hr);
                     }
                     break;
+
                 case MaterialType.Phong:
                     foreach (Light light in scene.Lights)
                     {
@@ -876,13 +877,13 @@ namespace RayTrace
                         }
 
                         // Diffuse part.
-                        Colour lightIntensity = light.GetIntensityAtPoint(camera, hr.Entry);
+                        SColour lightIntensity = light.GetIntensityAtPoint(camera, hr.Entry);
                         vecToLight = vecToLight.Normalise();
                         float dpLN = vecToLight.DotProduct(hr.EntryNormal);
                         if (dpLN > 0.0f)
                         {
                             // diffuse += light.GetIntensityAtPoint(camera, hr.Entry) * dpLN * shape.Material.Albedo;
-                            diffuse += lightIntensity * dpLN * shape.GetColour(hr) * material.PhongDiffuse;
+                            diffuse += lightIntensity * dpLN * shape.GetSColour(hr) * material.PhongDiffuse;
 
                             if (UseSpecular)
                             {
@@ -901,7 +902,7 @@ namespace RayTrace
                                     float d = MathF.Pow(dpVR, (float)material.PhongShininess);
                                     if (d < 0.0f) d = 0.0f;
 
-                                    Colour specularColour = lightIntensity * d;
+                                    SColour specularColour = lightIntensity * d;
 
                                     specular += specularColour * material.PhongSpecular;
                                 }
@@ -914,12 +915,12 @@ namespace RayTrace
             //if (UseAmbient && hr.shape.Material.Type != MaterialType.BRDF)
             if (UseAmbient)
             {
-                ambient = shape.GetColour(hr).Multiply(scene.Ambient);
+                ambient = SColour.FromColour(shape.GetColour(hr).Multiply(scene.Ambient));
             }
 
-            emissive = new(material?.GetEmissiveColour(hr) ?? SPalette.Black);
+            emissive = material?.GetEmissiveColour(hr) ?? SPalette.Black;
 
-            Colour finalColour = ambient + emissive + diffuse + reflected + refracted + specular;
+            SColour finalColour = ambient + emissive + diffuse + reflected + refracted + specular;
 
             return finalColour;
         }
@@ -936,7 +937,7 @@ namespace RayTrace
             public float TLy;
             public float BRx;
             public float BRy;
-            public Colour[] Colours;
+            public SColour?[] Colours;
 
             // 0     1
             //
@@ -949,36 +950,36 @@ namespace RayTrace
                 TLy = tlY;
                 BRx = brX;
                 BRy = brY;
-                Colours = new Colour[5];
+                Colours = new SColour?[5];
             }
         }
 
-        private Colour GetSubPixelColour(Camera camera, Scene scene, Colour[,] colourBuffer, int w, int h, float x, float y, float width, float height)
+        private SColour GetSubPixelColour(Camera camera, Scene scene, SColour?[,] colourBuffer, int w, int h, float x, float y, float width, float height)
         {
             float centreX = x + width / 2.0f;
             float centreY = y - height / 2.0f;
 
-            Colour c0 = colourBuffer[w, h];
-            Colour c1 = colourBuffer[w + 1, h];
-            Colour c2 = colourBuffer[w, h + 1];
-            Colour c3 = colourBuffer[w + 1, h + 1];
+            SColour? c0 = colourBuffer[w, h];
+            SColour? c1 = colourBuffer[w + 1, h];
+            SColour? c2 = colourBuffer[w, h + 1];
+            SColour? c3 = colourBuffer[w + 1, h + 1];
 
             if (c0 == null) { c0 = GetPixelColour(camera, scene, x, y); colourBuffer[w, h] = c0; }
             if (c1 == null) { c1 = GetPixelColour(camera, scene, x + width, y); colourBuffer[w + 1, h] = c1; }
             if (c2 == null) { c2 = GetPixelColour(camera, scene, x + width, y - height); colourBuffer[w, h + 1] = c2; }
             if (c3 == null) { c3 = GetPixelColour(camera, scene, x + width, y - height); colourBuffer[w + 1, h + 1] = c3; }
 
-            Colour c4 = GetPixelColour(camera, scene, centreX, centreY);
+            SColour c4 = GetPixelColour(camera, scene, centreX, centreY);
 
-            Colour colour = c0 + c1 + c2 + c3 + c4;
+            SColour colour = c0.Value + c1.Value + c2.Value + c3.Value + c4;
 
             return colour.Scale(0.2f);
         }
 
-        private Colour GetSubPixelColour(Camera camera, Scene scene, SubSample subSample, int depth)
+        private SColour GetSubPixelColour(Camera camera, Scene scene, SubSample subSample, int depth)
         {
             if (depth > AdaptiveSuperSamplingDepth)
-                return Palette.Black;
+                return SPalette.Black;
 
             float centreX = (subSample.TLx + subSample.BRx) / 2;
             float centreY = (subSample.TLy + subSample.BRy) / 2;
@@ -992,12 +993,12 @@ namespace RayTrace
             if (Colours[3] == null) Colours[3] = GetPixelColour(camera, scene, subSample.BRx, subSample.BRy);
             if (Colours[4] == null) Colours[4] = GetPixelColour(camera, scene, centreX, centreY);
 
-            Colour col04, col14, col24, col34;
+            SColour col04, col14, col24, col34;
 
             // Compare each corner to the centre. If they're similar, average them else subdivide further.
-            if (Colours[0].IsSimilar(Colours[4]))
+            if (Colours[0].Value.IsSimilar(Colours[4].Value))
             {
-                col04 = Colour.Average(Colours[0], Colours[4]);
+                col04 = SColour.Average(Colours[0].Value, Colours[4].Value);
             }
             else
             {
@@ -1007,9 +1008,9 @@ namespace RayTrace
                 col04 = GetSubPixelColour(camera, scene, subSubSample, depth + 1);
             }
 
-            if (Colours[1].IsSimilar(Colours[4]))
+            if (Colours[1].Value.IsSimilar(Colours[4].Value))
             {
-                col14 = Colour.Average(Colours[1], Colours[4]);
+                col14 = SColour.Average(Colours[1].Value, Colours[4].Value);
             }
             else
             {
@@ -1019,9 +1020,9 @@ namespace RayTrace
                 col14 = GetSubPixelColour(camera, scene, subSubSample, depth + 1);
             }
 
-            if (Colours[2].IsSimilar(Colours[4]))
+            if (Colours[2].Value.IsSimilar(Colours[4].Value))
             {
-                col24 = Colour.Average(Colours[2], Colours[4]);
+                col24 = SColour.Average(Colours[2].Value, Colours[4].Value);
             }
             else
             {
@@ -1031,9 +1032,9 @@ namespace RayTrace
                 col24 = GetSubPixelColour(camera, scene, subSubSample, depth + 1);
             }
 
-            if (Colours[3].IsSimilar(Colours[4]))
+            if (Colours[3].Value.IsSimilar(Colours[4].Value))
             {
-                col34 = Colour.Average(Colours[3], Colours[4]);
+                col34 = SColour.Average(Colours[3].Value, Colours[4].Value);
             }
             else
             {
@@ -1044,7 +1045,7 @@ namespace RayTrace
             }
 
             // Average the four colours.
-            Colour colour = col04 + col14 + col24 + col34;
+            SColour colour = col04 + col14 + col24 + col34;
             colour = colour.Scale(0.25f);
 
             return colour;
@@ -1055,9 +1056,9 @@ namespace RayTrace
         //private int seedIndex = 0;
 
         // Get the colour of specified pixel by casting a ray into the Scene.
-        private Colour GetPixelColour(Camera camera, Scene scene, /*Random rand,*/ float x, float y)
+        private SColour GetPixelColour(Camera camera, Scene scene, /*Random rand,*/ float x, float y)
         {
-            Colour colour = scene.Background;
+            SColour colour = scene.Background.ToSColour();
 
             //NumRays++;
 
@@ -1179,7 +1180,7 @@ namespace RayTrace
             }
 
             //  Buffer to store the calculated Colour values for each corner of each pixel.
-            Colour[,] colourBuffer = new Colour[numColumns + 1, numRows + 1];
+            SColour?[,] colourBuffer = new SColour?[numColumns + 1, numRows + 1];
 
             float sceneStartX = -Size / 2.0f;
             float sceneStartY = Size / 2.0f;
@@ -1206,14 +1207,14 @@ namespace RayTrace
                 {
                     if (AntiAlias == AntiAliasType.None)
                     {
-                        Colour colour = GetPixelColour(camera, scene, sceneX + sceneStepX / 2, sceneY - sceneStepY / 2);
+                        SColour colour = GetPixelColour(camera, scene, sceneX + sceneStepX / 2, sceneY - sceneStepY / 2);
                         canvas.Set(w, h, colour.ToRGB());
                     }
                     else if (AntiAlias == AntiAliasType.NoiseGrid)
                     {
                         Random rand = new Random(1234);
                         float[,] grid = SampleGrid.GetOffsetGrid(rand, 5);
-                        Colour colour = Palette.Black;
+                        SColour colour = SPalette.Black;
                         for (int i=0; i<grid.GetLength(0); i++)
                         {
                             colour += GetPixelColour(camera, scene, sceneX + sceneStepX*grid[i, 0], sceneY - sceneStepY*grid[i, 1]);
@@ -1225,13 +1226,13 @@ namespace RayTrace
                     else if (AntiAlias == AntiAliasType.SuperSampling)
                     {
                         //SubSample subSample = new SubSample(x, y, x + sceneStepX, y - sceneStepY);
-                        Colour colour = GetSubPixelColour(camera, scene, colourBuffer, w - startX, h - startY, sceneX, sceneY, /*sceneX +*/ sceneStepX, /*sceneY -*/ sceneStepY);
+                        SColour colour = GetSubPixelColour(camera, scene, colourBuffer, w - startX, h - startY, sceneX, sceneY, /*sceneX +*/ sceneStepX, /*sceneY -*/ sceneStepY);
                         canvas.Set(w, h, colour.ToRGB());
                     }
                     else
                     {
                         SubSample subSample = new SubSample(sceneX, sceneY, sceneX + sceneStepX, sceneY - sceneStepY);
-                        Colour colour = GetSubPixelColour(camera, scene, subSample, 1);
+                        SColour colour = GetSubPixelColour(camera, scene, subSample, 1);
                         canvas.Set(w, h, colour.ToRGB());
                     }
 

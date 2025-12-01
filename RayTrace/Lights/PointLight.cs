@@ -71,11 +71,11 @@ namespace RayTrace
             return (float) lightAttenuation;
         }
 
-        public override Colour GetIntensityAtPoint(Camera camera, SPoint p)
+        public override SColour GetIntensityAtPoint(Camera camera, SPoint p)
         {
             SVector vecToLight = GetDirection(camera, p);
             float dDistanceSqr = vecToLight.MagnitudeSquared();
-            return Output / (4.0f * MathF.PI * dDistanceSqr);
+            return (Output / (4.0f * MathF.PI * dDistanceSqr)).ToSColour();
         }
 
         public override string ToString()

@@ -76,7 +76,7 @@ namespace RayTrace
 
         public abstract SVector GetDirection(Camera camera, SPoint p);
         public abstract float GetAttenuation(Camera camera, SPoint p);
-        public abstract Colour GetIntensityAtPoint(Camera camera, SPoint p);
+        public abstract SColour GetIntensityAtPoint(Camera camera, SPoint p);
 
         protected override void AsXMLImpl(XMLEntity xml)
         {

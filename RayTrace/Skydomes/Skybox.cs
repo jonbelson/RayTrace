@@ -174,7 +174,7 @@ namespace RayTrace.Skydomes
 
         //}
 
-        private static Colour GetColour(BitmapUtils.RgbTexture texture, float u, float v)
+        private static SColour GetColour(BitmapUtils.RgbTexture texture, float u, float v)
         {
             if (texture != null)
             {
@@ -189,7 +189,7 @@ namespace RayTrace.Skydomes
                 try
                 {
                     uint rgb = (uint)texture.Texture[y * texture.Width + x];
-                    return new Colour(rgb);
+                    return SColour.FromRGB(rgb);
                     //Colour c = texture.Texture[y * texture.Width + x];
                     //return c;
                 }
@@ -201,10 +201,10 @@ namespace RayTrace.Skydomes
                 }
             }
 
-            return Palette.Grey;
+            return SPalette.Grey;
         }
 
-        public override Colour GetColour(Camera camera, SVector ray)
+        public override SColour GetColour(Camera camera, SVector ray)
         {
             ray = ray.Normalise();
 
@@ -314,7 +314,7 @@ namespace RayTrace.Skydomes
                 }
             }
 
-            return Palette.Grey;
+            return SPalette.Grey;
         }
 
         public override XMLSkydome ToXML()

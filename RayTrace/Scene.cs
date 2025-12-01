@@ -307,14 +307,14 @@ namespace RayTrace
             return GetUniqueName(Lights, type);
         }
 
-        public Colour GetSkydomeColour(Camera camera, SVector ray)
+        public SColour GetSkydomeColour(Camera camera, SVector ray)
         {
             if (Skydome != null && Skydome.Enabled)
             {
                 return Skydome.GetColour(camera, ray);
             }
 
-            return Palette.Black;
+            return SPalette.Black;
         }
 
         public virtual XMLScene ToXML()

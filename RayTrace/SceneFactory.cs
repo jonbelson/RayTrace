@@ -43,8 +43,8 @@ namespace RayTrace
         {
             Scene scene = new Scene();
 
-            double[] n = { 2, 10, 50, 250, 1250 };
-            double[] ks = { 0.02, 0.04, 0.08, 0.1, 0.15, 0.2 };
+            float[] n = { 2, 10, 50, 250, 1250 };
+            float[] ks = { 0.02f, 0.04f, 0.08f, 0.1f, 0.15f, 0.2f };
 
             for (int j = 0; j < 5; j++)
             {
@@ -52,7 +52,7 @@ namespace RayTrace
                 {
                     Sphere sphere = new Sphere(scene, new Point(-50 + i * 20, -40 + j * 20, 80), 8, Palette.Green);
                     sphere.Material.SetType(MaterialType.Phong);
-                    sphere.Material.PhongDiffuse = 0.95;
+                    sphere.Material.PhongDiffuse = 0.95f;
                     sphere.Material.PhongSpecular = 2 * ks[i];  // i / 5.0;
                     sphere.Material.PhongShininess = n[j];  // (j + 1) * (j + 1);
                     scene.AddShape(sphere);
