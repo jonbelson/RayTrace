@@ -1,21 +1,52 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace RayTrace
 {
     // Simple texture that just returns asingle colour.
-    public class TextureSolid : Texture
+    public class TextureSolid : Texture, INotifyPropertyChanged
     {
         public override TextureType Type { get; } = TextureType.Solid;
 
-        public Colour Colour { get; set; }              // Diffuse colour
-        //public Colour ColourSpecular { get; set; }    // Colour for specular reflections.
+        public Colour Colour { get;
+            set
+            {
+                if (field != value)
+                {
+                    field?.PropertyChanged -= Colour_PropertyChanged;
 
+                    field = value;
+
+                    field?.PropertyChanged += Colour_PropertyChanged;
+
+                    Notify();
+                }
+            }
+        }
+
+        private void Colour_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            Notify("Colour");
+        }
+
+        private void Notify([CallerMemberName] String propName = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
+        }
+
+        //
+        // Constructor.
+        //
         public TextureSolid() : this(Palette.Grey) { }
 
+        //
+        // Constructor.
+        //
         public TextureSolid(Colour colour)
         {
             Name = "Solid";
@@ -23,10 +54,15 @@ namespace RayTrace
             Colour = colour;
         }
 
+        //
+        // Constructor.
+        //
         public TextureSolid(XMLTextureSolid xmlTextureSolid)
         {
             Colour = new Colour(xmlTextureSolid.Colour);
         }
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public override Colour GetColour(HitResult hr) { return Colour; }
 

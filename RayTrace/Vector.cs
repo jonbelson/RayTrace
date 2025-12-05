@@ -26,7 +26,7 @@ namespace RayTrace
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public SVector VectorProduct(SVector v2) => Vector4.Cross(v, v2);
 
-            public SVector Add(SVector v2) => v+v2;// Vector4.Cross(v, v2);
+            public SVector Add(SVector v2) => v+v2;
 
             public SVector Scale(float scale) => v*scale;
 

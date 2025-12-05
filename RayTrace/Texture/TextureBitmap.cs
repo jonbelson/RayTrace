@@ -1,19 +1,27 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Runtime.CompilerServices;
 using System.Windows;
 
 namespace RayTrace
 {
-    public class TextureBitmap : Texture
+    public class TextureBitmap : Texture, INotifyPropertyChanged
     {
         private int width;
         private int height;
         private String fileName;
 
-        //private Colour[] texture = null;
         private int[] texture = null;
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        private void Notify([CallerMemberName] String propName = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
+        }
 
         public override TextureType Type { get; } = TextureType.Bitmap;
 
@@ -32,12 +40,16 @@ namespace RayTrace
                 if (fileName != value)
                 {
                     fileName = value;
-                    LoadTexture(fileName);
+                    if (!string.IsNullOrEmpty(fileName))
+                    {
+                        LoadTexture(fileName);
+                    }
+                    Notify();
                 }
             }
         }
 
-        // Attempt to load teh specified bitmap texture.
+        // Attempt to load the specified bitmap texture.
         private bool LoadTexture(string fileName)
         {
             try
@@ -109,6 +121,11 @@ namespace RayTrace
             width = height = 0;
 
             LoadTexture(xml.fileName);
+        }
+
+        public void Clear()
+        {
+            texture = null;
         }
 
         public bool IsValid() => texture != null;
@@ -191,6 +208,8 @@ namespace RayTrace
 
         public override Colour GetColour(HitResult hr)
         {
+            return GetColour(hr.u, hr.v);
+/*
             if (texture != null)
             {
                 float u = hr.u;
@@ -208,6 +227,7 @@ namespace RayTrace
             }
 
             return Palette.Grey;
+*/
         }
 
         public override XMLTexture ToXML()

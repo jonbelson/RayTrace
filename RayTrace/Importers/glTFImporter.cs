@@ -1506,7 +1506,7 @@ namespace RayTrace.Importers
                 {
                     Name = material.name,
                     Brdf = brdf,
-                    EmissiveFactor = new SColour(material.emissiveFactor.x, material.emissiveFactor.y, material.emissiveFactor.z),
+                    EmissiveFactor = new Colour(material.emissiveFactor.x, material.emissiveFactor.y, material.emissiveFactor.z),
                     EmissiveStrength = material.emissiveStrength
                 };
 

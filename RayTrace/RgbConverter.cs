@@ -22,6 +22,8 @@ namespace RayTrace
             }
 
             if (values[0] == DependencyProperty.UnsetValue) return Binding.DoNothing;
+            if (values[1] == DependencyProperty.UnsetValue) return Binding.DoNothing;
+            if (values[2] == DependencyProperty.UnsetValue) return Binding.DoNothing;
 
             var red = System.Convert.ToSingle(values[0]);
             var green = System.Convert.ToSingle(values[1]);

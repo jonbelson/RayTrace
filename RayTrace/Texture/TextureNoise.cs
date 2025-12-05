@@ -1,27 +1,86 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace RayTrace
 {
-    public class TextureNoise : Texture
+    public class TextureNoise : Texture, INotifyPropertyChanged
     {
-        public override TextureType Type { get; } = TextureType.Perlin;
+        private void Notify([CallerMemberName] String propName = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
+        }
+
+        private void Colour_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            Notify(e.PropertyName);
+        }
+
 
         private double noiseRange = Perlin.GetRange();
+
+        public override TextureType Type { get; } = TextureType.Perlin;
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public enum ColourFunction
         {
             EitherOr, Blend
         };
-        
-        public Colour Colour1 { get; set; }
-        public Colour Colour2 { get; set; }
 
-        public int Scale { get; set; } = 10;
+        public Colour Colour1
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field?.PropertyChanged -= Colour_PropertyChanged;
+
+                    field = value;
+
+                    field?.PropertyChanged += Colour_PropertyChanged;
+
+                    Notify();
+                }
+            }
+        }
+        public Colour Colour2
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field?.PropertyChanged -= Colour_PropertyChanged;
+
+                    field = value;
+
+                    field?.PropertyChanged += Colour_PropertyChanged;
+
+                    Notify();
+                }
+            }
+        }
+
+        public int Scale
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    Notify();
+                }
+            }
+        } = 10;
+
         public ColourFunction Function { get; set; } = ColourFunction.EitherOr;
 
         public TextureNoise() : this(Palette.Green, Palette.Red) { }

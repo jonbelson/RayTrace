@@ -109,30 +109,6 @@ namespace RayTrace
     }
 
     [Serializable]
-    public class XMLMaterial
-    {
-        public string Name;
-        public Guid Guid;
-
-        public MaterialType Type;
-
-        public float PhongDiffuse;
-        public float PhongSpecular;
-        public float PhongShininess;
-
-        public float roughness;
-        public float transparency;
-        public float reflectivity;
-
-        public float RefractiveIndex;
-
-        public XMLBrdf Brdf;
-        public XMLTexture Texture;
-
-        public virtual Material Create() => new Material(this);
-    }
-
-    [Serializable]
     [XmlInclude(typeof(XMLTextureSolid))]
     [XmlInclude(typeof(XMLTexturePerTriangle))]
     [XmlInclude(typeof(XMLTextureSquares))]
@@ -148,6 +124,49 @@ namespace RayTrace
         public XMLColour Colour;
 
         public override Texture Create() => new TextureSolid(this);
+    }
+
+    [Serializable]
+    public class XMLNormalMap
+    {
+        public string Name { get; set; }
+        public string FileName { get; set; }
+
+        public virtual NormalMap Create() => new NormalMap(this);
+    }
+
+    [Serializable]
+    [XmlInclude(typeof(XMLTextureBitmap))]
+    public class XMLMaterial
+    {
+        public string Name;
+        public Guid Guid;
+
+        public MaterialType Type;
+
+        public SamplerWrapMode SamplerWrapModeU;
+        public SamplerWrapMode SamplerWrapModeV;
+
+        public float PhongDiffuse;
+        public float PhongSpecular;
+        public float PhongShininess;
+
+        public float roughness;
+        public float transparency;
+        public float reflectivity;
+
+        public XMLNormalMap NormalMap;
+
+        public XMLTexture /*Bitmap*/ EmissiveTexture;
+        public XMLColour EmissiveFactor;
+        public float EmissiveStrength;
+
+        public float RefractiveIndex;
+
+        public XMLBrdf Brdf;
+        public XMLTexture Texture;
+
+        public virtual Material Create() => new Material(this);
     }
 
     [Serializable]

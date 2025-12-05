@@ -1,11 +1,11 @@
 ﻿
+using RayTrace.Brdfs;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Drawing;
-
-using RayTrace.Brdfs;
+using System.Runtime.CompilerServices;
 
 namespace RayTrace
 {
@@ -55,7 +55,7 @@ namespace RayTrace
     //
     // Characteristics of a Shape's physical form.
     //
-    public class Material
+    public class Material : INotifyPropertyChanged
     {
         public string Name { get; set; } = "Material";
         public Guid Guid { get; set; } = Guid.NewGuid();
@@ -78,41 +78,44 @@ namespace RayTrace
         private float transparency; // Transparency coefficient kt, range 0.0 to 1.0.
         private float reflectivity;
 
-        public float Roughness { get => roughness; set => roughness = Math.Clamp(value, 0.0f, 1.0f); }
-        public float Transparency { get => transparency; set => transparency = Math.Clamp(value, 0.0f, 1.0f); }
-        public float Reflectivity { get => reflectivity; set => reflectivity = Math.Clamp(value, 0.0f, 1.0f); }
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void Notify([CallerMemberName] string propName = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
+        }
+
+        public float Roughness { get => roughness; set { roughness = Math.Clamp(value, 0.0f, 1.0f); Notify(); } }
+        public float Transparency { get => transparency; set { transparency = Math.Clamp(value, 0.0f, 1.0f); Notify(); } }
+        public float Reflectivity { get => reflectivity; set { reflectivity = Math.Clamp(value, 0.0f, 1.0f); Notify(); } }
 
         public NormalMap NormalMap { get; set; }
 
-        public TextureBitmap EmissiveTexture { get; set; }
+        public Texture /*Bitmap*/ EmissiveTexture { get; set; }
 
-        public float EmissiveStrength { get; set; } = 1;
-        public SColour EmissiveFactor { get; set; } = new(1f, 1f, 1f);
+        public float EmissiveStrength { get; set { reflectivity = Math.Clamp(value, 0.0f, 1.0f); Notify(); } } = 1;
+        public Colour EmissiveFactor { get; set { field = value; Notify(); } } = new(1f, 1f, 1f);
 
-        public bool HasRoughness()
+        public float RefractiveIndex { get; set; } = RayTrace.RefractiveIndex.WindowGlass;
+
+        public Brdfs.Brdf Brdf { get; set; }
+
+        private Texture _texture = null;
+        public Texture Texture
         {
-            return Roughness > 0.0f;
+            get => _texture;
+            set { _texture = value; Notify("Texture"); }
         }
 
-        public bool HasTransparency()
-        {
-            return Transparency > 0.0f;
-        }
+        public bool HasRoughness() => Roughness > 0.0f;
 
-        public bool HasReflectivity()
-        {
-            return Reflectivity > 0.0f;
-        }
+        public bool HasTransparency() => Transparency > 0.0f;
+
+        public bool HasReflectivity() => Reflectivity > 0.0f;
 
         public bool HasNormalMap() => NormalMap!= null;
 
         //// True if the Shape is considered solid, or false if at least part of the interior is empty.
         //public bool IsSolid { get; set; }
-
-        public float RefractiveIndex { get; set; } = RayTrace.RefractiveIndex.WindowGlass;
-
-        public Brdfs.Brdf Brdf { get; set; }
-        public Texture Texture { get; set; }
 
         //
         // Constructor
@@ -156,8 +159,12 @@ namespace RayTrace
         {
             _type = xmlMaterial.Type;
 
-            Guid = xmlMaterial.Guid;
             Name = xmlMaterial.Name;
+            Guid = xmlMaterial.Guid;
+
+            SamplerWrapModeU = xmlMaterial.SamplerWrapModeU;
+            SamplerWrapModeV = xmlMaterial.SamplerWrapModeV;
+
             PhongDiffuse = xmlMaterial.PhongDiffuse;
             PhongShininess = xmlMaterial.PhongShininess;
             PhongSpecular = xmlMaterial.PhongSpecular;
@@ -165,6 +172,23 @@ namespace RayTrace
             transparency = xmlMaterial.transparency;
             reflectivity = xmlMaterial.reflectivity;
             RefractiveIndex = xmlMaterial.RefractiveIndex;
+
+            EmissiveStrength = xmlMaterial.EmissiveStrength;
+            EmissiveFactor = new(xmlMaterial.EmissiveFactor);
+
+            if (xmlMaterial.NormalMap is not null)
+            {
+                NormalMap = xmlMaterial.NormalMap.Create();
+            }
+
+            if (xmlMaterial.EmissiveTexture is not null)
+            {
+                Texture bmp = xmlMaterial.EmissiveTexture.Create();
+                if (bmp is TextureBitmap textureBitmap)
+                {
+                    EmissiveTexture = textureBitmap;
+                }
+            }
 
             if (xmlMaterial.Brdf != null)
             {
@@ -238,11 +262,11 @@ namespace RayTrace
 
         public SColour GetEmissiveColour(HitResult hr)
         {
-            Colour c = EmissiveTexture?.GetColour(hr.u, hr.v) ?? Palette.Black;
+            Colour c = EmissiveTexture?.GetColour(hr) ?? Palette.Black;
             
-            SColour sc = c.ToSColour();
-            sc = sc * EmissiveStrength * EmissiveFactor;
+            c = c * EmissiveStrength * EmissiveFactor;
 
+            SColour sc = c.ToSColour();
             return sc;
         }
 
@@ -271,6 +295,10 @@ namespace RayTrace
             xmlMaterial.Name = Name;
             xmlMaterial.Guid = Guid;
             xmlMaterial.Type = Type;
+
+            xmlMaterial.SamplerWrapModeU = SamplerWrapModeU;
+            xmlMaterial.SamplerWrapModeV = SamplerWrapModeV;
+
             xmlMaterial.PhongDiffuse = PhongDiffuse;
             xmlMaterial.PhongShininess = PhongShininess;
             xmlMaterial.PhongSpecular = PhongSpecular;
@@ -279,6 +307,19 @@ namespace RayTrace
             xmlMaterial.transparency = transparency;
             xmlMaterial.reflectivity = reflectivity;
             xmlMaterial.RefractiveIndex = RefractiveIndex;
+
+            xmlMaterial.EmissiveStrength = EmissiveStrength;
+            xmlMaterial.EmissiveFactor = EmissiveFactor.ToXML();
+
+            if (EmissiveTexture != null)
+            {
+                xmlMaterial.EmissiveTexture = EmissiveTexture.ToXML();
+            }
+
+            if (NormalMap != null)
+            {
+                xmlMaterial.NormalMap = NormalMap.ToXML();
+            }
 
             if (Brdf != null)
             {

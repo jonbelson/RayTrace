@@ -1,18 +1,64 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace RayTrace
 {
-    class TextureGradient : Texture
+    class TextureGradient : Texture, INotifyPropertyChanged
     {
+        private void Notify([CallerMemberName] String propName = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
+        }
+
+        private void Colour_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            Notify(e.PropertyName);
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+
         public override TextureType Type { get; } = TextureType.Gradient;
 
-        public Colour Colour1 { get; set; }
-        public Colour Colour2 { get; set; }
+        public Colour Colour1
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field?.PropertyChanged -= Colour_PropertyChanged;
 
+                    field = value;
+
+                    field?.PropertyChanged += Colour_PropertyChanged;
+
+                    Notify();
+                }
+            }
+        }
+        public Colour Colour2
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field?.PropertyChanged -= Colour_PropertyChanged;
+
+                    field = value;
+
+                    field?.PropertyChanged += Colour_PropertyChanged;
+
+                    Notify();
+                }
+            }
+        }
         public enum GradientType
         {
             Vertical, Horizontal, Diagonal, Radial
@@ -27,8 +73,14 @@ namespace RayTrace
 
         public BlendType Blend { get; set; } = TextureGradient.BlendType.Smooth;
 
+        //
+        // Constructor.
+        //
         public TextureGradient() : this(Palette.Blue, Palette.Green) { }
 
+        //
+        // Constructor.
+        //
         public TextureGradient(Colour colour1, Colour colour2)
         {
             Name = "Gradient";

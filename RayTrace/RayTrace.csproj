@@ -30,11 +30,6 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Remove="-Model.cs" />
-    <Compile Remove="Renderer - Copy (2).cs" />
-    <Compile Remove="Renderer - Copy.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <Compile Update="Properties\Settings.Designer.cs">
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <AutoGen>True</AutoGen>

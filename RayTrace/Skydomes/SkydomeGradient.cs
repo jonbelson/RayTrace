@@ -49,11 +49,12 @@ namespace RayTrace.Skydomes
 
         public override XMLSkydome ToXML()
         {
-            XMLSkydomeGradient xml = new();
-
-            xml.Top = Top.ToXML();
-            xml.Middle = Middle.ToXML();
-            xml.Bottom = Bottom.ToXML();
+            XMLSkydomeGradient xml = new()
+            {
+                Top = Top.ToXML(),
+                Middle = Middle.ToXML(),
+                Bottom = Bottom.ToXML()
+            };
 
             return xml;
         }

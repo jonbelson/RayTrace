@@ -25,23 +25,37 @@ namespace RayTrace
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
+        private INotifyPropertyChanged _currentTextureListener;
+
         private readonly List<MaterialType> materialTypes = new() { MaterialType.Diffuse, MaterialType.Reflective, MaterialType.RefractiveAndReflective, MaterialType.Phong, MaterialType.BRDF_Lambertian, MaterialType.BRDF_CookTorrence, MaterialType.BRDF_Gltf };
 
         private readonly MaterialTileMaker materialTileMaker = new();
 
         public MaterialTile MaterialTile { get; set; } = null;
 
+        private Material _material = null;
+
+        private Texture _texture = null;
+
         //private readonly Material material;
         //[NotifyParentProperty(true)]
-        public Material material { get; set; } = null;
-        public Texture texture { get; set; } = null;
+        public Material material
+        {
+            get => _material;
+            set { _material = value; Notify(); }
+        }
+
+        public Texture texture
+        {
+            get => _texture;
+            set { _texture = value; Notify(); }
+        }
 
         private TextureType tt;
         public TextureType textureType { get => tt; set { tt = value; Notify(); } }
 
         public ObservableCollection<Material> Materials { get; set; } = new();
 
-        //public enum TextureType { Solid, Perlin, Squares, Gradient };
         public ObservableCollection<TextureType> Textures { get; set; } = new() { TextureType.Solid, TextureType.Perlin, TextureType.Squares, TextureType.Gradient, TextureType.Bitmap };
 
         // Orignal Material passed in for Cancelling purposes.
@@ -66,6 +80,30 @@ namespace RayTrace
             }
         }
 
+        private void SubscribeToTexture()
+        {
+            UnsubscribeFromTexture();
+
+            if (material.Texture is INotifyPropertyChanged newTexture)
+            {
+                _currentTextureListener = newTexture;
+                newTexture.PropertyChanged += Texture_PropertyChanged;
+            }
+        }
+
+        private void UnsubscribeFromTexture()
+        {
+            if (_currentTextureListener is INotifyPropertyChanged texture)
+            {
+                texture.PropertyChanged -= Texture_PropertyChanged;
+            }
+        }
+
+        private void Texture_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            UpdatePreview();
+        }
+
         //
         // Constructor
         //
@@ -74,27 +112,24 @@ namespace RayTrace
             material = mat;
             texture = material.Texture;
 
-            if (texture != null)
+            InitializeComponent();
+
+            DataContext = this;
+
+            if (texture != null /*&& textureType != material.Texture.Type*/)
             {
                 textureType = material.Texture.Type;
 
                 // Serialse the Material to XML in case the user cancels.
                 _textureOrig = mat.Texture;
-                //mat.Texture = null;
                 _xmlMaterialOrig = mat.ToXML();
-                //mat.Texture = _textureOrig;
-
-                InitializeComponent();
-
-                DataContext = this;
 
                 Materials.Add(material);
 
                 comboBoxMaterialType.ItemsSource = materialTypes;
                 comboBoxMaterialType.SelectedItem = mat.Type;
 
-                //comboBoxTexture.ItemSource = Textures;
-
+                SubscribeToTexture();
                 UpdatePreview();
             }
 
@@ -149,12 +184,12 @@ namespace RayTrace
 
         private void comboBoxTexture_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            //TextureType textureType = (TextureType)comboBoxTexture.SelectedItem;
-
             ComboBox comboBox = (ComboBox)sender;
             if (comboBox.SelectedItem != null)
             {
                 TextureType textureType = (TextureType)comboBox.SelectedItem;
+
+                UnsubscribeFromTexture();
 
                 switch (textureType)
                 {
@@ -169,11 +204,8 @@ namespace RayTrace
 
                 textureType = texture.Type;
 
+                SubscribeToTexture();
                 UpdatePreview();
-
-                //var currentSelector = contentControl.ContentTemplateSelector;
-                //contentControl.ContentTemplateSelector = null;
-                //contentControl.ContentTemplateSelector = currentSelector;
             }
             else
             {
@@ -258,6 +290,50 @@ namespace RayTrace
             UpdatePreview();
         }
 
+        private void NormalMap_SourceUpdated(object sender, DataTransferEventArgs e)
+        {
+            if (sender is TextBox textBox)
+            {
+                if (string.IsNullOrEmpty(textBox.Text))
+                {
+                    material.NormalMap = null;
+
+                }
+            }
+
+            UpdatePreview();
+        }
+
+        private void EmissiveTexture_SourceUpdated(object sender, DataTransferEventArgs e)
+        {
+            if (sender is TextBox textBox)
+            {
+                if (string.IsNullOrEmpty(textBox.Text))
+                {
+                    material.EmissiveTexture = null;
+                }
+            }
+
+            UpdatePreview();
+        }
+
+        private void BitmapTexture_SourceUpdated(object sender, DataTransferEventArgs e)
+        {
+            if (sender is TextBox textBox)
+            {
+                if (string.IsNullOrEmpty(textBox.Text))
+                {
+                    // Handle the case where the user has cleared the BitmapTexture filename.
+                    if (material.Texture is TextureBitmap textureBitmap)
+                    {
+                        textureBitmap.Clear();
+                    }
+                }
+            }
+
+            UpdatePreview();
+        }
+
         private void TextBox_SourceUpdated(object sender, DataTransferEventArgs e)
         {
             UpdatePreview();
@@ -291,18 +367,16 @@ namespace RayTrace
 
                 if (material != null)
                 {
-                    //if (material.NormalMap is null)
+                    if (material.NormalMap is null)
                     {
                         material.NormalMap = new(fileName);
                         UpdatePreview();
                     }
-
-                    //if (material.NormalMap != null)
-                    //{
-                    //    material.NormalMap.FileName = fileName;
-
-                    //    UpdatePreview();
-                    //}
+                    else
+                    {
+                        material.NormalMap.FileName = fileName;
+                        UpdatePreview();
+                    }
                 }
             }
         }
@@ -316,11 +390,18 @@ namespace RayTrace
 
                 if (material != null)
                 {
-                    material.EmissiveTexture = new(fileName);
+                    material.EmissiveTexture = new TextureBitmap(fileName);
 
                     UpdatePreview();
                 }
             }
+        }
+
+        private void dialog_Closed(object sender, EventArgs e)
+        {
+            UnsubscribeFromTexture();
+
+            base.OnClosed(e);
         }
     }
 }

@@ -116,6 +116,7 @@ namespace RayTrace
 		private HitResult HitTestImpl(Camera camera, Ray ray)
 		{
 			HitResult hr = new HitResult(this);
+			hr.Ray = ray.Direction;
 
 			SPoint vPos = camera.WorldToView * _viewPos;
 

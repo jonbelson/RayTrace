@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 
 namespace RayTrace
@@ -130,13 +131,13 @@ namespace RayTrace
     {
         private float red, green, blue;
 
-        public float Red { get { return red; } set { red = value; Notify("Red"); } }
-        public float Blue { get { return blue; } set { blue = value; Notify("Blue"); } }
-        public float Green { get { return green; } set { green = value; Notify("Green"); } }
+        public float Red { get { return red; } set { red = value; Notify(); } }
+        public float Blue { get { return blue; } set { blue = value; Notify(); } }
+        public float Green { get { return green; } set { green = value; Notify(); } }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        protected void Notify(string propName)
+        private void Notify([CallerMemberName] String propName = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
         }

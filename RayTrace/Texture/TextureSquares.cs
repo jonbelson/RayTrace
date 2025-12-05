@@ -1,18 +1,80 @@
 ﻿using System;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace RayTrace
 {
-    public class TextureSquares : Texture
+    public class TextureSquares : Texture, INotifyPropertyChanged
     {
+        private void Notify([CallerMemberName] String propName = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
+        }
+        private void Colour_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            Notify(e.PropertyName);
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
         public override TextureType Type { get; } = TextureType.Squares;
 
-        public Colour Colour1 { get; set; }
-        public Colour Colour2 { get; set; }
+        public Colour Colour1
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field?.PropertyChanged -= Colour_PropertyChanged;
 
-        public int Scale { get; set; } = 20;
+                    field = value;
 
+                    field?.PropertyChanged += Colour_PropertyChanged;
+
+                    Notify();
+                }
+            }
+        }
+        public Colour Colour2
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field?.PropertyChanged -= Colour_PropertyChanged;
+
+                    field = value;
+
+                    field?.PropertyChanged += Colour_PropertyChanged;
+
+                    Notify();
+                }
+            }
+        }
+
+        public int Scale
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    Notify();
+                }
+            }
+        } = 20;
+
+        //
+        // Constructor.
+        //
         public TextureSquares() : this(Palette.Blue, Palette.White) { }
 
+        //
+        // Constructor.
+        //
         public TextureSquares(Colour colour1, Colour colour2)
         {
             Name = "Squares";
@@ -21,6 +83,9 @@ namespace RayTrace
             Colour2 = colour2;
         }
 
+        //
+        // Constructor.
+        //
         public TextureSquares(XMLTextureSquares xml)
         {
             Colour1 = new Colour(xml.Colour1);

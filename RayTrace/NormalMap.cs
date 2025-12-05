@@ -28,7 +28,10 @@ namespace RayTrace
                 if (_fileName != value)
                 {
                     _fileName = value;
-                    LoadTexture(_fileName);
+                    if (!string.IsNullOrEmpty(_fileName))
+                    {
+                        LoadTexture(_fileName);
+                    }
                 }
             }
         }
@@ -102,7 +105,28 @@ namespace RayTrace
             LoadTexture(fileName);
         }
 
+        //
+        // Constructor.
+        //
+        public NormalMap(XMLNormalMap xmlNormalMap)
+        {
+            _width = _height = 0;
+
+            Name = xmlNormalMap.Name;
+            FileName = xmlNormalMap.FileName;
+        }
+
         public bool IsValid => texture != null;
+
+        public XMLNormalMap ToXML()
+        {
+            XMLNormalMap xml = new();
+
+            xml.Name = Name;
+            xml.FileName = FileName;
+
+            return xml;
+        }
 
         public SVector GetNormal(HitResult hr)
         {
