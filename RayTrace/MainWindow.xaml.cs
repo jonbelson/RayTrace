@@ -752,7 +752,7 @@ namespace RayTrace
                 return false;
             }
 
-            if (adaptiveSuperSamplingDepth > 10)
+            if (adaptiveSuperSamplingDepth > 20)
             {
                 _ = MessageBox.Show("Adaptive Super-Sampling depth must be 10 or less.");
                 return false;
@@ -977,7 +977,7 @@ namespace RayTrace
         private void comboBoxAntiAlias_SelectionChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
             Renderer.AntiAliasType antiAlias = (Renderer.AntiAliasType)comboBoxAntiAlias.SelectedItem;
-            textBoxAdaptiveSubSamplingDepth.IsEnabled = antiAlias == Renderer.AntiAliasType.AdaptiveSupersampling;
+            textBoxAdaptiveSubSamplingDepth.IsEnabled = antiAlias == Renderer.AntiAliasType.AdaptiveSupersampling || antiAlias == Renderer.AntiAliasType.NoiseGrid;
         }
 
         private void LoadScene_Click(object sender, RoutedEventArgs e)

@@ -37,6 +37,22 @@ namespace RayTrace
                 return (col1 + col2).Scale(0.5f);
             }
 
+            public float MaxComponent()
+            {
+                float max = c.X;
+                if (c.Y > max) max = c.Y;
+                if (c.Z > max) max = c.Z;
+                return max;
+            }
+
+            public float MinComponent()
+            {
+                float min = c.X;
+                if (c.Y < min) min = c.Y;
+                if (c.Z < min) min = c.Z;
+                return min;
+            }
+
             // Return true if Colours are 'similar'.
             public bool IsSimilar(SColour c2)
             {
@@ -108,8 +124,9 @@ namespace RayTrace
     public class SPalette
     {
         public static readonly SColour Black = new SColour(0.0f, 0.0f, 0.0f);
-        public static readonly SColour White = new SColour(0.0f, 0.0f, 0.0f);
+        public static readonly SColour White = new SColour(1.0f, 1.0f, 1.0f);
         public static readonly SColour Grey = new SColour(0.7f, 0.7f, 0.7f);
+        public static readonly SColour Pink = new SColour(1.0f, 0.75f, 0.8f);
     }
 
     public class Palette

@@ -58,6 +58,7 @@ namespace RayTrace.Importers
 
             // NormalTexureInfo
             public string normalTexture;    // +X right, +Y up, +Z towards viewer.
+            public float normalScale = 1.0f;
 
             // textureInfo
             public string emissiveTexture;  // sRGB
@@ -388,6 +389,7 @@ namespace RayTrace.Importers
             public class NormalTexture
             {
                 public int index { get; set; }
+                public float scale { get; set; } = 1.0f;
             }
 
             public NormalTexture normalTexture { get; set; }
@@ -1378,6 +1380,9 @@ namespace RayTrace.Importers
 
                         string normalTexture = GetImage(asset, imageIndex);
                         if (normalTexture is not null) gltfMaterial.normalTexture = normalTexture;
+
+                        float scale = material.normalTexture.scale;
+                        gltfMaterial.normalScale = scale;
                     }
 
                     if (material.emissiveTexture is not null)
@@ -1451,7 +1456,7 @@ namespace RayTrace.Importers
         // 
         public ModelData ImportModel(string path)
         {
-            Logger.Instance.Info($"Importing model {path}");
+            Logger.Instance.Info($"Importing glTF model {path}");
 
             _gltfAsset = null;
 
@@ -1537,7 +1542,7 @@ namespace RayTrace.Importers
                     string path = FindImage(_gltfAsset.directory, material.normalTexture);
                     if (!String.IsNullOrEmpty(path))
                     {
-                        NormalMap normalMap = new NormalMap(path);
+                        NormalMap normalMap = new NormalMap(path) { Scale = material.normalScale };
                         mat.NormalMap = normalMap;
                     }
                     else

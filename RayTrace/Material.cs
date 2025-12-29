@@ -227,6 +227,18 @@ namespace RayTrace
             }
         }
 
+        public virtual SColour GetSColour(HitResult hr)
+        {
+            Colour c = GetColour(hr);
+
+            if (c is not null)
+            {
+                return c.ToSColour();
+            }
+
+            return SPalette.Grey;
+        }
+
         public virtual Colour GetColour(HitResult hr)
         {
             if (Texture != null)
@@ -246,7 +258,7 @@ namespace RayTrace
         {
             if (Brdf != null)
             {
-                SColour c = Brdf.GetColour(hr, lcs, rand, GetColour(hr).ToSColour(), source, Li);
+                SColour c = Brdf.GetColour(hr, lcs, rand, GetSColour(hr), source, Li);
 
                 //if (EmissiveTexture != null)
                 //{
