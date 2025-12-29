@@ -885,8 +885,11 @@ namespace RayTrace
                 {
                     SVector tNormal = material.NormalMap.GetNormal(texel.u, texel.v);
 
-                    // Transform normal map vector to the triangle's normal.
+                    //LocalCoordinateSystem lcs = new(new SVector(0.0f, 0.0f, 1.0f, 0.0f));
 
+                    //hr.EntryNormal = lcs.Reproject(tNormal);
+
+                    // Transform normal map vector to the triangle's normal.
                     SVector up = new(0, 1, 0, 0);
                     SVector vUp = camera.NormalMatrix*up;
 
@@ -911,7 +914,7 @@ namespace RayTrace
 
                     Matrix m = new(xaxis, yaxis, -zaxis);
 
-                    m.Transpose();
+                    ////////m.Transpose();
 
                     SVector vMapNormal = m * tNormal;
 

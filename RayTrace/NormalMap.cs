@@ -16,9 +16,20 @@ namespace RayTrace
         private int _height = 0;
         private string _fileName;
 
+        private SVector _scaleVector = new(1.0f, 1.0f, 1.0f, 0.0f);
+
         private uint[] texture;
 
         public string Name { get; set; }
+
+        public float Scale
+        {
+            get => field;
+            set {
+                field = Math.Clamp(value, 0.0f, 1.0f);
+                _scaleVector = new(field, field, 1.0f, 1.0f);
+            }
+        } = 1.0f;
 
         public string FileName
         {
@@ -151,12 +162,27 @@ namespace RayTrace
                 byte g = (byte)(val >> 8);
                 byte b = (byte)val;
 
-                float i = (r - 128) / 128.0f;
-                float j = (g - 128) / 128.0f;
-                float k = (b - 128) / 128.0f;
+                //float i = (r - 128) / 128.0f;
+                //float j = (g - 128) / 128.0f;
+                //float k = (b - 128) / 128.0f;
 
-//                SVector n = new SVector(-i, -j, -k);
-                SVector n = new SVector(i, -j, -k, 0);
+
+                // Spec uses RH coordinate system with Z towards viewer, so switch for our Y-up coordinate system.
+                //float i = (r / 255.0f) * 2.0f - 1.0f;
+                //float j = (b / 255.0f) * 2.0f - 1.0f;
+                //float k = (g / 255.0f) * 2.0f - 1.0f;
+
+                float i = (r / 255.0f) * 2.0f - 1.0f;
+                float j = (g / 255.0f) * 2.0f - 1.0f;
+                float k = (b / 255.0f) * 2.0f - 1.0f;
+
+                Debug.Assert(k >= 0.0f);
+
+                //SVector n = new SVector(-i, -j, -k);
+                SVector n = new SVector(i, j, -k, 0);
+
+                n = n * _scaleVector;
+
                 return n.Normalise();
             }
 
