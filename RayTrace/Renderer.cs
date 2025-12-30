@@ -6,6 +6,7 @@ using System.Dynamic;
 using System.Net.NetworkInformation;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Windows.Media.Converters;
 
@@ -37,7 +38,7 @@ namespace RayTrace
             Nb = N.VectorProduct(Nt);   // Possible the order of this shoudl be reversed.
         }
 
-        // Reproject a vector from the LCS to an LCS with the specified normal.
+        // Reproject a vector from the lcs a world space with the specified normal.
         public SVector Reproject(in SVector normal)
         {
             float i = normal.I*Nb.I + normal.J*N.I + normal.K*Nt.I;
@@ -47,7 +48,7 @@ namespace RayTrace
             return new(i, j, k, 0.0f);
         }
 
-        // Reproject a vector from world space to lcs.
+        // Reproject a vector from world space to the lcs.
         public SVector FromWorld(in SVector v)
         {
             float x = v.DotProduct(Nb);
@@ -75,14 +76,16 @@ namespace RayTrace
         public bool UseImportanceSampling { get; set; } = true;
 
         public enum AntiAliasType { None, NoiseGrid, SuperSampling, AdaptiveSupersampling }
-        public AntiAliasType AntiAlias { get; set; } = AntiAliasType.None;
+        public AntiAliasType AntiAlias { get; set; } = AntiAliasType.NoiseGrid;
 
         private int _adaptiveSuperSamplingDepth = 5;
         public int AdaptiveSuperSamplingDepth { set { if (value >= 0) _adaptiveSuperSamplingDepth = value; } get { return _adaptiveSuperSamplingDepth; } }
 
         // Maximum recursive reflection depth when tracing reflections.
-        private int _recursionDepth = 1;
-        public int RecursionDepth { set { if (value >= 0) _recursionDepth = value; } get { return _recursionDepth; } }
+        private int _recursionDepth = 5;
+        public int RecursionDepth { set { if (value <= 5) _recursionDepth = value; } get { return _recursionDepth; } }
+
+        private int _minRecursiveDepth = 2;
 
         // Maximum recursive global illumination depth when tracing scattered rays.
         private int _GIDepth = 1;
@@ -566,21 +569,211 @@ namespace RayTrace
             return c;
         }
 
-        //Random rand = new Random(/*24680*/);
+        private SColour GetPixelColour2(Camera camera, Scene scene, float x, float y)
+        {
+            Random rand = threadRand.Value;
+
+            SColour throughput = SPalette.White;
+            SColour radiance = SPalette.Black;
+
+            SPoint origin = new SPoint(0.0f, 0.0f, 0f);
+            SVector dir = new SVector(x, y, 1f, 0f);
+            Ray ray = new Ray(origin, dir.Normalise());
+
+            for (int depth = 0; depth < RecursionDepth; depth++)
+            {
+                NumThreadRays++;
+                SColour ambient = SPalette.Black;
+                SColour refracted = SPalette.Black;
+                SColour reflected = SPalette.Black;
+                SColour diffuse = SPalette.Black;
+                SColour specular = SPalette.Black;
+                SColour emissive = SPalette.Black;
+
+                HitResult hr = scene.HitTest(camera, ray);
+                if (hr.HasEntry())
+                {
+                    //hr.EntryNormal = new SVector(hr.EntryNormal.X, hr.EntryNormal.Y, -hr.EntryNormal.Z, 0.0f);
+
+                    Shape shape = hr.shape;
+                    Material material = shape.GetMaterial(hr);
+
+                    MaterialType materialType = material.Type;
+
+                    emissive = material?.GetEmissiveColour(hr) ?? SPalette.Black;
+
+                    switch (materialType)
+                    {
+                        case MaterialType.BRDF_Lambertian:
+                        case MaterialType.BRDF_CookTorrence:
+                        case MaterialType.BRDF_Gltf:
+                            {
+                                LocalCoordinateSystem lcs = new LocalCoordinateSystem(hr.EntryNormal);
+
+                                SVector scattered;
+                                float pdf = 1.0f;
+
+                                //SPoint origin = hr.Entry + hr.EntryNormal.Scale(0.01f);
+                                if (UseImportanceSampling)
+                                {
+                                    //SVector v = GetLocalVectorInHemisphere(rand);
+                                    SVector v = material.Brdf.GetSample(hr, lcs, rand, material.GetSColour(hr), out /*float*/ pdf);
+
+                                    scattered = v;
+
+                                    if (scattered != System.Numerics.Vector4.Null())
+                                    {
+                                        Debug.Assert(!float.IsNaN(v.I));
+
+                                        //Debug.Assert(System.Numerics.Vector4.IsNaN(v) != System.Numerics.Vector4.Zero);
+
+                                        scattered = scattered.Normalise();
+
+                                        Debug.Assert(!float.IsNaN(scattered.I));
+                                    }
+                                }
+                                else
+                                {
+                                    SPoint p = hr.Entry + hr.EntryNormal + GetSVectorInSphere(rand);
+                                    scattered = p - hr.Entry;
+                                    scattered = scattered.Normalise();
+
+                                    // Check scattered Vector is in the corect hemishere
+                                    double dpSN = scattered.DotProduct(hr.EntryNormal);
+                                    if (dpSN < 0.0)
+                                    {
+                                        // Reverse the direction on the Vector.
+                                        scattered = -scattered;
+                                        //dpSN = scattered.DotProduct(hr.EntryNormal);
+                                    }
+                                }
+
+                                if (scattered.IsNull()) continue;
+
+                                Debug.Assert(pdf >= 0);
+                                if (pdf == 0.0f) break;
+                                if (scattered.DotProduct(hr.EntryNormal) <= 0.0f) break;
+
+                                float cosTheta = scattered.DotProduct(hr.EntryNormal);
+
+                                SColour brdfColour = material.Brdf.GetBrdfReflectance(hr, lcs, rand, material.GetSColour(hr), scattered) / pdf;
+
+                                SColour brdfWeight = brdfColour * cosTheta;
+
+                                SColour newThroughput = throughput * brdfWeight;
+
+                                if (depth >= 3)
+                                {
+                                    float q = newThroughput.MaxComponent();
+
+                                    if (q < 0.01f) break;
+
+                                    if (rand.NextSingle() > q) break;
+
+                                    newThroughput = newThroughput / q;
+                                }
+
+                                throughput = newThroughput;
+
+                                //                            ray = new Ray(hr.Entry + scattered * 0.01f, scattered);
+                                ray = new Ray(hr.Entry + hr.EntryNormal * 0.01f, scattered);
+
+                                //                            ray.Origin = hr.Entry + scattered * 0.01f;//.Scale(0.01);
+                                //                           ray.Direction = scattered;
+
+                            }
+                            break;
+
+                        case MaterialType.Reflective:
+                            {
+                                // Get reflection angle 'R'.
+                                SVector vecToViewer = ray.Direction.Scale(-1.0f);
+
+                                float dpVE = vecToViewer.DotProduct(hr.EntryNormal);
+
+                                SVector reflection = hr.EntryNormal.Scale(2.0f * dpVE) - vecToViewer;
+                                reflection = reflection.Normalise();
+
+                                ray = new Ray(hr.Entry + hr.EntryNormal * 0.01f, reflection);
+                            }
+                            break;
+
+                        case MaterialType.RefractiveAndReflective:
+                            {
+                                // Schlicks approximation of Fresnal's factor.
+                                // L = k_fresnal * L_reflected_ + (1 - k_fresnal) * L_refracted
+                                float n1 = RefractiveIndex.Vacuum;
+                                float n2 = shape.Material.RefractiveIndex;
+                                float R0 = ((n1 - n2) / (n1 + n2)) * ((n1 - n2) / (n1 + n2));
+
+                                SVector vecToViewer = ray.Direction.Scale(-1.0f).Normalise();
+                                float cosTheta = vecToViewer.DotProduct(hr.EntryNormal);
+
+                                float Rtheta = R0 + (1.0f - R0) * (1.0f * cosTheta);
+
+                                // Probability that light is reflected.
+                                float fresnalFactor = Rtheta;
+
+                                fresnalFactor = Math.Max(0.0f, fresnalFactor);
+                                fresnalFactor = Math.Min(1.0f, fresnalFactor);
+
+                                Debug.Assert(fresnalFactor >= 0.0);
+                                Debug.Assert(fresnalFactor <= 1.0);
+
+                                //ray = ray.Normalise();
+
+                                if (rand.NextSingle() >= fresnalFactor)
+                                {
+                                    // Get reflection angle 'R'.
+                                    //SVector vecToViewer = ray.Direction.Scale(-1.0f);
+
+                                    float dpVE = vecToViewer.DotProduct(hr.EntryNormal);
+
+                                    SVector reflection = hr.EntryNormal.Scale(2.0f * dpVE) - vecToViewer;
+                                    reflection = reflection.Normalise();
+
+                                    ray = new Ray(hr.Entry + hr.EntryNormal * 0.01f, reflection);
+                                }
+                                else
+                                {
+                                    var result = shape.GetRefractedVector(camera, ray.Direction, hr);
+                                    ray = new(result.Item1 + result.Item2*0.01f, result.Item2);
+                                }
+                            }
+                            break;
+
+                        default:
+                            break;
+
+                    }
+
+
+                    //colour = CalculateColour(camera, scene, dir, rand, hr);
+                }
+                else
+                {
+                    // No further bounces, so just add the skydome colour then drop out.
+                    radiance += throughput*scene.GetSkydomeColour(camera, ray.Direction);
+                    break;
+
+                }
+
+                radiance += throughput*emissive;
+            }
+
+            return radiance;
+        }
 
         // scene    Scene we are rendering.
         // ray      Incoming ray that produced HitResult.
         // hr       HitResult that detected intersection.
-        /*private*/ internal SColour CalculateColour(Camera camera, Scene scene, SVector ray, Random rand, HitResult hr, int depth = 0, bool BrdfRay = false)
+        internal SColour CalculateColour(Camera camera, Scene scene, SVector ray, Random rand, HitResult hr, int depth = 0, bool BrdfRay = false)
         {
             ////////Debug.Assert(hr.HasEntry());
 
             if (depth > RecursionDepth) return SPalette.Black;
-            depth++;
 
             NumThreadRays++;
-
-            Shape shape = hr.shape;
 
             SColour ambient = SPalette.Black;
             SColour refracted = SPalette.Black;
@@ -589,13 +782,34 @@ namespace RayTrace
             SColour specular = SPalette.Black;
             SColour emissive = SPalette.Black;
 
+            //SColour throughput = SPalette.White;
+            float throughput = 1.0f;
+
+            Shape shape = hr.shape;
+            if (shape is null) return SPalette.Black;
+
             Material material = shape.GetMaterial(hr);
+            if (material is null) return SPalette.Black;
+
             MaterialType materialType = material.Type;
 
             if (!UseBRDF && (materialType == MaterialType.BRDF_Lambertian || materialType == MaterialType.BRDF_CookTorrence || materialType == MaterialType.BRDF_Gltf))
             {
                 materialType = MaterialType.Diffuse;
             }
+
+            emissive = material?.GetEmissiveColour(hr) ?? SPalette.Black;
+
+            //if (depth > _minRecursiveDepth)
+            //{
+            //    float p = Math.Max(0.05f, 1.0f - material.Reflectivity);
+            //    if (rand.NextSingle() < p) return emissive;
+            //}
+
+
+            depth++;
+
+
 
             switch (materialType)
             {
@@ -607,7 +821,8 @@ namespace RayTrace
 
                         LocalCoordinateSystem lcs = new LocalCoordinateSystem(hr.EntryNormal);
 
-                        if (BrdfRay)
+                        int numSamples = BrdfRay ? NumBRDFSamples / 4 : NumBRDFSamples;
+                        if (/*false &&*/ BrdfRay)
                         {
                             // Don't bother doing a full calculation if this is already a scattered ray from a BRDF surface.
                             Ray ray2 = new Ray(hr.Entry + hr.EntryNormal.Scale(0.01f), hr.EntryNormal);
@@ -629,7 +844,8 @@ namespace RayTrace
                         {
                             SPoint origin = hr.Entry + hr.EntryNormal.Scale(0.01f);
 
-                            for (int i = 0; i < NumBRDFSamples; i++)
+                          for (int i = 0; i < numSamples; i++)
+//                            for (int i = 0; i < 1; i++)
                             {
                                 SVector scattered;
 
@@ -638,7 +854,7 @@ namespace RayTrace
                                 if (UseImportanceSampling)
                                 {
                                     //SVector v = GetLocalVectorInHemisphere(rand);
-                                    SVector v = material.Brdf.GetSample(hr, lcs, rand, out /*float*/ pdf);
+                                    SVector v = material.Brdf.GetSample(hr, lcs, rand, material.GetSColour(hr), out /*float*/ pdf);
 
                                     scattered = v;// lcs.Reproject(v);
 
@@ -675,24 +891,50 @@ namespace RayTrace
                                 //double dp = scattered.DotProduct(hr.EntryNormal);
                                 ///Debug.Assert(dp >= 0.0);
 
-                                Ray ray2 = new Ray(origin /*hr.Entry + hr.EntryNormal.Scale(0.01f)*/, scattered);
+                                SColour incoming;
+
+                                Ray ray2 = new Ray(origin, scattered);
                                 HitResult hr2 = scene.HitTest(camera, ray2);
                                 if (hr2.HasEntry())
                                 {
                                     // Calculate light arriving from the random direction.
-                                    SColour incoming = CalculateColour(camera, scene, scattered, rand, hr2, depth, /*false*/ true);
-                                    //Colour incoming = context.GetColour(scattered, hr2, /*false*/ true);
+                                    /*SColour*/ incoming = CalculateColour(camera, scene, scattered, rand, hr2, depth, /*false*/ true);
 
-                                    L += material.GetBrdfColour(lcs, hr, rand, scattered, incoming)/pdf;
-                                    //L += material.GetEmissiveColour(hr2);
+                                    //L += material.GetBrdfColour(lcs, hr, rand, scattered, incoming)/pdf;
                                 }
                                 else
                                 {
-                                    SColour incoming = scene.GetSkydomeColour(camera, ray2.Direction);
+                                    /*SColour*/ incoming = scene.GetSkydomeColour(camera, ray2.Direction);
 
-                                    L += material.GetBrdfColour(lcs, hr, rand, scattered, incoming)/pdf;
-                                    //L += material.GetEmissiveColour(hr);
+                                    //L += material.GetBrdfColour(lcs, hr, rand, scattered, incoming)/pdf;
                                 }
+
+                                SColour brdfColour = material.GetBrdfColour(lcs, hr, rand, scattered, incoming) / pdf;
+
+                                //throughput = throughput * brdfColour;
+
+                                if (depth > 2)
+                                {
+                                    throughput = brdfColour.MaxComponent();
+                                    throughput = Math.Clamp(throughput, 0.05f, 0.95f);
+
+                                    float r = rand.NextSingle();
+
+                                    if (r > throughput)
+                                    {
+                                        //depth = RecursionDepth + 1;
+                                        return emissive;
+                                    }
+                                    else
+                                    {
+                                        //throughput = throughput / maxThroughput;
+                                    }
+
+                                    brdfColour /= throughput;
+                                }
+
+                                L += brdfColour;
+
                             }
 
                             L /= NumBRDFSamples;
@@ -729,7 +971,7 @@ namespace RayTrace
 
                         }
 
-                        diffuse = L;// new SColour(L);
+                        diffuse = L;
                     }
                     break;
 
@@ -921,6 +1163,8 @@ namespace RayTrace
             emissive = material?.GetEmissiveColour(hr) ?? SPalette.Black;
 
             SColour finalColour = ambient + emissive + diffuse + reflected + refracted + specular;
+
+            //finalColour /= throughput;
 
             return finalColour;
         }
@@ -1148,6 +1392,10 @@ namespace RayTrace
         }
 
         // Render specified block of Scene to the Canvas.
+        // startX   X coordinate of top left of block to render.
+        // startY   Y coordinate of top left of block to render.
+        // numColumns   Width of block to render.
+        // numRows      Height of block to render.
         public void Render(Scene scene, Canvas canvas, int startX, int startY, int numColumns, int numRows, CancellationToken cancellationToken)
         {
             Camera camera = scene.Camera;
@@ -1213,12 +1461,13 @@ namespace RayTrace
                     else if (AntiAlias == AntiAliasType.NoiseGrid)
                     {
                         Random rand = new Random(1234);
-                        float[,] grid = SampleGrid.GetOffsetGrid(rand, 5);
+                        float[,] grid = SampleGrid.GetOffsetGrid(rand, AdaptiveSuperSamplingDepth);
                         SColour colour = SPalette.Black;
+
                         for (int i=0; i<grid.GetLength(0); i++)
                         {
                             colour += GetPixelColour(camera, scene, sceneX + sceneStepX*grid[i, 0], sceneY - sceneStepY*grid[i, 1]);
-
+                            //colour += GetPixelColour2(camera, scene, sceneX + sceneStepX * grid[i, 0], sceneY - sceneStepY * grid[i, 1]);
                         }
                         colour = colour.Scale(1.0f/grid.GetLength(0));
                         canvas.Set(w, h, colour.ToRGB());

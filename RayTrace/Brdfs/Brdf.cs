@@ -7,6 +7,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media.Animation;
 
+using RayTrace;
+
 namespace RayTrace.Brdfs
 {
     internal class BrdfSample
@@ -29,7 +31,9 @@ namespace RayTrace.Brdfs
         protected abstract float Pdf(in SVector v);
 
         // Get random sample direction for this BRDF type.
-        public abstract SVector GetSample(HitResult hr, LocalCoordinateSystem lcs, Random rand, out float pdf);
+        public abstract SVector GetSample(HitResult hr, LocalCoordinateSystem lcs, Random rand, SColour colour, out float pdf);
+
+        public virtual SColour GetBrdfReflectance(HitResult hr, LocalCoordinateSystem lcs, Random rand, SColour colour, SVector source) => RayTrace.SPalette.Pink;
 
         // Calculate the colour of the hit point based on a light sample from the specified direction.
         public abstract SColour GetColour(HitResult hr, LocalCoordinateSystem lcs, Random rand, SColour colour, SVector source, SColour Li);

@@ -129,11 +129,16 @@ namespace RayTrace
 //        public async Task<MaterialTile> MakeTile(Material material)
         public MaterialTile MakeTile(Material material)
         {
+            Logger.Instance.Debug($"Rendering Tile for Material {material.Name}");
+
             sphere.Material = material;
             scene.AddMaterial(sphere.Material);
             scene.CreateCaches();
 
             Renderer renderer = new();
+//            renderer.AntiAlias = Renderer.AntiAliasType.NoiseGrid;
+            renderer.AntiAlias = Renderer.AntiAliasType.None;
+            renderer.AdaptiveSuperSamplingDepth = 5;
             renderer.UseAmbient = true;
             renderer.UseShadows = false;
             //scene.Ambient = new Colour(0.5f, 0.5f, 0.5f);

@@ -35,7 +35,7 @@ namespace RayTrace.Brdfs
         public float Ior { get; set; } = 1.2f;
 
         // Cosine-weighted random vector in local hemisphere.
-        public override SVector GetSample(HitResult hr, LocalCoordinateSystem lcs, Random rand, out float pdf)
+        public override SVector GetSample(HitResult hr, LocalCoordinateSystem lcs, Random rand, SColour colour, out float pdf)
         {
             float r1 = rand.NextSingle();
             float r2 = rand.NextSingle();
@@ -50,6 +50,69 @@ namespace RayTrace.Brdfs
             pdf = y/MathF.PI;
 
             return new SVector(x, y, z, 0f);
+        }
+
+        public override SColour GetBrdfReflectance(HitResult hr, LocalCoordinateSystem lcs, Random rand, SColour colour, SVector source)
+        {
+            Debug.Assert(!source.IsNull());
+            Debug.Assert(!hr.Ray.IsNull());
+
+            colour = colour.ToLinearRGB();
+
+            SVector normal = hr.EntryNormal;
+            SVector viewDirection = hr.Ray.Normalise().Negate();
+            SVector halfVector = (viewDirection + source).Normalise();
+
+            //float fresnel = 1.0f;
+            SColour Fc;
+            if (Type == SurfaceType.Conductor)
+            {
+                float fresnel = CalculateFConductor(halfVector.DotProductSaturated(viewDirection), 1.0f, Ior);
+                Debug.Assert(!float.IsInfinity(fresnel) && !float.IsNaN(fresnel));
+                Fc = colour * fresnel;
+            }
+            else
+            {
+                float fresnel = CalculateFDielectric(halfVector.DotProductSaturated(viewDirection), 1.0f);
+                Fc = new SColour(fresnel, fresnel, fresnel);
+            }
+
+            //float geometry = CalculateG(viewDirection, normal, halfVector)* CalculateG(source, normal, halfVector);
+            float geometryView = CalculateG_GGX(viewDirection, normal);
+            float geometryLight = CalculateG_GGX(source, normal);
+            float geometry = geometryView * geometryLight;
+
+            //            float distribution = CalculateD(source, normal, halfVector);
+            float distribution = CalculateD_GGX(halfVector, normal);
+
+            //            float denominator = 4 * (normal.DotProductSaturated(viewDirection) * halfVector.DotProductSaturated(normal));
+            float denominator = 4 * (normal.DotProductSaturated(viewDirection) * normal.DotProductSaturated(source));
+            denominator = Math.Clamp(denominator, 0.001f, 1f);
+
+            Debug.Assert(denominator > 0f);
+
+            //float dp = normal.DotProductSaturated(viewDirection);
+            //            float dp = normal.DotProductSaturated(source);  // ??
+            float dp = normal.DotProduct(source);  // ??
+
+            //Debug.Assert(dp >= 0f && dp <= 1f);
+
+            //Colour diffuse = Li * Colour * (1 - Shininess) * dp / Math.PI;
+            SColour diffuse = colour * (1f - Shininess) / MathF.PI;
+
+            //float DFG = distribution * fresnel * geometry;
+            SColour DFG = Fc * distribution * geometry;
+            //Colour specular = colour * Li * Shininess * DFG / denominator * dp;
+            //float specularf = Shininess * DFG / denominator;
+            SColour specular = DFG * Shininess / denominator;
+            //Colour specular = new(specularf, specularf, specularf);
+
+            SColour Lo = (diffuse + specular);
+
+            //float pdf = dp/MathF.PI;
+            //Lo /= pdf;
+
+            return Lo.FromLinearRGB();
         }
 
         protected override float F(in SVector v) { return 1f; }
@@ -209,7 +272,7 @@ namespace RayTrace.Brdfs
         {
             Debug.Assert(!source.IsNull());
             Debug.Assert(!hr.Ray.IsNull());
-
+#if false
             SVector normal = hr.EntryNormal;
             SVector viewDirection = hr.Ray.Normalise().Negate();
             SVector halfVector = (viewDirection + source).Normalise();
@@ -259,9 +322,20 @@ namespace RayTrace.Brdfs
             //Colour specular = new(specularf, specularf, specularf);
 
             SColour Lo = (diffuse + specular) * Li * dp;
+#endif
 
-            //float pdf = dp/MathF.PI;
-            //Lo /= pdf;
+            SVector N = hr.EntryNormal.Normalise();
+            SVector L = source;
+
+            float NdotL = N.DotProduct(source);
+            if (NdotL <= 0f)
+            {
+                return SPalette.Black;
+            }
+
+            NdotL = Math.Clamp(NdotL, 0.0001f, 1f);
+
+            SColour Lo = GetBrdfReflectance(hr, lcs, rand, colour, source)*Li*NdotL;
 
             return Lo;
         }

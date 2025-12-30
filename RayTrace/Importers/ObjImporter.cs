@@ -548,6 +548,8 @@ namespace RayTrace.Importers
         // XXX Rewrite using Span<> for performance.
         public ModelData ImportModel(string path)
         {
+            Logger.Instance.Info($"Importing OBJ model {path}");
+
             ModelData modelData = null;
 
             string fileName = Path.GetFileName(path);
@@ -834,19 +836,20 @@ namespace RayTrace.Importers
        {
             List<Material> materials = new();
 
-            foreach (var mat in MaterialLibrary.Materials)
+            foreach (var objMaterial in MaterialLibrary.Materials)
             {
-                Material material = new(MaterialType.Phong /*Diffuse*/);
+//                Material material = new(MaterialType.Phong /*Diffuse*/);
+                Material material = new(MaterialType.BRDF_Lambertian);
 
-                material.Name = mat.Name;
+                material.Name = objMaterial.Name;
 
-                material.PhongShininess = mat.Shininess;
+                material.PhongShininess = objMaterial.Shininess;
                 //material.PhongSpecular = mat.Specular;
                 //material.PhongDiffuse = mat.
 
-                if (mat.BumpFilename != null)
+                if (objMaterial.BumpFilename != null)
                 {
-                    string path = FindTexture(mat.Directory, mat.BumpFilename);
+                    string path = FindTexture(objMaterial.Directory, objMaterial.BumpFilename);
                     if (!String.IsNullOrEmpty(path))
                     {
                         NormalMap normalMap = new(path);
@@ -854,9 +857,9 @@ namespace RayTrace.Importers
                     }
                 }
 
-                if (mat.DiffuseFilename != null)
+                if (objMaterial.DiffuseFilename != null)
                 {
-                    string path = FindTexture(mat.Directory, mat.DiffuseFilename);
+                    string path = FindTexture(objMaterial.Directory, objMaterial.DiffuseFilename);
                     if (!String.IsNullOrEmpty(path))
                     {
                         TextureBitmap texture = new(path);
@@ -866,9 +869,9 @@ namespace RayTrace.Importers
 
                 if (material.Texture == null)
                 {
-                    if (mat.Diffuse != null)
+                    if (objMaterial.Diffuse != null)
                     {
-                        Colour c = new(mat.Diffuse.red, mat.Diffuse.green, mat.Diffuse.blue);
+                        Colour c = new(objMaterial.Diffuse.red, objMaterial.Diffuse.green, objMaterial.Diffuse.blue);
                         TextureSolid texture = new(c);
                         material.Texture = texture;
                     }

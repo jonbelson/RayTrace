@@ -2,7 +2,7 @@
 
 using System.Collections.Generic;
 using System.ComponentModel;
-
+using RayTrace.Brdfs;
 using RayTrace.Importers;
 using RayTrace.Skydomes;
 
@@ -16,7 +16,7 @@ namespace RayTrace
         public List<Shape> Shapes { get; set; } = new List<Shape>();
         public List<Light> Lights { get; set; } = new List<Light>();
 
-        private readonly Material defaultMaterial = new Material(Palette.Grey) { Name = "Default" };
+        private readonly Material defaultMaterial = new Material(MaterialType.BRDF_Lambertian) { Texture = new TextureSolid(Palette.Grey), Brdf = new Lambertian(), Name = "Default" };
 
         private List<Material> materials = new List<Material>();
 

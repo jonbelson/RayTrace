@@ -37,7 +37,7 @@ namespace RayTrace.Brdfs
         }
 
         // Cosine-weighted random vector in local hemisphere.
-        public override SVector GetSample(HitResult hr, LocalCoordinateSystem lcs, Random rand, out float pdf)
+        public override SVector GetSample(HitResult hr, LocalCoordinateSystem lcs, Random rand, SColour colour, out float pdf)
         {
             float r1 = rand.NextSingle();
             float r2 = rand.NextSingle();
@@ -49,9 +49,24 @@ namespace RayTrace.Brdfs
             float z = MathF.Sin(phi)*sqrtR2;
             float y = MathF.Sqrt(1f - r2);
 
-            pdf = y / MathF.PI;
+            //pdf = y / MathF.PI;
 
-            return new SVector(x, y, z, 0f);
+            SVector sample_lcs = new SVector(x, y, z, 0f);
+
+            // convert back to world space.
+            SVector sample = lcs.Reproject(sample_lcs).Normalise();
+            float NdotL = hr.EntryNormal.DotProductSaturated(sample);
+
+            pdf = NdotL / MathF.PI;
+
+            return sample;
+        }
+
+        public override SColour GetBrdfReflectance(HitResult hr, LocalCoordinateSystem lcs, Random rand, SColour colour, SVector source)
+        {
+            float diffuse = F(source);
+
+            return colour * diffuse;
         }
 
         // Calculate Colour at point given in hr based on radiance (L) coming from direction source.
@@ -72,11 +87,14 @@ namespace RayTrace.Brdfs
             */
 
             float dp = hr.EntryNormal.DotProduct(source);
+            if (dp <= 0f)
+            {
+                return SPalette.Black;
+            }
 
-            float pdf = dp/MathF.PI;
-            float diffuse = F(source);///pdf;// Pdf(source);
+            dp = Math.Clamp(dp, 0.0001f, 1f);
 
-            SColour Lo = colour * diffuse * Li * dp;
+            SColour Lo = GetBrdfReflectance(hr, lcs, rand, colour, source) * Li * dp; ;// colour * diffuse * Li * dp;
 
             return Lo;
         }
