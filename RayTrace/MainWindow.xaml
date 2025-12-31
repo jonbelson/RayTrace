@@ -594,7 +594,7 @@
                             </RibbonGalleryCategory>
                         </RibbonGallery>
                     </RibbonComboBox>
-                    <RibbonTextBox x:Name="textBoxAdaptiveSubSamplingDepth" Label="Depth"></RibbonTextBox>
+                    <RibbonTextBox x:Name="textBoxSamplingDepth" Label="Depth"></RibbonTextBox>
                 </RibbonGroup>
                 
                 <RibbonGroup x:Name="groupEngine" Header="Engine">

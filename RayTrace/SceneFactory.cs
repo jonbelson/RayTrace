@@ -461,7 +461,7 @@ namespace RayTrace
             scene.Camera.Target = new Point(0, 0, 0);
 
             //            Model model = scene.ImportModel(@"Data\Models\AntiqueCamera\glTF\AntiqueCamera.gltf");
-              Model model = scene.ImportModel(@"Data\redeye_watcher_rig__horizon_zero_dawn__update\scene.gltf");
+              Model model = scene.ImportModel(@"Data\redeye_watcher_rig__horizon_zero_dawn\scene.gltf");
 //            Model model = scene.ImportModel(@"Data\Models\MetalRoughSpheres\glTF\MetalRoughSpheres.gltf");
 //            Model model = scene.ImportModel(@"Data\Models\MetalRoughSpheresNoTextures\glTF\MetalRoughSpheresNoTextures.gltf");
 

@@ -138,7 +138,7 @@ namespace RayTrace
             Renderer renderer = new();
 //            renderer.AntiAlias = Renderer.AntiAliasType.NoiseGrid;
             renderer.AntiAlias = Renderer.AntiAliasType.None;
-            renderer.AdaptiveSuperSamplingDepth = 5;
+            renderer.SampleDepth = 5;
             renderer.UseAmbient = true;
             renderer.UseShadows = false;
             //scene.Ambient = new Colour(0.5f, 0.5f, 0.5f);

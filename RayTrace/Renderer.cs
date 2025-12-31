@@ -78,8 +78,9 @@ namespace RayTrace
         public enum AntiAliasType { None, NoiseGrid, SuperSampling, AdaptiveSupersampling }
         public AntiAliasType AntiAlias { get; set; } = AntiAliasType.NoiseGrid;
 
-        private int _adaptiveSuperSamplingDepth = 5;
-        public int AdaptiveSuperSamplingDepth { set { if (value >= 0) _adaptiveSuperSamplingDepth = value; } get { return _adaptiveSuperSamplingDepth; } }
+        private int _sampleDepth = 5;
+        public int SampleDepth { set { if (value >= 0) _sampleDepth = value; } get { return _sampleDepth; } }
+        public static int MaxSampleDepth { get => 50; }
 
         // Maximum recursive reflection depth when tracing reflections.
         private int _recursionDepth = 5;
@@ -610,26 +611,29 @@ namespace RayTrace
                             {
                                 LocalCoordinateSystem lcs = new LocalCoordinateSystem(hr.EntryNormal);
 
-                                SVector scattered;
+                                SVector scattered = SVector.Null();
                                 float pdf = 1.0f;
 
                                 //SPoint origin = hr.Entry + hr.EntryNormal.Scale(0.01f);
                                 if (UseImportanceSampling)
                                 {
-                                    //SVector v = GetLocalVectorInHemisphere(rand);
-                                    SVector v = material.Brdf.GetSample(hr, lcs, rand, material.GetSColour(hr), out /*float*/ pdf);
+                                    const int NumRetries = 5;
 
-                                    scattered = v;
-
-                                    if (scattered != System.Numerics.Vector4.Null())
+                                    for (int i = 0; i<NumRetries; i++)
                                     {
-                                        Debug.Assert(!float.IsNaN(v.I));
+                                        //SVector v = GetLocalVectorInHemisphere(rand);
+                                        scattered = material.Brdf.GetSample(hr, lcs, rand, material.GetSColour(hr), out /*float*/ pdf);
 
-                                        //Debug.Assert(System.Numerics.Vector4.IsNaN(v) != System.Numerics.Vector4.Zero);
+                                        if (scattered != System.Numerics.Vector4.Null())
+                                        {
+                                            Debug.Assert(!float.IsNaN(scattered.I));
 
-                                        scattered = scattered.Normalise();
+                                            scattered = scattered.Normalise();
 
-                                        Debug.Assert(!float.IsNaN(scattered.I));
+                                            Debug.Assert(!float.IsNaN(scattered.I));
+
+                                            break;
+                                        }
                                     }
                                 }
                                 else
@@ -644,15 +648,16 @@ namespace RayTrace
                                     {
                                         // Reverse the direction on the Vector.
                                         scattered = -scattered;
-                                        //dpSN = scattered.DotProduct(hr.EntryNormal);
                                     }
                                 }
 
-                                if (scattered.IsNull()) continue;
+                                if (scattered.IsNull())
+                                    break;
 
                                 Debug.Assert(pdf >= 0);
                                 if (pdf == 0.0f) break;
-                                if (scattered.DotProduct(hr.EntryNormal) <= 0.0f) break;
+                                if (scattered.DotProduct(hr.EntryNormal) <= 0.0f)
+                                    break;
 
                                 float cosTheta = scattered.DotProduct(hr.EntryNormal);
 
@@ -1222,7 +1227,7 @@ namespace RayTrace
 
         private SColour GetSubPixelColour(Camera camera, Scene scene, SubSample subSample, int depth)
         {
-            if (depth > AdaptiveSuperSamplingDepth)
+            if (depth > SampleDepth)
                 return SPalette.Black;
 
             float centreX = (subSample.TLx + subSample.BRx) / 2;
@@ -1460,14 +1465,14 @@ namespace RayTrace
                     }
                     else if (AntiAlias == AntiAliasType.NoiseGrid)
                     {
-                        Random rand = new Random(1234);
-                        float[,] grid = SampleGrid.GetOffsetGrid(rand, AdaptiveSuperSamplingDepth);
+                        Random rand = threadRand.Value;// new Random(1234);
+                        float[,] grid = SampleGrid.GetOffsetGrid(rand, SampleDepth);
                         SColour colour = SPalette.Black;
 
                         for (int i=0; i<grid.GetLength(0); i++)
                         {
-                            colour += GetPixelColour(camera, scene, sceneX + sceneStepX*grid[i, 0], sceneY - sceneStepY*grid[i, 1]);
-                            //colour += GetPixelColour2(camera, scene, sceneX + sceneStepX * grid[i, 0], sceneY - sceneStepY * grid[i, 1]);
+                            //colour += GetPixelColour(camera, scene, sceneX + sceneStepX*grid[i, 0], sceneY - sceneStepY*grid[i, 1]);
+                            colour += GetPixelColour2(camera, scene, sceneX + sceneStepX * grid[i, 0], sceneY - sceneStepY * grid[i, 1]);
                         }
                         colour = colour.Scale(1.0f/grid.GetLength(0));
                         canvas.Set(w, h, colour.ToRGB());

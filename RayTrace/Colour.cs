@@ -123,10 +123,11 @@ namespace RayTrace
 
     public class SPalette
     {
-        public static readonly SColour Black = new SColour(0.0f, 0.0f, 0.0f);
-        public static readonly SColour White = new SColour(1.0f, 1.0f, 1.0f);
-        public static readonly SColour Grey = new SColour(0.7f, 0.7f, 0.7f);
-        public static readonly SColour Pink = new SColour(1.0f, 0.75f, 0.8f);
+        public static readonly SColour Black = new(0.0f, 0.0f, 0.0f);
+        public static readonly SColour White = new(1.0f, 1.0f, 1.0f);
+        public static readonly SColour Grey = new(0.7f, 0.7f, 0.7f);
+        public static readonly SColour Pink = new(1.0f, 0.75f, 0.8f);
+        public static readonly SColour Magenta = new(1.0f, 0.0f, 1.0f);
     }
 
     public class Palette
@@ -137,6 +138,7 @@ namespace RayTrace
         public static Colour White { get { return new Colour(1.0f, 1.0f, 1.0f); } }
         public static Colour Black { get { return new Colour(0.0f, 0.0f, 0.0f); } }
         public static Colour Grey { get { return new Colour(0.7f, 0.7f, 0.7f); } }
+        public static Colour Magenta => new(1.0f, 0.0f, 1.0f);
         public static Colour Copper { get { return new Colour(0.82f, 0.475f, 0.23f); } }
         public static Colour MetallicGold { get { return new Colour(212/255f, 175/255f, 55/255f); } }
         public static Colour MetallicSilver { get { return new Colour(170/255f, 169 / 255f, 173 / 255f); } }

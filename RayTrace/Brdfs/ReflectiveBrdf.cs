@@ -6,6 +6,11 @@ namespace RayTrace.Brdfs
 {
     public class ReflectiveBrdf : Brdf
     {
+        public override SColour GetBrdfReflectance(HitResult hr, LocalCoordinateSystem lcs, Random rand, SColour colour, SVector source)
+        {
+            throw new NotImplementedException();
+        }
+
         public override SColour GetColour(HitResult hr, LocalCoordinateSystem lcs, Random rand, SColour colour, SVector source, SColour Li)
         {
             throw new NotImplementedException();

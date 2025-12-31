@@ -399,12 +399,7 @@ namespace RayTrace
 
         private void dialog_Closed(object sender, EventArgs e)
         {
-            //if (_currentTextureListener is not null)
-            //{
-                UnsubscribeFromTexture();
-            //}
-
-            //_currentTextureListener = null;
+            UnsubscribeFromTexture();
         }
     }
 }

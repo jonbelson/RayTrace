@@ -472,6 +472,7 @@ namespace RayTrace.Brdfs
         }
 
         // Return a sample direction in world space.
+        // colour   sRGB surface colour at hit point.
         public override SVector GetSample(HitResult hr, LocalCoordinateSystem lcs, Random rand, SColour colour, out float pdf)
         {
             // Decide which lobe to sample (diffuse or specular).
@@ -538,7 +539,7 @@ namespace RayTrace.Brdfs
 
                 if (sample_lcs.J <= 0.001f)
                 {
-                    pdf = 1e-10f;
+                    //pdf = 1e-10f;
 
                     return SVector.Null();
                 }
@@ -562,7 +563,7 @@ namespace RayTrace.Brdfs
 
             if (NdotH < 0.001f)
             {
-                pdf = 0;
+                //pdf = 0;
                 return SVector.Null();
             }
 
@@ -695,85 +696,6 @@ namespace RayTrace.Brdfs
             Debug.Assert(!source.IsNull());
             Debug.Assert(!hr.Ray.IsNull());
 
-#if false
-
-            //Colour colour = colour2.ToLinearRGB();
-
-            colour = colour.ToLinearRGB();
-
-            //source = source.Normalise();
-
-            SVector N = hr.EntryNormal.Normalise();
-            SVector V = hr.Ray.Normalise().Negate();
-
-            // Decide which lobe to sample (diffuse or specular).
-            Colour metallicRoughnessColour = GetMetallicRoughness(hr).ToLinearRGB();
-            float metalness = GetMetalness(metallicRoughnessColour)*MetallicFactor;
-            float roughness = Math.Max(GetRoughness(metallicRoughnessColour)*RoughnessFactor, 0.0001f);
-
-            roughness = MathF.Max(roughness, 0.0001f);
-
-            float specularWeight = metalness + (1.0f - metalness)*(1.0f - roughness);
-            float diffuseWeight = 1.0f - specularWeight;
-
-            bool sampleDiffuse = _sampleDiffuse;// rand.NextSingle() < diffuseWeight;
-
-            SVector L = source;
-            SVector H = (V + L).Normalise();
-
-            float NdotL = N.DotProduct(L);
-
-            float NdotV = N.DotProductSaturated(V);
-            float NdotH = N.DotProductSaturated(H);
-
-            float VdotH = V.DotProductSaturated(H);
-
-            NdotH = Math.Max(NdotH, 0.001f);
-            VdotH = Math.Max(VdotH, 0.001f);
-
-            NdotL = Math.Clamp(NdotL, 0.0001f, 1f);
-            NdotV = Math.Clamp(NdotV, 0.0001f, 1f);
-
-            //Colour f0 = Colour.LinearBlend(_f0, colour, metalness);
-            SColour f0 = _f0*(1f - metalness) + colour*metalness;
-
-            SColour specularColour = f0;// Colour.LinearBlend(f0 /*_f0*/, colour, metalness);
-
-//            Colour diffuseColour = colour*(Palette.White - specularColour /*_f0*/)*(1f - metalness);
-            SColour diffuseColour = colour*(1f - metalness);
-
-            float reflectance = Math.Max(Math.Max(specularColour.Red, specularColour.Green), specularColour.Blue);
-
-            float reflectance90 = Math.Clamp(reflectance*25.0f, 0.0f, 1.0f);
-
-            // Reflectance0 (normal incidence angle).
-            //Colour specularEnvironmentR0 = specularColour;
-            SColour specularEnvironmentR0 = f0;// specularColour;        Grok
-
-            // Reflectance at grazing angle.
-            //Colour specularEnvironmentR90 = new(reflectance90, reflectance90, reflectance90);
-            SColour specularEnvironmentR90 = /*Palette.White;*/ new(reflectance90, reflectance90, reflectance90);
-
-            SColour F = specularReflection(specularEnvironmentR0, specularEnvironmentR90, VdotH);
-            //float D = CalculateD_GGX(NdotH);
-//            float D = CalculateD_Ref(NdotH, roughness);
-            float D = CalculateD_GGX(NdotH, roughness);
-            //float G = CalculateG_Ref2(NdotL, NdotV, roughness);
-            float G = CalculateG_Smith(NdotL, NdotV, roughness);
-
-//            Colour diffuseContrib = (Palette.White - F)*diffuseColour/MathF.PI;
-            SColour diffuseContrib = diffuseColour*(White - F)/MathF.PI;
-
-            float denom = (4.0f*NdotL*NdotV);
-            SColour specularContrib = new SColour(0f, 0f, 0f);
-            if (denom > 1e-6f)
-            {
-                specularContrib = F*G*D/denom;
-            }
-
-            SColour Lo = (diffuseContrib + specularContrib)*Li*NdotL;
-#endif
-
             SVector N = hr.EntryNormal.Normalise();
             SVector L = source;
 
@@ -801,14 +723,5 @@ namespace RayTrace.Brdfs
 
             return xml;
         }
-
-        //public override XMLBrdf ToXML()
-        //{
-        //    GltfBRDF xml = new();
-
-        //    xml.Name = Name;
-        //    xml.Ior = Ior;
-        //    xml.Roughness = Roughness;
-        //}
     }
 }

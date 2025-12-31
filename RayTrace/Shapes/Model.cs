@@ -914,7 +914,7 @@ namespace RayTrace
 
                     Matrix m = new(xaxis, yaxis, -zaxis);
 
-                    ////////m.Transpose();
+                    ///m.Transpose();
 
                     SVector vMapNormal = m * tNormal;
 

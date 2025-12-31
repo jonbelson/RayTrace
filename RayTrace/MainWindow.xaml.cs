@@ -532,8 +532,8 @@ namespace RayTrace
             checkBoxImportanceSampling.IsChecked = renderer.UseImportanceSampling;
 
             textBoxDepth.Text = renderer.RecursionDepth.ToString();
-            textBoxAdaptiveSubSamplingDepth.Text = renderer.AdaptiveSuperSamplingDepth.ToString();
-            textBoxAdaptiveSubSamplingDepth.IsEnabled = false;
+            textBoxSamplingDepth.Text = renderer.SampleDepth.ToString();
+            textBoxSamplingDepth.IsEnabled = false;
 
             textBoxGINumRays.Text = renderer.NumGIRays.ToString();
             textBoxGIDepth.Text = renderer.GIDepth.ToString();
@@ -745,20 +745,20 @@ namespace RayTrace
             Renderer.AntiAliasType antiAlias = (Renderer.AntiAliasType)comboBoxAntiAlias.SelectedItem;
             renderer.AntiAlias = antiAlias;
 
-            int adaptiveSuperSamplingDepth;
-            if (!Int32.TryParse(textBoxAdaptiveSubSamplingDepth.Text, out adaptiveSuperSamplingDepth))
+            int samplingDepth;
+            if (!Int32.TryParse(textBoxSamplingDepth.Text, out samplingDepth))
             {
-                MessageBox.Show("Recursion depth must be an integer.");
+                MessageBox.Show("Sampling depth must be an integer.");
                 return false;
             }
 
-            if (adaptiveSuperSamplingDepth > 20)
+            if (samplingDepth > Renderer.MaxSampleDepth)
             {
-                _ = MessageBox.Show("Adaptive Super-Sampling depth must be 10 or less.");
+                _ = MessageBox.Show($"Sampling depth must be {Renderer.MaxSampleDepth} or less.");
                 return false;
             }
 
-            renderer.AdaptiveSuperSamplingDepth = adaptiveSuperSamplingDepth;
+            renderer.SampleDepth = samplingDepth;
 
             int width = 800;
             if (!Int32.TryParse(textWidth.Text, out width))
@@ -977,7 +977,7 @@ namespace RayTrace
         private void comboBoxAntiAlias_SelectionChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
             Renderer.AntiAliasType antiAlias = (Renderer.AntiAliasType)comboBoxAntiAlias.SelectedItem;
-            textBoxAdaptiveSubSamplingDepth.IsEnabled = antiAlias == Renderer.AntiAliasType.AdaptiveSupersampling || antiAlias == Renderer.AntiAliasType.NoiseGrid;
+            textBoxSamplingDepth.IsEnabled = antiAlias == Renderer.AntiAliasType.AdaptiveSupersampling || antiAlias == Renderer.AntiAliasType.NoiseGrid;
         }
 
         private void LoadScene_Click(object sender, RoutedEventArgs e)

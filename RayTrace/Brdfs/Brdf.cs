@@ -33,7 +33,7 @@ namespace RayTrace.Brdfs
         // Get random sample direction for this BRDF type.
         public abstract SVector GetSample(HitResult hr, LocalCoordinateSystem lcs, Random rand, SColour colour, out float pdf);
 
-        public virtual SColour GetBrdfReflectance(HitResult hr, LocalCoordinateSystem lcs, Random rand, SColour colour, SVector source) => RayTrace.SPalette.Pink;
+        public abstract SColour GetBrdfReflectance(HitResult hr, LocalCoordinateSystem lcs, Random rand, SColour colour, SVector source);// => RayTrace.SPalette.Magenta;
 
         // Calculate the colour of the hit point based on a light sample from the specified direction.
         public abstract SColour GetColour(HitResult hr, LocalCoordinateSystem lcs, Random rand, SColour colour, SVector source, SColour Li);
