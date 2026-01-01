@@ -58,7 +58,7 @@ namespace RayTrace
 
             public static SVector Null() => Vector4.Zero;
 
-            public SPoint AsPoint() => new SPoint(v.I, v.J, v.K);
+            public SPoint AsPoint() => new SPoint(v.I, v.J, v.K, 1.0f);
 
         }
 

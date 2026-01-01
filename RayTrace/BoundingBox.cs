@@ -30,7 +30,8 @@ namespace RayTrace
             (
                 (MinX + MaxX) / 2.0f,
                 (MinY + MaxY) / 2.0f,
-                (MinZ + MaxZ) / 2.0f
+                (MinZ + MaxZ) / 2.0f,
+                1.0f
             );
         }
 
@@ -110,15 +111,15 @@ namespace RayTrace
         public BoundingBox Transform(Matrix matrix)
         {
             // Rate each of the eight corner points and create a BoundingBox that contains them all.
-            SPoint p1 = matrix * new SPoint(MinX, MinY, MinZ);
-            SPoint p2 = matrix * new SPoint(MinX, MaxY, MinZ);
-            SPoint p3 = matrix * new SPoint(MaxX, MaxY, MinZ);
-            SPoint p4 = matrix * new SPoint(MaxX, MinY, MinZ);
+            SPoint p1 = matrix * new SPoint(MinX, MinY, MinZ, 1.0f);
+            SPoint p2 = matrix * new SPoint(MinX, MaxY, MinZ, 1.0f);
+            SPoint p3 = matrix * new SPoint(MaxX, MaxY, MinZ, 1.0f);
+            SPoint p4 = matrix * new SPoint(MaxX, MinY, MinZ, 1.0f);
 
-            SPoint p5 = matrix * new SPoint(MinX, MinY, MaxZ);
-            SPoint p6 = matrix * new SPoint(MinX, MaxY, MaxZ);
-            SPoint p7 = matrix * new SPoint(MaxX, MaxY, MaxZ);
-            SPoint p8 = matrix * new SPoint(MaxX, MinY, MaxZ);
+            SPoint p5 = matrix * new SPoint(MinX, MinY, MaxZ, 1.0f);
+            SPoint p6 = matrix * new SPoint(MinX, MaxY, MaxZ, 1.0f);
+            SPoint p7 = matrix * new SPoint(MaxX, MaxY, MaxZ, 1.0f);
+            SPoint p8 = matrix * new SPoint(MaxX, MinY, MaxZ, 1.0f);
 
             BoundingBox bb = new();
             bb.AddPoint(p1);
@@ -257,8 +258,8 @@ namespace RayTrace
             distance = float.MaxValue;
 
             // Get bounding box extents.
-            SPoint B0 = new(MinX, MinY, MinZ);
-            SPoint B1 = new(MaxX, MaxY, MaxZ);
+            SPoint B0 = new(MinX, MinY, MinZ, 1.0f);
+            SPoint B1 = new(MaxX, MaxY, MaxZ, 1.0f);
 
             SVector D = p2 - p1;
             //D = D.Normalise();

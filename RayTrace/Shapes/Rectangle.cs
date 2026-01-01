@@ -33,7 +33,7 @@ namespace RayTrace
         // Allow Shape to pre-transform data using the Camera's WorldToView Matrix.
         public override void CreateCache(Camera camera)
         {
-            pos = new(Pos.X, Pos.Y, Pos.Z);
+            pos = new(Pos.X, Pos.Y, Pos.Z, 1.0f);
             normal = new(Normal.I, Normal.J, Normal.K, 0.0f);
             up = new(Up.I, Up.J, Up.K, 0.0f);
         }

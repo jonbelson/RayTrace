@@ -41,7 +41,7 @@ namespace RayTrace
         // Allow Shape to pre-transform data using the Camera's WorldToView Matrix.
         public override void CreateCache(Camera camera)
         {
-            _pos = new SPoint(Pos);
+            _pos = Pos.ToVector4();
             //_pos = camera.WorldToView * Pos;
         }
 

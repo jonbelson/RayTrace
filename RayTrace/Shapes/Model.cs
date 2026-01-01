@@ -428,7 +428,7 @@ namespace RayTrace
                 List<SPoint> points = new List<SPoint>();
                 foreach (XMLPoint p in xmlModel.Points)
                 {
-                    points.Add(new SPoint(p.X, p.Y, p.Z));
+                    points.Add(new SPoint(p.X, p.Y, p.Z, 1.0f));
                 }
                 _modelData.points = points.ToArray();
 

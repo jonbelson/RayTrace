@@ -33,16 +33,16 @@ namespace RayTrace
             List<ModelData.Triangle> triangles = new List<ModelData.Triangle>();
 
 
-            points.Add(new SPoint(0, 0, 0)); // Dummy point.
+            points.Add(new SPoint(0, 0, 0, 1.0f)); // Dummy point.
 
-            points.Add(new SPoint(width/2, height, depth));
-            points.Add(new SPoint(width / 2, height, 0));
-            points.Add(new SPoint(width / 2, 0, depth));
-            points.Add(new SPoint(width / 2, 0, 0));
-            points.Add(new SPoint(-width / 2, height, depth));
-            points.Add(new SPoint(-width / 2, height, 0));
-            points.Add(new SPoint(-width / 2, 0, depth));
-            points.Add(new SPoint(-width / 2, 0, 0));
+            points.Add(new SPoint(width/2, height, depth, 1.0f));
+            points.Add(new SPoint(width / 2, height, 0, 1.0f));
+            points.Add(new SPoint(width / 2, 0, depth, 1.0f));
+            points.Add(new SPoint(width / 2, 0, 0, 1.0f));
+            points.Add(new SPoint(-width / 2, height, depth, 1.0f));
+            points.Add(new SPoint(-width / 2, height, 0, 1.0f));
+            points.Add(new SPoint(-width / 2, 0, depth, 1.0f));
+            points.Add(new SPoint(-width / 2, 0, 0, 1.0f));
 
             // Right
             triangles.Add(MakeTriangle(2, 1, 3));
@@ -103,16 +103,16 @@ namespace RayTrace
             List<SVector> normals = new List<SVector>();
             List<ModelData.Triangle> triangles = new List<ModelData.Triangle>();
 
-            points.Add(new SPoint(0, 0, 0)); // Dummy point.
+            points.Add(new SPoint(0, 0, 0, 1.0f)); // Dummy point.
 
-            points.Add(new SPoint(1, 1, 1));
-            points.Add(new SPoint(1, 1, -1));
-            points.Add(new SPoint(1, -1, 1));
-            points.Add(new SPoint(1, -1, -1));
-            points.Add(new SPoint(-1, 1, 1));
-            points.Add(new SPoint(-1, 1, -1));
-            points.Add(new SPoint(-1, -1, 1));
-            points.Add(new SPoint(-1, -1, -1));
+            points.Add(new SPoint(1, 1, 1, 1.0f));
+            points.Add(new SPoint(1, 1, -1, 1.0f));
+            points.Add(new SPoint(1, -1, 1, 1.0f));
+            points.Add(new SPoint(1, -1, -1, 1.0f));
+            points.Add(new SPoint(-1, 1, 1, 1.0f));
+            points.Add(new SPoint(-1, 1, -1, 1.0f));
+            points.Add(new SPoint(-1, -1, 1, 1.0f));
+            points.Add(new SPoint(-1, -1, -1, 1.0f));
 
             triangles.Add(MakeTriangle(2, 1, 3));
             triangles.Add(MakeTriangle(2, 3, 4));
@@ -157,14 +157,14 @@ namespace RayTrace
             List<SVector> normals = new List<SVector>();
             List<ModelData.Triangle> triangles = new List<ModelData.Triangle>();
 
-            points.Add(new SPoint(0, 0, 0)); // Dummy point.
+            points.Add(new SPoint(0, 0, 0, 1.0f)); // Dummy point.
 
-            points.Add(new SPoint(1, 0, 0));
-            points.Add(new SPoint(-1, 0, 0));
-            points.Add(new SPoint(0, 1, 0));
-            points.Add(new SPoint(0, -1, 0));
-            points.Add(new SPoint(0, 0, 1));
-            points.Add(new SPoint(0, 0, -1));
+            points.Add(new SPoint(1, 0, 0, 1.0f));
+            points.Add(new SPoint(-1, 0, 0, 1.0f));
+            points.Add(new SPoint(0, 1, 0, 1.0f));
+            points.Add(new SPoint(0, -1, 0, 1.0f));
+            points.Add(new SPoint(0, 0, 1, 1.0f));
+            points.Add(new SPoint(0, 0, -1, 1.0f));
 
             triangles.Add(MakeTriangle(1, 3, 5));
             triangles.Add(MakeTriangle(3, 1, 6));
@@ -200,12 +200,12 @@ namespace RayTrace
             List<SVector> normals = new List<SVector>();
             List<ModelData.Triangle> triangles = new List<ModelData.Triangle>();
 
-            points.Add(new SPoint(0, 0, 0)); // Dummy point.
+            points.Add(new SPoint(0, 0, 0, 1.0f)); // Dummy point.
 
-            points.Add(new SPoint(1, 1, 1));
-            points.Add(new SPoint(1, -1, -1));
-            points.Add(new SPoint(-1, 1, -1));
-            points.Add(new SPoint(-1, -1, 1));
+            points.Add(new SPoint(1, 1, 1, 1.0f));
+            points.Add(new SPoint(1, -1, -1, 1.0f));
+            points.Add(new SPoint(-1, 1, -1, 1.0f));
+            points.Add(new SPoint(-1, -1, 1, 1.0f));
 
             //triangles.Add(MakeTriangle(4, 3, 2));
             //triangles.Add(MakeTriangle(3, 4, 1));
@@ -266,7 +266,7 @@ namespace RayTrace
             List<ModelData.Texel> texels = new();
             List<ModelData.Triangle> triangles = new();
 
-            points.Add(new SPoint(0, 0, 0)); // Dummy point.
+            points.Add(new SPoint(0, 0, 0, 1.0f)); // Dummy point.
             normals.Add(SVector.Null());
             texels.Add(new ModelData.Texel());
 
@@ -282,7 +282,7 @@ namespace RayTrace
                 for (int w=0; w<widthPoints; w++)
                 {
 //                    points.Add(new SPoint(x, 0, y));
-                    points.Add(new SPoint(x, y, 0));
+                    points.Add(new SPoint(x, y, 0, 1.0f));
                     normals.Add(new SVector(0, 0, -1, 0));
 
                     ModelData.Texel texel = new() { u = w/(widthPoints - 1.0f), v = h/(heightPoints - 1.0f) };

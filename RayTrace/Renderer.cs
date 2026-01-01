@@ -86,7 +86,8 @@ namespace RayTrace
         private int _recursionDepth = 5;
         public int RecursionDepth { set { if (value <= 5) _recursionDepth = value; } get { return _recursionDepth; } }
 
-        private int _minRecursiveDepth = 2;
+        // Minimum depth before we start to apply Russian roulette termination.
+        private int _minRecursionDepth = 3;
 
         // Maximum recursive global illumination depth when tracing scattered rays.
         private int _GIDepth = 1;
@@ -189,7 +190,7 @@ namespace RayTrace
                 y = -1.0f + 2.0f * rand.NextSingle();
             } while (x * x + y * y > 1.0f);
 
-            return new SPoint(x, y, 0.0f);
+            return new SPoint(x, y, 0.0f, 1.0f);
         }
 
         // Return a random SVector within a unit disc.
@@ -224,7 +225,7 @@ namespace RayTrace
                 z = -1.0f + 2.0f * rand.NextSingle();
             } while (x * x + y * y + z * z > 1.0f);
 
-            return new SPoint(x, y, z);
+            return new SPoint(x, y, z, 1.0f);
         }
 
         // Return a random Vector within a unit sphere.
@@ -476,7 +477,7 @@ namespace RayTrace
                 {
                     SVector jitteredRay = GetJitteredRay(lookAt, rayNum, L, distance, light.Radius, rand);
 
-                    Ray ray2 = new Ray(pos, jitteredRay.AsPoint());
+                    Ray ray2 = Ray.FromPoints(pos, jitteredRay.AsPoint());
                     bool hit = scene.HitTestFast(camera, ray2);
                     if (hit)
                     {
@@ -577,7 +578,7 @@ namespace RayTrace
             SColour throughput = SPalette.White;
             SColour radiance = SPalette.Black;
 
-            SPoint origin = new SPoint(0.0f, 0.0f, 0f);
+            SPoint origin = new SPoint(0.0f, 0.0f, 0f, 1.0f);
             SVector dir = new SVector(x, y, 1f, 0f);
             Ray ray = new Ray(origin, dir.Normalise());
 
@@ -667,7 +668,7 @@ namespace RayTrace
 
                                 SColour newThroughput = throughput * brdfWeight;
 
-                                if (depth >= 3)
+                                if (depth >= _minRecursionDepth)
                                 {
                                     float q = newThroughput.MaxComponent();
 
@@ -1048,7 +1049,7 @@ namespace RayTrace
                                 }
                                 else
                                 {
-                                    if (scene.HitTestFast(camera, new Ray(hr.Entry, vecToLight.AsPoint())))
+                                    if (scene.HitTestFast(camera, Ray.FromPoints(hr.Entry, vecToLight.AsPoint())))
                                     {
                                         continue;
                                     }
@@ -1344,7 +1345,7 @@ namespace RayTrace
                 SVector v = viewToPixel.Normalise();
                 float f = camera.DepthOfField; // camera.GetViewVector().Magnitude();
 
-                SPoint e = new SPoint(0.0f, 0.0f, 0.0f);
+                SPoint e = new SPoint(0.0f, 0.0f, 0.0f, 1.0f);
                 SPoint P = e + v * (dtick / (d / (d + f)));  // Point on focal plane.
                 float aperture = camera.Aperture;
 
@@ -1359,7 +1360,7 @@ namespace RayTrace
                 if (numSamples == 0) numSamples = 1;
                 for (int i = 0; i < numSamples; i++)
                 {
-                    SPoint o = new SPoint(x, y, 1.0f);
+                    SPoint o = new SPoint(x, y, 1.0f, 1.0f);
                     SVector offset = GetSVectorOnDisc(rand) * aperture * pixelWidth;
                     o += offset;
                     SVector dir = P - o;
@@ -1376,7 +1377,7 @@ namespace RayTrace
             }
             else
             {
-                SPoint origin = new SPoint(0.0f, 0.0f, 0f);
+                SPoint origin = new SPoint(0.0f, 0.0f, 0f, 1.0f);
                 SVector dir = new SVector(x, y, 1, 0);
                 Ray ray = new Ray(origin, dir.Normalise());
 

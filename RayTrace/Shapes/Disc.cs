@@ -21,7 +21,7 @@ namespace RayTrace
             radius = Scale;
             radiusSquared = radius * radius;
 
-            pos = new(Pos.X, Pos.Y, Pos.Z);
+            pos = Pos.ToSPoint();
             normal = new(Normal.I, Normal.J, Normal.K, 0f);
         }
 

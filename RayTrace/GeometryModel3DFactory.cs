@@ -601,7 +601,7 @@ namespace RayTrace
         {
             var (Min, _) = shape.GetBoundingBox();
 
-            ModelAxis3D axis = new(new(Min));
+            ModelAxis3D axis = new(Min.ToVector4());
 
             var axisRotationX = new AxisAngleRotation3D(new Vector3D(1, 0, 0), -shape.RotateX);
             var axisRotationY = new AxisAngleRotation3D(new Vector3D(0, 1, 0), -shape.RotateY);
@@ -627,7 +627,7 @@ namespace RayTrace
         {
             var (Min, Max) = shape.GetBoundingBox();
 
-            BoundingBox3D boundingBox = new(new(Min), new(Max));
+            BoundingBox3D boundingBox = new(Min.ToVector4(), Max.ToVector4());
 
             var axisRotationX = new AxisAngleRotation3D(new Vector3D(1, 0, 0), -shape.RotateX);
             var axisRotationY = new AxisAngleRotation3D(new Vector3D(0, 1, 0), -shape.RotateY);

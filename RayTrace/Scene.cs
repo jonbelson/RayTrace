@@ -116,7 +116,7 @@ namespace RayTrace
         // Return closest hit object.
         public HitResult HitTest(Camera camera, SPoint p1, SPoint p2)
         {
-            Ray ray = new Ray(p1, p2);
+            Ray ray = Ray.FromPoints(p1, p2);
             return HitTest(camera, ray);
         }
 
@@ -139,7 +139,7 @@ namespace RayTrace
         // Return true if an object is intersected.
         public bool HitTestFast(Camera camera, SPoint p1, SPoint p2)
         {
-            Ray ray = new Ray(p1, p2);
+            Ray ray = Ray.FromPoints(p1, p2);
 
             return HitTestFast(camera, ray);
         }

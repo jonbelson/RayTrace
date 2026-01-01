@@ -789,7 +789,7 @@ namespace RayTrace.Importers
                         Vector3 v = new(position.x, position.y, position.z);
                         //                    v = Vector3.Transform(v, node.matrix);
                         v = Vector3.Transform(v, m /*matrix*/);
-                        points.Add(new SPoint(v.X, v.Y, -v.Z));
+                        points.Add(new SPoint(v.X, v.Y, -v.Z, 1.0f));
                     }
 
                     if (primitive.texCoords != null)

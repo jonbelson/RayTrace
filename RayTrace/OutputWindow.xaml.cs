@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -63,6 +64,8 @@ namespace RayTrace
     /// </summary>
     public partial class OutputWindow : Window, INotifyPropertyChanged
     {
+        private ConcurrentQueue<RenderBlock> _completedBlocks = new();
+
         public Canvas OutputCanvas { get; set; }
 
         public Scene Scene { get; set; }
@@ -107,23 +110,30 @@ namespace RayTrace
             Error
         }
 
-        public OutputWindow(/*Scene scene, Renderer renderer, int width, int height, List<RenderBlock> renderBlocks*/)
+        private void CopyAnyBlocks()
+        {
+            if (_completedBlocks.IsEmpty) return;
+
+            while (_completedBlocks.TryDequeue(out RenderBlock block))
+            {
+                Update(block.StartX, block.StartY, block.Width, block.Height);
+            }
+        }
+
+        public OutputWindow()
         {
             InitializeComponent();
 
-//            BlocksDone = 10;
-
             DataContext = this;
 
-/*            _scene = scene;
-            _renderer = renderer;
+            CompositionTarget.Rendering += (s, e) =>
+            {
+                // This event fires ~60 times per second.
+                // Could use it to update a progress bar.
+                CopyAnyBlocks();
+            };
 
-            _width = width;
-            _height = height;
-
-            this.renderBlocks = renderBlocks;
-
-            DoRender();*/
+            //SizeToContent = SizeToContent.WidthAndHeight;
         }
 
         private void GetDpi(out double dpiX, out double dpiY)
@@ -148,9 +158,6 @@ namespace RayTrace
             GetDpi(out double dpiX, out double dpiY);
 
             Bitmap = new WriteableBitmap(OutputCanvas.Width, OutputCanvas.Height, dpiX, dpiY, PixelFormats.Bgr32, null);
-
-            image.MinWidth = width;
-            image.MinHeight = height;
         }
 
         public void Update()
@@ -158,35 +165,38 @@ namespace RayTrace
             Update(0, 0, OutputCanvas.Width, OutputCanvas.Height);
         }
 
-        public void Update(int startX, int startY, int numColumns, int numRows)
+        // Copy block from OutputCanvas to Bitmap and update image.
+        public unsafe void Update(int startX, int startY, int numColumns, int numRows)
         {
+            Bitmap.Lock();
+
             try
             {
-                Bitmap.Lock();
-
                 for (int y = startY; y < startY + numRows; y++)
                 {
                     IntPtr buffer = Bitmap.BackBuffer + y * Bitmap.BackBufferStride;
-                    //                  for (int x = 0; x < canvas.Width; x++)
                     buffer += 4 * startX;
+
+                    fixed (uint* srcPtr = OutputCanvas.buffer)
+                    {
+                        int offset = OutputCanvas.GetOffset(startX, y);
+                        Buffer.MemoryCopy((void*)(srcPtr + offset), (void*)buffer, numColumns*4, numColumns*4);
+                    }
+/*
                     for (int x = startX; x < startX + numColumns; x++)
                     {
-                        //int val = data[y * width + x];
-                        //val %= palettes[currentPalette].colours.Count;
-                        //Color c = palettes[currentPalette].colours[val];
-
                         UInt32 c = OutputCanvas.Get(x, y);
 
-                        //System.Runtime.InteropServices.Marshal.WriteInt32(buffer, GetColour(0, 0, (byte)val));
                         System.Runtime.InteropServices.Marshal.WriteInt32(buffer, (int)c);
 
                         buffer += 4;
                     }
-
+*/
                 }
-                Bitmap.AddDirtyRect(new Int32Rect(0, 0, OutputCanvas.Width, OutputCanvas.Height));
 
-                //image.Source = bitmap;
+//                Bitmap.AddDirtyRect(new Int32Rect(0, 0, OutputCanvas.Width, OutputCanvas.Height));
+                Bitmap.AddDirtyRect(new Int32Rect(startX, startY, numColumns, numRows));
+
                 image.Source = Bitmap;
 
                 BlocksDone++;
@@ -328,28 +338,30 @@ namespace RayTrace
                 int idx = i;
                 Task renderTask = Task.Factory.StartNew(() =>
                 {
-                try
-                {
-                    if (token.IsCancellationRequested) return;
-
-                    Thread.CurrentThread.Name = $"Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...";
-                    Debug.WriteLine($"Starting Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...");
-
-                    Renderer.Render(Scene, OutputCanvas, rb.StartX, rb.StartY, rb.Width, rb.Height, token);
-                    Debug.WriteLine($"Done Task {idx}...");
-
-                    // Run on UI thread.
-                    Dispatcher.BeginInvoke(DispatcherPriority.Normal, () =>
-                            {
-                                Update(rb.StartX, rb.StartY, rb.Width, rb.Height);
-                            }
-                        );
-                    }
-                    catch (Exception e)
+                    try
                     {
-                        Logger.Instance.Warn($"{e.Message}");
-                        throw;
+                        if (token.IsCancellationRequested) return;
+
+                        Thread.CurrentThread.Name = $"Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...";
+                        Debug.WriteLine($"Starting Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...");
+
+                        Renderer.Render(Scene, OutputCanvas, rb.StartX, rb.StartY, rb.Width, rb.Height, token);
+                        Debug.WriteLine($"Done Task {idx}...");
+
+                        _completedBlocks.Enqueue(rb);
+
+                        // Run on UI thread.
+                        //Dispatcher.BeginInvoke(DispatcherPriority.Normal, () =>
+                        //    {
+                        //        Update(rb.StartX, rb.StartY, rb.Width, rb.Height);
+                        //    }
+                        //);
                     }
+                        catch (Exception e)
+                        {
+                            Logger.Instance.Warn($"{e.Message}");
+                            throw;
+                        }
                 });
                 tasks.Add(renderTask);
                 i++;
@@ -404,6 +416,8 @@ namespace RayTrace
             Trace.WriteLine("Number rays: " + Renderer.NumRays);
             Trace.WriteLine("Rays per second: " + 1000.0*Renderer.NumRays/stopwatch.ElapsedMilliseconds);
 */
+
+            _completedBlocks.Clear();
 
             return status;
         }

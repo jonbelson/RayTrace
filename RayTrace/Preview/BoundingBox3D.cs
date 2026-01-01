@@ -128,7 +128,7 @@ namespace RayTrace.Preview
             float dy = max.Y - min.Y;
             float dz = max.Z - min.Z;
 
-            SPoint mid = new((min.X + max.X)/2.0f, (min.Y + max.Y)/2.0f, (min.Z + max.Z)/2.0f);
+            SPoint mid = new((min.X + max.X)/2.0f, (min.Y + max.Y)/2.0f, (min.Z + max.Z)/2.0f, 1.0f);
 
             var scale = new ScaleTransform3D(dx/1.0f, dy/1.0f, dz/1.0f);
             //var translate = new TranslateTransform3D(mid.X, mid.Y/2.0f, -mid.Z/2.0f);

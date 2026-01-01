@@ -6,7 +6,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:RayTrace"
         mc:Ignorable="d"
-        Title="Output Window" Height="800" Width="800" Closing="outputWindow_Closing">
+        Title="Output Window" Height="800" Width="800" Closing="outputWindow_Closing" ResizeMode="CanResizeWithGrip">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition></ColumnDefinition>
@@ -16,7 +16,9 @@
             <RowDefinition></RowDefinition>
             <RowDefinition Height="Auto"></RowDefinition>
         </Grid.RowDefinitions>
-        <Image x:Name="image" HorizontalAlignment="Center" MinHeight="400" VerticalAlignment="Center" MinWidth="400" Grid.ColumnSpan="2" MouseDown="image_MouseDown"/>
+        <Border Grid.ColumnSpan="2" Background="Black">
+            <Image x:Name="image" HorizontalAlignment="Center" MinHeight="400" VerticalAlignment="Center" MinWidth="400" Grid.ColumnSpan="2" Stretch="Uniform" MouseDown="image_MouseDown"/>
+        </Border>
         <Grid Grid.Row="1" Grid.ColumnSpan="2" >
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"></ColumnDefinition>

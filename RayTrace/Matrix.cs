@@ -131,20 +131,20 @@ namespace RayTrace
             return vv;
         }
 
+        /*
         public static SPoint operator*(Matrix m, in SPoint p)
         {
             SPoint pp = new SPoint
             (
                 m.M11 * p.X + m.M12 * p.Y + m.M13 * p.Z + m.M14 * 1.0f,
                 m.M21 * p.X + m.M22 * p.Y + m.M23 * p.Z + m.M24 * 1.0f,
-                m.M31 * p.X + m.M32 * p.Y + m.M33 * p.Z + m.M34 * 1.0f
+                m.M31 * p.X + m.M32 * p.Y + m.M33 * p.Z + m.M34 * 1.0f,
+                1.0f
             );
 
             return pp;
         }
-
-
-
+        */
 
         public static Vector operator*(Matrix m, Vector v)
         {
@@ -515,6 +515,7 @@ namespace RayTrace
             }
         }
 
+        /*
         unsafe public void MatrixMultiplySIMD(SVector[] vectors, SVector[] results)
         {
             //fixed (float* matrixPtr = M, SVector* vectorPtr = vectors)
@@ -533,6 +534,7 @@ namespace RayTrace
                     }
                 }
         }
+        */
 
         unsafe static void MatrixMultiplySIMD(float* matrixPtr, float* vectorsPtr, float* resultsPtr, int numVectors)
         {

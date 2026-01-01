@@ -196,11 +196,11 @@ namespace RayTrace
 
 
 
-            SPoint origin = new(0, 0, 0);
+            SPoint origin = new(0, 0, 0, 1.0f);
             SVector dir = new(x, y, 1.0f, 0f);
             Ray ray = new(origin, dir.Normalise());
 
-            SPoint planePos = new(0, 0, 0);
+            SPoint planePos = new(0, 0, 0, 1.0f);
             SVector planeNormal = new(0, 1, 0, 0);
 
             SPoint vPos = _scene.Camera.WorldToView*planePos;

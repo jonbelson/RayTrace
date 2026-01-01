@@ -31,7 +31,7 @@ namespace RayTrace
         // Allow Shape to pre-transform data using the Camera's WorldToView Matrix.
         public override void CreateCache(Camera camera)
         {
-            pos = new(Pos.X, Pos.Y, Pos.Z);
+            pos = new(Pos.X, Pos.Y, Pos.Z, 1.0f);
         }
 
         private void Swap(ref float d1, ref float d2)
@@ -93,8 +93,8 @@ namespace RayTrace
             SPoint wPos = camera.WorldToView * pos;
 
             // Get bounding box extents.
-            SPoint B0 = new SPoint(wPos.X - Width / 2, wPos.Y - Height / 2, wPos.Z - Depth / 2);
-            SPoint B1 = new SPoint(wPos.X + Width / 2, wPos.Y + Height / 2, wPos.Z + Depth / 2);
+            SPoint B0 = new SPoint(wPos.X - Width / 2, wPos.Y - Height / 2, wPos.Z - Depth / 2, 1.0f);
+            SPoint B1 = new SPoint(wPos.X + Width / 2, wPos.Y + Height / 2, wPos.Z + Depth / 2, 1.0f);
 
             SVector D = p2 - p1;
             //D = D.Normalise();

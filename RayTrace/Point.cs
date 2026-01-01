@@ -5,6 +5,31 @@ using System.Numerics;
 
 namespace RayTrace
 {
+    // Extension methods to make SPoint act more like Point.
+    public static class SPointExtensionMethods
+    {
+        extension(SPoint p)
+        {
+            public float X => p.X;
+            public float Y => p.Y;
+            public float Z => p.Z;
+            public float W => p.W;
+
+            public static SPoint New(float x, float y, float z) => new(x, y, z, 1.0f);
+
+            public SPoint Offset(in SVector v) => new(p.X + v.I, p.Y + v.J, p.Z + v.K, 1.0f);
+
+            public SVector Difference(in SPoint pp) => new(pp.X - p.X, pp.Y - p.Y, pp.Z - p.Z, 0);
+
+            public float Distance(in SPoint pp)
+            {
+                SVector s = p.Difference(pp);
+                return s.Magnitude();
+            }
+        }
+    }
+
+#if false
     public readonly struct SPoint
     {
         public readonly float X { get; }
@@ -32,6 +57,7 @@ namespace RayTrace
         public Vector4 ToVector4() => new(X, Y, Z, 0);
         public Vector4 ToPoint4() => new(X, Y, Z, 1);
     }
+#endif
 
     // Represent a point in 3D space.
     public class /*struct*/ Point : INotifyPropertyChanged
@@ -85,5 +111,6 @@ namespace RayTrace
         }
 
         public Vector4 ToVector4() => new(X, Y, Z, 0);
+        public SPoint ToSPoint() => new(X, Y, Z, 1.0f);
     }
 }

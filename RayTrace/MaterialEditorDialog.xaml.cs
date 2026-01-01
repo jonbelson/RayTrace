@@ -72,9 +72,16 @@ namespace RayTrace
             MaterialTile = materialTileMaker.MakeTile(material);
             //WriteableBitmap wb = BitmapToWriteableBitmap(materialTile.Bitmap);
 
+            preview.Source = null;
+
             if (MaterialTile.Bitmap != null)
             {
                 WriteableBitmap wb = MaterialTile.Bitmap.ToWriteableBitmap();
+
+                if (wb.CanFreeze)
+                {
+                    wb.Freeze();
+                }
 
                 preview.Source = wb;
             }

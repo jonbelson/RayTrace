@@ -313,7 +313,7 @@ namespace RayTrace
             InitializeComponent();
 
             //List<SPoint> points = new List<SPoint>() { new SPoint(0, 0, 0), new SPoint(1, 0, 0), new SPoint(1, 1, 0), new SPoint(0, 1, 0) };
-            List<SPoint> points = new List<SPoint>() { new SPoint(0, 0, 0), new SPoint(5, 0, 0), new SPoint(5, 5, 0), new SPoint(0, 5, 0) };
+            List<SPoint> points = new List<SPoint>() { new SPoint(0, 0, 0, 1.0f), new SPoint(5, 0, 0, 1.0f), new SPoint(5, 5, 0, 1.0f), new SPoint(0, 5, 0, 1.0f) };
             Triangulator triangulator = new(points);
 
             if (triangulator.Triangulate())
@@ -335,8 +335,8 @@ namespace RayTrace
 
                 SPoint[] p =
                 [
-                    new(0.0f, 0.0f, 0.0f),
-                    new(10.0f, 20.0f, 30.0f)
+                    new(0.0f, 0.0f, 0.0f, 1.0f),
+                    new(10.0f, 20.0f, 30.0f, 1.0f)
                 ];
 
                 SPoint[] res = new SPoint[2];

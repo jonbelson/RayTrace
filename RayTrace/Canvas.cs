@@ -78,6 +78,15 @@ namespace RayTrace
             return 0;
         }
 
+        public int GetOffset(int x, int y)
+        {
+            if (InRange(x, y))
+            {
+                return y * Width + x;
+            }
+            return 0;
+        }
+
         public bool Save(string path)
         {
             return Save(path, ImageFormat.Tiff);
