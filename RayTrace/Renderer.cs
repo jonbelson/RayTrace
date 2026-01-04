@@ -78,8 +78,8 @@ namespace RayTrace
         public enum AntiAliasType { None, NoiseGrid, SuperSampling, AdaptiveSupersampling }
         public AntiAliasType AntiAlias { get; set; } = AntiAliasType.NoiseGrid;
 
-        private int _sampleDepth = 5;
-        public int SampleDepth { set { if (value >= 0) _sampleDepth = value; } get { return _sampleDepth; } }
+        private int _sampleDepth = 15;
+        public int SampleDepth { set { _sampleDepth = Math.Clamp(value, 0, MaxSampleDepth); } get { return _sampleDepth; } }
         public static int MaxSampleDepth { get => 50; }
 
         // Maximum recursive reflection depth when tracing reflections.
@@ -1444,8 +1444,6 @@ namespace RayTrace
             float sceneY = sceneStartY;
             sceneY -= startY * sceneStepY;
 
-            //Debug.WriteLine("startX {0} startY {1} numRows {2} numCols {3}", startX, startY, numColumns, numRows);
-
             for (int h = startY; h < startY + numRows; h++)
             {
                 if (cancellationToken.IsCancellationRequested)
@@ -1469,6 +1467,8 @@ namespace RayTrace
                         Random rand = threadRand.Value;// new Random(1234);
                         float[,] grid = SampleGrid.GetOffsetGrid(rand, SampleDepth);
                         SColour colour = SPalette.Black;
+
+                        //canvas.Set(w, h, SPalette.Magenta.ToRGB());
 
                         for (int i=0; i<grid.GetLength(0); i++)
                         {

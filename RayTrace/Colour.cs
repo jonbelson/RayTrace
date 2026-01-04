@@ -126,8 +126,10 @@ namespace RayTrace
         public static readonly SColour Black = new(0.0f, 0.0f, 0.0f);
         public static readonly SColour White = new(1.0f, 1.0f, 1.0f);
         public static readonly SColour Grey = new(0.7f, 0.7f, 0.7f);
+        public static readonly SColour Red = new(1.0f, 0.0f, 0.0f);
         public static readonly SColour Pink = new(1.0f, 0.75f, 0.8f);
         public static readonly SColour Magenta = new(1.0f, 0.0f, 1.0f);
+        public static readonly SColour Orange = new(1.0f, 165.0f/255.0f, 0.0f);
     }
 
     public class Palette

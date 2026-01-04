@@ -174,7 +174,10 @@ namespace RayTrace
             RefractiveIndex = xmlMaterial.RefractiveIndex;
 
             EmissiveStrength = xmlMaterial.EmissiveStrength;
-            EmissiveFactor = new(xmlMaterial.EmissiveFactor);
+            if (xmlMaterial.EmissiveFactor is not null)
+            {
+                EmissiveFactor = new(xmlMaterial.EmissiveFactor);
+            }
 
             if (xmlMaterial.NormalMap is not null)
             {

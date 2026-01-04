@@ -14,7 +14,7 @@ namespace RayTrace
             Vector v = p1 - p2;
             Vector v2 = p1.Difference(p2);
 
-            Canvas canvas = new Canvas(1000, 1000, Palette.Black);
+            Canvas canvas = new Canvas(1000, 1000, SPalette.Black);
   //          Canvas canvas = new Canvas(400, 400, Palette.Black);
             //            Canvas canvas = new Canvas(100, 100, Palette.Black);
             //canvas.Background = 0xff0000;

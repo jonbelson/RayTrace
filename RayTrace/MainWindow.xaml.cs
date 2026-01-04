@@ -645,7 +645,7 @@ namespace RayTrace
 
             //renderDirections.ItemsSource = renderDirection;
             comboBoxDirection.SelectedItem = RenderDirection.CentreOut;
-            comboBoxAntiAlias.SelectedItem = Renderer.AntiAliasType.None;
+            comboBoxAntiAlias.SelectedItem = Renderer.AntiAliasType.NoiseGrid;
 
             //Entities = new List<Entity>();
             //Entities = new ObservableCollection<Entity>();
@@ -823,6 +823,7 @@ namespace RayTrace
                 OutputWindow.RenderStatus status = await outputWindow.DoRender(numRenderBlocks, direction);
 
                 stopWatch.Stop();
+                outputWindow.Update(0, 0, outputWindow.OutputCanvas.Width, outputWindow.OutputCanvas.Height);
 
                 if (status == OutputWindow.RenderStatus.Complete)
                 {

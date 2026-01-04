@@ -144,7 +144,7 @@ namespace RayTrace
             //scene.Ambient = new Colour(0.5f, 0.5f, 0.5f);
             renderer.NumBRDFSamples = 100;
             renderer.RecursionDepth = 2;
-            Canvas canvas = new(Size, Size, Palette.Red);
+            Canvas canvas = new(Size, Size, SPalette.Red);
             //renderer.Render(scene, canvas);
 
             //await DoRender(renderer, canvas);

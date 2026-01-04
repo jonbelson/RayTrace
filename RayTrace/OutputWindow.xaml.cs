@@ -114,6 +114,8 @@ namespace RayTrace
         {
             if (_completedBlocks.IsEmpty) return;
 
+            Debug.Assert(_completedBlocks.Count != 0);
+
             while (_completedBlocks.TryDequeue(out RenderBlock block))
             {
                 Update(block.StartX, block.StartY, block.Width, block.Height);
@@ -129,8 +131,9 @@ namespace RayTrace
             CompositionTarget.Rendering += (s, e) =>
             {
                 // This event fires ~60 times per second.
-                // Could use it to update a progress bar.
                 CopyAnyBlocks();
+                
+                //Update(0, 0, OutputCanvas.Width, OutputCanvas.Height);
             };
 
             //SizeToContent = SizeToContent.WidthAndHeight;
@@ -308,6 +311,7 @@ namespace RayTrace
             //_bitmap = new WriteableBitmap(_canvas.Width, _canvas.Height, dpiX, dpiY, PixelFormats.Bgr32, null);
 
             OutputCanvas.Clear();
+            _completedBlocks.Enqueue(new RenderBlock() { StartX=0, StartY=0, Width=OutputCanvas.Width, Height=OutputCanvas.Height } );
 
             Scene.Camera.UpdateMatrix();    // XXX Needed?
 
@@ -325,7 +329,7 @@ namespace RayTrace
             Renderer.NumRays = 0;
 
             //OutputCanvas.Background = 0xff00ff00;
-            OutputCanvas.Clear();
+            //OutputCanvas.Clear();
 
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -333,9 +337,11 @@ namespace RayTrace
             List<Task> tasks = new();
 
             int i = 0;
+
             foreach (RenderBlock rb in renderBlocks)
             {
                 int idx = i;
+
                 Task renderTask = Task.Factory.StartNew(() =>
                 {
                     try
@@ -345,23 +351,21 @@ namespace RayTrace
                         Thread.CurrentThread.Name = $"Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...";
                         Debug.WriteLine($"Starting Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...");
 
+                        OutputCanvas.DrawRectangle(rb.StartX, rb.StartY, rb.Width, rb.Height, SPalette.Orange);
+                        _completedBlocks.Enqueue(rb);
+
                         Renderer.Render(Scene, OutputCanvas, rb.StartX, rb.StartY, rb.Width, rb.Height, token);
                         Debug.WriteLine($"Done Task {idx}...");
 
                         _completedBlocks.Enqueue(rb);
-
-                        // Run on UI thread.
-                        //Dispatcher.BeginInvoke(DispatcherPriority.Normal, () =>
-                        //    {
-                        //        Update(rb.StartX, rb.StartY, rb.Width, rb.Height);
-                        //    }
-                        //);
+                        //_completedBlocks.Enqueue(new RenderBlock() { StartX=0, StartY=0, Width=OutputCanvas.Width, Height=OutputCanvas.Height });
+                        //_completedBlocks.Enqueue(new RenderBlock() { StartX=x, StartY=y, Width=width, Height=height });
                     }
-                        catch (Exception e)
-                        {
-                            Logger.Instance.Warn($"{e.Message}");
-                            throw;
-                        }
+                    catch (Exception e)
+                    {
+                        Logger.Instance.Warn($"{e.Message}");
+                        throw;
+                    }
                 });
                 tasks.Add(renderTask);
                 i++;
@@ -385,6 +389,8 @@ namespace RayTrace
                 status = RenderStatus.Complete;
 
                 //Update(0, 0, OutputCanvas.Width, OutputCanvas.Height);
+                _completedBlocks.Enqueue(new RenderBlock() { StartX=0, StartY=0, Width=OutputCanvas.Width, Height=OutputCanvas.Height });
+                //Bitmap.AddDirtyRect(new Int32Rect(0, 0, OutputCanvas.Width, OutputCanvas.Height));
 
             }
             catch (Exception e)

@@ -23,7 +23,7 @@ namespace RayTrace
         //
         // Constructor
         //
-        public Canvas(int width, int height, Colour Background) : this(width, height, Background.ToRGB()) { }
+        public Canvas(int width, int height, SColour Background) : this(width, height, Background.ToRGB()) { }
 
         //
         // Constructor
@@ -40,15 +40,33 @@ namespace RayTrace
             Clear();
         }
 
-        public void Fill(int x, int y, int width, int height, Colour colour)
+        public void DrawRectangle(int x, int y, int width, int height, SColour colour)
+        {
+            uint rgb = colour.ToRGB();
+            for (int col = x; col < x + width; col++)
+            {
+                for (int row = y; row < y + height; row++)
+                {
+                    if (InRange(col, row))
+                    {
+                        if (col == x || col == x + width - 1 || row == y || row == y + height - 1)
+                        {
+                            buffer[row * Width + col] = rgb;
+                        }
+                    }
+                }
+            }
+        }
+
+        public void Fill(int x, int y, int width, int height, SColour colour)
         {
             uint rgb = colour.ToRGB();
 
-            for (int row = x; row < x + width; row++)
+            for (int col = x; col < x + width; col++)
             {
-                for (int col = y; col < y + height; col++)
+                for (int row = y; row < y + height; row++)
                 {
-                    if (InRange(row, col))
+                    if (InRange(col, row))
                     {
                         buffer[row * Width + col] = rgb;
                     }

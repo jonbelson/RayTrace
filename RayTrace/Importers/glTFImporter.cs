@@ -753,6 +753,22 @@ namespace RayTrace.Importers
         private List<ModelData.Triangle> triangles = new List<ModelData.Triangle>();
 
 
+        // Check if a GltfNode has a Mesh with Primitives, or a descendent with a Mesh with Primitves.
+        private bool HasRendererableDescendent(GltfNode node)
+        {
+
+            foreach (var childNode in node.children)
+            {
+                if (HasRendererableDescendent(childNode)) return true;
+            }
+
+            if (node.mesh is null) return false;
+
+            if (node.mesh.primitives.Count > 0) return true;
+
+            return false;
+        }
+
         // node     Node which we are working on.
         // matrix   Current transform matrix, which is the product of all parent Node matrixes.
         private void CreateGroupFromNode(ModelData.SubGroup group, GltfNode node, Matrix4x4 matrix)
@@ -762,22 +778,26 @@ namespace RayTrace.Importers
 
             foreach (var child in node.children)
             {
-                //                Matrix4x4 m2 = m*matrix;
-                //                CreateGroupFromNode(group, child, m /*matrix*/ /*m2*/);
+                if (HasRendererableDescendent(child))
+                {
+                    ModelData.SubGroup childGroup = new() { Name = child.name ?? "Node" };
+                    group.Children.Add(childGroup);
 
-                ModelData.SubGroup childGroup = new() { Name = child.name };
-                group.Children.Add(childGroup);
-
-                CreateGroupFromNode(childGroup, child, m /*matrix*/ /*m2*/);
+                    CreateGroupFromNode(childGroup, child, m /*matrix*/ /*m2*/);
+                }
             }
 
             GltfMesh mesh = node.mesh;
 
             if (mesh is not null)
             {
-
+                // XXX We really need to create a SubGroup per Primitive rather than a SubGroup per Mesh, as each Mesh can have
+                //  multiple Primitives, each with its own Material.
+                int index = 0;
                 foreach (GltfPrimitive primitive in mesh.primitives)
                 {
+                    ModelData.SubGroup primGroup = new() { Name=$"Primitive {index++}" };
+
                     // Current offsets.
                     int pointOffset = points.Count;
                     int normalOffset = normals.Count;
@@ -787,7 +807,7 @@ namespace RayTrace.Importers
                     foreach (var position in primitive.positions)
                     {
                         Vector3 v = new(position.x, position.y, position.z);
-                        //                    v = Vector3.Transform(v, node.matrix);
+                        //v = Vector3.Transform(v, node.matrix);
                         v = Vector3.Transform(v, m /*matrix*/);
                         points.Add(new SPoint(v.X, v.Y, -v.Z, 1.0f));
                     }
@@ -849,7 +869,8 @@ namespace RayTrace.Importers
                             triangles.Add(triangle);
                             //points.Add(new SPoint(position.x, position.y, position.z));
 
-                            group.Triangles.Add(triangles.Count - 1);
+                            //group.Triangles.Add(triangles.Count - 1);
+                            primGroup.Triangles.Add(triangles.Count - 1);
 
                         }
                         catch (Exception e)
@@ -858,13 +879,13 @@ namespace RayTrace.Importers
                             break;
                         }
                     }
-                    //points.Clear();
-                    //normals.Clear();
 
-                    // XXX Material should be per-primitive, not per-mesh (though most models seem to have a single primitive per mesh?)
                     int material = primitive.material;
-                    group.Material = material;
 
+                    //group.Material = material;
+                    primGroup.Material = material;
+
+                    group.Children.Add(primGroup);
                 }
             }
 
