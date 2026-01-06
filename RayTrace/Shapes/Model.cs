@@ -1,5 +1,7 @@
 ﻿#define USE_SIMD
 
+using RayTrace.Importers;
+using RayTrace.Preview;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -13,10 +15,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Automation;
 using System.Windows.Media.Media3D;
-
+using static RayTrace.BoundingBox;
 using static RayTrace.ModelData;
-using RayTrace.Importers;
-using RayTrace.Preview;
 
 namespace RayTrace
 {
@@ -53,15 +53,17 @@ namespace RayTrace
         public class Triangle
         {
             public int v0, v1, v2;  // Indices into Point array.
-            public int t0, t1, t2;  // Indexes into Texel array.
+            public int t0, t1, t2;  // Indixes into Texel array.
             public int c0, c1, c2;  // Indices into Colour array.
             public int n0, n1, n2;  // Indices into normal array.
+            public int tg0, tg1, tg2;  // Indices into tangent array.
             public int n;           // Index into normal array for triangle normal.
         }
 
         public SPoint[] points;
         public Texel[] texels;
         public SVector[] normals;
+        public SVector[] tangents;
         public Colour[] colours;
         public Triangle[] triangles;
 
@@ -88,6 +90,7 @@ namespace RayTrace
         public float maxZ = 0.0f;
 
         public bool HasVertexNormals { get; set; } = false;
+        public bool HasVertexTangents { get; set; } = false;
         public bool HasVertexColours { get; set; } = false;
         public bool HasVertexTexels { get; set; } = false;
 
@@ -133,6 +136,7 @@ namespace RayTrace
         // Cached vertices and normal vectors converted to View space.
         private SPoint[] _viewPoints = null;
         private SVector[] _viewNormals = null;
+        private SVector[] _viewTangents = null;
         private BoundingBox _viewBoundingBox;
 
         // Root Node of space partition tree.
@@ -148,10 +152,15 @@ namespace RayTrace
         public SVector GetTriangleNormal1(int index) => _viewNormals[_modelData.triangles[index].n1];
         public SVector GetTriangleNormal2(int index) => _viewNormals[_modelData.triangles[index].n2];
 
+        public SVector GetTriangleTargent0(int index) => _viewTangents[_modelData.triangles[index].tg0];
+        public SVector GetTriangleTargent1(int index) => _viewTangents[_modelData.triangles[index].tg1];
+        public SVector GetTriangleTargent2(int index) => _viewTangents[_modelData.triangles[index].tg2];
+
         public Node TreeRoot { get => _root; }
 
         // If normal index is set to -1, assume that there are no vertex normals for this triangle.
-        public bool HasVectorNormal(int index) => _modelData.triangles[index].n0 != -1;
+        public bool HasVertexNormals(int index) => _modelData.triangles[index].n0 != -1;
+        public bool HasVertexTangents(int index) => _modelData.triangles[index].tg0 != -1;
 
         public SVector GetTriangleNormal(int index) => _viewNormals[_modelData.triangles[index].n];
 
@@ -168,6 +177,7 @@ namespace RayTrace
             public SPoint v0, v1, v2;
             public ModelData.Texel t0, t1, t2;
             public SVector n0, n1, n2;
+            public SVector tg0, tg1, tg2;
             public SVector n;
 
             public int subGroup;
@@ -295,6 +305,18 @@ namespace RayTrace
             SVector N = n0*(1.0f - u - v) + n1*u + n2*v;
 
             return N.Normalise();
+        }
+
+        // Get tangent vector at point. Note that the W component is preserved.
+        // tg0, tg1, tg2   Tangent vector for triangle vertices.
+        // u, v         Barycentric coordinates of hit point.
+        private static SVector GetTangent(SVector tg0, SVector tg1, SVector tg2, float u, float v)
+        {
+            SVector N = tg0*(1.0f - u - v) + tg1*u + tg2*v;
+            float W = N.W;
+            N = N.Normalise();
+            N.W = W;
+            return N;
         }
 
         // c0, c1, c2   Colours for triangle.
@@ -510,7 +532,20 @@ namespace RayTrace
                 }
 #endif
 
-//                _subGroupArray = new ModelSubGroup[_modelData.Children.Count];
+                _viewTangents = new SVector[_modelData.tangents.Length];
+
+                // XXX Should these be left in object space?
+#if USE_SIMD
+                Matrix OtoVT = ObjectToViewNormal.GetTranspose();
+                OtoVT.MatrixMultiplySIMD(_modelData.tangents, _viewTangents);
+#else
+                for (int i=0; i<_modelData.tangents.Length; i++)
+                {
+                    _viewTangents[i] = ObjectToViewNormal * _modelData.tangents[i];
+                }
+#endif
+
+                //                _subGroupArray = new ModelSubGroup[_modelData.Children.Count];
                 _subGroupArray = new ModelSubGroup[_subGroups.Count];
                 int idx = 0;
                 foreach (var group in _subGroups)
@@ -557,6 +592,13 @@ namespace RayTrace
                         }
 
                         fatTriangle.n = GetTriangleNormal(idx);//.Negate(); XXX
+
+                        if (_modelData.HasVertexTangents)
+                        {
+                            fatTriangle.tg0 = GetTriangleTargent0(idx);
+                            fatTriangle.tg1 = GetTriangleTargent1(idx);
+                            fatTriangle.tg2 = GetTriangleTargent2(idx);
+                        }
 
                         if (_modelData.HasVertexTexels)
                         {
@@ -861,11 +903,47 @@ namespace RayTrace
 
             // Get the triangle face normal, or vertex normal if available.
             SVector vTriNormal = GetTriangleNormal(index);
-            if (HasVectorNormal(index))
+            if (HasVertexNormals(index))
             {
+                // Get an interpolated normal based on the brycentric coordinates.
                 vTriNormal = GetNormal(n0, n1, n2, uv.Item1, uv.Item2);
             }
 
+            if (_modelData.HasVertexTangents)
+            {
+                // " The bitangent vectors MUST be computed by taking the cross product of the
+                // normal and tangent XYZ vectors and multiplying it against the W component of
+                // the tangent: bitangent = cross(normal.xyz, tangent.xyz) * tangent.w. "
+
+                // Use barycentric coordinates to get tangent vector.
+                SVector tg0 = tri.tg0;
+                SVector tg1 = tri.tg1;
+                SVector tg2 = tri.tg2;
+
+                float W = tg0.W;
+                tg0.W = 0.0f;
+                tg1.W = 0.0f;
+                tg2.W = 0.0f;
+
+                SVector vTriTangent = GetTangent(tg0, tg1, tg2, uv.Item1, uv.Item2);
+
+                //SVector vTriTangent = tg0*(1.0f - u - v) + tg1*u + tg2*v;
+                //float W = vTriTangent.W;
+                //vTriTangent = vTriTangent.Normalise();
+
+//                SVector vTriBitangent = vTriNormal.VectorProduct(vTriTangent)*-W;   // XXX W probably needs negating?
+                SVector vTriBitangent = vTriNormal.VectorProduct(vTriTangent)*W;   // XXX W probably needs negating?
+
+
+                Matrix m = new(vTriTangent, vTriNormal, -vTriBitangent);
+
+                ///m.Transpose();
+
+                SVector vMapNormal = m * vTriNormal;
+
+                hr.EntryNormal = vMapNormal;
+            }
+            else
             // Calculate texel at hit point if texels are available.
             if (_modelData.HasVertexTexels)
             {
@@ -928,120 +1006,6 @@ namespace RayTrace
 
             return true;
         }
-
-#if false
-        private HitResult HitTestTriangleFast(Camera camera, ref HitResult hr, int index, in Vector4 vvP1, in Vector4 vvP2, in Vector4 vvRay, bool segmentOnly)
-        {
-            FatTriangle tri = _fatTriangles[index];
-
-            //SPoint vPos = tri.v0;
-            Vector4 vvPos = tri.v0.ToVector4();
-
-            //SVector vNormal = tri.n;//.Negate();
-            Vector4 vvNormal = tri.n.ToVector4();
-
-            //Vector4 vvRay = ray.ToVector4();
-
-            // Check if face is pointing away from us.
-            float dp = Vector4.Dot(vvNormal, vvRay);
-            if (dp > 0.0f) return hr;    // Check >0 since vectors point in opposite directions.
-
-            // Hit test against the triangle's plane.
-
-            vvNormal.W = 0;
-
-            Vector4 vvNP = vvNormal*vvPos;
-            //vvNP = Vector4.Negate(vvNP);
-
-            float D = -Vector4.Dot(vvNP, Vector4.One);
-
-            //Vector4 vvP1 = p1.ToPoint4();      // W must be 1
-            //Vector4 vvP2 = p2.ToPoint4();
-
-            vvNormal.W = D;                     // vvNormal = A, B, C, D
-
-            float num = Vector4.Dot(vvNormal*vvP1, Vector4.One);
-
-            Vector4 vvP1P2 = vvP1 - vvP2;
-            Vector4 vvNP1P2 = vvNormal*vvP1P2;
-
-            float denom = Vector4.Dot(vvNP1P2, Vector4.One);
-
-
-            if (denom == 0)
-            {
-                return hr;
-            }
-
-            float mu = num / denom;
-
-            if (mu == 0.0)
-            {
-                // Either parallel to plane or on the plane - treat both as no intersection for our purposes.
-                return hr;
-            }
-
-            float THRESH = 0.000001f;
-
-            if (mu < THRESH)
-            {
-                // Not interested in intersections that happen behind us.
-                return hr;
-            }
-
-            if (segmentOnly)
-            {
-                // Check if segment actually intersects us.
-                if (mu < THRESH || mu > 1.0f - THRESH)
-                {
-                    return hr;
-                }
-            }
-
-
-
-            Vector4 pp1 = vvP1;// p1.ToVector4();// new Vector4(p1.X, p1.Y, p1.Z, 1);
-            Vector4 pp2 = vvP2;// p2.ToVector4();// new Vector4(p2.X, p2.Y, p2.Z, 1);
-            Vector4 vecP2P1 = pp2 - pp1;
-            Vector4 Intersection = pp1 + vecP2P1*mu;
-
-            Vector4 v0 = tri.v0.ToVector4();
-            Vector4 v1 = tri.v1.ToVector4();
-            Vector4 v2 = tri.v2.ToVector4();
-
-            Vector4 edge0 = v1 - v0;
-            Vector4 edge1 = v2 - v1;
-            Vector4 edge2 = v0 - v2;
-
-            Vector4 C0 = Intersection - v0;
-            Vector4 C1 = Intersection - v1;
-            Vector4 C2 = Intersection - v2;
-
-            Vector4 normal = tri.n.ToVector4();
-
-            Vector4 vp0 = edge0.VectorProduct(C0);
-            Vector4 vp1 = edge1.VectorProduct(C1);
-            Vector4 vp2 = edge2.VectorProduct(C2);
-
-            //float dp1 = Vector4.Dot(normal, vp0);
-            //float dp2 = Vector4.Dot(normal, vp1);
-            //float dp3 = Vector4.Dot(normal, vp2);
-
-            if (Vector4.Dot(normal, edge0.VectorProduct(C0)) <= 0.0f &&
-                Vector4.Dot(normal, edge1.VectorProduct(C1)) <= 0.0f &&
-                Vector4.Dot(normal, edge2.VectorProduct(C2)) <= 0.0f)
-            {
-                hr.Entry = new SPoint(Intersection.X, Intersection.Y, Intersection.Z);
-                hr.EntryNormal = tri.n; // vNormal;
-                hr.t = mu;
-                hr.Index = index;
-            }
-
-
-            return hr;
-        }
-#endif
-
 
         private HitResult HitTestTriangle(Camera camera, ref HitResult hr, int index, in SPoint p1, in SPoint p2, in SVector ray, bool segmentOnly)
         {

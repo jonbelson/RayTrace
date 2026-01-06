@@ -20,10 +20,18 @@ namespace RayTrace
             }
         }
 
-        // Get sample 1x1 grid with bottom left at [0, 0]
+        // Get sample grid over range o->1 with bottom left at [0, 0]
         public static float[,] GetOffsetGrid(Random rand, int size)
         {
             float[,] grid = new float[size * size, 2];
+
+            return UpdateOffsetGrid(rand, grid);
+        }
+
+        // Update sample grid over range 0->1 with bottom left at [0, 0]
+        public static float[,] UpdateOffsetGrid(Random rand, float[,] grid)
+        {
+            int size = Math.Min(grid.GetLength(0), grid.GetLength(1));
 
             float halfStep = 1.0f / (2 * size);
             float step = halfStep + halfStep;
@@ -34,8 +42,8 @@ namespace RayTrace
                 float xVal = 0.0f;
                 for (int x = 0; x < size; x++)
                 {
-                    grid[y * size + x, 0] = xVal + halfStep * (float)(rand.NextDouble());
-                    grid[y * size + x, 1] = yVal + halfStep * (float)(rand.NextDouble());
+                    grid[y * size + x, 0] = xVal + halfStep * rand.NextSingle();
+                    grid[y * size + x, 1] = yVal + halfStep * rand.NextSingle();
                     xVal += step;
                 }
                 yVal += step;

@@ -748,6 +748,7 @@ namespace RayTrace.Importers
 
         private List<SPoint> points = new List<SPoint>();
         private List<SVector> normals = new List<SVector>();
+        private List<SVector> tangents = new List<SVector>();
         private List<ModelData.Texel> texels = new List<ModelData.Texel>();
         private List<Colour> colours = new List<Colour>();
         private List<ModelData.Triangle> triangles = new List<ModelData.Triangle>();
@@ -801,6 +802,7 @@ namespace RayTrace.Importers
                     // Current offsets.
                     int pointOffset = points.Count;
                     int normalOffset = normals.Count;
+                    int tangentOffset = tangents.Count;
                     int colourOffset = colours.Count;
                     int texelOffset = texels.Count;
 
@@ -838,6 +840,14 @@ namespace RayTrace.Importers
                         foreach (var normal in primitive.normals)
                         {
                             normals.Add(new SVector(normal.x, normal.y, -normal.z, 0f));
+                        }
+                    }
+
+                    if (primitive.tangents is not null)
+                    {
+                        foreach (var tangent in primitive.tangents)
+                        {
+                            tangents.Add(new SVector(tangent.x, tangent.y, -tangent.z, tangent.w));
                         }
                     }
 
@@ -901,6 +911,7 @@ namespace RayTrace.Importers
 
             points.Clear();
             normals.Clear();
+            tangents.Clear();
             texels.Clear();
             colours.Clear();
             triangles.Clear();
@@ -932,6 +943,7 @@ namespace RayTrace.Importers
             }
 
             modelData.HasVertexNormals = normals.Count > 0;
+            modelData.HasVertexTangents = tangents.Count > 0;
             modelData.HasVertexColours = colours.Count > 0;
             modelData.HasVertexTexels = texels.Count > 0;
 
@@ -947,6 +959,7 @@ namespace RayTrace.Importers
             modelData.points = points.ToArray();
             modelData.colours = colours.ToArray();
             modelData.normals = normals.ToArray();
+            modelData.tangents = tangents.ToArray();
             modelData.triangles = triangles.ToArray();
             //modelData.Node = new();
             modelData.Node.Children = groups;

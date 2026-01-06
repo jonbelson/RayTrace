@@ -64,6 +64,7 @@ namespace RayTrace
     /// </summary>
     public partial class OutputWindow : Window, INotifyPropertyChanged
     {
+        private ConcurrentDictionary<int, RenderBlock> _blocksInProgress = new();
         private ConcurrentQueue<RenderBlock> _completedBlocks = new();
 
         public Canvas OutputCanvas { get; set; }
@@ -112,10 +113,14 @@ namespace RayTrace
 
         private void CopyAnyBlocks()
         {
-            if (_completedBlocks.IsEmpty) return;
+            // Update any blocks that are currently being renderered.
+            foreach (var kvp in _blocksInProgress)
+            {
+                RenderBlock block = kvp.Value;
+                Update(block.StartX, block.StartY, block.Width, block.Height);
+            }
 
-            Debug.Assert(_completedBlocks.Count != 0);
-
+            // Do a final update of any blocks which have been completed.
             while (_completedBlocks.TryDequeue(out RenderBlock block))
             {
                 Update(block.StartX, block.StartY, block.Width, block.Height);
@@ -352,10 +357,13 @@ namespace RayTrace
                         Debug.WriteLine($"Starting Task {idx}, lines {rb.StartY} to {rb.StartY + rb.Height}...");
 
                         OutputCanvas.DrawRectangle(rb.StartX, rb.StartY, rb.Width, rb.Height, SPalette.Orange);
-                        _completedBlocks.Enqueue(rb);
+                        //_completedBlocks.Enqueue(rb);
+                        _blocksInProgress[idx] = rb;
 
                         Renderer.Render(Scene, OutputCanvas, rb.StartX, rb.StartY, rb.Width, rb.Height, token);
                         Debug.WriteLine($"Done Task {idx}...");
+
+                        _blocksInProgress.TryRemove(idx, out RenderBlock removed);
 
                         _completedBlocks.Enqueue(rb);
                         //_completedBlocks.Enqueue(new RenderBlock() { StartX=0, StartY=0, Width=OutputCanvas.Width, Height=OutputCanvas.Height });
@@ -371,10 +379,6 @@ namespace RayTrace
                 i++;
             }
 
-            //Stopwatch stopwatch = new();
-            //stopwatch.Reset();
-            //stopwatch.Start();
-
             RenderStatus status = RenderStatus.NotStarted;
 
             //List<Task> Tasks = new List<Task>() { renderTask1, renderTask2 };
@@ -388,9 +392,7 @@ namespace RayTrace
 
                 status = RenderStatus.Complete;
 
-                //Update(0, 0, OutputCanvas.Width, OutputCanvas.Height);
                 _completedBlocks.Enqueue(new RenderBlock() { StartX=0, StartY=0, Width=OutputCanvas.Width, Height=OutputCanvas.Height });
-                //Bitmap.AddDirtyRect(new Int32Rect(0, 0, OutputCanvas.Width, OutputCanvas.Height));
 
             }
             catch (Exception e)
@@ -424,6 +426,7 @@ namespace RayTrace
 */
 
             _completedBlocks.Clear();
+            _blocksInProgress.Clear();
 
             return status;
         }

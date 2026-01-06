@@ -1444,6 +1444,9 @@ namespace RayTrace
             float sceneY = sceneStartY;
             sceneY -= startY * sceneStepY;
 
+            Random rand = threadRand.Value;// new Random(1234);
+            float[,] grid = null;
+
             for (int h = startY; h < startY + numRows; h++)
             {
                 if (cancellationToken.IsCancellationRequested)
@@ -1464,11 +1467,13 @@ namespace RayTrace
                     }
                     else if (AntiAlias == AntiAliasType.NoiseGrid)
                     {
-                        Random rand = threadRand.Value;// new Random(1234);
-                        float[,] grid = SampleGrid.GetOffsetGrid(rand, SampleDepth);
-                        SColour colour = SPalette.Black;
+                        //float[,] grid = SampleGrid.GetOffsetGrid(rand, SampleDepth);
+                        if (grid is null)
+                            grid = SampleGrid.GetOffsetGrid(rand, SampleDepth);
+                        else
+                            grid = SampleGrid.UpdateOffsetGrid(rand, grid);
 
-                        //canvas.Set(w, h, SPalette.Magenta.ToRGB());
+                        SColour colour = SPalette.Black;
 
                         for (int i=0; i<grid.GetLength(0); i++)
                         {
