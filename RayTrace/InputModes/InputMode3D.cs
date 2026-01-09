@@ -400,7 +400,7 @@ namespace RayTrace
                 {
                     _viewport3D.UpdateBoundingBox(shape);
 
-                    _XZOffset = new((double)shape.Pos.X - hitResultXZ.Point.X, (double)shape.Pos.Y - hitResultXZ.Point.Y, (double)shape.Pos.Z + hitResultXZ.Point.Z);
+                    _XZOffset = new((double)shape.Pos.X - hitResultXZ.Point.X, (double)shape.Pos.Y - hitResultXZ.Point.Y, (double)shape.Pos.Z - hitResultXZ.Point.Z);
                     Debug.WriteLine($"shape.Pos = {shape.Pos.X}, {shape.Pos.Y}, {shape.Pos.Z}");
                     Debug.WriteLine($"hitResultXZ.Point = {hitResultXZ.Point.X}, {hitResultXZ.Point.Y}, {hitResultXZ.Point.Z}");
                     Debug.WriteLine($"_XZOffset = {_XZOffset.X}, {_XZOffset.Y}, {_XZOffset.Z}");
@@ -416,7 +416,7 @@ namespace RayTrace
                 }
                 if (hitResult.Entity is Shape shape)
                 {
-                    _XZOffset = new((double)shape.Pos.X - hitResult.Point.X, (double)shape.Pos.Y - hitResult.Point.Y, (double)shape.Pos.Z + hitResult.Point.Z);
+                    _XZOffset = new((double)shape.Pos.X - hitResult.Point.X, (double)shape.Pos.Y - hitResult.Point.Y, (double)shape.Pos.Z - hitResult.Point.Z);
                 }
             }
 
@@ -440,9 +440,9 @@ namespace RayTrace
                 SVector viewVector = _scene.Camera.GetViewVector().ToSVector();
                 float magnitude = viewVector.Magnitude();
                 SVector view = viewVector.Normalise();
-                SVector left = view.VectorProduct(new SVector(0, 1, 0, 0));
+                SVector right = view.VectorProduct(SVector.New(0, 1, 0));
                 //SVector right = view.VectorProduct(new SVector(0, 1, 0));
-                SVector up = view.VectorProduct(left);
+                SVector up = right.VectorProduct(view);
 
                 //WriteSVector("viewVector", viewVector);
                 //WriteSVector("left", left);
@@ -450,13 +450,13 @@ namespace RayTrace
                 const float factor = 200.0f;
 
                 // Yaw.
-                Quaternion q = new(new SVector(0, 1, 0, 0f), xDiff / factor);
+                Quaternion q = new(new SVector(0, 1, 0, 0f), -xDiff / factor);
                 SVector rotY = q.Rotate(view);
 
                 //WriteSVector("rotY", rotY);
 
                 // Pitch.
-                Quaternion qPitch = new(-left, yDiff / factor);
+                Quaternion qPitch = new(-right, yDiff / factor);
                 SVector rotLeft = qPitch.Rotate(view);
 
                 //WriteSVector("rotLeft", rotLeft);
@@ -485,11 +485,11 @@ namespace RayTrace
 
                 Vector view = _scene.Camera.GetViewVector().Normalise();
 
-                Vector left = view.VectorProduct(new Vector(0, 1, 0));
+                Vector right = view.VectorProduct(new Vector(0, 1, 0));
 
-                Vector up = view.VectorProduct(left);
+                Vector up = right.VectorProduct(view);
 
-                Vector offset = left * xDiff - up * yDiff;
+                Vector offset = -right * xDiff + up * yDiff;
 
                 const float factor = 0.15f;
                 offset *= factor;
@@ -503,13 +503,13 @@ namespace RayTrace
 
                 Vector view = _scene.Camera.GetViewVector().Normalise();
 
-                Vector left = view.VectorProduct(new Vector(0, 1, 0));
+                Vector right = view.VectorProduct(new Vector(0, 1, 0));
 
-                left.J = 0.0f;
+                right.J = 0.0f;
 
                 view.J = 0.0f;
 
-                Vector offset = left * xDiff + view * yDiff;
+                Vector offset = right * -xDiff + view * yDiff;
 
                 const float factor = 0.15f;
                 offset *= factor;
@@ -528,7 +528,7 @@ namespace RayTrace
                 Point target = _scene.Camera.Target;
 
                 Matrix toOrigin = Matrix.GetTranslation(-target.X, -target.Y, -target.Z);
-                Matrix rotation = Matrix.GetRotationY((float)(xDiff / 10.0));
+                Matrix rotation = Matrix.GetRotationY((float)(-xDiff / 10.0));
                 Matrix fromOrigin = Matrix.GetTranslation(target.X, target.Y, target.Z);
 
                 // targetToCamera = toOrigin * targetToCamera;
@@ -572,7 +572,7 @@ namespace RayTrace
 //                  PreviewHitResult hitResult = _viewport3D.HitTestPlaneXZ(p);
                     PreviewHitResult hitResult = _viewport3D.HitTestPlaneXZ5(p, _XZPlane);
 
-                    Point newPos = new((float)hitResult.Point.X, (float)hitResult.Point.Y, (float)-hitResult.Point.Z);
+                    Point newPos = new((float)hitResult.Point.X, (float)hitResult.Point.Y, (float)hitResult.Point.Z);
 
                     switch (_state)
                     {

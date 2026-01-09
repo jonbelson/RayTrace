@@ -88,7 +88,7 @@ namespace RayTrace
             //Vector vecP2P1 = p1 - p2;
             vecP2P1 = vecP2P1.Normalise();
             double dp = vNormal.DotProduct(vecP2P1);
-            if (dp > 0.0)
+            if (dp < 0.0)
             {
                 hr.EntryNormal = vNormal;
             }
@@ -108,7 +108,7 @@ namespace RayTrace
             e1 = e1.Normalise();
             if (e1.I == 0.0 && e1.J == 0.0 && e1.K == 0.0)
             {
-                e1 = vNormal.VectorProduct(new SVector(0.0f, 0.0f, 1.0f, 0.0f));
+                e1 = vNormal.VectorProduct(new SVector(0.0f, 0.0f, -1.0f, 0.0f));
                 e1 = e1.Normalise();
             }
 

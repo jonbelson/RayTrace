@@ -428,21 +428,19 @@ namespace RayTrace
         {
             SetIdentity();
 
-            //return;
-
             Point cameraTarget = to;
             Point cameraPosition = from;
-            Vector zaxis = cameraTarget - cameraPosition;
-            //            Vector zaxis = cameraPosition - cameraTarget;
 
+            Vector zaxis = cameraTarget - cameraPosition;
             zaxis = zaxis.Normalise();
+
             Vector cameraUpVector = new Vector(0, 1, 0);
 
-            Vector xaxis = cameraUpVector.VectorProduct(zaxis);
+            Vector xaxis = zaxis.VectorProduct(cameraUpVector);
             //xaxis = zaxis.VectorProduct(cameraUpVector);
             xaxis = xaxis.Normalise();
 
-            Vector yaxis = zaxis.VectorProduct(xaxis);
+            Vector yaxis = xaxis.VectorProduct(zaxis);
             //yaxis = xaxis.VectorProduct(zaxis);
 
             Vector vecPosition = new Vector(cameraPosition.X, cameraPosition.Y, cameraPosition.Z);
@@ -455,14 +453,14 @@ namespace RayTrace
             M22 = yaxis.J;
             M23 = yaxis.K;
 
-            M31 = zaxis.I;
-            M32 = zaxis.J;
-            M33 = zaxis.K;
+            M31 = -zaxis.I;
+            M32 = -zaxis.J;
+            M33 = -zaxis.K;
 
 
             M14 = -xaxis.DotProduct(vecPosition);
             M24 = -yaxis.DotProduct(vecPosition);
-            M34 = -zaxis.DotProduct(vecPosition);
+            M34 = zaxis.DotProduct(vecPosition);
 
             //M14 = -vecPosition.I;
             //M24 = -vecPosition.J;

@@ -381,13 +381,13 @@ namespace RayTrace
             //scene.Camera.Pos = new Point(-5.994f, 4.712f, -9.275f);
             //scene.Camera.Target = new Point(0, 3, 1);
 
-            scene.Camera.Pos = new Point(0f, 0f, -12f);
+            scene.Camera.Pos = new Point(0f, 0f, 12f);
             scene.Camera.Target = new Point(0, 0, 0);
 
             Light light = new PointLight(scene, new Point(-50, 50, 10), 6000, Palette.White);
             //scene.AddLight(light);
 
-            light = new PointLight(scene, new Point(10, 30, -30), 3000, Palette.White);
+            light = new PointLight(scene, new Point(10, 30, 30), 3000, Palette.White);
             //scene.AddLight(light);
 
             Material mat = new Material() { Name = "CookTorrence" };

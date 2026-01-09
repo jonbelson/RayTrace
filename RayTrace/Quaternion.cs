@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace RayTrace
 {
+    // Helper class for Quaternion rotations.
+    // Note that for a right-handed coordinate system, a +ve rotation
+    //  follows the right hand rule.
     public struct Quaternion
     {
         public float X, Y, Z, W;

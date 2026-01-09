@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -14,7 +15,7 @@ using System.Windows.Shapes;
 namespace RayTrace.Preview
 {
     // Utility class for managing two-way mapping between two types of object.
-    internal class BiDiMap<TFirst, TSecond>
+    internal class BiDiMap<TFirst, TSecond> //: IEnumerable<TFirst>
     {
         private Dictionary<TFirst, TSecond> firstToSecond = new();
         private Dictionary<TSecond, TFirst> secondToFirst = new();
@@ -69,6 +70,14 @@ namespace RayTrace.Preview
 
             return false;
         }
+
+        public IEnumerator<TFirst> GetEnumerator()
+        {
+            foreach (var key in firstToSecond.Keys)
+            {
+                yield return key;
+            }
+        }
     };
 
     //
@@ -78,10 +87,11 @@ namespace RayTrace.Preview
     public class PreviewVisual3D : ModelVisual3D
     {
         private readonly Scene scene;
-
+        // Group to contain all the geometry for Scene objects.
         private readonly Model3DGroup group = new();
 
-        private readonly BiDiMap<GeometryModel3D, Entity> models = new();
+//        private readonly BiDiMap<GeometryModel3D, Entity> models = new();
+        private readonly BiDiMap<Model3D, Entity> models = new();
 
         // Utility delagates for converting between formats.
         private readonly Func<Point, Point3D> PointToPoint3D = (p) => new Point3D(p.X, p.Y, p.Z);
@@ -97,7 +107,7 @@ namespace RayTrace.Preview
         {
             this.scene = scene;
 
-            group.Transform = new ScaleTransform3D(1.0, 1.0, -1.0);
+            group.Transform = new ScaleTransform3D(1.0, 1.0, 1.0);
 
             this.Content = group;
         }
@@ -114,7 +124,14 @@ namespace RayTrace.Preview
         // Update geometry for all Shapes
         public void Update()
         {
+            foreach (var m in models)
+            {
+                group.Children.Remove(m);
+            }
+
             models.Clear();
+
+            group.Children.Clear();
 
             foreach (Shape shape in scene.Shapes)
             {
@@ -150,6 +167,9 @@ namespace RayTrace.Preview
 
             models.Remove(light);
 
+            // Create a group to contain light geometry and light source.
+            Model3DGroup lightGroup = new();
+
             // Create new geometry.
             GeometryModel3D geometryModel = null;
 
@@ -159,7 +179,8 @@ namespace RayTrace.Preview
                 {
                     geometryModel = GeometryModel3DFactory.MakePointLight(pointLight);
 
-                    group.Children.Add(geometryModel);
+                    //group.Children.Add(geometryModel);
+                    lightGroup.Children.Add(geometryModel);
 
                     System.Windows.Media.Media3D.PointLight pl = new(ColourToColor(pointLight.Output), PointToPoint3D(pointLight.Pos));
 
@@ -168,17 +189,20 @@ namespace RayTrace.Preview
                     pl.QuadraticAttenuation = 0.001;
                     //l.LinearAttenuation = 0.01;
 
-                    group.Children.Add(pl);
+                    //group.Children.Add(pl);
+                    lightGroup.Children.Add(pl);
                 }
                 else if (light is DistantLight distantLight)
                 {
                     System.Windows.Media.Media3D.DirectionalLight dl = new(ColourToColor(distantLight.Output), VectorToVector3D(distantLight.Normal));
 
-                    group.Children.Add(dl);
+                    //group.Children.Add(dl);
+                    lightGroup.Children.Add(dl);
                 }
             }
 
-            if (geometryModel != null)
+//            if (geometryModel != null)
+            if (lightGroup.Children.Count > 0)
             {
                 Colour c = light.Colour;
                 //geometryModel.Material = new DiffuseMaterial(new SolidColorBrush(Color.FromScRgb(1, c.Red, c.Green, c.Blue)));
@@ -188,7 +212,11 @@ namespace RayTrace.Preview
                 materialGroup.Children.Add(new EmissiveMaterial(new SolidColorBrush(Color.FromScRgb(1, c.Red, c.Green, c.Blue))));
 
                 geometryModel.Material = materialGroup;
-                models.Add(geometryModel, light);
+
+                //models.Add(geometryModel, light);
+                models.Add(lightGroup, light);
+
+                group.Children.Add(lightGroup);
             }
         }
 

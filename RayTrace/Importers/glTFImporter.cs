@@ -811,7 +811,7 @@ namespace RayTrace.Importers
                         Vector3 v = new(position.x, position.y, position.z);
                         //v = Vector3.Transform(v, node.matrix);
                         v = Vector3.Transform(v, m /*matrix*/);
-                        points.Add(new SPoint(v.X, v.Y, -v.Z, 1.0f));
+                        points.Add(new SPoint(v.X, v.Y, v.Z, 1.0f));
                     }
 
                     if (primitive.texCoords != null)
@@ -821,7 +821,7 @@ namespace RayTrace.Importers
                             var texel = new ModelData.Texel()
                             {
                                 u = texCoord.x,
-                                v = 1.0f - texCoord.y
+                                v = /*1.0f -*/ texCoord.y
                             };
                             texels.Add(texel);
                         }
@@ -839,7 +839,7 @@ namespace RayTrace.Importers
                     {
                         foreach (var normal in primitive.normals)
                         {
-                            normals.Add(new SVector(normal.x, normal.y, -normal.z, 0f));
+                            normals.Add(new SVector(normal.x, normal.y, normal.z, 0f));
                         }
                     }
 
@@ -847,7 +847,7 @@ namespace RayTrace.Importers
                     {
                         foreach (var tangent in primitive.tangents)
                         {
-                            tangents.Add(new SVector(tangent.x, tangent.y, -tangent.z, tangent.w));
+                            tangents.Add(new SVector(tangent.x, tangent.y, tangent.z, tangent.w));
                         }
                     }
 
@@ -1531,7 +1531,7 @@ namespace RayTrace.Importers
         {
             List<RayTrace.Material> materials = new();
 
-            if (_gltfAsset.materials is null)
+            if (_gltfAsset is null || _gltfAsset.materials is null)
                 return materials;
 
             foreach (GltfMaterial material in _gltfAsset.materials)

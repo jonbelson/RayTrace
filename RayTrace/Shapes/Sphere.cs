@@ -32,8 +32,8 @@ namespace RayTrace
 
 			double v = phi / Math.PI;
 
-			SVector Se = new SVector(0.0f, 0.0f, 1.0f, 0.0f);
-			Se = _viewAway;
+			//SVector Se = new SVector(0.0f, 0.0f, 1.0f, 0.0f);
+            SVector Se = _viewAway;
 			Se = camera.NormalMatrix * Se;
 			dp = Se.DotProduct(Sn);
 
@@ -56,7 +56,7 @@ namespace RayTrace
 
 			Debug.Assert(!Double.IsNaN(u) && !Double.IsNaN(v));
 
-			hr.u = (float) (1.0 - u);
+			hr.u = (float) u;
 			hr.v = (float) v;
         }
 
@@ -103,7 +103,7 @@ namespace RayTrace
 
 			Vector up = new(0, 1, 0);
 			_viewUp = (ObjectToWorldNormal*up).ToSVector();
-			Vector away = new(0, 0, 1);
+			Vector away = new(0, 0, -1);
 			_viewAway = (ObjectToWorldNormal*away).ToSVector();
 
 			_viewUp = _viewUp.Normalise();

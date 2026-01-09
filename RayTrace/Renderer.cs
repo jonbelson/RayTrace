@@ -579,7 +579,7 @@ namespace RayTrace
             SColour radiance = SPalette.Black;
 
             SPoint origin = new SPoint(0.0f, 0.0f, 0f, 1.0f);
-            SVector dir = new SVector(x, y, 1f, 0f);
+            SVector dir = new SVector(x, y, -1f, 0f);
             Ray ray = new Ray(origin, dir.Normalise());
 
             for (int depth = 0; depth < RecursionDepth; depth++)
@@ -1378,7 +1378,7 @@ namespace RayTrace
             else
             {
                 SPoint origin = new SPoint(0.0f, 0.0f, 0f, 1.0f);
-                SVector dir = new SVector(x, y, 1, 0);
+                SVector dir = new SVector(x, y, -1, 0);
                 Ray ray = new Ray(origin, dir.Normalise());
 
                 HitResult hr = scene.HitTest(camera, ray);

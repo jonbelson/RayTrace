@@ -490,8 +490,11 @@ namespace RayTrace.Brdfs
             float diffuseWeight = (1.0f - metalness)*colour.ToLinearRGB().MaxComponent();
 
             float sum = specWeight + diffuseWeight;
-            specWeight /= sum;
-            diffuseWeight /= sum;
+            if (sum != 0)
+            {
+                specWeight /= sum;
+                diffuseWeight /= sum;
+            }
 
             bool sampleDiffuse = rand.NextSingle() < diffuseWeight;
 

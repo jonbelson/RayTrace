@@ -99,9 +99,9 @@ namespace RayTrace
             //_scene.Ambient = Palette.Blue;
             //_scene.Background = Palette.Red;
             scene.Camera.Pos = new Point(0, 0, 0);
-            scene.Camera.Target = new Point(0, 0, 1);
+            scene.Camera.Target = new Point(0, 0, -1);
 
-            sphere = new Sphere(scene, new Point(0, 0, 5), 2, Palette.White);
+            sphere = new Sphere(scene, new Point(0, 0, -5f), 2, Palette.White);
             //scene.AddShape(sphere);
 
             PointLight pl = new PointLight(scene, new Point(-6, 4, 0), 500, Palette.White);

@@ -27,7 +27,7 @@ namespace RayTrace
 
         public string BaseDirectory { get; set; }
 
-        public Camera Camera { get; } = new Camera(new Point(0, 0, 0), new Point(0, 0, 1));
+        public Camera Camera { get; } = new Camera(new Point(0, 0, 0), new Point(0, 0, -1f));
 
         public Colour Ambient { get; set; } = new Colour(0.2f, 0.2f, 0.2f);
 

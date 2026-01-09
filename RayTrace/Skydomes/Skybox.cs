@@ -40,13 +40,10 @@ namespace RayTrace.Skydomes
 
         private class /*struct*/ Fileset
         {
-            //public string right, left, top, bottom, front, back;
-            //public string[] faces = new string[6];
             public List<string> faces = new List<string>();
         };
 
-//      private Fileset fileset1 = new Fileset() { right="posx.jpg", left = "negx.jpg", top="posy.jpg", bottom="negy.jpg", front="posz.jpg", back="negz.jpg" };
-        private readonly Fileset fileset1 = new Fileset() { faces = { "posx.jpg", "negx.jpg", "posy.jpg", "negy.jpg", "posz.jpg", "negz.jpg" } };
+        private readonly Fileset fileset1 = new Fileset() { faces = { "posx.jpg", "negx.jpg", "posy.jpg", "negy.jpg", "negz.jpg", "posz.jpg" } };
 
         // Attempt to load skybox textures by trying a few common formats.
         private bool LoadTextures(string directory)
@@ -140,23 +137,6 @@ namespace RayTrace.Skydomes
             }
 
             _ = LoadTextures(_directory);
-
- /*
-            BitmapUtils.ColourTexture colourTexture;
-
-            BitmapUtils.CreateTexture(Palette.Red, 256, 256, out colourTexture);
-            faces[Left] = colourTexture;
-            BitmapUtils.CreateTexture(Palette.Blue, 256, 256, out colourTexture);
-            faces[Right] = colourTexture;
-            BitmapUtils.CreateTexture(Palette.Green, 256, 256, out colourTexture);
-            faces[Top] = colourTexture;
-            BitmapUtils.CreateTexture(Palette.White, 256, 256, out colourTexture);
-            faces[Bottom] = colourTexture;
-            BitmapUtils.CreateTexture(Palette.Black, 256, 256, out colourTexture);
-            faces[Front] = colourTexture;
-            BitmapUtils.CreateTexture(Palette.Grey, 256, 256, out colourTexture);
-            faces[Back] = colourTexture;
- */
         }
 
         //
@@ -168,11 +148,6 @@ namespace RayTrace.Skydomes
 
             _ = LoadTextures(_directory);
         }
-
-        //private (float u, float v) CalculateUV(Camera camera, SVector ray)
-        //{
-
-        //}
 
         private static SColour GetColour(BitmapUtils.RgbTexture texture, float u, float v)
         {
@@ -208,18 +183,13 @@ namespace RayTrace.Skydomes
         {
             ray = ray.Normalise();
 
-            //ray = ray.Negate();
-            //Matrix m = camera.NormalMatrix.GetInverse();
-//            Matrix m = camera.NormalMatrix.GetTranspose();
             Matrix m = camera.NormalMatrixT;
 
-            //            SVector v = camera.NormalMatrix * ray;
+            Matrix rot = Matrix.GetRotationY(MathF.PI);
+
+            m = rot*m;
+
             SVector v = m * ray;
-            //v = v.Negate();
-
-            //Trace.WriteLine("Skybox vector: " + v.ToString());
-
-//v =  new(v.I, v.J, -v.K);
 
             float iAbs = Math.Abs(v.I);
             float jAbs = Math.Abs(v.J);
@@ -260,12 +230,9 @@ namespace RayTrace.Skydomes
             if (iMajor)
             {
                 if (v.I < 0)
-//                if (v.I > 0)
                 {
-                        // Left face.
-                        //float U = ((-v.K / iAbs) + 1) / 2;
-                        //float V = ((-v.J / iAbs) + 1) / 2;
-                        float U = ((v.K / iAbs) + 1) / 2;
+                    // Left face.
+                    float U = ((v.K / iAbs) + 1) / 2;
                     float V = ((v.J / iAbs) + 1) / 2;
                     return GetColour(faces[Left], U, V);
                 }
@@ -303,14 +270,14 @@ namespace RayTrace.Skydomes
                     // Back face.
                     float U = ((v.I / kAbs) + 1) / 2;
                     float V = ((v.J / kAbs) + 1) / 2;
-                    return GetColour(faces[Back], 1.0f - U, V);
+                    return GetColour(faces[Front], 1.0f - U, V);
                 }
                 else
                 {
                     // Front face.
                     float U = ((v.I / kAbs) + 1) / 2;
                     float V = ((v.J / kAbs) + 1) / 2;
-                    return GetColour(faces[Front], U, V);
+                    return GetColour(faces[Back], U, V);
                 }
             }
 

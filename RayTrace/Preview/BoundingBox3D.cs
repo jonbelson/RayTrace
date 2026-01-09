@@ -102,7 +102,7 @@ namespace RayTrace.Preview
             CreateBoundingBox();
 
             var scale = new ScaleTransform3D(sx, sy, sz);
-            var translate = new TranslateTransform3D(p.X, p.Y, -p.Z);
+            var translate = new TranslateTransform3D(p.X, p.Y, p.Z);
             Transform3DGroup transformGroup = new();
 
             transformGroup.Children.Add(scale);
@@ -137,7 +137,7 @@ namespace RayTrace.Preview
             float ty = min.Y + dy/2.0f;
             float tz = min.Z + dz/2.0f;
 
-            var translate = new TranslateTransform3D(tx, ty, -tz);
+            var translate = new TranslateTransform3D(tx, ty, tz);
             Transform3DGroup transformGroup = new();
 
             transformGroup.Children.Add(scale);

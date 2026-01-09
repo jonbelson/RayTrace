@@ -50,6 +50,7 @@ namespace RayTrace
             public float u, v, w;
         }
 
+        // Assumes CCW winding order.
         public class Triangle
         {
             public int v0, v1, v2;  // Indices into Point array.
@@ -532,20 +533,23 @@ namespace RayTrace
                 }
 #endif
 
-                _viewTangents = new SVector[_modelData.tangents.Length];
-
-                // XXX Should these be left in object space?
-#if USE_SIMD
-                Matrix OtoVT = ObjectToViewNormal.GetTranspose();
-                OtoVT.MatrixMultiplySIMD(_modelData.tangents, _viewTangents);
-#else
-                for (int i=0; i<_modelData.tangents.Length; i++)
+                if (_modelData.tangents is not null)
                 {
-                    _viewTangents[i] = ObjectToViewNormal * _modelData.tangents[i];
-                }
-#endif
+                    _viewTangents = new SVector[_modelData.tangents.Length];
 
-                //                _subGroupArray = new ModelSubGroup[_modelData.Children.Count];
+                    // XXX Should these be left in object space?
+#if USE_SIMD
+                    Matrix OtoVT = ObjectToViewNormal.GetTranspose();
+                    OtoVT.MatrixMultiplySIMD(_modelData.tangents, _viewTangents);
+#else
+                    for (int i=0; i<_modelData.tangents.Length; i++)
+                    {
+                        _viewTangents[i] = ObjectToViewNormal * _modelData.tangents[i];
+                    }
+#endif
+                }
+
+                //_subGroupArray = new ModelSubGroup[_modelData.Children.Count];
                 _subGroupArray = new ModelSubGroup[_subGroups.Count];
                 int idx = 0;
                 foreach (var group in _subGroups)
@@ -908,7 +912,7 @@ namespace RayTrace
                 // Get an interpolated normal based on the brycentric coordinates.
                 vTriNormal = GetNormal(n0, n1, n2, uv.Item1, uv.Item2);
             }
-
+/*
             if (_modelData.HasVertexTangents)
             {
                 // " The bitangent vectors MUST be computed by taking the cross product of the
@@ -944,6 +948,7 @@ namespace RayTrace
                 hr.EntryNormal = vMapNormal;
             }
             else
+*/
             // Calculate texel at hit point if texels are available.
             if (_modelData.HasVertexTexels)
             {
@@ -1104,9 +1109,9 @@ namespace RayTrace
             //float dp2 = vNormal.DotProduct(vp1);
             //float dp3 = vNormal.DotProduct(vp2);
 
-            if (vNormal.DotProduct(edge0.VectorProduct(C0)) <= 0.0f &&
-                vNormal.DotProduct(edge1.VectorProduct(C1)) <= 0.0f &&
-                vNormal.DotProduct(edge2.VectorProduct(C2)) <= 0.0f)
+            if (vNormal.DotProduct(edge0.VectorProduct(C0)) > 0.0f &&
+                vNormal.DotProduct(edge1.VectorProduct(C1)) > 0.0f &&
+                vNormal.DotProduct(edge2.VectorProduct(C2)) > 0.0f)
             {
                 hr.Entry = Intersection;
                 hr.EntryNormal = vNormal;

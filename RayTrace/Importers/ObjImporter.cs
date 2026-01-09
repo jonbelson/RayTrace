@@ -19,8 +19,8 @@ namespace RayTrace.Importers
         {
             SVector v1 = points[triangle.v1] - points[triangle.v0];
             SVector v2 = points[triangle.v2] - points[triangle.v0];
-//            SVector normal = v1.VectorProduct(v2);
-            SVector normal = v2.VectorProduct(v1);
+            SVector normal = v1.VectorProduct(v2);
+//            SVector normal = v2.VectorProduct(v1);
             return normal.Normalise();
         }
 
@@ -601,7 +601,7 @@ namespace RayTrace.Importers
                     {
                         if (tokens.Length >= 4 && Parse(tokens, out f1, out f2, out f3) == 3)
                         {
-                            SPoint p = new SPoint(f1, f2, -f3, 1.0f);
+                            SPoint p = new SPoint(f1, f2, f3, 1.0f);
                             points.Add(p);
                         }
                         else
@@ -612,7 +612,7 @@ namespace RayTrace.Importers
                     {
                         if (tokens.Length == 4 && Parse(tokens, out f1, out f2, out f3) == 3)
                         {
-                            SVector v = new SVector(f1, f2, -f3, 0f);
+                            SVector v = new SVector(f1, f2, f3, 0f);
                             v = v.Normalise();
                             normals.Add(v);
                         }

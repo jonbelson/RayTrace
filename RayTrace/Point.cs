@@ -94,6 +94,7 @@ namespace RayTrace
         public Vector Difference(Point p) => new Vector(p.X - X, p.Y - Y, p.Z - Z);
 
         public static Point operator+(Point p, Vector v) => new Point(p.X + v.I, p.Y + v.J, p.Z + v.K);
+        public static Point operator-(Point p, Vector v) => new Point(p.X - v.I, p.Y - v.J, p.Z - v.K);
 
         public Point Offset(Vector v) => new Point(X + v.I, Y + v.J, Z + v.K);
 

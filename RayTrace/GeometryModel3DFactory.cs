@@ -513,13 +513,7 @@ namespace RayTrace
                     SVector v2 = v;//.Negate();
                    // SVector v2 = v.Negate();
 
-                    //v2.I = -v2.I;
-                    //v2.J = -v2.J;
-
-                    //v2 = new(v2.I, v2.J, -v2.K);
-                    //v2 = new(-v2.I, -v2.J, -v2.K);
-
-                    Vector3D v3d = VectorToVector3D(v2);
+                    Vector3D v3d = VectorToVector3D(-v2);
 
                     mesh.Normals.Add(v3d);
                 }
@@ -603,11 +597,11 @@ namespace RayTrace
 
             ModelAxis3D axis = new(Min.ToVector4());
 
-            var axisRotationX = new AxisAngleRotation3D(new Vector3D(1, 0, 0), -shape.RotateX);
-            var axisRotationY = new AxisAngleRotation3D(new Vector3D(0, 1, 0), -shape.RotateY);
+            var axisRotationX = new AxisAngleRotation3D(new Vector3D(1, 0, 0), shape.RotateX);
+            var axisRotationY = new AxisAngleRotation3D(new Vector3D(0, 1, 0), shape.RotateY);
             var axisRotationZ = new AxisAngleRotation3D(new Vector3D(0, 0, 1), shape.RotateZ);
             var scale = new ScaleTransform3D(shape.Scale, shape.Scale, shape.Scale);
-            var translate = new TranslateTransform3D(shape.Pos.X, shape.Pos.Y, -shape.Pos.Z);
+            var translate = new TranslateTransform3D(shape.Pos.X, shape.Pos.Y, shape.Pos.Z);
 
 
             var transformGroup = axis.Transform as Transform3DGroup;
@@ -629,11 +623,11 @@ namespace RayTrace
 
             BoundingBox3D boundingBox = new(Min.ToVector4(), Max.ToVector4());
 
-            var axisRotationX = new AxisAngleRotation3D(new Vector3D(1, 0, 0), -shape.RotateX);
-            var axisRotationY = new AxisAngleRotation3D(new Vector3D(0, 1, 0), -shape.RotateY);
+            var axisRotationX = new AxisAngleRotation3D(new Vector3D(1, 0, 0), shape.RotateX);
+            var axisRotationY = new AxisAngleRotation3D(new Vector3D(0, 1, 0), shape.RotateY);
             var axisRotationZ = new AxisAngleRotation3D(new Vector3D(0, 0, 1), shape.RotateZ);
             var scale = new ScaleTransform3D(shape.Scale, shape.Scale, shape.Scale);
-            var translate = new TranslateTransform3D(shape.Pos.X, shape.Pos.Y, -shape.Pos.Z);
+            var translate = new TranslateTransform3D(shape.Pos.X, shape.Pos.Y, shape.Pos.Z);
 
 
             var transformGroup = boundingBox.Transform as Transform3DGroup;

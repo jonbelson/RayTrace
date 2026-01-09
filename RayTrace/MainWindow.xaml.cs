@@ -312,13 +312,15 @@ namespace RayTrace
         {
             InitializeComponent();
 
-            //List<SPoint> points = new List<SPoint>() { new SPoint(0, 0, 0), new SPoint(1, 0, 0), new SPoint(1, 1, 0), new SPoint(0, 1, 0) };
-            List<SPoint> points = new List<SPoint>() { new SPoint(0, 0, 0, 1.0f), new SPoint(5, 0, 0, 1.0f), new SPoint(5, 5, 0, 1.0f), new SPoint(0, 5, 0, 1.0f) };
-            Triangulator triangulator = new(points);
-
-            if (triangulator.Triangulate())
             {
+                //List<SPoint> points = new List<SPoint>() { new SPoint(0, 0, 0), new SPoint(1, 0, 0), new SPoint(1, 1, 0), new SPoint(0, 1, 0) };
+                List<SPoint> points = new List<SPoint>() { new SPoint(0, 0, 0, 1.0f), new SPoint(5, 0, 0, 1.0f), new SPoint(5, 5, 0, 1.0f), new SPoint(0, 5, 0, 1.0f) };
+                Triangulator triangulator = new(points);
 
+                if (triangulator.Triangulate())
+                {
+
+                }
             }
 
             Logger.Instance.Info($"Launched from {Environment.CurrentDirectory}");
@@ -357,12 +359,28 @@ namespace RayTrace
 */            }
 
 
-            ModelData.Triangle triangle = new();
-            triangle.v0 = 0;
-            triangle.v1 = 1;
-            triangle.v2 = 2;
+            {
+//                List<SPoint> points = new List<SPoint>() { new SPoint(0, 0, 0, 1.0f), new SPoint(5, 0, 0, 1.0f), new SPoint(0, 5, 0, 1.0f) };
+                List<SPoint> points = new List<SPoint>()
+                {
+                    SPoint.New(5, 0, 0),
+                    SPoint.New(3, 0, -2),
+                    SPoint.New(-1, 0, 1)
+                };
 
-            SVector normal = ObjImporter.GetNormal(points, triangle);
+                ModelData.Triangle triangle = new();
+                triangle.v0 = 0;
+                triangle.v1 = 1;
+                triangle.v2 = 2;
+
+                SVector normal = ObjImporter.GetNormal(points, triangle);
+
+                //SVector unitZ = SVector.UnitZ;
+
+                //float dp = normal.DotProduct(unitZ);
+                int i = 0;
+
+            }
 
             {
                 Debug.Assert(Sse.IsSupported);
@@ -877,8 +895,8 @@ namespace RayTrace
 ///*
             viewport3D.Camera = camera3D;
 
-            camera3D.Position = new Point3D(cameraPos.X, cameraPos.Y, -cameraPos.Z);
-            camera3D.LookDirection = new Vector3D(cameraView.I, cameraView.J, -cameraView.K);
+            camera3D.Position = new Point3D(cameraPos.X, cameraPos.Y, cameraPos.Z);
+            camera3D.LookDirection = new Vector3D(cameraView.I, cameraView.J, cameraView.K);
             camera3D.UpDirection = new Vector3D(0.0, 1.0, 0.0);
             camera3D.FieldOfView = scene.Camera.FovH;
 //*/
@@ -888,7 +906,7 @@ namespace RayTrace
                 return;
             }
 
-            if (sender is Light light && (propName == "Pos"))
+            if (sender is Light light && (propName == "Pos" || propName == "Enabled"))
             {
                 viewport3D.Update(light);
                 return;
@@ -1606,8 +1624,8 @@ namespace RayTrace
                             Point cameraPos = scene.Camera.Pos;
                             Vector cameraView = scene.Camera.GetViewVector().Normalise();
 
-                            camera3D.Position = new Point3D(cameraPos.X, cameraPos.Y, -cameraPos.Z);
-                            camera3D.LookDirection = new Vector3D(cameraView.I, cameraView.J, -cameraView.K);
+                            camera3D.Position = new Point3D(cameraPos.X, cameraPos.Y, cameraPos.Z);
+                            camera3D.LookDirection = new Vector3D(cameraView.I, cameraView.J, cameraView.K);
                             camera3D.UpDirection = new Vector3D(0.0, 1.0, 0.0);
                             camera3D.FieldOfView = scene.Camera.FovH;
 

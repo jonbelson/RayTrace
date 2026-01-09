@@ -176,7 +176,7 @@ namespace RayTrace
                 float j = (g / 255.0f) * 2.0f - 1.0f;
                 float k = (b / 255.0f) * 2.0f - 1.0f;
 
-                Debug.Assert(k >= 0.0f);
+///                Debug.Assert(k >= 0.0f);
 
                 //SVector n = new SVector(-i, -j, -k);
                 SVector n = new SVector(i, j, -k, 0);

@@ -18,7 +18,7 @@ namespace RayTrace.Preview
         static private Point3D origin = new Point3D(0, 0, 0);
         static private Point3D x = new(1, 0, 0);
         static private Point3D y = new(0, 1, 0);
-        static private Point3D z = new(0, 0, -1);
+        static private Point3D z = new(0, 0, 1);
 
         private static readonly double Thickness = 8;
 
@@ -28,7 +28,7 @@ namespace RayTrace.Preview
 
             Transform3DGroup transformGroup = new();
 
-            var translate = new TranslateTransform3D(origin.X, origin.Y, -origin.Z);
+            var translate = new TranslateTransform3D(origin.X, origin.Y, origin.Z);
 
             //var scale = new ScaleTransform3D(10, 10, 10);
             //transformGroup.Children.Add(scale);
@@ -62,7 +62,7 @@ namespace RayTrace.Preview
 
             line = new()
             {
-                Points = CreateLine(new(0, 0, 0), new(0, 0, -1)),
+                Points = CreateLine(new(0, 0, 0), new(0, 0, 1)),
                 Thickness = Thickness,
                 Color = Colors.Blue
             };

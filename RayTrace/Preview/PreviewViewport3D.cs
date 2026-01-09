@@ -220,7 +220,7 @@ namespace RayTrace.Preview
             {
                 _3DTools.ScreenSpaceLines3D lines = new();
 
-                lines.Points = CreateLine(new Point3D(0, 0, 0), new Point3D(0, 0, -AxisSize));
+                lines.Points = CreateLine(new Point3D(0, 0, 0), new Point3D(0, 0, AxisSize));
                 lines.Thickness = 5;
                 lines.Color = Colors.Blue;
 
@@ -263,9 +263,9 @@ namespace RayTrace.Preview
             double cz = Vector3D.DotProduct(zAxis, positionVec);
 
             Matrix3D viewMatrix = new Matrix3D(
-                xAxis.X, yAxis.X, -zAxis.X, 0,
-                xAxis.Y, yAxis.Y, -zAxis.Y, 0,
-                xAxis.Z, yAxis.Z, -zAxis.Z, 0,
+                xAxis.X, yAxis.X, zAxis.X, 0,
+                xAxis.Y, yAxis.Y, zAxis.Y, 0,
+                xAxis.Z, yAxis.Z, zAxis.Z, 0,
                 cx, cy, cz, 1
                 );
 
@@ -286,7 +286,7 @@ namespace RayTrace.Preview
             double fov = camera.FieldOfView/180.0*Math.PI;
             double halfTanFov = Math.Tan(fov/2.0);
 
-            Vector3D directionCameraSpece = new Vector3D(x*halfTanFov, y*halfTanFov/aspect, -1.0);
+            Vector3D directionCameraSpece = new Vector3D(x*halfTanFov, y*halfTanFov/aspect, 1.0);
 
             Matrix3D viewMatrix = CreateViewMatrix(camera);
             Matrix3D inverseViewMatrix = viewMatrix;
