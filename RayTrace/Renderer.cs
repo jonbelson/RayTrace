@@ -602,7 +602,22 @@ namespace RayTrace
 
                     MaterialType materialType = material.Type;
 
-                    emissive = material?.GetEmissiveColour(hr) ?? SPalette.Black;
+                    emissive = material?.GetEmissiveColour(hr).ToLinearRGB() ?? SPalette.Black;
+
+                    radiance += throughput*emissive;
+
+                    // Do Russian Roulette to decide if we should terminate this ray.
+                    if (depth >= _minRecursionDepth)
+                    {
+//                        float q = throughput.MaxComponent();
+                        float q = Math.Min(0.95f, throughput.MaxComponent());
+
+                        if (q < 0.01f) break;
+
+                        if (rand.NextSingle() > q) break;
+
+                        throughput = throughput / q;
+                    }
 
                     switch (materialType)
                     {
@@ -623,7 +638,7 @@ namespace RayTrace
                                     for (int i = 0; i<NumRetries; i++)
                                     {
                                         //SVector v = GetLocalVectorInHemisphere(rand);
-                                        scattered = material.Brdf.GetSample(hr, lcs, rand, material.GetSColour(hr), out /*float*/ pdf);
+                                        scattered = material.Brdf.GetSample(hr, lcs, rand, material.GetSColour(hr).ToLinearRGB(), out pdf);
 
                                         if (scattered != System.Numerics.Vector4.Null())
                                         {
@@ -662,31 +677,14 @@ namespace RayTrace
 
                                 float cosTheta = scattered.DotProduct(hr.EntryNormal);
 
-                                SColour brdfColour = material.Brdf.GetBrdfReflectance(hr, lcs, rand, material.GetSColour(hr), scattered) / pdf;
+                                SColour brdfColour = material.Brdf.GetBrdfReflectance(hr, lcs, rand, material.GetSColour(hr).ToLinearRGB(), scattered);
+                                brdfColour = brdfColour / pdf;
 
                                 SColour brdfWeight = brdfColour * cosTheta;
 
-                                SColour newThroughput = throughput * brdfWeight;
+                                throughput = throughput * brdfWeight;
 
-                                if (depth >= _minRecursionDepth)
-                                {
-                                    float q = newThroughput.MaxComponent();
-
-                                    if (q < 0.01f) break;
-
-                                    if (rand.NextSingle() > q) break;
-
-                                    newThroughput = newThroughput / q;
-                                }
-
-                                throughput = newThroughput;
-
-                                //                            ray = new Ray(hr.Entry + scattered * 0.01f, scattered);
                                 ray = new Ray(hr.Entry + hr.EntryNormal * 0.01f, scattered);
-
-                                //                            ray.Origin = hr.Entry + scattered * 0.01f;//.Scale(0.01);
-                                //                           ray.Direction = scattered;
-
                             }
                             break;
 
@@ -759,15 +757,14 @@ namespace RayTrace
                 else
                 {
                     // No further bounces, so just add the skydome colour then drop out.
-                    radiance += throughput*scene.GetSkydomeColour(camera, ray.Direction);
+                    radiance += throughput*scene.GetSkydomeColour(camera, ray.Direction).ToLinearRGB();
                     break;
 
                 }
 
-                radiance += throughput*emissive;
             }
 
-            return radiance;
+            return radiance.FromLinearRGB();
         }
 
         // scene    Scene we are rendering.

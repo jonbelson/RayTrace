@@ -1,0 +1,5 @@
+
+Many, but including:
+
+Boksansky's reference path tracer (Ray Tracing Gems).
+Khronous Group's reference viewer.

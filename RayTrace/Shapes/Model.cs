@@ -912,9 +912,24 @@ namespace RayTrace
                 // Get an interpolated normal based on the brycentric coordinates.
                 vTriNormal = GetNormal(n0, n1, n2, uv.Item1, uv.Item2);
             }
-/*
-            if (_modelData.HasVertexTangents)
+
+            Material material = subGroup.Material ?? Material;
+
+            if (_modelData.HasVertexTangents && material.HasNormalMap())
             {
+                // Use barycentric coordinates to get texel coordinates.
+                ModelData.Texel t0 = _modelData.GetTriangleTexel0(index);
+                ModelData.Texel t1 = _modelData.GetTriangleTexel1(index);
+                ModelData.Texel t2 = _modelData.GetTriangleTexel2(index);
+
+                ModelData.Texel texel = GetTexel(t0, t1, t2, uv.Item1, uv.Item2);
+                hr.u = texel.u;
+                hr.v = texel.v;
+
+                SVector tNormal = material.NormalMap.GetNormal(texel.u, texel.v);
+
+                vTriNormal = tNormal;
+
                 // " The bitangent vectors MUST be computed by taking the cross product of the
                 // normal and tangent XYZ vectors and multiplying it against the W component of
                 // the tangent: bitangent = cross(normal.xyz, tangent.xyz) * tangent.w. "
@@ -935,20 +950,20 @@ namespace RayTrace
                 //float W = vTriTangent.W;
                 //vTriTangent = vTriTangent.Normalise();
 
-//                SVector vTriBitangent = vTriNormal.VectorProduct(vTriTangent)*-W;   // XXX W probably needs negating?
+                //SVector vTriBitangent = vTriNormal.VectorProduct(vTriTangent)*-W;   // XXX W probably needs negating?
                 SVector vTriBitangent = vTriNormal.VectorProduct(vTriTangent)*W;   // XXX W probably needs negating?
 
 
-                Matrix m = new(vTriTangent, vTriNormal, -vTriBitangent);
+                Matrix m = new(vTriTangent, vTriBitangent, tNormal /*vTriNormal*/);
 
                 ///m.Transpose();
 
                 SVector vMapNormal = m * vTriNormal;
 
-                hr.EntryNormal = vMapNormal;
+                hr.EntryNormal = vMapNormal.Normalise();
             }
             else
-*/
+
             // Calculate texel at hit point if texels are available.
             if (_modelData.HasVertexTexels)
             {
@@ -961,7 +976,7 @@ namespace RayTrace
                 hr.u = texel.u;
                 hr.v = texel.v;
 
-                Material material = subGroup.Material ?? Material;
+                //Material material = subGroup.Material ?? Material;
 
                 // If there's a normal map, apply it to the vertex normal.
                 if (material.HasNormalMap())
@@ -995,7 +1010,7 @@ namespace RayTrace
                     SVector yaxis = vUp;
                     SVector zaxis = vNorm;
 
-                    Matrix m = new(xaxis, yaxis, -zaxis);
+                    Matrix m = new(xaxis, yaxis, zaxis);
 
                     ///m.Transpose();
 

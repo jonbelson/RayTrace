@@ -44,13 +44,15 @@ namespace RayTrace.Brdfs
 
         private bool _sampleDiffuse; // XXX nasty hack!!!
 
-        // Read Roughness from the texture, else return default.
+        // Read Metallic-Roughness from the texture, else return default.
+        // Note that metallicRoughnessTexture is encoded as linear RGB
+        // (https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#metallic-roughness-material).
         private Colour GetMetallicRoughness(in HitResult hr)
         {
             if (MetallicRoughnessTexture is not null && MetallicRoughnessTexture.IsValid())
             {
                 Colour texColour = MetallicRoughnessTexture.GetColour(hr.u, hr.v);
-                return texColour.ToLinearRGB();
+                return texColour;
             }
             return _defaultRoughness;
         }
@@ -472,7 +474,7 @@ namespace RayTrace.Brdfs
         }
 
         // Return a sample direction in world space.
-        // colour   sRGB surface colour at hit point.
+        // colour   Surface colour at hit point (linear RGB).
         public override SVector GetSample(HitResult hr, LocalCoordinateSystem lcs, Random rand, SColour colour, out float pdf)
         {
             // Decide which lobe to sample (diffuse or specular).
@@ -482,12 +484,12 @@ namespace RayTrace.Brdfs
 
             roughness = MathF.Max(roughness, 0.045f);
 
-            SColour F0 = SColour.Lerp(_f0, colour.ToLinearRGB(), metalness);
+            SColour F0 = SColour.Lerp(_f0, colour, metalness);
 
             float luminance = F0.MaxComponent();
 
             float specWeight = luminance;
-            float diffuseWeight = (1.0f - metalness)*colour.ToLinearRGB().MaxComponent();
+            float diffuseWeight = (1.0f - metalness)*colour.MaxComponent();
 
             float sum = specWeight + diffuseWeight;
             if (sum != 0)
@@ -604,14 +606,13 @@ namespace RayTrace.Brdfs
             MetallicFactor = xml.Metallic;
         }
 
+        // Calculate reflectance.
+        // colour   Colour of surface at hit point (linear RGB).
+        // Returns reflectance at hit point (linear RGB).
         public override SColour GetBrdfReflectance(HitResult hr, LocalCoordinateSystem lcs, Random rand, SColour colour, SVector source)
         {
             Debug.Assert(!source.IsNull());
             Debug.Assert(!hr.Ray.IsNull());
-
-            //Colour colour = colour2.ToLinearRGB();
-
-            colour = colour.ToLinearRGB();
 
             //source = source.Normalise();
 
@@ -619,7 +620,7 @@ namespace RayTrace.Brdfs
             SVector V = hr.Ray.Normalise().Negate();
 
             // Decide which lobe to sample (diffuse or specular).
-            Colour metallicRoughnessColour = GetMetallicRoughness(hr).ToLinearRGB();
+            Colour metallicRoughnessColour = GetMetallicRoughness(hr);
             float metalness = GetMetalness(metallicRoughnessColour) * MetallicFactor;
             float roughness = Math.Max(GetRoughness(metallicRoughnessColour) * RoughnessFactor, 0.0001f);
 
@@ -685,13 +686,15 @@ namespace RayTrace.Brdfs
 
             SColour radiance = diffuseContrib + specularContrib;
 
-            return radiance.FromLinearRGB();
+            //radiance = radiance.FromLinearRGB();
+
+            return radiance;
         }
 
         // Calculate Colour at point given in hr based on radiance (Li) coming from direction 'source'.
         // Based on reference implemenation at:
         //   https://github.com/KhronosGroup/glTF-Sample-Viewer/blob/glTF-WebGL-PBR/shaders/pbr-frag.glsl
-        // colour   Colour of surface at hit point.
+        // colour   Colour of surface at hit point (linear RGB).
         // source   A vector from hr towards the source of the incoming light.
         // Li       The colour of the incoming light.
         public override SColour GetColour(HitResult hr, LocalCoordinateSystem lcs, Random rand, SColour colour, SVector source, SColour Li)

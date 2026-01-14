@@ -23,6 +23,11 @@ namespace RayTrace
     //  8  9 10 11
     // 12 13 14 15
     //
+    // M11 M12 M13 M14
+    // M21 M22 M23 M24
+    // M31 M32 M33 M44
+    // M41 M42 M43 M44
+    //
     // M14 M24 M34 - translation
     // M11 M22 M33 - scale
     //
@@ -49,6 +54,9 @@ namespace RayTrace
         public float M33 { get { return M[10]; } set { M[10] = value; } }
         public float M34 { get { return M[11]; } set { M[11] = value; } }
 
+        public float M41 { get { return M[12]; } set { M[12] = value; } }
+        public float M42 { get { return M[13]; } set { M[13] = value; } }
+        public float M43 { get { return M[14]; } set { M[14] = value; } }
         public float M44 { get { return M[15]; } set { M[15] = value; } }
 
         //
@@ -431,17 +439,18 @@ namespace RayTrace
             Point cameraTarget = to;
             Point cameraPosition = from;
 
-            Vector zaxis = cameraTarget - cameraPosition;
+//            Vector zaxis = cameraTarget - cameraPosition;
+            Vector zaxis = cameraPosition - cameraTarget;
             zaxis = zaxis.Normalise();
 
             Vector cameraUpVector = new Vector(0, 1, 0);
 
-            Vector xaxis = zaxis.VectorProduct(cameraUpVector);
-            //xaxis = zaxis.VectorProduct(cameraUpVector);
+//            Vector xaxis = zaxis.VectorProduct(cameraUpVector);
+            Vector xaxis = cameraUpVector.VectorProduct(zaxis);
             xaxis = xaxis.Normalise();
 
-            Vector yaxis = xaxis.VectorProduct(zaxis);
-            //yaxis = xaxis.VectorProduct(zaxis);
+//            Vector yaxis = xaxis.VectorProduct(zaxis);
+            Vector yaxis = zaxis.VectorProduct(xaxis);
 
             Vector vecPosition = new Vector(cameraPosition.X, cameraPosition.Y, cameraPosition.Z);
 
@@ -453,14 +462,14 @@ namespace RayTrace
             M22 = yaxis.J;
             M23 = yaxis.K;
 
-            M31 = -zaxis.I;
-            M32 = -zaxis.J;
-            M33 = -zaxis.K;
+            M31 = zaxis.I;
+            M32 = zaxis.J;
+            M33 = zaxis.K;
 
 
             M14 = -xaxis.DotProduct(vecPosition);
             M24 = -yaxis.DotProduct(vecPosition);
-            M34 = zaxis.DotProduct(vecPosition);
+            M34 = -zaxis.DotProduct(vecPosition);
 
             //M14 = -vecPosition.I;
             //M24 = -vecPosition.J;

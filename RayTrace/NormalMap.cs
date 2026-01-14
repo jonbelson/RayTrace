@@ -47,6 +47,14 @@ namespace RayTrace
             }
         }
 
+        public enum TextureOrigin
+        {
+            TopLeft,        // Used by glTF (https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#images)
+            BottomLeft      // Used by OpenGL.
+        }
+
+        public TextureOrigin Origin = TextureOrigin.BottomLeft;
+
         private bool LoadTexture(string fileName)
         {
             try
@@ -144,10 +152,15 @@ namespace RayTrace
             return GetNormal(hr.u, hr.v);
         }
 
+        // Note:
+        // glTF/OpenGL convention is +Y in normal map is +Y (up).
+        // DirectX convention is +Y in normal map is -Y (down).
         public SVector GetNormal(float u, float v)
         {
             if (IsValid)
             {
+                if (Origin == TextureOrigin.TopLeft) v = 1.0f - v;
+
                 u = Math.Clamp(u, 0, 1);
                 v = Math.Clamp(v, 0, 1);
 
@@ -179,7 +192,7 @@ namespace RayTrace
 ///                Debug.Assert(k >= 0.0f);
 
                 //SVector n = new SVector(-i, -j, -k);
-                SVector n = new SVector(i, j, -k, 0);
+                SVector n = new SVector(i, j, k, 0);
 
                 n = n * _scaleVector;
 

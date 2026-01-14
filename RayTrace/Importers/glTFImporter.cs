@@ -1,24 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using System.Text.Json;
-using System.IO;
-using System.Windows.Media;
-using System.Diagnostics;
-using System.Reflection;
-using System.Xml.Linq;
-using System.Windows;
-using System.Runtime.InteropServices;
-using System.Windows.Media.Media3D;
-using Microsoft.Windows.Themes;
-using System.Security.Policy;
-using System.Numerics;
-using System.Drawing;
-
+﻿using Microsoft.Windows.Themes;
 using RayTrace.Brdfs;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Numerics;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Security.Policy;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Media3D;
+using System.Windows.Media.TextFormatting;
+using System.Xml.Linq;
 using static RayTrace.Importers.ObjImporter;
 using static RayTrace.ModelData;
 
@@ -434,6 +433,36 @@ namespace RayTrace.Importers
 
             public List<JsonTexture> textures { get; set; }
         };
+
+        private void Dump(Vec3T<float>[] array, string name)
+        {
+            Logger.Instance.Trace($"Dumping array: {name}");
+
+            for (int i=0; i<array.Count(); i++)
+            {
+                Logger.Instance.Trace($"  {i} {array[i].x}, {array[i].y}, {array[i].z}");
+            }
+        }
+
+        private void Dump(Vec4T<float>[] array, string name)
+        {
+            Logger.Instance.Trace($"Dumping array: {name}");
+
+            for (int i = 0; i<array.Count(); i++)
+            {
+                Logger.Instance.Trace($"  {i} {array[i].x}, {array[i].y}, {array[i].z}, {array[i].w}");
+            }
+        }
+
+        private void Dump(uint[] array, string name)
+        {
+            Logger.Instance.Trace($"Dumping array: {name}");
+
+            for (int i = 0; i<array.Count(); i++)
+            {
+                Logger.Instance.Trace($"  {i} {array[i]}");
+            }
+        }
 
         private static JsonAccessor GetAccessor(Asset asset, int index)
         {
@@ -1189,6 +1218,8 @@ namespace RayTrace.Importers
                     gltfPrimitive.material = primitive.material.HasValue ? primitive.material.Value : -1;
                     gltfPrimitive.mode = primitive.mode.HasValue ? (MeshPrimitiveMode)primitive.mode.Value : MeshPrimitiveMode.TRIANGLES;
 
+                    //Dump(primitive.);
+
                     gltfMesh.primitives.Add(gltfPrimitive);
                 }
 
@@ -1555,8 +1586,9 @@ namespace RayTrace.Importers
                     if (!String.IsNullOrEmpty(path))
                     {
                         TextureBitmap texture = new();
-                        mat.Texture = texture;
                         texture.FileName = path;
+                        texture.Origin = TextureBitmap.TextureOrigin.TopLeft;
+                        mat.Texture = texture;
                     }
                     else
                     {
@@ -1577,6 +1609,7 @@ namespace RayTrace.Importers
                     if (!String.IsNullOrEmpty(path))
                     {
                         NormalMap normalMap = new NormalMap(path) { Scale = material.normalScale };
+                        normalMap.Origin = NormalMap.TextureOrigin.TopLeft;
                         mat.NormalMap = normalMap;
                     }
                     else
@@ -1591,6 +1624,7 @@ namespace RayTrace.Importers
                     if (!string.IsNullOrEmpty(path))
                     {
                         TextureBitmap texture = new(path);
+                        texture.Origin = TextureBitmap.TextureOrigin.TopLeft;
                         brdf.MetallicRoughnessTexture = texture;
                     }
                 }
@@ -1601,6 +1635,7 @@ namespace RayTrace.Importers
                     if (!String.IsNullOrEmpty(path))
                     {
                         TextureBitmap emissiveTexture = new() { FileName = path };
+                        emissiveTexture.Origin = TextureBitmap.TextureOrigin.TopLeft;
 
                         mat.EmissiveTexture = emissiveTexture;
                     }

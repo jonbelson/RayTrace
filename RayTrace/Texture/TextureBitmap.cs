@@ -34,6 +34,14 @@ namespace RayTrace
         public WrappingMode WrapU { get; set; } = WrappingMode.Repeat;
         public WrappingMode WrapV { get; set; } = WrappingMode.Repeat;
 
+        public enum TextureOrigin
+        {
+            TopLeft,        // Used by glTF (https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#images)
+            BottomLeft      // Used by OpenGL.
+        }
+
+        public TextureOrigin Origin = TextureOrigin.BottomLeft;
+
         public string FileName {
             get => fileName;
             set {
@@ -188,6 +196,8 @@ namespace RayTrace
                         break;
                 }
 
+
+                if (Origin == TextureOrigin.TopLeft) v = 1.0f - v;
 
                 //u = Math.Clamp(u, 0, 1);
                 //v = Math.Clamp(v, 0, 1);

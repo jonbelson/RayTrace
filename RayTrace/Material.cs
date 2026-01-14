@@ -275,13 +275,16 @@ namespace RayTrace
             return SPalette.Black;
         }
 
+        // Return emissive colour at hit point.
+        // Returns emissive colour, or black if not defined (linearRGB).
         public SColour GetEmissiveColour(HitResult hr)
         {
             Colour c = EmissiveTexture?.GetColour(hr) ?? Palette.Black;
-            
-            c = c * EmissiveStrength * EmissiveFactor;
 
-            SColour sc = c.ToSColour();
+            SColour sc = c.ToSColour().ToLinearRGB();
+            
+            sc = sc * EmissiveStrength * EmissiveFactor.ToSColour();
+
             return sc;
         }
 

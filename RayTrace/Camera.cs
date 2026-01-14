@@ -65,12 +65,29 @@ namespace RayTrace
         {
             WorldToView.SetLookAt(_pos, _target);
 
-            _normalMatrix = new Matrix(WorldToView);
+            //_normalMatrix = new Matrix(WorldToView);
+            //_normalMatrix.M14 = 0.0f;
+            //_normalMatrix.M24 = 0.0f;
+            //_normalMatrix.M34 = 0.0f;
+
+            _normalMatrix = WorldToView.GetInverse();
+
+            _normalMatrix = _normalMatrix.GetTranspose();
             _normalMatrix.M14 = 0.0f;
             _normalMatrix.M24 = 0.0f;
             _normalMatrix.M34 = 0.0f;
 
-            _normalMatrixT = _normalMatrix.GetTranspose();
+            _normalMatrix.M41 = 0.0f;
+            _normalMatrix.M42 = 0.0f;
+            _normalMatrix.M43 = 0.0f;
+
+            //_normalMatrixT = _normalMatrix.GetTranspose();
+
+            _normalMatrixT = new Matrix(WorldToView);
+            _normalMatrixT.M14 = 0.0f;
+            _normalMatrixT.M24 = 0.0f;
+            _normalMatrixT.M34 = 0.0f;
+            _normalMatrixT = _normalMatrixT.GetTranspose();
 
             // XXX For transforming surface normals, we need to use the transverse of the inverse of the WorldToView matrix.
         }
