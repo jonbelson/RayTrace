@@ -35,7 +35,7 @@ namespace RayTrace
                 Nt = new SVector(0.0f, -N.K*invMagnitude, N.J*invMagnitude, 0);
             }
 
-            Nb = N.VectorProduct(Nt);   // Possible the order of this shoudl be reversed.
+            Nb = N.VectorProduct(Nt);
         }
 
         // Reproject a vector from the lcs a world space with the specified normal.
@@ -1466,7 +1466,7 @@ namespace RayTrace
                     {
                         //float[,] grid = SampleGrid.GetOffsetGrid(rand, SampleDepth);
                         if (grid is null)
-                            grid = SampleGrid.GetOffsetGrid(rand, SampleDepth);
+                            grid = SampleGrid.GetOffsetGrid(rand, SampleDepth*SampleDepth);
                         else
                             grid = SampleGrid.UpdateOffsetGrid(rand, grid);
 

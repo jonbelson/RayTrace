@@ -114,9 +114,9 @@ namespace RayTrace
 
         public SVector GetTriangleNormal(int index) => normals[triangles[index].n];
 
-        public Texel GetTriangleTexel0(int index) => texels[triangles[index].t0];
-        public Texel GetTriangleTexel1(int index) => texels[triangles[index].t1];
-        public Texel GetTriangleTexel2(int index) => texels[triangles[index].t2];
+        public Texel GetTriangleTexel0(int index) { if (index < triangles.Length) { var tri = triangles[index]; if (tri.t0 < texels.Length) return texels[tri.t0]; } return new Texel(); }
+        public Texel GetTriangleTexel1(int index) { if (index < triangles.Length) { var tri = triangles[index]; if (tri.t1 < texels.Length) return texels[tri.t1]; } return new Texel(); }
+        public Texel GetTriangleTexel2(int index) { if (index < triangles.Length) { var tri = triangles[index]; if (tri.t2 < texels.Length) return texels[tri.t2]; } return new Texel(); }
 
         public Colour GetTriangleColour0(int index) => colours[triangles[index].c0];
         public Colour GetTriangleColour1(int index) => colours[triangles[index].c1];
@@ -156,6 +156,11 @@ namespace RayTrace
         public SVector GetTriangleTargent0(int index) => _viewTangents[_modelData.triangles[index].tg0];
         public SVector GetTriangleTargent1(int index) => _viewTangents[_modelData.triangles[index].tg1];
         public SVector GetTriangleTargent2(int index) => _viewTangents[_modelData.triangles[index].tg2];
+
+        //public SVector GetTriangleTexel0(int index) => _viewTangents[_modelData.triangles[index].tg0];
+        //public SVector GetTriangleTexel1(int index) => _viewTangents[_modelData.triangles[index].tg1];
+        //public SVector GetTriangleTexel2(int index) => _viewTangents[_modelData.triangles[index].tg2];
+
 
         public Node TreeRoot { get => _root; }
 
@@ -573,6 +578,11 @@ namespace RayTrace
                 for (int i=0; i<_subGroupArray.Length; i++)
                 {
                     ModelSubGroup group = _subGroupArray[i];
+
+                    Debug.Assert(group is not null);
+                    Debug.Assert(group.Group is not null);
+                    Debug.Assert(group.Group.Triangles is not null);
+
                     for (int tri = 0; tri < group.Group.Triangles.Count; tri++)
                     {
                         FatTriangle fatTriangle = new();
@@ -621,61 +631,7 @@ namespace RayTrace
                 Debug.Assert(idx == _modelData.triangles.Length);
             }
         }
-#if false
-        // Recurse through partition tree, checking for intersections in boxes that that ray passees through.
-        private void HitTestRecurseFast(Camera camera, List<HitResult> hitResults, Node node, ref SPoint p1, ref SPoint p2, bool segmentOnly, bool firstHitOnly)
-        {
-            if (firstHitOnly && hitResults.Count > 0)
-            {
-                return;
-            }
 
-            // Does ray passes through us?
-            if (node.Box.Intersects(in p1, in p2, out float distance))
-            {
-                HitResult hr = new HitResult(this);
-
-                //SVector ray = p2 - p1;
-
-//                Vector4 pp1 = p1.ToVector4();
-//                Vector4 pp2 = p2.ToVector4();
-                Vector4 pp1 = p1.ToPoint4();
-                Vector4 pp2 = p2.ToPoint4();
-                Vector4 vRay = pp2 - pp1;
-
-                if (node.Left == null && node.Right == null)
-                {
-                    // We're a leaf node, so test our triangles.
-                    foreach (int i in node.Triangles)
-                    {
-                        hr.Reset();
-                        HitTestTriangleFast(camera, ref hr, i, pp1, pp2, vRay, segmentOnly);
-                        if (hr.HasEntry())
-                        {
-                            hitResults.Add(hr);
-
-                            if (firstHitOnly) break;
-                        }
-
-                    }
-                    return;
-                }
-
-                if (node.Left != null)
-                {
-                    HitTestRecurseFast(camera, hitResults, node.Left, ref p1, ref p2, segmentOnly, firstHitOnly);
-                }
-                if (node.Right != null)
-                {
-                    HitTestRecurseFast(camera, hitResults, node.Right, ref p1, ref p2, segmentOnly, firstHitOnly);
-                }
-            }
-            else
-            {
-                _ = 0;
-            }
-        }
-#endif
         // Recurse through partition tree, checking for intersections in boxes that that ray passees through.
         private void HitTestRecurse(Camera camera, List<HitResult> hitResults, Node node, in SPoint p1, in SPoint p2, bool segmentOnly, bool firstHitOnly)
         {
@@ -1041,6 +997,7 @@ namespace RayTrace
             hr.Reset();
 
             FatTriangle tri = _fatTriangles[index];
+            if (tri is null) return hr;
 
             SPoint vPos = tri.v0;
 
