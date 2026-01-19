@@ -22,7 +22,7 @@ namespace RayTrace
             Colour = col;
         }
 
-        public override Colour GetColour(HitResult hr)
+        public override SColour GetSColour(HitResult hr)
         {
             // Step through Shape incremnentally until we hit 'solid' part of noise function.
 
@@ -39,14 +39,14 @@ namespace RayTrace
                 double val = Perlin.Noise(start.X, start.Y, start.Z);
                 if (val >= 0)
                 {
-                    return Colour;
+                    return Colour.ToSColour();
                 }
             } while (false);
 
             //double x = hr.u * Scale;
             //double y = hr.v * Scale;
 
-            return Palette.Black;
+            return SPalette.Black;
         }
     }
 }

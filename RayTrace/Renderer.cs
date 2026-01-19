@@ -602,7 +602,7 @@ namespace RayTrace
 
                     MaterialType materialType = material.Type;
 
-                    emissive = material?.GetEmissiveColour(hr).ToLinearRGB() ?? SPalette.Black;
+                    emissive = material?.GetEmissiveColour(hr) ?? SPalette.Black;
 
                     radiance += throughput*emissive;
 
@@ -638,7 +638,7 @@ namespace RayTrace
                                     for (int i = 0; i<NumRetries; i++)
                                     {
                                         //SVector v = GetLocalVectorInHemisphere(rand);
-                                        scattered = material.Brdf.GetSample(hr, lcs, rand, material.GetSColour(hr).ToLinearRGB(), out pdf);
+                                        scattered = material.Brdf.GetSample(hr, lcs, rand, material.GetSColour(hr), out pdf);
 
                                         if (scattered != System.Numerics.Vector4.Null())
                                         {
@@ -677,7 +677,7 @@ namespace RayTrace
 
                                 float cosTheta = scattered.DotProduct(hr.EntryNormal);
 
-                                SColour brdfColour = material.Brdf.GetBrdfReflectance(hr, lcs, rand, material.GetSColour(hr).ToLinearRGB(), scattered);
+                                SColour brdfColour = material.Brdf.GetBrdfReflectance(hr, lcs, rand, material.GetSColour(hr), scattered);
                                 brdfColour = brdfColour / pdf;
 
                                 SColour brdfWeight = brdfColour * cosTheta;
@@ -757,14 +757,17 @@ namespace RayTrace
                 else
                 {
                     // No further bounces, so just add the skydome colour then drop out.
-                    radiance += throughput*scene.GetSkydomeColour(camera, ray.Direction).ToLinearRGB();
+                    radiance += throughput*scene.GetSkydomeColour(camera, ray.Direction);
                     break;
 
                 }
 
             }
 
-            return radiance.FromLinearRGB();
+            //if (UseAmbient)
+            //    radiance += radiance * scene.Ambient.ToSColour();
+
+            return radiance;//.FromLinearRGB();
         }
 
         // scene    Scene we are rendering.
@@ -1478,6 +1481,10 @@ namespace RayTrace
                             colour += GetPixelColour2(camera, scene, sceneX + sceneStepX * grid[i, 0], sceneY - sceneStepY * grid[i, 1]);
                         }
                         colour = colour.Scale(1.0f/grid.GetLength(0));
+//                        colour = colour.Clamp();
+//                        colour = colour.ReinhardToneMap();
+                        colour = colour.FromLinearRGB();
+                        colour = colour.Clamp();
                         canvas.Set(w, h, colour.ToRGB());
                     }
                     else if (AntiAlias == AntiAliasType.SuperSampling)

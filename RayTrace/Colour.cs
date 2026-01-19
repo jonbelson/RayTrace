@@ -53,6 +53,20 @@ namespace RayTrace
                 return min;
             }
 
+            public SColour Clamp()
+            {
+                float r = Math.Clamp(c.Red, 0f, 1f);
+                float g = Math.Clamp(c.Green, 0f, 1f);
+                float b = Math.Clamp(c.Blue, 0f, 1f);
+
+                return new(r, g, b);
+            }
+
+            public SColour ReinhardToneMap()
+            {
+                return c/(c + Vector3.One);
+            }
+
             // Return true if Colours are 'similar'.
             public bool IsSimilar(SColour c2)
             {
@@ -67,7 +81,16 @@ namespace RayTrace
                 return diffSquared < MinDiff * MinDiff;
             }
 
-            public uint ToRGB(float gamma = 1f/2.2f)
+            public uint ToRGB()
+            {
+                byte r = (byte)(c.Red * 255);
+                byte g = (byte)(c.Green * 255);
+                byte b = (byte)(c.Blue * 255);
+
+                return (uint)(r << 16 | g << 8 | b);
+            }
+#if false
+            public uint ToRGB(float gamma /*= 1f/2.2f*/)
             {
                 float gammaRed = MathF.Pow(c.Red, gamma);
                 float gammaGreen = MathF.Pow(c.Green, gamma);
@@ -85,6 +108,7 @@ namespace RayTrace
 
                 return (uint)(r << 16 | g << 8 | b);
             }
+#endif
 
             public static SColour FromColour(Colour colour)
             {
@@ -118,6 +142,69 @@ namespace RayTrace
 
                 return new SColour(r, g, b);
             }
+
+            // Select one of two colours
+            // ratio       Return col1 if ratio < 0.5, else col2.
+            public static SColour StepBlend(SColour col1, SColour col2, float ratio)
+            {
+                ratio = Math.Max(ratio, 0.0f);
+                ratio = Math.Min(ratio, 1.0f);
+
+                return (ratio < 0.5) ? col1 : col2;
+            }
+/*
+            // Blend two Colours in the specified ratio.
+            // ratio       Ranges from 0.0 (all col1) to 1.0 (all col2).
+            public static SColour LinearBlend(SColour col1, SColour col2, float ratio)
+            {
+                ratio = Math.Max(ratio, 0.0f);
+                ratio = Math.Min(ratio, 1.0f);
+
+                float r = col2.Red * ratio + (1 - ratio) * col1.Red;
+                float g = col2.Green * ratio + (1 - ratio) * col1.Green;
+                float b = col2.Blue * ratio + (1 - ratio) * col1.Blue;
+
+                return new SColour(r, g, b);
+            }
+*/
+            // From https://en.wikipedia.org/wiki/Smoothstep
+            private static float SmoothStep(float edge0, float edge1, float x)
+            {
+                // Scale, bias and saturate x to 0..1 range
+                x = Math.Clamp((x - edge0) / (edge1 - edge0), 0.0f, 1.0f);
+
+                // Evaluate polynomial
+                return x * x * (3 - 2 * x);
+            }
+
+            // Perlin's variation.
+            private static float SmootherStep(float edge0, float edge1, float x)
+            {
+                // Scale, bias and saturate x to 0..1 range
+                x = Math.Clamp((x - edge0) / (edge1 - edge0), 0.0f, 1.0f);
+
+                // Evaluate polynomial
+                return x * x * x * (x * (x * 6 - 15) + 10);
+            }
+
+            public static SColour SmoothBlend(SColour col1, SColour col2, float ratio)
+            {
+                //            ratio = SmoothStep(0.0f, 1.0f, ratio);
+                ratio = SmootherStep(0.0f, 1.0f, ratio);
+
+                float r = col2.Red * ratio + (1 - ratio) * col1.Red;
+                float g = col2.Green * ratio + (1 - ratio) * col1.Green;
+                float b = col2.Blue * ratio + (1 - ratio) * col1.Blue;
+
+                /*
+                            float r = SmoothStep(col1.Red, col2.Red, ratio);
+                            float g = SmoothStep(col1.Green, col2.Green, ratio);
+                            float b = SmoothStep(col1.Blue, col2.Blue, ratio);
+                */
+                return new SColour(r, g, b);
+            }
+
+
         }
     }
 
@@ -140,6 +227,8 @@ namespace RayTrace
         public static Colour White { get { return new Colour(1.0f, 1.0f, 1.0f); } }
         public static Colour Black { get { return new Colour(0.0f, 0.0f, 0.0f); } }
         public static Colour Grey { get { return new Colour(0.7f, 0.7f, 0.7f); } }
+        public static Colour DarkGrey { get; } = new Colour(0xA9A9A9);
+        public static Colour LightGrey { get; } = new Colour(0xd3d3d3);
         public static Colour Magenta => new(1.0f, 0.0f, 1.0f);
         public static Colour Copper { get { return new Colour(0.82f, 0.475f, 0.23f); } }
         public static Colour MetallicGold { get { return new Colour(212/255f, 175/255f, 55/255f); } }
@@ -295,7 +384,7 @@ namespace RayTrace
         }
 
         // Return gamma-corrected version of this Colour.
-        public Colour ApplyGamma(float gamma)
+/*        public Colour ApplyGamma(float gamma)
         {
             float gammaRed = MathF.Pow(Red, gamma);
             float gammaGreen = MathF.Pow(Green, gamma);
@@ -303,7 +392,9 @@ namespace RayTrace
 
             return new Colour(gammaRed, gammaGreen, gammaBlue);
         }
+*/
 
+        /*
         public uint ToRGB(float gamma=1f/2.2f)
         {
             float gammaRed = MathF.Pow(Red, gamma);
@@ -322,6 +413,7 @@ namespace RayTrace
 
             return (uint) (r << 16 | g << 8 | b);
         }
+        */
 
         public override string ToString()
         {

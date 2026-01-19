@@ -779,7 +779,7 @@ namespace RayTrace.Importers
         private List<SVector> normals = new List<SVector>();
         private List<SVector> tangents = new List<SVector>();
         private List<ModelData.Texel> texels = new List<ModelData.Texel>();
-        private List<Colour> colours = new List<Colour>();
+        private List<SColour> colours = new List<SColour>();
         private List<ModelData.Triangle> triangles = new List<ModelData.Triangle>();
 
 
@@ -860,7 +860,7 @@ namespace RayTrace.Importers
                     {
                         foreach (var colour in primitive.colours)
                         {
-                            colours.Add(new Colour(colour.x, colour.y, colour.z));
+                            colours.Add(new SColour(colour.x, colour.y, colour.z));
                         }
                     }
 
@@ -1567,7 +1567,6 @@ namespace RayTrace.Importers
 
             foreach (GltfMaterial material in _gltfAsset.materials)
             {
-
                 GltfBrdf brdf = new();
                 brdf.MetallicFactor = material.metallicFactor;
                 brdf.RoughnessFactor = material.roughnessFactor;
@@ -1585,9 +1584,12 @@ namespace RayTrace.Importers
                     string path = FindImage(_gltfAsset.directory, material.baseColorTexture);
                     if (!String.IsNullOrEmpty(path))
                     {
-                        TextureBitmap texture = new();
-                        texture.FileName = path;
-                        texture.Origin = TextureBitmap.TextureOrigin.TopLeft;
+                        TextureBitmap texture = new()
+                        {
+                            ConvertToLinearRGB = true,
+                            FileName = path,
+                            Origin = TextureBitmap.TextureOrigin.TopLeft
+                        };
                         mat.Texture = texture;
                     }
                     else
@@ -1599,7 +1601,11 @@ namespace RayTrace.Importers
                 {
                     var bcf = material.baseColorFactor;
 
-                    TextureSolid texture = new(new Colour(bcf.x, bcf.y, bcf.z));
+                    TextureSolid texture = new(new Colour(bcf.x, bcf.y, bcf.z))
+                    {
+                        ConvertToLinearRGB = false
+                    };
+
                     mat.Texture = texture;
                 }
 
@@ -1608,8 +1614,11 @@ namespace RayTrace.Importers
                     string path = FindImage(_gltfAsset.directory, material.normalTexture);
                     if (!String.IsNullOrEmpty(path))
                     {
-                        NormalMap normalMap = new NormalMap(path) { Scale = material.normalScale };
-                        normalMap.Origin = NormalMap.TextureOrigin.TopLeft;
+                        NormalMap normalMap = new NormalMap(path)
+                        {
+                            Scale = material.normalScale,
+                            Origin = NormalMap.TextureOrigin.TopLeft
+                        };
                         mat.NormalMap = normalMap;
                     }
                     else
@@ -1623,8 +1632,11 @@ namespace RayTrace.Importers
                     string path = FindImage(_gltfAsset.directory, material.metallicRoughnessTexture);
                     if (!string.IsNullOrEmpty(path))
                     {
-                        TextureBitmap texture = new(path);
-                        texture.Origin = TextureBitmap.TextureOrigin.TopLeft;
+                        TextureBitmap texture = new(path)
+                        {
+                            ConvertToLinearRGB = false,
+                            Origin = TextureBitmap.TextureOrigin.TopLeft
+                        };
                         brdf.MetallicRoughnessTexture = texture;
                     }
                 }
@@ -1634,8 +1646,12 @@ namespace RayTrace.Importers
                     string path = FindImage(_gltfAsset.directory, material.emissiveTexture);
                     if (!String.IsNullOrEmpty(path))
                     {
-                        TextureBitmap emissiveTexture = new() { FileName = path };
-                        emissiveTexture.Origin = TextureBitmap.TextureOrigin.TopLeft;
+                        TextureBitmap emissiveTexture = new()
+                        {
+                            ConvertToLinearRGB = true,
+                            FileName = path,
+                            Origin = TextureBitmap.TextureOrigin.TopLeft
+                        };
 
                         mat.EmissiveTexture = emissiveTexture;
                     }

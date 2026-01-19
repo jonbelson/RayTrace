@@ -93,7 +93,7 @@ namespace RayTrace
             Colour2 = col2;
         }
 
-        public override Colour GetColour(HitResult hr)
+        public override SColour GetSColour(HitResult hr)
         {
             double x = hr.u * Scale;
             double y = hr.v * Scale;
@@ -105,12 +105,15 @@ namespace RayTrace
 
             //Console.WriteLine(val);
 
-            Colour c = Colour1;
+            SColour result = SPalette.Grey;
+
+            SColour c1 = Colour1.ToSColour();
+            SColour c2 = Colour2.ToSColour();
 
             switch (Function)
             {
                 case ColourFunction.EitherOr:
-                    c = (val < 0.0) ? Colour1 : Colour2;
+                    result = (val < 0.0) ? c1 : c2;
                     break;
                 case ColourFunction.Blend:
                     {
@@ -119,16 +122,16 @@ namespace RayTrace
                         //Debug.Assert(ratio >= 0.0);
                         //Debug.Assert(ratio <= 1.0);
 
-                        c = Colour.SmoothBlend(Colour1, Colour2, ratio);
+                        result = SColour.SmoothBlend(c1, c2, ratio);
 
-                        Debug.Assert(c.Red >= 0.0 && c.Red <= 1.0);
-                        Debug.Assert(c.Green >= 0.0 && c.Green <= 1.0);
-                        Debug.Assert(c.Blue >= 0.0 && c.Blue <= 1.0);
+                        Debug.Assert(result.Red >= 0.0 && result.Red <= 1.0);
+                        Debug.Assert(result.Green >= 0.0 && result.Green <= 1.0);
+                        Debug.Assert(result.Blue >= 0.0 && result.Blue <= 1.0);
                     }
                     break;
             }
 
-            return c;
+            return result;
         }
 
     }

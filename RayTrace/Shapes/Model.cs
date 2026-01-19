@@ -65,7 +65,7 @@ namespace RayTrace
         public Texel[] texels;
         public SVector[] normals;
         public SVector[] tangents;
-        public Colour[] colours;
+        public SColour[] colours;
         public Triangle[] triangles;
 
         public class SubGroup
@@ -118,9 +118,9 @@ namespace RayTrace
         public Texel GetTriangleTexel1(int index) { if (index < triangles.Length) { var tri = triangles[index]; if (tri.t1 < texels.Length) return texels[tri.t1]; } return new Texel(); }
         public Texel GetTriangleTexel2(int index) { if (index < triangles.Length) { var tri = triangles[index]; if (tri.t2 < texels.Length) return texels[tri.t2]; } return new Texel(); }
 
-        public Colour GetTriangleColour0(int index) => colours[triangles[index].c0];
-        public Colour GetTriangleColour1(int index) => colours[triangles[index].c1];
-        public Colour GetTriangleColour2(int index) => colours[triangles[index].c2];
+        public SColour GetTriangleColour0(int index) => colours[triangles[index].c0];
+        public SColour GetTriangleColour1(int index) => colours[triangles[index].c1];
+        public SColour GetTriangleColour2(int index) => colours[triangles[index].c2];
     }
 
     //
@@ -350,6 +350,13 @@ namespace RayTrace
 
             return new Colour(red, green, blue);
 */
+        }
+
+        private static SColour GetSColour(SColour c0, SColour c1, SColour c2, float u, float v)
+        {
+            SColour c = c0*(1.0f - u - v) + c1*u + c2*v;
+
+            return c;
         }
 
         public override void AddPropertyChangedHandler(PropertyChangedEventHandler eventHandler)
@@ -1218,7 +1225,7 @@ namespace RayTrace
 #endif
         }
 
-        public override Colour GetColour(HitResult hr)
+        public override SColour GetSColour(HitResult hr)
         {
             FatTriangle triangle = _fatTriangles[hr.Index];
             ModelSubGroup subGroup = _subGroupArray[triangle.subGroup];
@@ -1231,11 +1238,11 @@ namespace RayTrace
             {
                 int index = hr.Index;
 
-                Colour c0 = _modelData.GetTriangleColour0(index);
-                Colour c1 = _modelData.GetTriangleColour1(index);
-                Colour c2 = _modelData.GetTriangleColour2(index);
+                SColour c0 = _modelData.GetTriangleColour0(index);
+                SColour c1 = _modelData.GetTriangleColour1(index);
+                SColour c2 = _modelData.GetTriangleColour2(index);
 
-                Colour colour = GetColour(c0, c1, c2, hr.bu, hr.bv);
+                SColour colour = GetSColour(c0, c1, c2, hr.bu, hr.bv);
 
                 return colour;
             }
@@ -1253,7 +1260,7 @@ namespace RayTrace
                 //hr.v = texel.v;
 
 //                return textureBitmap.GetColour(texel.u, texel.v);
-                return textureBitmap.GetColour(hr.u, hr.v);
+                return textureBitmap.GetSColour(hr.u, hr.v);
             }
             else
             {
@@ -1261,11 +1268,11 @@ namespace RayTrace
 
                 if (material.Texture != null)
                 {
-                    return material.Texture.GetColour(hr);
+                    return material.Texture.GetSColour(hr);
                 }
             }
 
-            return Palette.Grey;
+            return SPalette.Grey;
         }
 
         // Retrieve a list of Material instances used by this Model.

@@ -23,6 +23,21 @@ namespace RayTrace
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
         }
 
+        // Lookup table from sRGB luminance to linear.
+        private float[] _sRGBToLinearLUT = new float[256];
+
+        private void CreateLUT()
+        {
+            int entries = _sRGBToLinearLUT.Length;
+
+            for (int i=0; i<entries; i++)
+            {
+                float val = ((float)i)/entries;
+
+                _sRGBToLinearLUT[i] = val <= 0.04045f ? val / 12.92f : MathF.Pow((val + 0.055f) / 1.055f, 2.4f);
+            }
+        }
+
         public override TextureType Type { get; } = TextureType.Bitmap;
 
         // How to deal with uv values that are ouside of the 0 - 1 range.
@@ -69,10 +84,7 @@ namespace RayTrace
                     height = bitmap.Height;
                     BitmapData bitmapData = bitmap.LockBits(new System.Drawing.Rectangle(0, 0, width, height), ImageLockMode.ReadOnly, PixelFormat.Format32bppRgb);
 
-                    //texture = new Colour[width * height];
                     texture = new int[width * height];
-
-                    //int[] row = new int[width];
 
                     for (int y = 0; y < height; y++)
                     {
@@ -107,6 +119,8 @@ namespace RayTrace
             Name = "Bitmap";
 
             width = height = 0;
+
+            CreateLUT();
         }
 
         //
@@ -118,6 +132,8 @@ namespace RayTrace
 
             width = height = 0;
 
+            CreateLUT();
+
             LoadTexture(fileName);
         }
 
@@ -127,6 +143,8 @@ namespace RayTrace
         public TextureBitmap(XMLTextureBitmap xml)
         {
             width = height = 0;
+
+            ConvertToLinearRGB = xml.ConvertToLinearRGB;
 
             LoadTexture(xml.fileName);
         }
@@ -138,7 +156,7 @@ namespace RayTrace
 
         public bool IsValid() => texture != null;
 
-        public Colour GetColour(float u, float v)
+        public SColour GetSColour(float u, float v)
         {
             if (texture != null)
             {
@@ -199,53 +217,43 @@ namespace RayTrace
 
                 if (Origin == TextureOrigin.TopLeft) v = 1.0f - v;
 
-                //u = Math.Clamp(u, 0, 1);
-                //v = Math.Clamp(v, 0, 1);
-
                 int x = (int)(u * (width - 1));
                 int y = (int)(v * (height - 1));
 
                 Debug.Assert(y * width + x < texture.Length);
 
-                //return texture[y * width + x];
-
                 uint rgb = (uint) texture[y * width + x];
-                return new Colour(rgb);
+
+                SColour c = SColour.FromRGB(rgb);
+
+                if (ConvertToLinearRGB)
+                {
+                    c = c.ToLinearRGB();
+
+                    //c = new SColour(
+                    //    _sRGBToLinearLUT[(int)(c.Red * 255.0f)] ,
+                    //    _sRGBToLinearLUT[(int)(c.Green * 255.0f)] ,
+                    //    _sRGBToLinearLUT[(int)(c.Blue * 255.0f)] );
+                }
+
+                return c;
             }
 
-            return Palette.Grey;
+            return SPalette.Grey;
         }
 
-        public override Colour GetColour(HitResult hr)
+        public override SColour GetSColour(HitResult hr)
         {
-            return GetColour(hr.u, hr.v);
-/*
-            if (texture != null)
-            {
-                float u = hr.u;
-                float v = hr.v;
-
-                u = Math.Clamp(u, 0, 1);
-                v = Math.Clamp(v, 0, 1);
-
-                int x = (int)(u * (width - 1));
-                int y = (int)(v * (height - 1));
-
-                //return texture[y * width + x];
-                uint rgb = (uint)texture[y * width + x];
-                return new Colour(rgb);
-            }
-
-            return Palette.Grey;
-*/
+            return GetSColour(hr.u, hr.v);
         }
 
         public override XMLTexture ToXML()
         {
             XMLTextureBitmap xml = new XMLTextureBitmap();
-            //xml.width = width;
-            //xml.height = height;
+
+            xml.ConvertToLinearRGB = ConvertToLinearRGB;
             xml.fileName = fileName;
+
             return xml;
         }
     }

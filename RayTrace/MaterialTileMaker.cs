@@ -96,7 +96,7 @@ namespace RayTrace
         public MaterialTileMaker()
         {
             scene = new Scene();
-            //_scene.Ambient = Palette.Blue;
+            scene.Ambient = Palette.Blue;
             //_scene.Background = Palette.Red;
             scene.Camera.Pos = new Point(0, 0, 0);
             scene.Camera.Target = new Point(0, 0, -1);
@@ -109,15 +109,18 @@ namespace RayTrace
 
             //Plane plane = new Plane(new Vector(0, 0, -1), new Point(0, 0, 20));
             //plane.Material.Texture = new TextureSquares(new Colour(System.Windows.Media.Colors.DarkGray), new Colour(System.Windows.Media.Colors.Gray)) { Scale = 50 };
-            Disc disc = new Disc(scene, new Point(0, 0, 20), new Vector(0, 0, -1), 16);
 
-            Material matSquares = new() { Name="Squares", /*Type=MaterialType.Diffuse,*/ PhongShininess = 1.0f };
-            matSquares.SetType(MaterialType.Diffuse);
-            //matSquares.PhongShininess = 1.0;
-            matSquares.Texture = new TextureSquares(new Colour(System.Windows.Media.Colors.DarkGray), new Colour(System.Windows.Media.Colors.Gray)) { Scale = 500 };
-            disc.Material = matSquares;
+            Material matSquares = new(MaterialType.BRDF_Lambertian) { Name="Squares" };
+            //matSquares.SetType(MaterialType.BRDF_Lambertian);
+            matSquares.Texture = new TextureSquares(Palette.DarkGrey, Palette.White /*Palette.LightGrey*/)
+            {
+                Scale = 50
+            };
 
-            //scene.AddShape(disc);
+            //Disc disc = new Disc(scene, new Point(0, 0, -20), new Vector(0, 0, 1), 18)
+            //{
+            //    Material = matSquares
+            //};
 
             scene.AddMaterial(matSquares);
 
@@ -136,10 +139,10 @@ namespace RayTrace
             scene.CreateCaches();
 
             Renderer renderer = new();
-//            renderer.AntiAlias = Renderer.AntiAliasType.NoiseGrid;
-            renderer.AntiAlias = Renderer.AntiAliasType.None;
-            renderer.SampleDepth = 5;
-            renderer.UseAmbient = true;
+            renderer.AntiAlias = Renderer.AntiAliasType.NoiseGrid;
+            //renderer.AntiAlias = Renderer.AntiAliasType.None;
+            renderer.SampleDepth = 10;
+            ////renderer.UseAmbient = true;
             renderer.UseShadows = false;
             //scene.Ambient = new Colour(0.5f, 0.5f, 0.5f);
             renderer.NumBRDFSamples = 100;

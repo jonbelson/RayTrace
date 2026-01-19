@@ -96,39 +96,49 @@ namespace RayTrace
         //      Type = xml.Type;
         //}
 
-        public delegate Colour Blender(Colour c1, Colour c2, float ratio);
+        public delegate SColour Blender(SColour c1, SColour c2, float ratio);
 
-        public override Colour GetColour(HitResult hr)
+        public override SColour GetSColour(HitResult hr)
         {
             Blender handler = null;
 
             switch (Blend)
             {
-                case BlendType.Linear: handler = Colour.LinearBlend;    break;
-                case BlendType.Smooth: handler = Colour.SmoothBlend; break;
-                case BlendType.Step: handler = Colour.StepBlend; break;
+                case BlendType.Linear: handler = SColour.LinearBlend;    break;
+                case BlendType.Smooth: handler = SColour.SmoothBlend; break;
+                case BlendType.Step: handler = SColour.StepBlend; break;
             }
 
-            switch (Gradient)
+            SColour result = SPalette.Grey;
+
+            if (handler is not null)
             {
-                case GradientType.Vertical:
-                    return handler?.Invoke(Colour1, Colour2, hr.v);
+                SColour c1 = Colour1.ToSColour();
+                SColour c2 = Colour2.ToSColour();
 
-                case GradientType.Horizontal:
-                    return handler?.Invoke(Colour1, Colour2, hr.u);
+                switch (Gradient)
+                {
+                    case GradientType.Vertical:
+                        result = handler.Invoke(c1, c2, hr.v);
+                        break;
 
-                case GradientType.Diagonal:
-                    // Find shortest distance from 0,0 to 1,1 and use 'm' as blend.
-                    throw new NotImplementedException();
+                    case GradientType.Horizontal:
+                        result = handler.Invoke(c1, c2, hr.u);
+                        break;
 
-                case GradientType.Radial:
-                    Vector v = new Point(0.5f, 0.5f, 0) - new Point(hr.u, hr.v, 0);
-                    double distance = v.Magnitude();
-                    return handler?.Invoke(Colour1, Colour2, (float) distance);
+                    case GradientType.Diagonal:
+                        // Find shortest distance from 0,0 to 1,1 and use 'm' as blend.
+                        throw new NotImplementedException();
 
+                    case GradientType.Radial:
+                        Vector v = new Point(0.5f, 0.5f, 0) - new Point(hr.u, hr.v, 0);
+                        double distance = v.Magnitude();
+                        return handler.Invoke(c1, c2, (float)distance);
+
+                }
             }
 
-            return Palette.Grey;
+            return result;
         }
 
         public override Colour GetBaseColour()

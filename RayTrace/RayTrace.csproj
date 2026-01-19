@@ -28,6 +28,13 @@
     <Compile Remove="Skydomes\Skybox - Copy.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Remove="GeometryModel3DFactory.cs.bak" />
+    <None Remove="MaterialEditorDialog.xaml.cs.bak" />
+    <None Remove="NormalMap.cs.bak" />
+    <None Remove="Shapes\Model.cs.bak" />
+    <None Remove="Skydomes\Skybox.cs.bak" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Microsoft.DotNet.UpgradeAssistant.Extensions.Default.Analyzers" Version="0.2.212405">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>

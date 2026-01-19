@@ -149,6 +149,7 @@ namespace RayTrace.Skydomes
             _ = LoadTextures(_directory);
         }
 
+        // Return colour in linear RGB format.
         private static SColour GetColour(BitmapUtils.RgbTexture texture, float u, float v)
         {
             if (texture != null)
@@ -164,7 +165,7 @@ namespace RayTrace.Skydomes
                 try
                 {
                     uint rgb = (uint)texture.Texture[y * texture.Width + x];
-                    return SColour.FromRGB(rgb);
+                    return SColour.FromRGB(rgb).ToLinearRGB();
                     //Colour c = texture.Texture[y * texture.Width + x];
                     //return c;
                 }

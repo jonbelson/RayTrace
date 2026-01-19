@@ -64,7 +64,7 @@ namespace RayTrace
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public override Colour GetColour(HitResult hr) { return Colour; }
+        public override SColour GetSColour(HitResult hr) { return Colour.ToSColour(); }
 
         public override Colour GetBaseColour() { return Colour; }
 

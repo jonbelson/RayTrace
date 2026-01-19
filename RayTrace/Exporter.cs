@@ -115,6 +115,8 @@ namespace RayTrace
     [XmlInclude(typeof(XMLTextureBitmap))]
     public class XMLTexture
     {
+        public bool ConvertToLinearRGB;
+
         public virtual Texture Create() { return null; }
     }
 
@@ -201,7 +203,6 @@ namespace RayTrace
         //public int width;
         //public int height;
         public String fileName;
-
         public override Texture Create() => new TextureBitmap(this);
     }
 

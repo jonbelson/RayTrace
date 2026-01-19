@@ -43,6 +43,7 @@ namespace RayTrace
             public ColourTexture(Colour[] texture, int width, int height) { Width = width; Height = height; Texture = texture; }
         };
 
+        // An sRGB texture.
         public class RgbTexture
         {
             public int Width { get; set; }
@@ -89,7 +90,7 @@ namespace RayTrace
                     {
                         IntPtr source = bitmapData.Scan0 + (height - y - 1) * bitmapData.Stride;
 
-                        //                    System.Runtime.InteropServices.Marshal.Copy(row, 0, dest, width);
+                        //System.Runtime.InteropServices.Marshal.Copy(row, 0, dest, width);
                         System.Runtime.InteropServices.Marshal.Copy(source, row, 0, width);
 
                         for (int i = 0; i < width; i++)
@@ -97,7 +98,7 @@ namespace RayTrace
                             uint rgb = (uint)row[i];
                             // Need to 'ungamma' the image since we apply gamma when saving.
                             Colour c = new(rgb);
-                            texture[y * width + i] = c.ApplyGamma(2.2f);
+                            texture[y * width + i] = c;////.ApplyGamma(2.2f);
 //                            texture[y * width + i] = new Colour(rgb);
                         }
                     }
@@ -122,7 +123,7 @@ namespace RayTrace
         }
 
         //
-        // Load a bitmap as an RGB texture.
+        // Load a bitmap as an sRGB texture.
         //
         public static bool LoadTexture(string fileName, out RgbTexture colourTexture)
         {
@@ -146,16 +147,17 @@ namespace RayTrace
 
                         //System.Runtime.InteropServices.Marshal.Copy(source, row, 0, width);
                         System.Runtime.InteropServices.Marshal.Copy(source, texture, y*width, width);
-
-                        // XXX Need to UnGamme
+                        /*
+                        // XXX Need to UnGamma
                         for (int i = 0; i < width; i++)
                         {
                             uint rgb = (uint)texture[y*width + i];
                             // Need to 'ungamma' the image since we apply gamma when saving.
-                            Colour c = new(rgb);
-                            texture[y*width + i] = (int) c.ToRGB(2.2f);
+                            //SColour c = new(rgb);
+                            texture[y*width + i] = (int)rgb;// c.ToLinearRGB().ToRGB();
                             //texture[y * width + i] = new Colour(rgb);
                         }
+                        */
                     }
 
                     bitmap.UnlockBits(bitmapData);

@@ -143,10 +143,10 @@ namespace RayTrace
 
         public enum RenderDirection
         {
-            TopToBottom, Diagonal, CentreOut
+            TopToBottom, Diagonal, CentreOut, ConcentricOut, SpiralOut
         }
 
-        private readonly RenderDirection[] renderDirection = { RenderDirection.TopToBottom, RenderDirection.Diagonal, RenderDirection.CentreOut };
+        private readonly RenderDirection[] renderDirection = { RenderDirection.TopToBottom, RenderDirection.Diagonal, RenderDirection.CentreOut, RenderDirection.SpiralOut, RenderDirection.ConcentricOut };
         public RenderDirection[] RenderDirections => renderDirection;
 
         private readonly List<Renderer.AntiAliasType> antiAlias = new List<Renderer.AntiAliasType>() { Renderer.AntiAliasType.None, Renderer.AntiAliasType.NoiseGrid, Renderer.AntiAliasType.SuperSampling, Renderer.AntiAliasType.AdaptiveSupersampling };
@@ -378,7 +378,7 @@ namespace RayTrace
                 //SVector unitZ = SVector.UnitZ;
 
                 //float dp = normal.DotProduct(unitZ);
-                int i = 0;
+                //int i = 0;
 
             }
 

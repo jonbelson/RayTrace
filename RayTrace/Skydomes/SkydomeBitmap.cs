@@ -16,8 +16,10 @@ namespace RayTrace.Skydomes
         private int height;
         private string fileName;
 
+        // Texture in sRGB/source format.
         private SColour[] texture = null;
 
+#if false
         public Bitmap GetAsBitmap()
         {
             Bitmap bitmap = null;
@@ -58,6 +60,7 @@ namespace RayTrace.Skydomes
 
             return bitmap;
         }
+#endif
 
         private bool LoadTexture(string fileName)
         {
@@ -78,7 +81,7 @@ namespace RayTrace.Skydomes
                     {
                         IntPtr source = bitmapData.Scan0 + (height - y - 1) * bitmapData.Stride;
 
-                        //                    System.Runtime.InteropServices.Marshal.Copy(row, 0, dest, width);
+                        //System.Runtime.InteropServices.Marshal.Copy(row, 0, dest, width);
                         System.Runtime.InteropServices.Marshal.Copy(source, row, 0, width);
 
                         for (int i = 0; i < width; i++)
@@ -87,8 +90,9 @@ namespace RayTrace.Skydomes
 
                             // Need to 'ungamma' the image since we apply gamma when saving.
                             SColour c = SColour.FromRGB(rgb);
-                            texture[y * width + i] = c.ApplyGamma(2.2f);
+                            texture[y * width + i] = c;//.ToLinearRGB();   // ApplyGamma(2.2f);
                         }
+
                     }
 
                     bitmap.UnlockBits(bitmapData);
@@ -167,6 +171,7 @@ namespace RayTrace.Skydomes
         {
         }
 
+        // Return colour in linear RGB format.
         public override SColour GetColour(Camera camera, SVector ray)
         {
             if (texture != null)
@@ -189,7 +194,7 @@ namespace RayTrace.Skydomes
                 try
                 {
                     SColour c = texture[y * width + x];
-                    return c;
+                    return c.ToLinearRGB();
                 }
                 catch (Exception e)
                 {

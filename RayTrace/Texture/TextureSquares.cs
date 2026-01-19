@@ -93,18 +93,21 @@ namespace RayTrace
             Scale = xml.Scale;
         }
 
-        public override Colour GetColour(HitResult hr)
+        public override SColour GetSColour(HitResult hr)
         {
             int x = (int)(hr.u * Scale);
             int y = (int)(hr.v * Scale);
 
+            SColour c1 = Colour1.ToSColour();
+            SColour c2 = Colour2.ToSColour();
+
             if (x % 2 == 1)
             {
-                return y % 2 == 1 ? Colour1 : Colour2;
+                return y % 2 == 1 ? c1 : c2;
             }
             else
             {
-                return y % 2 == 0 ? Colour1 : Colour2;
+                return y % 2 == 0 ? c1 : c2;
             }
         }
 

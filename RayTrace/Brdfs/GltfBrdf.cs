@@ -38,7 +38,8 @@ namespace RayTrace.Brdfs
         public TextureBitmap MetallicRoughnessTexture { get; set; }
 
         // Default Roughness if no texture is present.
-        private static readonly Colour _defaultRoughness = new(0f, 1f, 1f);
+//        private static readonly Colour _defaultRoughness = new(0f, 1f, 1f);
+        private static readonly SColour _defaultRoughness = new(0f, 1f, 1f);
 
         private float _specularWeight = 1.0f;
 
@@ -47,11 +48,11 @@ namespace RayTrace.Brdfs
         // Read Metallic-Roughness from the texture, else return default.
         // Note that metallicRoughnessTexture is encoded as linear RGB
         // (https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#metallic-roughness-material).
-        private Colour GetMetallicRoughness(in HitResult hr)
+        private SColour GetMetallicRoughness(in HitResult hr)
         {
             if (MetallicRoughnessTexture is not null && MetallicRoughnessTexture.IsValid())
             {
-                Colour texColour = MetallicRoughnessTexture.GetColour(hr.u, hr.v);
+                SColour texColour = MetallicRoughnessTexture.GetSColour(hr.u, hr.v);
                 return texColour;
             }
             return _defaultRoughness;
@@ -462,13 +463,13 @@ namespace RayTrace.Brdfs
         }
 
         // Return 'metalness' component of MetallicRoughness colour.
-        private static float GetMetalness(Colour c)
+        private static float GetMetalness(SColour c)
         {
             return c.Blue;
         }
 
         // Return 'roughness' component of MetallicRoughness colour.
-        private static float GetRoughness(Colour c)
+        private static float GetRoughness(SColour c)
         {
             return c.Green;
         }
@@ -478,11 +479,12 @@ namespace RayTrace.Brdfs
         public override SVector GetSample(HitResult hr, LocalCoordinateSystem lcs, Random rand, SColour colour, out float pdf)
         {
             // Decide which lobe to sample (diffuse or specular).
-            Colour metallicRoughnessColour = GetMetallicRoughness(hr);
+            SColour metallicRoughnessColour = GetMetallicRoughness(hr);
             float metalness = GetMetalness(metallicRoughnessColour)*MetallicFactor;
             float roughness = GetRoughness(metallicRoughnessColour)*RoughnessFactor;
 
-            roughness = MathF.Max(roughness, 0.045f);
+            //roughness = MathF.Max(roughness, 0.045f);
+            roughness = MathF.Max(roughness, 0.0001f);
 
             SColour F0 = SColour.Lerp(_f0, colour, metalness);
 
@@ -620,7 +622,7 @@ namespace RayTrace.Brdfs
             SVector V = hr.Ray.Normalise().Negate();
 
             // Decide which lobe to sample (diffuse or specular).
-            Colour metallicRoughnessColour = GetMetallicRoughness(hr);
+            SColour metallicRoughnessColour = GetMetallicRoughness(hr);
             float metalness = GetMetalness(metallicRoughnessColour) * MetallicFactor;
             float roughness = Math.Max(GetRoughness(metallicRoughnessColour) * RoughnessFactor, 0.0001f);
 

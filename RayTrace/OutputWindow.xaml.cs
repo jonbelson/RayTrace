@@ -21,6 +21,8 @@ namespace RayTrace
 {
     public struct RenderBlock
     {
+        public int X;
+        public int Y;
         public int StartX;
         public int StartY;
         public int Width;
@@ -256,6 +258,167 @@ namespace RayTrace
             RenderPoint((int)x, (int)y);
         }
 
+        private struct Rectangle
+        {
+            public int X;
+            public int Y;
+            public int Width;
+            public int Height;
+            public int Right { get { return X + Width; } }
+            public int Bottom { get { return Y + Height; } }
+        }
+
+        private static List<RenderBlock> MakeSpiralOutwards(int NumRenderBlocks, List<RenderBlock> renderBlocks)
+        {
+            RenderBlock?[,] grid = new RenderBlock?[NumRenderBlocks, NumRenderBlocks];
+
+            foreach (var block in renderBlocks)
+            {
+                grid[block.X, block.Y] = block;
+            }
+
+            List<RenderBlock> sorted = [];
+
+            int centreX = NumRenderBlocks/2;
+            int centreY = NumRenderBlocks/2;
+
+            // Create initial rectangle at the centre block.
+            Rectangle r = new() { X = centreX, Y = centreY, Width = 1, Height = 1 };
+
+            Action<int, int> CopyIfValid = (x, y) =>
+            {
+                if (x < 0 || x >= NumRenderBlocks) return;
+                if (y < 0 || y >= NumRenderBlocks) return;
+                if (grid[x, y] == null) return;
+                sorted.Add((RenderBlock)grid[x, y]);
+                grid[x, y] = null;
+            };
+
+            CopyIfValid(r.X, r.Y);
+
+            if (NumRenderBlocks%2 == 0)
+            {
+                CopyIfValid(r.X - 1, r.Y);
+                CopyIfValid(r.X, r.Y - 1);
+                CopyIfValid(r.X - 1, r.Y - 1);
+
+                r.Width++;
+                r.Height++;
+                r.X--;
+                r.Y--;
+            }
+
+
+            while (r.X >= 0 && r.Y >= 0 && r.Width < NumRenderBlocks && r.Height < NumRenderBlocks)
+            {
+                // Make next concentric rectangle.
+                r.X--;
+                r.Y--;
+                r.Width += 2;
+                r.Height += 2;
+
+                // Walk around the perimeter, adding valid blocks to output.
+                for (int top = r.X + 1; top<r.Right; top++)
+                {
+                    CopyIfValid(top, r.Y);
+                }
+
+                for (int right = r.Y; right<r.Bottom; right++)
+                {
+                    CopyIfValid(r.Right - 1, right);
+                }
+
+                for (int bottom = r.Right - 1; bottom>=r.X; bottom--)
+                {
+                    CopyIfValid(bottom, r.Right - 1);
+                }
+
+                for (int left = r.Bottom - 1; left>=r.Y - 1; left--)
+                {
+                    CopyIfValid(r.X, left);
+                }
+
+            }
+
+            return sorted;
+        }
+
+        private static List<RenderBlock> MakeConcentricOutwards(int NumRenderBlocks, List<RenderBlock> renderBlocks)
+        {
+            //int NumRenderBLocks = renderBlocks.Count;
+
+            RenderBlock?[,] grid = new RenderBlock?[NumRenderBlocks, NumRenderBlocks];
+
+            foreach (var block in renderBlocks)
+            {
+                grid[block.X, block.Y] = block;
+            }
+
+            List<RenderBlock> sorted = [];
+
+            int centreX = NumRenderBlocks/2;
+            int centreY = NumRenderBlocks/2;
+
+            // Create initial rectangle at the centre block.
+            Rectangle r = new Rectangle() { X = centreX, Y = centreY, Width = 1, Height = 1 };
+
+            Action<int, int> CopyIfValid = (x, y) =>
+            {
+                if (x < 0 || x >= NumRenderBlocks) return;
+                if (y < 0 || y >= NumRenderBlocks) return;
+                if (grid[x, y] == null) return;
+                sorted.Add((RenderBlock)grid[x, y]);
+                grid[x, y] = null;
+            };
+
+            CopyIfValid(r.X, r.Y);
+
+            if (NumRenderBlocks%2 == 0)
+            {
+                CopyIfValid(r.X - 1, r.Y);
+                CopyIfValid(r.X, r.Y - 1);
+                CopyIfValid(r.X - 1, r.Y - 1);
+
+                r.Width++;
+                r.Height++;
+                r.X--;
+                r.Y--;
+            }
+
+            while (r.X >= 0 && r.Y >= 0 && r.Width < NumRenderBlocks && r.Height < NumRenderBlocks)
+            {
+                // Make next concentric rectangle.
+                r.X--;
+                r.Y--;
+                r.Width += 2;
+                r.Height += 2;
+
+                // Walk around the perimeter, adding valid blocks to output.
+                for (int top = r.X; top<r.Right; top++)
+                {
+                    CopyIfValid(top, r.Y);
+                }
+
+                for (int right = r.Y; right<r.Bottom; right++)
+                {
+                    CopyIfValid(r.Right - 1, right);
+                }
+
+                for (int bottom = r.Right - 1; bottom>=r.X; bottom--)
+                {
+                    CopyIfValid(bottom, r.Right - 1);
+                }
+
+                for (int left = r.Bottom - 1; left>=r.Y; left--)
+                {
+                    CopyIfValid(r.X, left);
+                }
+
+            }
+
+            return sorted;
+        }
+
         private List<RenderBlock> CalcRenderBlocks(int NumRenderBlocks, MainWindow.RenderDirection direction)
         {
             int width = OutputCanvas.Width;
@@ -282,7 +445,7 @@ namespace RayTrace
                     int blockWidth = intStep;
                     if (floatX > intX) blockWidth++;
 
-                    RenderBlock renderBlock = new RenderBlock() { StartX = intX, StartY = intY, Width = blockWidth, Height = blockHeight };
+                    RenderBlock renderBlock = new RenderBlock() { X = x, Y = y, StartX = intX, StartY = intY, Width = blockWidth, Height = blockHeight };
                     renderBlocks.Add(renderBlock);
 
                     intX += blockWidth;
@@ -298,6 +461,12 @@ namespace RayTrace
                 case MainWindow.RenderDirection.CentreOut: renderBlocks.Sort(new TopToBottomComparer(width / 2, height / 2)); break;
                 case MainWindow.RenderDirection.Diagonal: renderBlocks.Sort(new DiagonalComparer()); break;
                 case MainWindow.RenderDirection.TopToBottom:  /* The default */ break;
+                case MainWindow.RenderDirection.ConcentricOut:
+                    renderBlocks = MakeConcentricOutwards(NumRenderBlocks, renderBlocks);
+                    break;
+                case MainWindow.RenderDirection.SpiralOut:
+                    renderBlocks = MakeSpiralOutwards(NumRenderBlocks, renderBlocks);
+                    break;
             }
 
             return renderBlocks;

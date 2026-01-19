@@ -52,12 +52,15 @@ namespace RayTrace.Brdfs
             return new SVector(x, y, z, 0f);
         }
 
+        // Calculate reflectance.
+        // colour   Colour of surface at hit point (linear RGB).
+        // Returns reflectance at hit point (linear RGB).
         public override SColour GetBrdfReflectance(HitResult hr, LocalCoordinateSystem lcs, Random rand, SColour colour, SVector source)
         {
             Debug.Assert(!source.IsNull());
             Debug.Assert(!hr.Ray.IsNull());
 
-            colour = colour.ToLinearRGB();
+            //colour = colour.ToLinearRGB();
 
             SVector normal = hr.EntryNormal;
             SVector viewDirection = hr.Ray.Normalise().Negate();
@@ -112,7 +115,7 @@ namespace RayTrace.Brdfs
             //float pdf = dp/MathF.PI;
             //Lo /= pdf;
 
-            return Lo.FromLinearRGB();
+            return Lo;//.FromLinearRGB();
         }
 
         protected override float F(in SVector v) { return 1f; }

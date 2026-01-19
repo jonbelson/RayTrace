@@ -36,14 +36,14 @@ namespace RayTrace
             }
         }
 
-        public override Colour GetColour(HitResult hr)
+        public override SColour GetSColour(HitResult hr)
         {
             Colour colour;
             if (_colourLookup.TryGetValue(hr.Index, out colour))
             {
-                return colour;
+                return colour.ToSColour();
             }
-            return Palette.Grey;
+            return SPalette.Grey;
         }
 
         public override XMLTexture ToXML()
