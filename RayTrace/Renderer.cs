@@ -671,7 +671,7 @@ namespace RayTrace
                                     break;
 
                                 Debug.Assert(pdf >= 0);
-                                if (pdf == 0.0f) break;
+                                if (pdf < 1e-6f) break;
                                 if (scattered.DotProduct(hr.EntryNormal) <= 0.0f)
                                     break;
 
@@ -681,6 +681,13 @@ namespace RayTrace
                                 brdfColour = brdfColour / pdf;
 
                                 SColour brdfWeight = brdfColour * cosTheta;
+
+                                //const float MaxBrdfWeight = 50.0f;
+                                //float maxWeight = brdfWeight.MaxComponent();
+                                //if (maxWeight > MaxBrdfWeight)
+                                //{
+                                //    brdfWeight = brdfWeight * (MaxBrdfWeight / maxWeight);
+                                //}
 
                                 throughput = throughput * brdfWeight;
 

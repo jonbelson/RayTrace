@@ -320,8 +320,9 @@ namespace RayTrace
         {
             SVector N = tg0*(1.0f - u - v) + tg1*u + tg2*v;
             float W = N.W;
+            N.W = 0.0f;
             N = N.Normalise();
-            N.W = W;
+            ///N.W = W;
             return N;
         }
 
@@ -549,7 +550,6 @@ namespace RayTrace
                 {
                     _viewTangents = new SVector[_modelData.tangents.Length];
 
-                    // XXX Should these be left in object space?
 #if USE_SIMD
                     Matrix OtoVT = ObjectToViewNormal.GetTranspose();
                     OtoVT.MatrixMultiplySIMD(_modelData.tangents, _viewTangents);
@@ -889,10 +889,6 @@ namespace RayTrace
                 hr.u = texel.u;
                 hr.v = texel.v;
 
-                SVector tNormal = material.NormalMap.GetNormal(texel.u, texel.v);
-
-                vTriNormal = tNormal;
-
                 // " The bitangent vectors MUST be computed by taking the cross product of the
                 // normal and tangent XYZ vectors and multiplying it against the W component of
                 // the tangent: bitangent = cross(normal.xyz, tangent.xyz) * tangent.w. "
@@ -909,19 +905,18 @@ namespace RayTrace
 
                 SVector vTriTangent = GetTangent(tg0, tg1, tg2, uv.Item1, uv.Item2);
 
-                //SVector vTriTangent = tg0*(1.0f - u - v) + tg1*u + tg2*v;
-                //float W = vTriTangent.W;
-                //vTriTangent = vTriTangent.Normalise();
+                SVector vTriBitangent = vTriNormal.VectorProduct(vTriTangent)*W;
 
-                //SVector vTriBitangent = vTriNormal.VectorProduct(vTriTangent)*-W;   // XXX W probably needs negating?
-                SVector vTriBitangent = vTriNormal.VectorProduct(vTriTangent)*W;   // XXX W probably needs negating?
+                // Create matrix to transform normal map vector (tNormal) to the shading normal.
+                Matrix m = new(vTriTangent, vTriBitangent, vTriNormal);
 
+                // Read the normal vector from the normal map.
+                SVector tNormal = material.NormalMap.GetNormal(texel.u, texel.v);
 
-                Matrix m = new(vTriTangent, vTriBitangent, tNormal /*vTriNormal*/);
+                //if (W > 0.0f) tNormal.Y = -tNormal.Y;
 
-                ///m.Transpose();
-
-                SVector vMapNormal = m * vTriNormal;
+                // Transform it to tangent space.
+                SVector vMapNormal = m * tNormal;
 
                 hr.EntryNormal = vMapNormal.Normalise();
             }

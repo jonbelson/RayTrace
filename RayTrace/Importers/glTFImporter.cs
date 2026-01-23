@@ -828,12 +828,13 @@ namespace RayTrace.Importers
                 {
                     ModelData.SubGroup primGroup = new() { Name=$"Primitive {index++}" };
 
-                    // Current offsets.
+                    // Get current offset so we know the offset of existing items.
                     int pointOffset = points.Count;
                     int normalOffset = normals.Count;
                     int tangentOffset = tangents.Count;
                     int colourOffset = colours.Count;
                     int texelOffset = texels.Count;
+                    int triangleOffset = triangles.Count;
 
                     foreach (var position in primitive.positions)
                     {
@@ -850,7 +851,7 @@ namespace RayTrace.Importers
                             var texel = new ModelData.Texel()
                             {
                                 u = texCoord.x,
-                                v = /*1.0f -*/ texCoord.y
+                                v = texCoord.y
                             };
                             texels.Add(texel);
                         }
@@ -879,8 +880,11 @@ namespace RayTrace.Importers
                             tangents.Add(new SVector(tangent.x, tangent.y, tangent.z, tangent.w));
                         }
                     }
+                    else
+                    {
+                        ///CalculateTangents(tangents, points, );
+                    }
 
-                    //int numTriangles = 0;
                     for (uint i = 0; i<=primitive.indices.Length - 3; i+=3)
                     {
                         if (i + 3 > primitive.indices.Length) break;
@@ -904,11 +908,12 @@ namespace RayTrace.Importers
                             triangle.t1 = texelOffset + (int)primitive.indices[i + 1];
                             triangle.t2 = texelOffset + (int)primitive.indices[i + 2];
 
+                            triangle.tg0 = tangentOffset + (int)primitive.indices[i];
+                            triangle.tg1 = tangentOffset + (int)primitive.indices[i + 1];
+                            triangle.tg2 = tangentOffset + (int)primitive.indices[i + 2];
 
                             triangles.Add(triangle);
-                            //points.Add(new SPoint(position.x, position.y, position.z));
 
-                            //group.Triangles.Add(triangles.Count - 1);
                             primGroup.Triangles.Add(triangles.Count - 1);
 
                         }
@@ -918,6 +923,78 @@ namespace RayTrace.Importers
                             break;
                         }
                     }
+
+                    // If there are no tangents for this primitive, calculate them.
+                    if (primitive.tangents is null && primitive.texCoords is not null && primitive.positions is not null)
+                    {
+                        Logger.Instance.Info($"Generating tangent vectors for Primitive {mesh.name}");
+
+                        int numPoints = points.Count - pointOffset;
+                        int numTriangles = triangles.Count - triangleOffset;
+
+                        SVector[] tangentSum = new SVector[numPoints];
+                        SVector[] bitangentSum = new SVector[numPoints];
+
+                        // First accumulate all the tangents and bitangents per triangle vertex.
+                        for (int tri=triangleOffset; tri<triangles.Count; tri++)
+                        {
+                            ModelData.Triangle triangle = triangles[tri];
+
+                            SVector p0 = points[triangle.v0];
+                            SVector p1 = points[triangle.v1];
+                            SVector p2 = points[triangle.v2];
+
+                            Texel uv0 = texels[triangle.t0];
+                            Texel uv1 = texels[triangle.t1];
+                            Texel uv2 = texels[triangle.t2];
+
+                            SVector dp1 = p1 - p0;
+                            SVector dp2 = p2 - p0;
+
+                            Vector2 duv1 = new(uv1.u - uv0.u, uv1.v - uv0.v);
+                            Vector2 duv2 = new(uv2.u - uv0.u, uv2.v - uv0.v);
+
+                            float denom = (duv1.X * duv2.Y - duv1.Y * duv2.X);
+                            if (denom == 0f) continue;
+
+                            float r = 1.0f / denom;
+
+                            SVector T = (dp1*duv2.Y - dp2*duv1.Y)*r;
+                            SVector B = (dp2*duv1.X - dp1*duv2.X)*r;
+
+                            tangentSum[triangle.v0] += T;
+                            tangentSum[triangle.v1] += T;
+                            tangentSum[triangle.v2] += T;
+
+                            bitangentSum[triangle.v0] += B;
+                            bitangentSum[triangle.v1] += B;
+                            bitangentSum[triangle.v2] += B;
+                        }
+
+                        for (int i = 0; i<numPoints; i++)
+                        {
+                            SVector N = normals[normalOffset + i].Normalise();
+                            SVector T = tangentSum[i];
+
+                            T = (T - N*N.DotProduct(T)).Normalise();
+                            float w = (N.VectorProduct(T).DotProduct(bitangentSum[i]) < 0.0f) ? -1.0f : 1.0f;
+
+                            SVector tangent = new(T.X, T.Y, T.Z, w);
+                            tangents.Add(tangent);
+                        }
+
+                        for (int tri = triangleOffset; tri<triangles.Count; tri++)
+                        {
+                            ModelData.Triangle triangle = triangles[tri];
+
+                            triangle.tg0 = triangle.v0;
+                            triangle.tg1 = triangle.v1;
+                            triangle.tg2 = triangle.v2;
+                        }
+
+                        Debug.Assert(tangents.Count == points.Count);
+                    }
+
 
                     int material = primitive.material;
 
@@ -945,12 +1022,6 @@ namespace RayTrace.Importers
             colours.Clear();
             triangles.Clear();
 
-            //List<SPoint> points = new List<SPoint>();
-            //List<SVector> normals = new List<SVector>();
-            //List<ModelData.Texel> texels = new List<ModelData.Texel>();
-            //List<Colour> colours = new List<Colour>();
-            //List<ModelData.Triangle> triangles = new List<ModelData.Triangle>();
-
             List<ModelData.SubGroup> groups = new();
 
 
@@ -970,6 +1041,7 @@ namespace RayTrace.Importers
                     groups.Add(group);
                 }
             }
+
 
             modelData.HasVertexNormals = normals.Count > 0;
             modelData.HasVertexTangents = tangents.Count > 0;

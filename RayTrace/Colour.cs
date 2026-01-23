@@ -11,6 +11,9 @@ namespace RayTrace
     // Extension methods to make Vector3 act more like Colour.
     public static class SColourExtensions
     {
+        // https://en.wikipedia.org/wiki/SRGB
+        private static SColour _luminanceScaler = new(0.2126f, 0.7152f, 0.0722f);
+
         extension(SColour c)
         {
             public float Red => c.X;
@@ -60,6 +63,11 @@ namespace RayTrace
                 float b = Math.Clamp(c.Blue, 0f, 1f);
 
                 return new(r, g, b);
+            }
+
+            public float Luminance()
+            {
+                return Vector3.Dot(c, _luminanceScaler);
             }
 
             public SColour ReinhardToneMap()

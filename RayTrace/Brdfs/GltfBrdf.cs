@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media.Media3D;
+using System.Xml.Schema;
 
 namespace RayTrace.Brdfs
 {
@@ -15,6 +16,13 @@ namespace RayTrace.Brdfs
     // H    Normalised half vector |L + V|
     public class GltfBrdf : Brdf
     {
+        // Minimum roughness value to use for calculations.
+        private const float MinRoughness = 0.045f;
+
+        private const float EPSILON = 1e-7f;
+        private const float EPSILON_SQRT = 1e-4f;
+        private const float EPSILON_CLAMP = 1e-6f;
+
         // Multiplier for metal-ness.
         private float _metallicFactor = 1f;
 
@@ -104,6 +112,15 @@ namespace RayTrace.Brdfs
                 }
         */
 
+        // Schlick's approximation.
+        private static float Fresnel(float f0, float f90, float NdotV)
+        {
+            float v = (1.0f - NdotV);
+            float v5 = v*v*v*v*v;
+
+            return f0 + (f90 - f0)*v5;
+        }
+
         private static SColour specularReflection(SColour f0, SColour f90, float VdotH)
         {
             float v = Math.Clamp(1.0f - VdotH /*Math.Abs(VdotH)*/, 0.0f, 1.0f);
@@ -151,12 +168,12 @@ namespace RayTrace.Brdfs
         private static float CalculateD_GGX(float NdotH, float roughness)
         {
             float alpha = roughness*roughness;
-            float alphaSqr = alpha*alpha;// + 0.000001f;
+            float alphaSqr = alpha*alpha;
 
-            alphaSqr = Math.Max(0.0001f, alphaSqr);
+            alphaSqr = Math.Max(EPSILON_SQRT, alphaSqr);
 
             float val = NdotH*NdotH*(alphaSqr - 1.0f) + 1.0f;
-            val = Math.Max(val, 1E-7f);
+            val = Math.Max(val, EPSILON);
 
             float denominator = MathF.PI*val*val;
 
@@ -164,7 +181,11 @@ namespace RayTrace.Brdfs
             {
                 float numerator = alphaSqr;
 
-                return numerator/denominator;
+                float D = numerator/denominator;
+
+                D = Math.Min(D, 100f);
+
+                return D;
             }
 
             //return 0.0f;
@@ -226,6 +247,9 @@ namespace RayTrace.Brdfs
             float alpha = roughness*roughness;
             float alphaSqr = alpha*alpha;
 
+            NdotL = Math.Max(EPSILON_CLAMP, NdotL);
+            NdotV = Math.Max(EPSILON_CLAMP, NdotV);
+
             float denom1 = NdotL*MathF.Sqrt(NdotV*NdotV*(1.0f - alphaSqr) + alphaSqr);
             float denom2 = NdotV*MathF.Sqrt(NdotL*NdotL*(1.0f - alphaSqr) + alphaSqr);
 
@@ -233,7 +257,7 @@ namespace RayTrace.Brdfs
             Debug.Assert(!float.IsNaN(denom2));
 
             float denominator = denom1 + denom2;
-            if (denominator > 0f)
+            if (denominator > EPSILON)
             {
                 return 0.5f/denominator;
             }
@@ -420,6 +444,9 @@ namespace RayTrace.Brdfs
             return pdf1Sqr/(pdf1Sqr + pdf2Sqr);
         }
 
+        // TODO Use Heitz VNDF sampling/
+        // Importance sampling of the GGX (Trowbridge-Reitz) normal distribution function using
+        //  inverse transform method.
         // viewDirection (from point to eye).
         // Returns half vector in Y-up space.
         public static SVector ImportanceSampleGGX(Random rand, in SVector viewDirection, float roughness, out float pdf)
@@ -484,7 +511,37 @@ namespace RayTrace.Brdfs
             float roughness = GetRoughness(metallicRoughnessColour)*RoughnessFactor;
 
             //roughness = MathF.Max(roughness, 0.045f);
-            roughness = MathF.Max(roughness, 0.0001f);
+            roughness = MathF.Max(roughness, MinRoughness);
+
+#if false
+//            float luminance = F0.MaxComponent();
+            //float specularF0 = F0.Luminance();
+
+            SColour F0 = SColour.Lerp(_f0, colour, metalness);
+            float specularF0 = F0.Luminance();
+
+            float diffuseReflectance = (1.0f - metalness)*colour.Luminance();
+
+            float shadowedF0 = Math.Min(1.0f, F0.Luminance()/0.04f);
+            SVector V = hr.Ray.Normalise().Negate();
+            float VdotN = Math.Min(0.00001f, V.DotProduct(hr.EntryNormal));
+
+            float fresnel = Fresnel(specularF0, shadowedF0, VdotN);
+
+            float specularWeight = fresnel;
+            float diffuseWeight = diffuseReflectance*(1.0f - fresnel);
+
+            float sum = specularWeight + diffuseWeight;
+            float p = (specularWeight / Math.Max(0.0001f, (sum)));
+
+            p = Math.Clamp(p, 0.1f, 0.9f);
+
+            pdf = p;
+
+            bool sampleDiffuse = rand.NextSingle() > p;
+
+            _sampleDiffuse = sampleDiffuse; // XXX nasty hack!!!
+#endif
 
             SColour F0 = SColour.Lerp(_f0, colour, metalness);
 
@@ -502,14 +559,11 @@ namespace RayTrace.Brdfs
 
             bool sampleDiffuse = rand.NextSingle() < diffuseWeight;
 
-            /*
-            float specularWeight = metalness + (1.0f - metalness)*(1.0f - roughness);
-            float diffuseWeight = 1.0f - specularWeight;
-
-            bool sampleDiffuse = rand.NextSingle() < diffuseWeight;
-            */
 
             _sampleDiffuse = sampleDiffuse; // XXX nasty hack!!!
+
+
+
 
             SVector wi = hr.Ray.Normalise().Negate();
 
@@ -522,27 +576,31 @@ namespace RayTrace.Brdfs
             //Vlcs = Vlcs.Normalise();
 
             pdf = 1f;
+            SColour sampleWeight = SPalette.White;
 
             if (sampleDiffuse)
             {
                 sample_lcs = ImportanceSampleCosine(rand /*, out pdf*/);
+
+                sampleWeight = colour*(1.0f - metalness);
             }
             else
             {
                 // Sampled half vector.
                 float halfPdf;
-                SVector HalfVeclcs = ImportanceSampleGGX(rand, Vlcs, roughness, out halfPdf);
+                SVector Hlcs = ImportanceSampleGGX(rand, Vlcs, roughness, out halfPdf);
 
-                HalfVeclcs = HalfVeclcs.Normalise();
+                Hlcs = Hlcs.Normalise();
 
                 // Reflect vector-to-viewpoint by the halfVector.
 //                float VdotH = Math.Max(0.001f, Vlcs.DotProduct(HalfVeclcs));
-                float VdotH = Vlcs.DotProduct(HalfVeclcs);
+                float VdotH = Math.Max(Vlcs.DotProduct(Hlcs), EPSILON_CLAMP);
 
-                if (VdotH < 0.05f)
+                if (VdotH < EPSILON_SQRT)
                     return SVector.Null();
-
-                sample_lcs = (HalfVeclcs*(2f*VdotH) - Vlcs).Normalise();
+                
+                // Get sample vector in local space.
+                sample_lcs = (Hlcs*(2f*VdotH) - Vlcs).Normalise();
 
                 if (sample_lcs.J <= 0.001f)
                 {
@@ -551,12 +609,26 @@ namespace RayTrace.Brdfs
                     return SVector.Null();
                 }
 
+                //SColour F0 = SColour.Lerp(_f0, colour, metalness);
+                float specularF0 = F0.Luminance();
+
+                float diffuseReflectance = (1.0f - metalness)*colour.Luminance();
+
+                float shadowedF0 = Math.Min(1.0f, F0.Luminance()/0.04f);
+                SVector V = hr.Ray.Normalise().Negate();
+                float VdotN = Math.Min(0.00001f, V.DotProduct(hr.EntryNormal));
+
+                float fresnel = Fresnel(specularF0, shadowedF0, VdotH /*VdotN*/);
+
+                // weight is brdf/pdf, then multiplied by cosTheta.
+                ///sampleWeight = F*
+
                 //pdf = halfPdf/(4f*VdotH);
             }
 
             //if (sample_lcs.J <= 0f)
             //    return SVector.Null();
-            
+
             sample = lcs.Reproject(sample_lcs).Normalise();  // convert back to world space.
 
             float NdotL = hr.EntryNormal.DotProductSaturated(sample);
@@ -620,34 +692,31 @@ namespace RayTrace.Brdfs
 
             SVector N = hr.EntryNormal.Normalise();
             SVector V = hr.Ray.Normalise().Negate();
+            SVector L = source;
+            SVector H = (V + L).Normalise();
+
+            float NdotL = Math.Clamp(N.DotProduct(L), EPSILON_CLAMP, 1f);
+            float NdotV = Math.Clamp(N.DotProductSaturated(V), EPSILON_CLAMP, 1f);
+            float NdotH = Math.Clamp(N.DotProductSaturated(H), EPSILON_CLAMP, 1f);
+            float VdotH = Math.Clamp(V.DotProductSaturated(H), EPSILON_CLAMP, 1f);
+
+            //NdotH = Math.Max(NdotH, 0.001f);
+            //VdotH = Math.Max(VdotH, 0.001f);
+
+            //NdotL = Math.Clamp(NdotL, 0.0001f, 1f);
+            //NdotV = Math.Clamp(NdotV, 0.0001f, 1f);
+
 
             // Decide which lobe to sample (diffuse or specular).
             SColour metallicRoughnessColour = GetMetallicRoughness(hr);
             float metalness = GetMetalness(metallicRoughnessColour) * MetallicFactor;
-            float roughness = Math.Max(GetRoughness(metallicRoughnessColour) * RoughnessFactor, 0.0001f);
-
-            roughness = MathF.Max(roughness, 0.0001f);
+            float roughness = Math.Max(GetRoughness(metallicRoughnessColour) * RoughnessFactor, MinRoughness);
 
             float specularWeight = metalness + (1.0f - metalness) * (1.0f - roughness);
             float diffuseWeight = 1.0f - specularWeight;
 
             bool sampleDiffuse = _sampleDiffuse;// rand.NextSingle() < diffuseWeight;
 
-            SVector L = source;
-            SVector H = (V + L).Normalise();
-
-            float NdotL = N.DotProduct(L);
-
-            float NdotV = N.DotProductSaturated(V);
-            float NdotH = N.DotProductSaturated(H);
-
-            float VdotH = V.DotProductSaturated(H);
-
-            NdotH = Math.Max(NdotH, 0.001f);
-            VdotH = Math.Max(VdotH, 0.001f);
-
-            NdotL = Math.Clamp(NdotL, 0.0001f, 1f);
-            NdotV = Math.Clamp(NdotV, 0.0001f, 1f);
 
             //Colour f0 = Colour.LinearBlend(_f0, colour, metalness);
             SColour f0 = _f0 * (1f - metalness) + colour * metalness;
@@ -681,9 +750,23 @@ namespace RayTrace.Brdfs
 
             float denom = (4.0f * NdotL * NdotV);
             SColour specularContrib = SColour.Zero; //new SColour(0f, 0f, 0f);
-            if (denom > 1e-6f)
+            if (denom > 1e-7f)
             {
                 specularContrib = F * G * D / denom;
+
+                const float MaxSpecular = 10f;
+
+                float Red = Math.Min(specularContrib.Red, MaxSpecular);
+                float Green = Math.Min(specularContrib.Green, MaxSpecular);
+                float Blue = Math.Min(specularContrib.Blue, MaxSpecular);
+
+                specularContrib = new(Red, Green, Blue);
+
+                //float maxComp = specularContrib.MaxComponent();
+                //if (maxComp > MaxSpecular)
+                //{
+                //    specularContrib = specularContrib * (MaxSpecular / maxComp);
+                //}
             }
 
             SColour radiance = diffuseContrib + specularContrib;
