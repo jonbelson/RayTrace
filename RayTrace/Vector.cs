@@ -1,3 +1,8 @@
+// Copyright (c) 2026 Jonathan Belson
+// Licensed under the MIT License — use freely, keep this notice.
+// SPDX-License-Identifier: MIT
+// Full terms: see LICENSE in the project root.
+
 ﻿using System;
 using System.ComponentModel;
 using System.Diagnostics;
