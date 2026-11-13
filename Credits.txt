@@ -3,3 +3,7 @@ Many, but including:
 
 Boksansky's reference path tracer (Ray Tracing Gems).
 Khronous Group's reference viewer.
+
+Default skybox texture 'Citadell2.zip' is from Humus' excellent texture collection:
+https://www.humus.name/index.php?page=Textures
+The textures are licensed under Create Commons Attribution 3.0 Unported Licence (http://creativecommons.org/licenses/by/3.0/)
