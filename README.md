@@ -28,15 +28,17 @@ This project was created to experiment with ray tracing and develop my C#/WPF sk
 
 <p>
 
-![](images/MetallicRoughSpheres.jpg)
-<sub>https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/MetalRoughSpheres</sub>
+![](Images/MetallicRoughSpheres.jpg)
+<sub>
+https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/MetalRoughSpheres
+</sub>
 
-![](images/RedEyeWatcher10.jpg)
+![](Images/RedEyeWatcher10.jpg)
 <sub>
 This work is based on "Redeye Watcher Rig | Horizon Zero Dawn" (https://sketchfab.com/3d-models/redeye-watcher-rig-horizon-zero-dawn-610cad1a5ab340059931fc916dc8f8ce) by cherishloveart (https://sketchfab.com/cherishloveart) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
 </sub>
 
-![](images/Balls.jpg)
+![](Images/Balls.jpg)
 
 <sub>
 Skyboxes from https://www.humus.name/index.php?page=Textures. Licensed under a Creative Commons Attribution 3.0 Unported Licence (http://creativecommons.org/licenses/by/3.0/)
